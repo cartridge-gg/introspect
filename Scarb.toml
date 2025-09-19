@@ -1,0 +1,47 @@
+[workspace.package]
+version = "0.1.0"
+edition = "2024_07"
+cairo-version = "2.12.2"
+scarb-version = "2.12.2"
+repository = "https://github.com/cartridge-gg/introspect"
+
+[workspace]
+members = ["packages/*"]
+
+[workspace.dependencies]
+starknet = "2.12.2"
+
+[workspace.dev-dependencies]
+cairo_test = "2.12.2"
+
+[workspace.tool.fmt]
+sort-module-level-items = true
+
+[workspace.tool.scarb]
+allow-prebuilt-plugins = ["snforge_std"]
+
+[package]
+name = "introspect"
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+scarb-version.workspace = true
+
+[dependencies]
+starknet.workspace = true
+introspect_types = { path = "packages/types" }
+introspect_events = { path = "packages/events" }
+wrapper = { path = "packages/wrapper" }
+
+[dev-dependencies]
+cairo_test = "2.12.2"
+
+[lib]
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
+
+[[target.starknet-contract]]
+sierra = true
+casm = false

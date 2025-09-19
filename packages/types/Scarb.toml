@@ -1,15 +1,19 @@
 [package]
-name = "introspect"
+name = "introspect_types"
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
 scarb-version.workspace = true
+repository.workspace = true
+
+[dependencies]
+wrapper = { path = "../wrapper" }
+
+[dev-dependencies]
+cairo_test = "2.12.2"
 
 [tool]
 fmt.workspace = true
 scarb.workspace = true
 
-[cairo]
-sierra-replace-ids = true
-
-[dependencies]
+[lib]

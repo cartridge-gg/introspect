@@ -1,0 +1,20 @@
+[package]
+name = "introspect_events"
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+scarb-version.workspace = true
+repository.workspace = true
+
+[dependencies]
+starknet.workspace = true
+introspect_types = { path = "../types" }
+
+[dev-dependencies]
+cairo_test = "2.12.2"
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
+
+[lib]
