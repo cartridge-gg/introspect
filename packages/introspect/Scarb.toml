@@ -1,0 +1,15 @@
+[package]
+name = "introspect"
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+scarb-version.workspace = true
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
+
+[cairo]
+sierra-replace-ids = true
+
+[dependencies]
