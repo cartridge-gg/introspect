@@ -1,13 +1,13 @@
 use introspect_types::Ty;
-use introspect_types::ty::Member;
+use introspect_types::ty::Field;
 
 pub enum DatabaseEvents {
     DeclareTable: DeclareTable,
     DeclareTableWithFields: DeclareTableWithFields,
     DeclareTableWithSchema: DeclareTableWithSchema,
+    UndeclareTable: UndeclareTable,
     DeclareTableField: DeclareTableField,
     DeclareTableFields: DeclareTableFields,
-    UndeclareTable: UndeclareTable,
     UndeclareField: UndeclareField,
     UndeclareFields: UndeclareFields,
     SetTableValue: SetValue,
@@ -29,9 +29,7 @@ pub enum DatabaseEvents {
 }
 
 
-/// TABLE MANAGEMENT EVENTS
-/// ===========================
-/// Table management common fields
+/// Table declaration common fields
 ///
 /// - `id` Table ID.
 /// - `name` in table events: Table name, in field events: Table ID the field name.
@@ -51,7 +49,7 @@ pub struct DeclareTableWithFields {
     #[key]
     pub id: felt252,
     pub name: ByteArray,
-    pub fields: Span<Member>,
+    pub fields: Span<Field>,
 }
 
 /// Declares a table using a pre-defined schema.
@@ -63,7 +61,13 @@ pub struct DeclareTableWithSchema {
     pub schema: felt252,
 }
 
-/// Table field common fields
+/// Emitted when a table is undeclared.
+pub struct UndeclareTable {
+    #[key]
+    pub id: felt252,
+}
+
+/// Table field management common fields
 ///
 /// - `table` Table ID the field belongs to.
 /// - `name` Field name.
@@ -86,39 +90,32 @@ pub struct DeclareTableField {
 pub struct DeclareTableFields {
     #[key]
     pub table: felt252,
-    pub fields: Span<Member>,
+    pub fields: Span<Field>,
 }
 
-/// Emitted when a table is undeclared.
-///
-/// Fields:
-/// - `id`: Unique identifier of the table (e.g., hash of the name or a custom ID).
-
-pub struct UndeclareTable {
+/// Emitted when a field is undeclared from a table.
+#[derive(Drop, Serde, starknet::Event)]
+pub struct UndeclareField {
     #[key]
-    pub id: felt252,
+    pub table: felt252,
+    pub field: felt252,
+}
+
+/// Emitted when multiple fields are undeclared from a table.
+#[derive(Drop, Serde, starknet::Event)]
+pub struct UndeclareFields {
+    #[key]
+    pub table: felt252,
+    pub fields: Span<felt252>,
 }
 
 
+/// Database values common fields
 ///
-/// Fields:
-/// - `id`: Unique identifier for the table.
-/// - `name`: Human-readable name of the table.
-/// - `schema`: The schema declared via `DeclareSchema`.
-
-/// Declares multiple fields for an existing table.
-///
-/// Fields:
-/// - `table`: Table ID the fields belong to.
-/// - `fields`: Array of field definitions (name + layout).
-
-/// Sets a single field for a single record.
-///
-/// Fields:
-/// - `table`: Table ID.
-/// - `record`: Record/entity ID.
-/// - `field`: Field selector.
-/// - `value`: Value to set.
+/// - `table` Table ID.
+/// - `record`/`records` Record ID.
+/// - `field`/`fields` Field selector.
+/// - `data` Serialised data being set.
 
 pub struct SetValue {
     #[key]
@@ -127,17 +124,8 @@ pub struct SetValue {
     pub record: felt252,
     #[key]
     pub field: felt252,
-    pub value: Span<felt252>,
+    pub data: Span<felt252>,
 }
-
-
-/// Sets multiple fields for a single record.
-///
-/// Fields:
-/// - `table`: Table ID.
-/// - `record`: Record ID.
-/// - `fields`: List of field selectors.
-/// - `values`: Concatenated field values (decoded per layout).
 
 pub struct SetRecordFields {
     #[key]
@@ -145,41 +133,24 @@ pub struct SetRecordFields {
     #[key]
     pub record: felt252,
     pub fields: Span<felt252>,
-    pub values: Span<felt252>,
+    pub data: Span<felt252>,
 }
 
-
-/// Sets a single field across multiple records.
-///
-/// Fields:
-/// - `table`: Table ID.
-/// - `field`: Field selector.
-/// - `records`: List of record IDs.
-/// - `values`: Corresponding values for each record.
-
-pub struct SetFieldRecords {
+pub struct SetRecordsField {
     #[key]
     pub table: felt252,
     #[key]
     pub field: felt252,
     pub records: Span<felt252>,
-    pub values: Span<felt252>,
+    pub data: Span<felt252>,
 }
-
-/// Sets multiple fields across multiple records (row-major order).
-///
-/// Fields:
-/// - `table`: Table ID.
-/// - `records`: List of record IDs (rows).
-/// - `fields`: List of field selectors (columns).
-/// - `data`: Flattened data buffer [record][field] values.
 
 pub struct SetRecordsFields {
     #[key]
     pub table: felt252,
     pub records: Span<felt252>,
     pub fields: Span<felt252>,
-    pub data: Span<felt252>,
+    pub data: Span<Span<felt252>>,
 }
 
 
@@ -215,5 +186,5 @@ pub struct SetRecordsFromSchema {
     #[key]
     pub schema: felt252,
     pub records: Span<felt252>,
-    pub data: Span<felt252>,
+    pub data: Span<Span<felt252>>,
 }

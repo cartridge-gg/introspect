@@ -31,7 +31,6 @@ scarb-version.workspace = true
 starknet.workspace = true
 introspect_types = { path = "packages/types" }
 introspect_events = { path = "packages/events" }
-wrapper = { path = "packages/wrapper" }
 
 [dev-dependencies]
 cairo_test = "2.12.2"
