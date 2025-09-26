@@ -1,4 +1,5 @@
 use core::dict::Felt252Dict;
+use core::poseidon::poseidon_hash_span;
 use starknet::{ClassHash, ContractAddress, EthAddress};
 use crate::Ty;
 
@@ -9,6 +10,11 @@ trait Introspect<T> {
     }
     const fn size() -> Option<u32> {
         None
+    }
+    fn hash() -> felt252 {
+        let mut serialized: Array<felt252> = Default::default();
+        Serde::<Ty>::serialize(@Self::introspect(), ref serialized);
+        poseidon_hash_span(serialized.span())
     }
 }
 
