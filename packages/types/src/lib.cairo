@@ -1,2 +1,3 @@
+pub mod introspect;
 pub mod ty;
-pub use ty::{Enum, Field, Member, Struct, Ty};
+pub use ty::{Enum, Field, Function, Member, Struct, Ty};

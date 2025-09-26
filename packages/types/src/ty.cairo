@@ -27,6 +27,14 @@ pub struct Member {
     pub ty: Ty,
 }
 
+#[derive(Drop, Copy, Serde, PartialEq)]
+pub struct Function {
+    pub name: felt252,
+    pub attrs: Span<felt252>,
+    pub args: Span<Member>,
+    pub ret: Box<Ty>,
+}
+
 #[derive(Drop, Copy, Serde, PartialEq, Default)]
 pub enum Ty {
     #[default]
@@ -44,6 +52,7 @@ pub enum Ty {
     Int32,
     Int64,
     Int128,
+    USize,
     ShortString,
     ClassHash,
     ContractAddress,
@@ -52,9 +61,16 @@ pub enum Ty {
     Tuple: Span<Ty>,
     Array: Box<Ty>,
     FixedArray: (Box<Ty>, u32),
-    Custom: felt252,
     Struct: Struct,
     Enum: Enum,
+    Schema: felt252,
+    Custom: felt252,
+    Option: Box<Ty>,
+    Result: (Box<Ty>, Box<Ty>),
+    Nullable: Box<Ty>,
+    Function: Function,
+    Encoding: felt252,
+    Felt252Dict: Box<Ty>,
 }
 
 

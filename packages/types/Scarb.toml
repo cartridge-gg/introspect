@@ -7,7 +7,6 @@ scarb-version.workspace = true
 repository.workspace = true
 
 [dependencies]
-wrapper = { path = "../wrapper" }
 
 [dev-dependencies]
 cairo_test = "2.12.2"

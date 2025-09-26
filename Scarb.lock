@@ -7,7 +7,6 @@ version = "0.1.0"
 dependencies = [
  "introspect_events",
  "introspect_types",
- "wrapper",
 ]
 
 [[package]]
@@ -19,11 +18,4 @@ dependencies = [
 
 [[package]]
 name = "introspect_types"
-version = "0.1.0"
-dependencies = [
- "wrapper",
-]
-
-[[package]]
-name = "wrapper"
 version = "0.1.0"

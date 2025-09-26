@@ -1,6 +1,8 @@
 use introspect_types::Ty;
 use introspect_types::ty::Field;
 
+
+#[derive(Drop, Serde, starknet::Event)]
 pub enum DatabaseEvents {
     DeclareTable: DeclareTable,
     DeclareTableWithFields: DeclareTableWithFields,
@@ -11,19 +13,19 @@ pub enum DatabaseEvents {
     UndeclareField: UndeclareField,
     UndeclareFields: UndeclareFields,
     SetTableValue: SetValue,
-    SetRecordFields: SetRecordFields,
-    SetFieldRecords: SetFieldRecords,
-    SetRecordsFields: SetRecordsFields,
     SetRecord: SetRecord,
     SetRecords: SetRecords,
-    SetRecordFromSchema: SetRecordFromSchema,
-    SetRecordsFromSchema: SetRecordsFromSchema,
+    SetRecordFields: SetRecordFields,
+    SetRecordsField: SetRecordsField,
+    SetRecordsFields: SetRecordsFields,
+    SetRecordDataFromSchema: SetRecordDataFromSchema,
+    SetRecordsDataFromSchema: SetRecordsDataFromSchema,
     DeleteValue: DeleteValue,
-    DeleteRecordFields: DeleteRecordFields,
-    DeleteFieldRecords: DeleteFieldRecords,
-    DeleteRecordsFields: DeleteRecordsFields,
     DeleteRecord: DeleteRecord,
     DeleteRecords: DeleteRecords,
+    DeleteRecordFields: DeleteRecordFields,
+    DeleteFieldRecords: DeleteRecordsField,
+    DeleteRecordsFields: DeleteRecordsFields,
     DeleteRecordFromSchema: DeleteRecordFromSchema,
     DeleteRecordsFromSchema: DeleteRecordsFromSchema,
 }
@@ -36,7 +38,8 @@ pub enum DatabaseEvents {
 /// - `fields` in table events: Table fields.
 /// - `schema` in table events: Schema ID.
 
-/// Emitted when a new table is declared with inline field definitions.
+///Emitted when a new table is declared with inline field definitions.
+#[derive(Drop, Serde, starknet::Event)]
 pub struct DeclareTable {
     #[key]
     pub id: felt252,
@@ -61,7 +64,8 @@ pub struct DeclareTableWithSchema {
     pub schema: felt252,
 }
 
-/// Emitted when a table is undeclared.
+///Emitted when a table is undeclared.
+#[derive(Drop, Serde, starknet::Event)]
 pub struct UndeclareTable {
     #[key]
     pub id: felt252,
@@ -116,7 +120,8 @@ pub struct UndeclareFields {
 /// - `record`/`records` Record ID.
 /// - `field`/`fields` Field selector.
 /// - `data` Serialised data being set.
-
+///
+#[derive(Drop, Serde, starknet::Event)]
 pub struct SetValue {
     #[key]
     pub table: felt252,
@@ -127,6 +132,7 @@ pub struct SetValue {
     pub data: Span<felt252>,
 }
 
+#[derive(Drop, Serde, starknet::Event)]
 pub struct SetRecordFields {
     #[key]
     pub table: felt252,
@@ -136,6 +142,7 @@ pub struct SetRecordFields {
     pub data: Span<felt252>,
 }
 
+#[derive(Drop, Serde, starknet::Event)]
 pub struct SetRecordsField {
     #[key]
     pub table: felt252,
@@ -145,6 +152,7 @@ pub struct SetRecordsField {
     pub data: Span<felt252>,
 }
 
+#[derive(Drop, Serde, starknet::Event)]
 pub struct SetRecordsFields {
     #[key]
     pub table: felt252,
@@ -153,16 +161,26 @@ pub struct SetRecordsFields {
     pub data: Span<Span<felt252>>,
 }
 
+#[derive(Drop, Serde, starknet::Event)]
+pub struct SetRecord {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub record: felt252,
+    pub data: Span<felt252>,
+}
 
-/// Sets a record using a predefined schema layout.
-///
-/// Fields:
-/// - `table`: Table ID.
-/// - `record`: Record ID.
-/// - `schema`: Schema ID (defines field order).
-/// - `data`: Field values matching the schema.
 
-pub struct SetRecordFromSchema {
+#[derive(Drop, Serde, starknet::Event)]
+pub struct SetRecords {
+    #[key]
+    pub table: felt252,
+    pub records: Span<felt252>,
+    pub data: Span<Span<felt252>>,
+}
+
+#[derive(Drop, Serde, starknet::Event)]
+pub struct SetRecordDataFromSchema {
     #[key]
     pub table: felt252,
     #[key]
@@ -172,15 +190,9 @@ pub struct SetRecordFromSchema {
     pub data: Span<felt252>,
 }
 
-/// Sets multiple records using a predefined schema layout.
-///
-/// Fields:
-/// - `table`: Table ID.
-/// - `schema`: Schema ID.
-/// - `records`: List of record IDs.
-/// - `data`: Flattened record values following the schema order.
 
-pub struct SetRecordsFromSchema {
+#[derive(Drop, Serde, starknet::Event)]
+pub struct SetRecordsDataFromSchema {
     #[key]
     pub table: felt252,
     #[key]
@@ -188,3 +200,76 @@ pub struct SetRecordsFromSchema {
     pub records: Span<felt252>,
     pub data: Span<Span<felt252>>,
 }
+
+
+#[derive(Drop, Serde, starknet::Event)]
+pub struct DeleteValue {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub record: felt252,
+    #[key]
+    pub field: felt252,
+}
+
+#[derive(Drop, Serde, starknet::Event)]
+pub struct DeleteRecord {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub record: felt252,
+}
+
+#[derive(Drop, Serde, starknet::Event)]
+pub struct DeleteRecords {
+    #[key]
+    pub table: felt252,
+    pub records: Span<felt252>,
+}
+
+#[derive(Drop, Serde, starknet::Event)]
+pub struct DeleteRecordFields {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub record: felt252,
+    pub fields: Span<felt252>,
+}
+
+
+#[derive(Drop, Serde, starknet::Event)]
+pub struct DeleteRecordsField {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub field: felt252,
+    pub records: Span<felt252>,
+}
+
+#[derive(Drop, Serde, starknet::Event)]
+pub struct DeleteRecordsFields {
+    #[key]
+    pub table: felt252,
+    pub records: Span<felt252>,
+    pub fields: Span<felt252>,
+}
+
+#[derive(Drop, Serde, starknet::Event)]
+pub struct DeleteRecordFromSchema {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub record: felt252,
+    #[key]
+    pub schema: felt252,
+}
+
+#[derive(Drop, Serde, starknet::Event)]
+pub struct DeleteRecordsFromSchema {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub schema: felt252,
+    pub records: Span<felt252>,
+}
+
