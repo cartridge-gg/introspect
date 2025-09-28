@@ -12,7 +12,7 @@ pub enum DatabaseEvents {
     DeclareTableFields: DeclareTableFields,
     UndeclareField: UndeclareField,
     UndeclareFields: UndeclareFields,
-    SetTableValue: SetValue,
+    SetValue: SetValue,
     SetRecord: SetRecord,
     SetRecords: SetRecords,
     SetRecordFields: SetRecordFields,
@@ -24,7 +24,7 @@ pub enum DatabaseEvents {
     DeleteRecord: DeleteRecord,
     DeleteRecords: DeleteRecords,
     DeleteRecordFields: DeleteRecordFields,
-    DeleteFieldRecords: DeleteRecordsField,
+    DeleteRecordsField: DeleteRecordsField,
     DeleteRecordsFields: DeleteRecordsFields,
     DeleteRecordFromSchema: DeleteRecordFromSchema,
     DeleteRecordsFromSchema: DeleteRecordsFromSchema,
@@ -38,7 +38,7 @@ pub enum DatabaseEvents {
 /// - `fields` in table events: Table fields.
 /// - `schema` in table events: Schema ID.
 
-///Emitted when a new table is declared with inline field definitions.
+///Emitted when a new table is declared without field definitions.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct DeclareTable {
     #[key]
@@ -146,9 +146,9 @@ pub struct SetRecordFields {
 pub struct SetRecordsField {
     #[key]
     pub table: felt252,
+    pub records: Span<felt252>,
     #[key]
     pub field: felt252,
-    pub records: Span<felt252>,
     pub data: Span<felt252>,
 }
 
@@ -158,7 +158,7 @@ pub struct SetRecordsFields {
     pub table: felt252,
     pub records: Span<felt252>,
     pub fields: Span<felt252>,
-    pub data: Span<Span<felt252>>,
+    pub data: Span<felt252>,
 }
 
 #[derive(Drop, Serde, starknet::Event)]
@@ -176,7 +176,7 @@ pub struct SetRecords {
     #[key]
     pub table: felt252,
     pub records: Span<felt252>,
-    pub data: Span<Span<felt252>>,
+    pub data: Span<felt252>,
 }
 
 #[derive(Drop, Serde, starknet::Event)]
@@ -195,10 +195,10 @@ pub struct SetRecordDataFromSchema {
 pub struct SetRecordsDataFromSchema {
     #[key]
     pub table: felt252,
+    pub records: Span<felt252>,
     #[key]
     pub schema: felt252,
-    pub records: Span<felt252>,
-    pub data: Span<Span<felt252>>,
+    pub data: Span<felt252>,
 }
 
 
@@ -241,9 +241,9 @@ pub struct DeleteRecordFields {
 pub struct DeleteRecordsField {
     #[key]
     pub table: felt252,
+    pub records: Span<felt252>,
     #[key]
     pub field: felt252,
-    pub records: Span<felt252>,
 }
 
 #[derive(Drop, Serde, starknet::Event)]
@@ -268,8 +268,8 @@ pub struct DeleteRecordFromSchema {
 pub struct DeleteRecordsFromSchema {
     #[key]
     pub table: felt252,
+    pub records: Span<felt252>,
     #[key]
     pub schema: felt252,
-    pub records: Span<felt252>,
 }
 
