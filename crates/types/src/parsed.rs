@@ -34,7 +34,7 @@ pub struct OptionParsed {
     value: Box<Parsed>,
 }
 
-pub struct ParsedParsed {
+pub struct ResultParsed {
     is_ok: bool,
     value: Box<Parsed>,
 }
@@ -43,9 +43,9 @@ pub enum Nullable {
     NotNull(Box<Parsed>),
 }
 
-pub struct EncodingParsed {
+pub struct Encoding {
     encoding: String,
-    value: Vec<String>,
+    value: Vec<u8>,
 }
 
 pub enum Parsed {
