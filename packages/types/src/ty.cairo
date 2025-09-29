@@ -35,6 +35,13 @@ pub struct Function {
     pub ret: Box<Ty>,
 }
 
+#[derive(Drop, Copy, Serde, PartialEq)]
+pub struct FixedArray {
+    pub ty: Box<Ty>,
+    pub size: u32,
+}
+
+
 #[derive(Drop, Copy, PartialEq, Default)]
 pub enum Ty {
     #[default]
@@ -60,7 +67,7 @@ pub enum Ty {
     ByteArray,
     Tuple: Span<Ty>,
     Array: Box<Ty>,
-    FixedArray: (Box<Ty>, u32),
+    FixedArray: FixedArray,
     Felt252Dict: Box<Ty>,
     Struct: Struct,
     Enum: Enum,
@@ -69,8 +76,7 @@ pub enum Ty {
     Option: Box<Ty>,
     Result: (Box<Ty>, Box<Ty>),
     Nullable: Box<Ty>,
-    Function: Function,
-    Encoding: felt252,
+    Encoded: felt252,
 }
 
 mod selectors {
@@ -105,8 +111,7 @@ mod selectors {
     pub const Option: felt252 = selector!("option");
     pub const Result: felt252 = selector!("result");
     pub const Nullable: felt252 = selector!("nullable");
-    pub const Function: felt252 = selector!("function");
-    pub const Encoding: felt252 = selector!("encoding");
+    pub const Encoded: felt252 = selector!("encoded");
 }
 
 
@@ -171,11 +176,7 @@ impl TySerde of Serde<Ty> {
                 output.append(selectors::Nullable);
                 Serde::serialize(t, ref output);
             },
-            Ty::Function(t) => {
-                output.append(selectors::Function);
-                Serde::serialize(t, ref output);
-            },
-            Ty::Encoding(e) => { output.append_span([selectors::Encoding, *e].span()); },
+            Ty::Encoded(e) => { output.append_span([selectors::Encoded, *e].span()); },
         }
     }
 
@@ -244,10 +245,8 @@ impl TySerde of Serde<Ty> {
             Option::Some(Ty::Result(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Nullable {
             Option::Some(Ty::Nullable(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Function {
-            Option::Some(Ty::Function(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Encoding {
-            Option::Some(Ty::Encoding(*serialized.pop_front()?))
+        } else if tag == selectors::Encoded {
+            Option::Some(Ty::Encoded(*serialized.pop_front()?))
         } else {
             Option::None
         }
