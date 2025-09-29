@@ -5,14 +5,18 @@ edition.workspace = true
 cairo-version.workspace = true
 scarb-version.workspace = true
 repository.workspace = true
+experimental-features = ["associated_item_constraints"]
 
 [dependencies]
-
+starknet.workspace = true
 [dev-dependencies]
 cairo_test = "2.12.2"
 
 [tool]
 fmt.workspace = true
 scarb.workspace = true
+
+[cairo]
+sierra-replace-ids = true
 
 [lib]
