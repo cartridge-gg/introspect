@@ -1,0 +1,24 @@
+[workspace]
+resolver = "2"
+
+members = ["crates/*"]
+
+[workspace.package]
+edition = "2021"
+license = "Apache-2.0"
+license-file = "LICENSE"
+repository = "https://github.com/cartridge-gg/introspect"
+version = "0.1.0"
+
+[profile.performance]
+codegen-units = 1
+incremental = false
+inherits = "release"
+lto = "fat"
+
+[profile.profiling]
+debug = true
+inherits = "release"
+
+[workspace.dependencies]
+starknet = "0.17.0"
