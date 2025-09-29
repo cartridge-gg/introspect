@@ -141,12 +141,9 @@ impl TySerde of Serde<Ty> {
                 output.append(selectors::Array);
                 Serde::serialize(t, ref output);
             },
-            Ty::FixedArray((
-                t, n,
-            )) => {
+            Ty::FixedArray(t) => {
                 output.append(selectors::FixedArray);
                 Serde::serialize(t, ref output);
-                output.append((*n).into());
             },
             Ty::Felt252Dict(t) => {
                 output.append(selectors::Felt252Dict);
@@ -160,8 +157,8 @@ impl TySerde of Serde<Ty> {
                 output.append(selectors::Enum);
                 Serde::serialize(t, ref output);
             },
-            Ty::Schema(s) => { output.append_span([selectors::Schema, *s].span()); },
-            Ty::Custom(s) => { output.append_span([selectors::Custom, *s].span()); },
+            Ty::Schema(t) => { output.append_span([selectors::Schema, *t].span()); },
+            Ty::Custom(t) => { output.append_span([selectors::Custom, *t].span()); },
             Ty::Option(t) => {
                 output.append(selectors::Option);
                 Serde::serialize(t, ref output);
