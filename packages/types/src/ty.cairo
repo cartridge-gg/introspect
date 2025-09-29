@@ -41,6 +41,12 @@ pub struct FixedArray {
     pub size: u32,
 }
 
+#[derive(Drop, Copy, Serde, PartialEq)]
+pub struct CairoResult {
+    pub ok: Box<Ty>,
+    pub err: Box<Ty>,
+}
+
 
 #[derive(Drop, Copy, PartialEq, Default)]
 pub enum Ty {
@@ -74,7 +80,7 @@ pub enum Ty {
     Schema: felt252,
     Custom: felt252,
     Option: Box<Ty>,
-    Result: (Box<Ty>, Box<Ty>),
+    Result: CairoResult,
     Nullable: Box<Ty>,
     Encoded: felt252,
 }

@@ -2,6 +2,7 @@ use core::dict::Felt252Dict;
 use core::poseidon::poseidon_hash_span;
 use starknet::{ClassHash, ContractAddress, EthAddress};
 use crate::Ty;
+use crate::ty::{CairoResult, FixedArray};
 
 trait Introspect<T> {
     fn introspect() -> Ty;
@@ -101,16 +102,16 @@ pub impl TArrayIntrospect<T, impl I: Introspect<T>> of Introspect<Array<T>> {
     }
 }
 
-pub impl FixedArrayIntrospect<T, const N: u32, impl I: Introspect<T>> of Introspect<[T; N]> {
+pub impl FixedArrayIntrospect<T, const SIZE: u32, impl I: Introspect<T>> of Introspect<[T; SIZE]> {
     fn introspect() -> Ty {
-        Ty::FixedArray((BoxTrait::new(I::introspect()), N))
+        Ty::FixedArray(FixedArray { ty: BoxTrait::new(I::introspect()), size: SIZE })
     }
     fn schemas() -> Array<(felt252, Ty)> {
         I::schemas()
     }
     const fn size() -> Option<u32> {
         match I::size() {
-            Option::Some(size) => Option::Some(size * N),
+            Option::Some(size) => Option::Some(size * SIZE),
             Option::None => Option::None,
         }
     }
@@ -303,7 +304,11 @@ pub impl ResultIntrospect<
     T, E, impl IT: Introspect<T>, impl IE: Introspect<E>,
 > of Introspect<Result<T, E>> {
     fn introspect() -> Ty {
-        Ty::Result((BoxTrait::new(IT::introspect()), BoxTrait::new(IE::introspect())))
+        Ty::Result(
+            CairoResult {
+                ok: BoxTrait::new(IT::introspect()), err: BoxTrait::new(IE::introspect()),
+            },
+        )
     }
     fn schemas() -> Array<(felt252, Ty)> {
         merge_schemas(array![IT::schemas(), IE::schemas()])
