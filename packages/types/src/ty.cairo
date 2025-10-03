@@ -23,7 +23,7 @@ pub enum Ty {
     ByteArray,
     Tuple: Span<Ty>,
     Array: Box<Ty>,
-    FixedArray: FixedArray,
+    FixedArray: Box<FixedArray>,
     Felt252Dict: Box<Ty>,
     Struct: Struct,
     Enum: Enum,
@@ -32,7 +32,7 @@ pub enum Ty {
     Encoded: felt252,
     Custom: felt252,
     Option: Box<Ty>,
-    Result: CairoResult,
+    Result: Box<CairoResult>,
     Nullable: Box<Ty>,
     DynamicEncoding,
 }
@@ -61,7 +61,7 @@ pub struct Enum {
 
 #[derive(Drop, Serde, PartialEq)]
 pub struct FixedArray {
-    pub ty: Box<Ty>,
+    pub ty: Ty,
     pub size: u32,
 }
 
@@ -75,8 +75,8 @@ pub struct Member {
 
 #[derive(Drop, Serde, PartialEq)]
 pub struct CairoResult {
-    pub ok: Box<Ty>,
-    pub err: Box<Ty>,
+    pub ok: Ty,
+    pub err: Ty,
 }
 
 

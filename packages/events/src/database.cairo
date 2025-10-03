@@ -12,7 +12,7 @@ pub enum DatabaseEvents {
     DeclareTableFields: DeclareTableFields,
     UndeclareField: UndeclareField,
     UndeclareFields: UndeclareFields,
-    SetValue: SetValue,
+    SetRecordField: SetRecordField,
     SetRecord: SetRecord,
     SetRecords: SetRecords,
     SetRecordFields: SetRecordFields,
@@ -122,7 +122,7 @@ pub struct UndeclareFields {
 /// - `data` Serialised data being set.
 ///
 #[derive(Drop, Serde, starknet::Event)]
-pub struct SetValue {
+pub struct SetRecordField {
     #[key]
     pub table: felt252,
     #[key]

@@ -1,53 +1,4 @@
 use starknet::core::types::Felt;
-
-struct U256 {
-    low: u128,
-    high: u128,
-}
-
-pub struct Member {
-    name: String,
-    attrs: Vec<String>,
-    value: Parsed,
-}
-
-pub struct Struct {
-    name: String,
-    attrs: Vec<String>,
-    children: Vec<Member>,
-}
-pub struct Enum {
-    name: String,
-    attrs: Vec<String>,
-    children: Vec<Field>,
-}
-
-pub struct Field {
-    pub selector: Felt,
-    pub name: String,
-    pub attrs: Vec<String>,
-    pub ty: Parsed,
-}
-
-pub struct OptionParsed {
-    is_some: bool,
-    value: Box<Parsed>,
-}
-
-pub struct ResultParsed {
-    is_ok: bool,
-    value: Box<Parsed>,
-}
-pub enum Nullable {
-    Null,
-    NotNull(Box<Parsed>),
-}
-
-pub struct Encoding {
-    encoding: String,
-    value: Vec<u8>,
-}
-
 pub enum Parsed {
     None,
     Felt252(Felt),
@@ -76,10 +27,51 @@ pub enum Parsed {
     Struct(Struct),
     Enum(Enum),
     Schema(String),
-    Custom(String),
-    Option(Option<Box<Parsed>>),
-    Result(Result<Box<Parsed>, Box<Parsed>>),
-    Nullable(Nullable),
-    Function(Function),
-    Encoding(EncodingParsed),
+    Custom(Vec<Felt>),
+    Option(Box<ParsedOption>),
+    Result(Box<ParsedResult>),
+    Nullable(Box<Nullable>),
+    Encoding(Encoded),
+    DynamicEncoding(Encoded),
+}
+pub struct U256 {
+    pub low: u128,
+    pub high: u128,
+}
+
+pub struct Member {
+    pub name: String,
+    pub attrs: Vec<String>,
+    pub value: Parsed,
+}
+
+pub struct Struct {
+    pub name: String,
+    pub attrs: Vec<String>,
+    pub children: Vec<Member>,
+}
+pub struct Enum {
+    pub name: String,
+    pub attrs: Vec<String>,
+    pub children: Vec<Field>,
+}
+
+pub struct Field {
+    pub selector: Felt,
+    pub name: String,
+    pub attrs: Vec<String>,
+    pub ty: Parsed,
+}
+
+pub type ParsedOption = Option<Parsed>;
+pub type ParsedResult = Result<Parsed, Parsed>;
+
+pub enum Nullable {
+    Null,
+    NotNull(Parsed),
+}
+
+pub struct Encoded {
+    pub encoding: String,
+    pub value: Vec<u8>,
 }

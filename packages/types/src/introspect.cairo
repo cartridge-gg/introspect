@@ -105,7 +105,7 @@ pub impl TArrayIntrospect<T, impl I: Introspect<T>> of Introspect<Array<T>> {
 
 pub impl FixedArrayIntrospect<T, const SIZE: u32, impl I: Introspect<T>> of Introspect<[T; SIZE]> {
     fn introspect() -> Ty {
-        Ty::FixedArray(FixedArray { ty: BoxTrait::new(I::introspect()), size: SIZE })
+        Ty::FixedArray(BoxTrait::new(FixedArray { ty: I::introspect(), size: SIZE }))
     }
     fn schemas() -> Array<(felt252, Ty)> {
         I::schemas()
@@ -293,11 +293,7 @@ pub impl ResultIntrospect<
     T, E, impl IT: Introspect<T>, impl IE: Introspect<E>,
 > of Introspect<Result<T, E>> {
     fn introspect() -> Ty {
-        Ty::Result(
-            CairoResult {
-                ok: BoxTrait::new(IT::introspect()), err: BoxTrait::new(IE::introspect()),
-            },
-        )
+        Ty::Result(BoxTrait::new(CairoResult { ok: IT::introspect(), err: IE::introspect() }))
     }
     fn schemas() -> Array<(felt252, Ty)> {
         merge_schemas(array![IT::schemas(), IE::schemas()])
