@@ -34,6 +34,7 @@ pub enum Parsed {
     Encoding(Encoded),
     DynamicEncoding(Encoded),
 }
+
 pub struct U256 {
     pub low: u128,
     pub high: u128,

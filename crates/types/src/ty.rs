@@ -1,3 +1,7 @@
+use starknet::core::types::Felt;
+
+use crate::parsed::Parsed;
+
 pub enum Ty {
     None,
     Felt252,
@@ -69,6 +73,24 @@ pub struct CairoResult {
     pub err: Box<Ty>,
 }
 
+pub trait Parse {
+    type Parsed;
+    fn parse(&self, data: &mut Vec<Felt>) -> Option<Self::Parsed>;
+}
+
+impl Parse for Ty {
+    type Parsed = Parsed;
+    fn parse(&self, data: &mut Vec<Felt>) -> Option<Self::Parsed> {
+        match self {
+            Ty::None => Some(Parsed::None),
+            Ty::Felt252 => Some(Parsed::Felt252(data.pop()?)),
+            Ty::Bool => Some(Parsed::Bool(data.pop()?.try_from_felt()?)),
+            // Implement other types similarly...
+            _ => None, // Placeholder for unimplemented types
+        }
+    }
+}
+
 impl Ty {
     pub fn is_primitive(&self) -> bool {
         matches!(
@@ -92,5 +114,9 @@ impl Ty {
                 | Ty::ContractAddress
                 | Ty::EthAddress
         )
+    }
+
+    pub fn deserialize(&self, data: Vec<Felt>) -> Option<Parsed> {
+        match self {}
     }
 }
