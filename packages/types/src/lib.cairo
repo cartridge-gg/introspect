@@ -1,3 +1,3 @@
 pub mod introspect;
 pub mod ty;
-pub use ty::{Enum, Field, Function, Member, Struct, Ty};
+pub use ty::{CairoResult, Enum, Field, FixedArray, Member, Struct, Ty};

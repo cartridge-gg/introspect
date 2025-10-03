@@ -1,54 +1,4 @@
-#[derive(Drop, Copy, Serde, PartialEq)]
-pub struct Field {
-    pub selector: felt252,
-    pub name: felt252,
-    pub attrs: Span<felt252>,
-    pub ty: Ty,
-}
-
-#[derive(Drop, Copy, Serde, PartialEq)]
-pub struct Struct {
-    pub name: felt252,
-    pub attrs: Span<felt252>,
-    pub children: Span<Member>,
-}
-
-#[derive(Drop, Copy, Serde, PartialEq)]
-pub struct Enum {
-    pub name: felt252,
-    pub attrs: Span<felt252>,
-    pub children: Span<Field>,
-}
-
-#[derive(Drop, Copy, Serde, PartialEq)]
-pub struct Member {
-    pub name: felt252,
-    pub attrs: Span<felt252>,
-    pub ty: Ty,
-}
-
-#[derive(Drop, Copy, Serde, PartialEq)]
-pub struct Function {
-    pub name: felt252,
-    pub attrs: Span<felt252>,
-    pub args: Span<Member>,
-    pub ret: Box<Ty>,
-}
-
-#[derive(Drop, Copy, Serde, PartialEq)]
-pub struct FixedArray {
-    pub ty: Box<Ty>,
-    pub size: u32,
-}
-
-#[derive(Drop, Copy, Serde, PartialEq)]
-pub struct CairoResult {
-    pub ok: Box<Ty>,
-    pub err: Box<Ty>,
-}
-
-
-#[derive(Drop, Copy, PartialEq, Default)]
+#[derive(Drop, PartialEq, Default)]
 pub enum Ty {
     #[default]
     None,
@@ -77,13 +27,58 @@ pub enum Ty {
     Felt252Dict: Box<Ty>,
     Struct: Struct,
     Enum: Enum,
-    Schema: felt252,
+    Ref: felt252,
+    Schema: Span<Field>,
+    Encoded: felt252,
     Custom: felt252,
     Option: Box<Ty>,
     Result: CairoResult,
     Nullable: Box<Ty>,
-    Encoded: felt252,
+    DynamicEncoding,
 }
+
+#[derive(Drop, Serde, PartialEq)]
+pub struct Field {
+    pub selector: felt252,
+    pub name: ByteArray,
+    pub attrs: Span<felt252>,
+    pub ty: Ty,
+}
+
+#[derive(Drop, Serde, PartialEq)]
+pub struct Struct {
+    pub name: ByteArray,
+    pub attrs: Span<felt252>,
+    pub children: Span<Member>,
+}
+
+#[derive(Drop, Serde, PartialEq)]
+pub struct Enum {
+    pub name: ByteArray,
+    pub attrs: Span<felt252>,
+    pub children: Span<Field>,
+}
+
+#[derive(Drop, Serde, PartialEq)]
+pub struct FixedArray {
+    pub ty: Box<Ty>,
+    pub size: u32,
+}
+
+#[derive(Drop, Serde, PartialEq)]
+pub struct Member {
+    pub name: ByteArray,
+    pub attrs: Span<felt252>,
+    pub ty: Ty,
+}
+
+
+#[derive(Drop, Serde, PartialEq)]
+pub struct CairoResult {
+    pub ok: Box<Ty>,
+    pub err: Box<Ty>,
+}
+
 
 mod selectors {
     pub const None: felt252 = 0;
@@ -112,44 +107,75 @@ mod selectors {
     pub const Felt252Dict: felt252 = selector!("felt252_dict");
     pub const Struct: felt252 = selector!("struct");
     pub const Enum: felt252 = selector!("enum");
-    pub const Schema: felt252 = selector!("schema");
+    pub const Ref: felt252 = selector!("ref");
     pub const Custom: felt252 = selector!("custom");
+    pub const Schema: felt252 = selector!("schema");
     pub const Option: felt252 = selector!("option");
     pub const Result: felt252 = selector!("result");
     pub const Nullable: felt252 = selector!("nullable");
     pub const Encoded: felt252 = selector!("encoded");
+    pub const DynamicEncoding: felt252 = selector!("dynamic_encoding");
+}
+
+#[generate_trait]
+impl TyImpl of TyTrait {
+    const fn selector(self: @Ty) -> felt252 {
+        match self {
+            Ty::None => selectors::None,
+            Ty::Felt252 => selectors::Felt252,
+            Ty::Bool => selectors::Bool,
+            Ty::Uint8 => selectors::Uint8,
+            Ty::Uint16 => selectors::Uint16,
+            Ty::Uint32 => selectors::Uint32,
+            Ty::Uint64 => selectors::Uint64,
+            Ty::Uint128 => selectors::Uint128,
+            Ty::Uint256 => selectors::Uint256,
+            Ty::Int8 => selectors::Int8,
+            Ty::Int16 => selectors::Int16,
+            Ty::Int32 => selectors::Int32,
+            Ty::Int64 => selectors::Int64,
+            Ty::Int128 => selectors::Int128,
+            Ty::USize => selectors::USize,
+            Ty::ShortString => selectors::ShortString,
+            Ty::ClassHash => selectors::ClassHash,
+            Ty::ContractAddress => selectors::ContractAddress,
+            Ty::EthAddress => selectors::EthAddress,
+            Ty::ByteArray => selectors::ByteArray,
+            Ty::Tuple(_) => selectors::Tuple,
+            Ty::Array(_) => selectors::Array,
+            Ty::FixedArray(_) => selectors::FixedArray,
+            Ty::Felt252Dict(_) => selectors::Felt252Dict,
+            Ty::Struct(_) => selectors::Struct,
+            Ty::Enum(_) => selectors::Enum,
+            Ty::Ref(_) => selectors::Ref,
+            Ty::Schema(_) => selectors::Schema,
+            Ty::Custom(_) => selectors::Custom,
+            Ty::Option(_) => selectors::Option,
+            Ty::Result(_) => selectors::Result,
+            Ty::Nullable(_) => selectors::Nullable,
+            Ty::Encoded(_) => selectors::Encoded,
+            Ty::DynamicEncoding(_) => selectors::DynamicEncoding,
+        }
+    }
 }
 
 
 impl TySerde of Serde<Ty> {
     fn serialize(self: @Ty, ref output: Array<felt252>) {
         match self {
-            Ty::None => { output.append(0); },
-            Ty::Felt252 => { output.append(selectors::Felt252); },
-            Ty::Bool => { output.append(selectors::Bool); },
-            Ty::Uint8 => { output.append(selectors::Uint8); },
-            Ty::Uint16 => { output.append(selectors::Uint16); },
-            Ty::Uint32 => { output.append(selectors::Uint32); },
-            Ty::Uint64 => { output.append(selectors::Uint64); },
-            Ty::Uint128 => { output.append(selectors::Uint128); },
-            Ty::Uint256 => { output.append(selectors::Uint256); },
-            Ty::Int8 => { output.append(selectors::Int8); },
-            Ty::Int16 => { output.append(selectors::Int16); },
-            Ty::Int32 => { output.append(selectors::Int32); },
-            Ty::Int64 => { output.append(selectors::Int64); },
-            Ty::Int128 => { output.append(selectors::Int128); },
-            Ty::USize => { output.append(selectors::USize); },
-            Ty::ShortString => { output.append(selectors::ShortString); },
-            Ty::ClassHash => { output.append(selectors::ClassHash); },
-            Ty::ContractAddress => { output.append(selectors::ContractAddress); },
-            Ty::EthAddress => { output.append(selectors::EthAddress); },
-            Ty::ByteArray => { output.append(selectors::ByteArray); },
-            Ty::Tuple(t) => {
-                output.append(selectors::Tuple);
+            Ty::None | Ty::Felt252 | Ty::Bool | Ty::Uint8 | Ty::Uint16 | Ty::Uint32 | Ty::Uint64 |
+            Ty::Uint128 | Ty::Uint256 | Ty::Int8 | Ty::Int16 | Ty::Int32 | Ty::Int64 | Ty::Int128 |
+            Ty::USize | Ty::ShortString | Ty::ClassHash | Ty::ContractAddress | Ty::EthAddress |
+            Ty::ByteArray | Ty::DynamicEncoding => { output.append(self.selector()); },
+            Ty::Ref(t) | Ty::Custom(t) |
+            Ty::Encoded(t) => { output.append_span([self.selector(), *t].span()); },
+            Ty::Array(t) | Ty::Option(t) |
+            Ty::Nullable(t) => {
+                output.append(selectors::Array);
                 Serde::serialize(t, ref output);
             },
-            Ty::Array(t) => {
-                output.append(selectors::Array);
+            Ty::Tuple(t) => {
+                output.append(selectors::Tuple);
                 Serde::serialize(t, ref output);
             },
             Ty::FixedArray(t) => {
@@ -168,21 +194,14 @@ impl TySerde of Serde<Ty> {
                 output.append(selectors::Enum);
                 Serde::serialize(t, ref output);
             },
-            Ty::Schema(t) => { output.append_span([selectors::Schema, *t].span()); },
-            Ty::Custom(t) => { output.append_span([selectors::Custom, *t].span()); },
-            Ty::Option(t) => {
-                output.append(selectors::Option);
-                Serde::serialize(t, ref output);
-            },
             Ty::Result(t) => {
                 output.append(selectors::Result);
                 Serde::serialize(t, ref output);
             },
-            Ty::Nullable(t) => {
-                output.append(selectors::Nullable);
+            Ty::Schema(t) => {
+                output.append(selectors::Schema);
                 Serde::serialize(t, ref output);
             },
-            Ty::Encoded(e) => { output.append_span([selectors::Encoded, *e].span()); },
         }
     }
 
@@ -241,10 +260,12 @@ impl TySerde of Serde<Ty> {
             Option::Some(Ty::Struct(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Enum {
             Option::Some(Ty::Enum(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Schema {
-            Option::Some(Ty::Schema(*serialized.pop_front()?))
+        } else if tag == selectors::Ref {
+            Option::Some(Ty::Ref(*serialized.pop_front()?))
         } else if tag == selectors::Custom {
             Option::Some(Ty::Custom(*serialized.pop_front()?))
+        } else if tag == selectors::Schema {
+            Option::Some(Ty::Schema(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Option {
             Option::Some(Ty::Option(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Result {

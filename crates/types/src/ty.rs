@@ -1,35 +1,3 @@
-pub struct Field {
-    pub selector: String,
-    pub name: String,
-    pub attrs: Vec<String>,
-    pub ty: Ty,
-}
-
-pub struct Struct {
-    pub name: String,
-    pub attrs: Vec<String>,
-    pub children: Vec<Member>,
-}
-
-pub struct Enum {
-    pub name: String,
-    pub attrs: Vec<String>,
-    pub children: Vec<Field>,
-}
-
-pub struct Member {
-    pub name: String,
-    pub attrs: Vec<String>,
-    pub ty: Ty,
-}
-
-pub struct Function {
-    pub name: String,
-    pub attrs: Vec<String>,
-    pub args: Vec<Member>,
-    pub ret: Box<Ty>,
-}
-
 pub enum Ty {
     None,
     Felt252,
@@ -51,19 +19,54 @@ pub enum Ty {
     ContractAddress,
     EthAddress,
     ByteArray,
-    Tuple(Box<Ty>),
+    Tuple(Vec<Ty>),
     Array(Box<Ty>),
-    FixedArray(Box<Ty>, u32),
+    FixedArray(FixedArray),
     Felt252Dict(Box<Ty>),
     Struct(Struct),
     Enum(Enum),
-    Schema(String),
+    Ref(String),
+    Schema(Vec<Field>),
     Custom(String),
     Option(Box<Ty>),
-    Result(Box<Ty>, Box<Ty>),
+    Result(CairoResult),
     Nullable(Box<Ty>),
-    Function(Function),
     Encoding(String),
+    DynamicEncoding,
+}
+pub struct Field {
+    pub selector: String,
+    pub name: String,
+    pub attrs: Vec<String>,
+    pub ty: Ty,
+}
+
+pub struct Struct {
+    pub name: String,
+    pub attrs: Vec<String>,
+    pub children: Vec<Member>,
+}
+
+pub struct Enum {
+    pub name: String,
+    pub attrs: Vec<String>,
+    pub children: Vec<Field>,
+}
+
+pub struct FixedArray {
+    pub ty: Box<Ty>,
+    pub size: u32,
+}
+
+pub struct Member {
+    pub name: String,
+    pub attrs: Vec<String>,
+    pub ty: Ty,
+}
+
+pub struct CairoResult {
+    pub ok: Box<Ty>,
+    pub err: Box<Ty>,
 }
 
 impl Ty {
@@ -90,6 +93,4 @@ impl Ty {
                 | Ty::EthAddress
         )
     }
-
-    fn parse(&self, ) -> 
 }

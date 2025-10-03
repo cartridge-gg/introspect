@@ -4,6 +4,7 @@ use starknet::{ClassHash, ContractAddress, EthAddress};
 use crate::Ty;
 use crate::ty::{CairoResult, FixedArray};
 
+
 trait Introspect<T> {
     fn introspect() -> Ty;
     fn schemas() -> Array<(felt252, Ty)> {
@@ -136,9 +137,7 @@ pub impl Tuple2Introspect<
         Ty::Tuple([I0::introspect(), I1::introspect()].span())
     }
     fn schemas() -> Array<(felt252, Ty)> {
-        let mut schemas1 = I0::schemas();
-        schemas1.append_span(I1::schemas().span());
-        schemas1
+        merge_schemas(array![I0::schemas(), I1::schemas()])
     }
     const fn size() -> Option<u32> {
         match (I0::size(), I1::size()) {
@@ -155,10 +154,7 @@ pub impl Tuple3Introspect<
         Ty::Tuple([I0::introspect(), I1::introspect(), I2::introspect()].span())
     }
     fn schemas() -> Array<(felt252, Ty)> {
-        let mut schemas1 = I0::schemas();
-        schemas1.append_span(I1::schemas().span());
-        schemas1.append_span(I2::schemas().span());
-        schemas1
+        merge_schemas(array![I0::schemas(), I1::schemas(), I2::schemas()])
     }
     const fn size() -> Option<u32> {
         match (I0::size(), I1::size(), I2::size()) {
@@ -184,11 +180,7 @@ pub impl Tuple4Introspect<
         Ty::Tuple([I0::introspect(), I1::introspect(), I2::introspect(), I3::introspect()].span())
     }
     fn schemas() -> Array<(felt252, Ty)> {
-        let mut schemas1 = I0::schemas();
-        schemas1.append_span(I1::schemas().span());
-        schemas1.append_span(I2::schemas().span());
-        schemas1.append_span(I3::schemas().span());
-        schemas1
+        merge_schemas(array![I0::schemas(), I1::schemas(), I2::schemas(), I3::schemas()])
     }
     const fn size() -> Option<u32> {
         match (I0::size(), I1::size(), I2::size(), I3::size()) {
@@ -223,12 +215,9 @@ pub impl Tuple5Introspect<
         )
     }
     fn schemas() -> Array<(felt252, Ty)> {
-        let mut schemas1 = I0::schemas();
-        schemas1.append_span(I1::schemas().span());
-        schemas1.append_span(I2::schemas().span());
-        schemas1.append_span(I3::schemas().span());
-        schemas1.append_span(I4::schemas().span());
-        schemas1
+        merge_schemas(
+            array![I0::schemas(), I1::schemas(), I2::schemas(), I3::schemas(), I4::schemas()],
+        )
     }
     const fn size() -> Option<u32> {
         match (I0::size(), I1::size(), I2::size(), I3::size(), I4::size()) {

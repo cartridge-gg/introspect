@@ -2,7 +2,7 @@ use introspect_types::{Field, Ty};
 
 pub enum TypeEvents {
     DeclareSchema: DeclareSchema,
-    DeclareCustom: DeclareCustom,
+    DeclareType: DeclareType,
 }
 
 /// Declares a reusable schema layout.
@@ -20,7 +20,7 @@ pub struct DeclareSchema {
 }
 
 #[derive(Drop, Serde, starknet::Event)]
-pub struct DeclareCustom {
+pub struct DeclareType {
     #[key]
     pub id: felt252,
     pub version: felt252,
