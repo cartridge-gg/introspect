@@ -78,7 +78,7 @@ pub fn pop_primitive<T: TryFrom<Felt>>(data: &mut VecDeque<Felt>) -> Option<T> {
     data.pop_front()?.try_into().ok()
 }
 
-pub fn read_serialized_array(data: &mut VecDeque<Felt>) -> Option<Vec<Felt>> {
+pub fn read_serialized_felt_array(data: &mut VecDeque<Felt>) -> Option<Vec<Felt>> {
     let len = pop_primitive(data)?;
     (0..len)
         .into_iter()
@@ -124,7 +124,7 @@ fn parse_tuple_to_value(tys: &Vec<TypeDef>, data: &mut VecDeque<Felt>) -> Option
 fn to_custom_value(name: &str, data: &mut VecDeque<Felt>) -> Option<Custom> {
     Some(Custom {
         name: name.to_string(),
-        values: read_serialized_array(data)?,
+        values: read_serialized_felt_array(data)?,
     })
 }
 
