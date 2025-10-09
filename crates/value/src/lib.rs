@@ -1,7 +1,10 @@
-use starknet_types_core::{felt::Felt, short_string::ShortString};
+use serde::{Deserialize, Serialize};
+use starknet_types_core::felt::Felt;
 use std::collections::VecDeque;
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub enum Value {
+    #[default]
     None,
     Felt252(Felt),
     Bool(bool),
@@ -17,7 +20,7 @@ pub enum Value {
     I64(i64),
     I128(i128),
     USize(u64),
-    ShortString(ShortString),
+    ShortString(String),
     ClassHash(Felt),
     ContractAddress(Felt),
     EthAddress(Felt),
@@ -37,22 +40,26 @@ pub enum Value {
     DynamicEncoding(Encoded),
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub struct U256 {
     pub low: u128,
     pub high: u128,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Member {
     pub name: String,
     pub attrs: Vec<String>,
     pub value: Value,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Struct {
     pub name: String,
     pub attrs: Vec<String>,
     pub children: Vec<Member>,
 }
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Enum {
     pub name: String,
     pub attrs: Vec<String>,
@@ -61,6 +68,7 @@ pub struct Enum {
     pub value: Value,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Field {
     pub selector: Felt,
     pub name: String,
@@ -68,16 +76,19 @@ pub struct Field {
     pub value: Value,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum Nullable {
     Null,
     NotNull(Value),
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Encoded {
     pub encoding: String,
     pub value: Vec<u8>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Custom {
     pub name: String,
     pub values: Vec<Felt>,

@@ -903,6 +903,7 @@ dependencies = [
  "cainome-cairo-serde",
  "introspect-value",
  "num-traits",
+ "serde",
  "starknet-types-core",
 ]
 
@@ -911,6 +912,7 @@ name = "introspect-value"
 version = "0.1.1"
 dependencies = [
  "cainome-cairo-serde",
+ "serde",
  "starknet-types-core",
 ]
 

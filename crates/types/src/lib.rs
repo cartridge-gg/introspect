@@ -1,10 +1,12 @@
 use cainome_cairo_serde::{ByteArray, Bytes31};
 use introspect_value::{Custom, Enum, Member, Struct, ToValue, Value};
 use num_traits::Zero;
-use starknet_types_core::{felt::Felt, short_string::ShortString};
+use serde::{Deserialize, Serialize};
+use starknet_types_core::felt::Felt;
 use std::collections::{HashMap, VecDeque};
-
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub enum TypeDef {
+    #[default]
     None,
     Felt252,
     Bool,
@@ -40,35 +42,41 @@ pub enum TypeDef {
     Encoding(String),
     DynamicEncoding,
 }
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FieldDef {
     pub name: String,
     pub attrs: Vec<String>,
     pub ty: TypeDef,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct StructDef {
     pub name: String,
     pub attrs: Vec<String>,
     pub children: Vec<MemberDef>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EnumDef {
     pub name: String,
     pub attrs: Vec<String>,
     pub variants: HashMap<Felt, FieldDef>,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FixedArrayDef {
     pub ty: Box<TypeDef>,
     pub size: u32,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct MemberDef {
     pub name: String,
     pub attrs: Vec<String>,
     pub ty: TypeDef,
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CairoResult {
     pub ok: Box<TypeDef>,
     pub err: Box<TypeDef>,
@@ -86,12 +94,10 @@ pub fn read_serialized_felt_array(data: &mut VecDeque<Felt>) -> Option<Vec<Felt>
         .collect::<Option<Vec<Felt>>>()
 }
 
-pub fn felt_to_utf8_string(felt: Felt) -> Option<ShortString> {
+pub fn felt_to_utf8_string(felt: Felt) -> Option<String> {
     let bytes = felt.to_bytes_be();
     let first = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len());
-    String::from_utf8(bytes[first..32].to_vec())
-        .ok()
-        .and_then(|v| ShortString::try_from(v).ok())
+    String::from_utf8(bytes[first..32].to_vec()).ok()
 }
 
 pub fn byte_array_felts_to_string(data: &mut VecDeque<Felt>) -> Option<String> {
