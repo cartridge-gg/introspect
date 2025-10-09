@@ -3,7 +3,7 @@ version = 1
 
 [[package]]
 name = "introspect"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "introspect_events",
  "introspect_types",
@@ -11,11 +11,11 @@ dependencies = [
 
 [[package]]
 name = "introspect_events"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "introspect_types",
 ]
 
 [[package]]
 name = "introspect_types"
-version = "0.1.0"
+version = "0.1.1"
