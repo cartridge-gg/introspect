@@ -1,4 +1,4 @@
-use introspect_types::ty::{Enum, Field, FixedArray, Member, Struct, Ty};
+use introspect_types::{Enum, Field, FixedArray, Member, Struct, Ty};
 
 pub trait TypeLibrary {
     fn get_ref_type(&self, id: String) -> Ty;
@@ -113,14 +113,14 @@ pub trait TypeLibrary {
     }
     fn expand_result(
         &self,
-        result: introspect_types::ty::CairoResult,
-    ) -> introspect_types::ty::CairoResult {
-        introspect_types::ty::CairoResult {
+        result: introspect_types::type_def::CairoResult,
+    ) -> introspect_types::type_def::CairoResult {
+        introspect_types::type_def::CairoResult {
             ok: self.expand_boxed_type(result.ok),
             err: self.expand_boxed_type(result.err),
         }
     }
-    fn expand_result_in_place(&self, result: &mut introspect_types::ty::CairoResult) {
+    fn expand_result_in_place(&self, result: &mut introspect_types::type_def::CairoResult) {
         self.expand_boxed_type_in_place(&mut result.ok);
         self.expand_boxed_type_in_place(&mut result.err);
     }

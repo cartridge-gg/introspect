@@ -2,7 +2,7 @@
 resolver = "2"
 
 members = ["crates/*"]
-exclude = ["crates/decoders"]
+exclude = ["crates/type_library"]
 
 [workspace.package]
 edition = "2021"

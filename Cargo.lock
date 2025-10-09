@@ -897,13 +897,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "introspect-type-library"
-version = "0.1.0"
-dependencies = [
- "introspect-types",
-]
-
-[[package]]
 name = "introspect-types"
 version = "0.1.0"
 dependencies = [
