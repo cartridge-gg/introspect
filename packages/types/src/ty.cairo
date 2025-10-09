@@ -4,17 +4,17 @@ pub enum Ty {
     None,
     Felt252,
     Bool,
-    Uint8,
-    Uint16,
-    Uint32,
-    Uint64,
-    Uint128,
-    Uint256,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
+    U8,
+    U16,
+    U32,
+    U64,
+    U128,
+    U256,
+    I8,
+    I16,
+    I32,
+    I64,
+    I128,
     USize,
     ShortString,
     ClassHash,
@@ -84,17 +84,17 @@ mod selectors {
     pub const None: felt252 = 0;
     pub const Felt252: felt252 = selector!("felt252");
     pub const Bool: felt252 = selector!("bool");
-    pub const Uint8: felt252 = selector!("uint8");
-    pub const Uint16: felt252 = selector!("uint16");
-    pub const Uint32: felt252 = selector!("uint32");
-    pub const Uint64: felt252 = selector!("uint64");
-    pub const Uint128: felt252 = selector!("uint128");
-    pub const Uint256: felt252 = selector!("uint256");
-    pub const Int8: felt252 = selector!("int8");
-    pub const Int16: felt252 = selector!("int16");
-    pub const Int32: felt252 = selector!("int32");
-    pub const Int64: felt252 = selector!("int64");
-    pub const Int128: felt252 = selector!("int128");
+    pub const U8: felt252 = selector!("u8");
+    pub const U16: felt252 = selector!("u16");
+    pub const U32: felt252 = selector!("u32");
+    pub const U64: felt252 = selector!("u64");
+    pub const U128: felt252 = selector!("u128");
+    pub const U256: felt252 = selector!("u256");
+    pub const I8: felt252 = selector!("i8");
+    pub const I16: felt252 = selector!("i16");
+    pub const I32: felt252 = selector!("i32");
+    pub const I64: felt252 = selector!("i64");
+    pub const I128: felt252 = selector!("i128");
     pub const USize: felt252 = selector!("usize");
     pub const ShortString: felt252 = selector!("short_string");
     pub const ClassHash: felt252 = selector!("class_hash");
@@ -124,17 +124,17 @@ impl TyImpl of TyTrait {
             Ty::None => selectors::None,
             Ty::Felt252 => selectors::Felt252,
             Ty::Bool => selectors::Bool,
-            Ty::Uint8 => selectors::Uint8,
-            Ty::Uint16 => selectors::Uint16,
-            Ty::Uint32 => selectors::Uint32,
-            Ty::Uint64 => selectors::Uint64,
-            Ty::Uint128 => selectors::Uint128,
-            Ty::Uint256 => selectors::Uint256,
-            Ty::Int8 => selectors::Int8,
-            Ty::Int16 => selectors::Int16,
-            Ty::Int32 => selectors::Int32,
-            Ty::Int64 => selectors::Int64,
-            Ty::Int128 => selectors::Int128,
+            Ty::U8 => selectors::U8,
+            Ty::U16 => selectors::U16,
+            Ty::U32 => selectors::U32,
+            Ty::U64 => selectors::U64,
+            Ty::U128 => selectors::U128,
+            Ty::U256 => selectors::U256,
+            Ty::I8 => selectors::I8,
+            Ty::I16 => selectors::I16,
+            Ty::I32 => selectors::I32,
+            Ty::I64 => selectors::I64,
+            Ty::I128 => selectors::I128,
             Ty::USize => selectors::USize,
             Ty::ShortString => selectors::ShortString,
             Ty::ClassHash => selectors::ClassHash,
@@ -163,10 +163,10 @@ impl TyImpl of TyTrait {
 impl TySerde of Serde<Ty> {
     fn serialize(self: @Ty, ref output: Array<felt252>) {
         match self {
-            Ty::None | Ty::Felt252 | Ty::Bool | Ty::Uint8 | Ty::Uint16 | Ty::Uint32 | Ty::Uint64 |
-            Ty::Uint128 | Ty::Uint256 | Ty::Int8 | Ty::Int16 | Ty::Int32 | Ty::Int64 | Ty::Int128 |
-            Ty::USize | Ty::ShortString | Ty::ClassHash | Ty::ContractAddress | Ty::EthAddress |
-            Ty::ByteArray | Ty::DynamicEncoding => { output.append(self.selector()); },
+            Ty::None | Ty::Felt252 | Ty::Bool | Ty::U8 | Ty::U16 | Ty::U32 | Ty::U64 | Ty::U128 |
+            Ty::U256 | Ty::I8 | Ty::I16 | Ty::I32 | Ty::I64 | Ty::I128 | Ty::USize |
+            Ty::ShortString | Ty::ClassHash | Ty::ContractAddress | Ty::EthAddress | Ty::ByteArray |
+            Ty::DynamicEncoding => { output.append(self.selector()); },
             Ty::Ref(t) | Ty::Custom(t) |
             Ty::Encoded(t) => { output.append_span([self.selector(), *t].span()); },
             Ty::Array(t) | Ty::Option(t) |
@@ -214,28 +214,28 @@ impl TySerde of Serde<Ty> {
             Option::Some(Ty::Felt252)
         } else if tag == selectors::Bool {
             Option::Some(Ty::Bool)
-        } else if tag == selectors::Uint8 {
-            Option::Some(Ty::Uint8)
-        } else if tag == selectors::Uint16 {
-            Option::Some(Ty::Uint16)
-        } else if tag == selectors::Uint32 {
-            Option::Some(Ty::Uint32)
-        } else if tag == selectors::Uint64 {
-            Option::Some(Ty::Uint64)
-        } else if tag == selectors::Uint128 {
-            Option::Some(Ty::Uint128)
-        } else if tag == selectors::Uint256 {
-            Option::Some(Ty::Uint256)
-        } else if tag == selectors::Int8 {
-            Option::Some(Ty::Int8)
-        } else if tag == selectors::Int16 {
-            Option::Some(Ty::Int16)
-        } else if tag == selectors::Int32 {
-            Option::Some(Ty::Int32)
-        } else if tag == selectors::Int64 {
-            Option::Some(Ty::Int64)
-        } else if tag == selectors::Int128 {
-            Option::Some(Ty::Int128)
+        } else if tag == selectors::U8 {
+            Option::Some(Ty::U8)
+        } else if tag == selectors::U16 {
+            Option::Some(Ty::U16)
+        } else if tag == selectors::U32 {
+            Option::Some(Ty::U32)
+        } else if tag == selectors::U64 {
+            Option::Some(Ty::U64)
+        } else if tag == selectors::U128 {
+            Option::Some(Ty::U128)
+        } else if tag == selectors::U256 {
+            Option::Some(Ty::U256)
+        } else if tag == selectors::I8 {
+            Option::Some(Ty::I8)
+        } else if tag == selectors::I16 {
+            Option::Some(Ty::I16)
+        } else if tag == selectors::I32 {
+            Option::Some(Ty::I32)
+        } else if tag == selectors::I64 {
+            Option::Some(Ty::I64)
+        } else if tag == selectors::I128 {
+            Option::Some(Ty::I128)
         } else if tag == selectors::USize {
             Option::Some(Ty::USize)
         } else if tag == selectors::ShortString {

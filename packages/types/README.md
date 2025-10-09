@@ -6,17 +6,17 @@ The Ty enum describes the simple and complex types that can be used in structs a
 
 - Felt252: The `felt252` type to be read as a felt`
 - Bool: The `bool` type to be read as a boolean.
-- Uint8: The `u8` type to be read as an unsigned 8-bit integer.
-- Uint16: The `u16` type to be read as an unsigned 16-bit integer.
-- Uint32: The `u32` type to be read as an unsigned 32-bit integer.
-- Uint64: The `u64` type to be read as an unsigned 64-bit integer.
-- Uint128: The `u128` type to be read as an unsigned 128-bit integer.
-- Uint256: The `u256` type to be read as an unsigned 256-bit integer.
-- Int8: The `i8` type to be read as a signed 8-bit integer.
-- Int16: The `i16` type to be read as a signed 16-bit integer.
-- Int32: The `i32` type to be read as a signed 32-bit integer.
-- Int64: The `i64` type to be read as a signed 64-bit integer.
-- Int128: The `i128` type to be read as a signed 128-bit integer.
+- U8: The `u8` type to be read as an unsigned 8-bit integer.
+- U16: The `u16` type to be read as an unsigned 16-bit integer.
+- U32: The `u32` type to be read as an unsigned 32-bit integer.
+- U64: The `u64` type to be read as an unsigned 64-bit integer.
+- U128: The `u128` type to be read as an unsigned 128-bit integer.
+- U256: The `u256` type to be read as an unsigned 256-bit integer.
+  -I8: The `i8` type to be read as a signed 8-bit integer.
+  -I16: The `i16` type to be read as a signed 16-bit integer.
+  -I32: The `i32` type to be read as a signed 32-bit integer.
+  -I64: The `i64` type to be read as a signed 64-bit integer.
+  -I128: The `i128` type to be read as a signed 128-bit integer.
 - USize: The `usize` type to be read as an unsigned size integer (system dependent).
 - ShortString: A felt252 that should be interpreted as a short string (up to 31 bytes)
 - ClassHash: A `ClassHash` representing a StarkNet class hash.
