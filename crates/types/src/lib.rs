@@ -1,8 +1,8 @@
 use cainome_cairo_serde::{ByteArray, Bytes31};
-use introspect_value::{Custom, ToValue, Value};
+use introspect_value::{Custom, Enum, Member, Struct, ToValue, Value};
 use num_traits::Zero;
 use starknet_types_core::{felt::Felt, short_string::ShortString};
-use std::collections::VecDeque;
+use std::collections::{HashMap, VecDeque};
 
 pub enum TypeDef {
     None,
@@ -41,7 +41,6 @@ pub enum TypeDef {
     DynamicEncoding,
 }
 pub struct FieldDef {
-    pub selector: String,
     pub name: String,
     pub attrs: Vec<String>,
     pub ty: TypeDef,
@@ -56,7 +55,7 @@ pub struct StructDef {
 pub struct EnumDef {
     pub name: String,
     pub attrs: Vec<String>,
-    pub children: Vec<FieldDef>,
+    pub variants: HashMap<Felt, FieldDef>,
 }
 
 pub struct FixedArrayDef {
@@ -137,7 +136,61 @@ fn to_option_value(ty: &TypeDef, data: &mut VecDeque<Felt>) -> Option<Option<Val
     }
 }
 
+impl ToValue for MemberDef {
+    type Value = Member;
+    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Member> {
+        Some(Member {
+            name: self.name.clone(),
+            attrs: self.attrs.clone(),
+            value: self.ty.to_value(data)?,
+        })
+    }
+}
+
+impl ToValue for StructDef {
+    type Value = Struct;
+    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Struct> {
+        Some(Struct {
+            name: self.name.clone(),
+            attrs: self.attrs.clone(),
+            children: self
+                .children
+                .iter()
+                .map(|child| child.to_value(data))
+                .collect::<Option<Vec<Member>>>()?,
+        })
+    }
+}
+
+impl ToValue for EnumDef {
+    type Value = Enum;
+    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Enum> {
+        let selector = pop_primitive::<Felt>(data)?;
+        let field = self.variants.get(&selector)?;
+
+        Some(Enum {
+            name: self.name.clone(),
+            attrs: self.attrs.clone(),
+            variant: field.name.clone(),
+            variant_attrs: field.attrs.clone(),
+            value: field.ty.to_value(data)?,
+        })
+    }
+
+    fn to_value_multiple(
+        &self,
+        data: &mut VecDeque<Felt>,
+        count: usize,
+    ) -> Option<Vec<Self::Value>> {
+        (0..count)
+            .into_iter()
+            .map(|_| self.to_value(data))
+            .collect()
+    }
+}
+
 impl ToValue for TypeDef {
+    type Value = Value;
     fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Value> {
         match self {
             TypeDef::None => Some(Value::None),
@@ -173,15 +226,15 @@ impl ToValue for TypeDef {
                 .ty
                 .to_value_multiple(data, fa.size as usize)
                 .map(Value::FixedArray),
-            TypeDef::Felt252Dict(ty) => None,
-            TypeDef::Struct(s) => None,
-            TypeDef::Enum(e) => None,
+            TypeDef::Felt252Dict(_ty) => None,
+            TypeDef::Struct(s) => s.to_value(data).map(Value::Struct),
+            TypeDef::Enum(e) => e.to_value(data).map(Box::new).map(Value::Enum),
             TypeDef::Ref(_) => None,
-            TypeDef::Schema(fields) => None,
+            TypeDef::Schema(_fields) => None,
             TypeDef::Custom(name) => to_custom_value(name, data).map(Value::Custom),
             TypeDef::Option(ty) => to_option_value(ty, data).map(Box::new).map(Value::Option),
-            TypeDef::Result(r) => None,
-            TypeDef::Nullable(ty) => None,
+            TypeDef::Result(_r) => None,
+            TypeDef::Nullable(_ty) => None,
             TypeDef::Encoding(_) => None,
             TypeDef::DynamicEncoding => None,
         }

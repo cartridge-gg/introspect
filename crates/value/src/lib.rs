@@ -1,4 +1,3 @@
-use cainome_cairo_serde::{ByteArray, Bytes31};
 use starknet_types_core::{felt::Felt, short_string::ShortString};
 use std::collections::VecDeque;
 
@@ -28,7 +27,7 @@ pub enum Value {
     FixedArray(Vec<Value>),
     Felt252Dict(Vec<(Felt, Value)>),
     Struct(Struct),
-    Enum(Enum),
+    Enum(Box<Enum>),
     Schema(String),
     Custom(Custom),
     Option(Box<Option<Value>>),
@@ -57,7 +56,9 @@ pub struct Struct {
 pub struct Enum {
     pub name: String,
     pub attrs: Vec<String>,
-    pub children: Vec<Field>,
+    pub variant: String,
+    pub variant_attrs: Vec<String>,
+    pub value: Value,
 }
 
 pub struct Field {
@@ -83,8 +84,13 @@ pub struct Custom {
 }
 
 pub trait ToValue {
-    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Value>;
-    fn to_value_multiple(&self, data: &mut VecDeque<Felt>, count: usize) -> Option<Vec<Value>> {
+    type Value;
+    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Self::Value>;
+    fn to_value_multiple(
+        &self,
+        data: &mut VecDeque<Felt>,
+        count: usize,
+    ) -> Option<Vec<Self::Value>> {
         (0..count)
             .into_iter()
             .map(|_| self.to_value(data))
