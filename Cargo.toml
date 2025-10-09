@@ -22,4 +22,9 @@ debug = true
 inherits = "release"
 
 [workspace.dependencies]
+starknet-types-core = "0.2.0"
+num-traits = { version = "0.2", default-features = false }
+serde = "1.0.228"
 starknet = "0.17.0"
+starknet-crypto = "0.8"
+cainome-cairo-serde = "0.4.0"
