@@ -78,7 +78,7 @@ pub fn pop_primitive<T: TryFrom<Felt>>(data: &mut VecDeque<Felt>) -> Option<T> {
     data.pop_front()?.try_into().ok()
 }
 
-fn read_serialized_array(data: &mut VecDeque<Felt>) -> Option<Vec<Felt>> {
+pub fn read_serialized_array(data: &mut VecDeque<Felt>) -> Option<Vec<Felt>> {
     let len = pop_primitive(data)?;
     (0..len)
         .into_iter()
