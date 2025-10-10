@@ -70,7 +70,7 @@ pub struct VariantDef {
 pub struct StructDef {
     pub name: String,
     pub attrs: Vec<String>,
-    pub children: Vec<MemberDef>,
+    pub members: Vec<MemberDef>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -181,8 +181,8 @@ impl ToValue for StructDef {
         Some(Struct {
             name: self.name.clone(),
             attrs: self.attrs.clone(),
-            children: self
-                .children
+            members: self
+                .members
                 .iter()
                 .map(|child| child.to_value(data))
                 .collect::<Option<Vec<Member>>>()?,

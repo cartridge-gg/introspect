@@ -57,7 +57,7 @@ pub struct Member {
 pub struct Struct {
     pub name: String,
     pub attrs: Vec<String>,
-    pub children: Vec<Member>,
+    pub members: Vec<Member>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Enum {

@@ -49,20 +49,7 @@ pub struct FieldDef {
 pub struct StructDef {
     pub name: ByteArray,
     pub attrs: Span<felt252>,
-    pub children: Span<MemberDef>,
-}
-
-#[derive(Drop, Serde, PartialEq)]
-pub struct EnumDef {
-    pub name: ByteArray,
-    pub attrs: Span<felt252>,
-    pub children: Span<FieldDef>,
-}
-
-#[derive(Drop, Serde, PartialEq)]
-pub struct FixedArrayDef {
-    pub type_def: TypeDef,
-    pub size: u32,
+    pub members: Span<MemberDef>,
 }
 
 #[derive(Drop, Serde, PartialEq)]
@@ -70,6 +57,27 @@ pub struct MemberDef {
     pub name: ByteArray,
     pub attrs: Span<felt252>,
     pub type_def: TypeDef,
+}
+
+#[derive(Drop, Serde, PartialEq)]
+pub struct EnumDef {
+    pub name: ByteArray,
+    pub attrs: Span<felt252>,
+    pub variants: Span<VariantDef>,
+}
+
+#[derive(Drop, Serde, PartialEq)]
+pub struct VariantDef {
+    pub selector: felt252,
+    pub name: ByteArray,
+    pub attrs: Span<felt252>,
+    pub type_def: TypeDef,
+}
+
+#[derive(Drop, Serde, PartialEq)]
+pub struct FixedArrayDef {
+    pub type_def: TypeDef,
+    pub size: u32,
 }
 
 

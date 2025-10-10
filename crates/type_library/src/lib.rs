@@ -65,15 +65,15 @@ pub trait TypeLibrary {
         StructDef {
             name: s.name,
             attrs: s.attrs,
-            children: s
-                .children
+            variants: s
+                .variants
                 .into_iter()
                 .map(|member| self.expand_member(member))
                 .collect(),
         }
     }
     fn expand_struct_in_place(&self, s: &mut StructDef) {
-        s.children
+        s.variants
             .iter_mut()
             .for_each(|member| self.expand_member_in_place(member));
     }
