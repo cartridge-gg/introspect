@@ -320,6 +320,12 @@ impl std::ops::Deref for FieldDefVec {
     }
 }
 
+impl FromIterator<FieldDef> for FieldDefVec {
+    fn from_iter<T: IntoIterator<Item = FieldDef>>(iter: T) -> Self {
+        FieldDefVec(iter.into_iter().collect())
+    }
+}
+
 impl std::ops::DerefMut for FieldDefVec {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
