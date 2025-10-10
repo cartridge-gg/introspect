@@ -199,6 +199,13 @@ impl ToValue for StructDef {
     }
 }
 
+impl ToValue for FixedArrayDef {
+    type Value = Vec<Value>;
+    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Vec<Value>> {
+        self.type_def.to_value_multiple(data, self.size as usize)
+    }
+}
+
 impl ToValue for EnumDef {
     type Value = Enum;
     fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Enum> {
@@ -259,10 +266,7 @@ impl ToValue for TypeDef {
                 let size = pop_primitive(data)?;
                 type_def.to_value_multiple(data, size).map(Value::Array)
             }
-            TypeDef::FixedArray(fa) => fa
-                .type_def
-                .to_value_multiple(data, fa.size as usize)
-                .map(Value::FixedArray),
+            TypeDef::FixedArray(fa) => fa.to_value(data).map(Value::FixedArray),
             TypeDef::Felt252Dict(_ty) => None,
             TypeDef::Struct(s) => s.to_value(data).map(Value::Struct),
             TypeDef::Enum(e) => e.to_value(data).map(Box::new).map(Value::Enum),
