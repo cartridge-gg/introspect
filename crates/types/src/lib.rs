@@ -37,13 +37,21 @@ pub enum TypeDef {
     Schema(Vec<FieldDef>),
     Custom(String),
     Option(Box<TypeDef>),
-    Result(CairoResult),
+    Result(ResultDef),
     Nullable(Box<TypeDef>),
     Encoding(String),
     DynamicEncoding,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FieldDef {
+    pub selector: Felt,
+    pub name: String,
+    pub attrs: Vec<String>,
+    pub type_def: TypeDef,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct VariantDef {
     pub name: String,
     pub attrs: Vec<String>,
     pub type_def: TypeDef,
@@ -60,7 +68,7 @@ pub struct StructDef {
 pub struct EnumDef {
     pub name: String,
     pub attrs: Vec<String>,
-    pub variants: HashMap<Felt, FieldDef>,
+    pub variants: HashMap<Felt, VariantDef>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -77,7 +85,7 @@ pub struct MemberDef {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CairoResult {
+pub struct ResultDef {
     pub ok: Box<TypeDef>,
     pub err: Box<TypeDef>,
 }
