@@ -42,6 +42,15 @@ pub enum TypeDef {
     Encoding(String),
     DynamicEncoding,
 }
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TableDef {
+    pub id: Felt,
+    pub name: String,
+    pub attrs: Vec<String>,
+    pub fields: Vec<FieldDef>,
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FieldDef {
     pub selector: Felt,
