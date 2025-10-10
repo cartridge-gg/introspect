@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
-use std::collections::VecDeque;
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub enum Value {
@@ -94,19 +93,13 @@ pub struct Custom {
     pub values: Vec<Felt>,
 }
 
-pub trait ToValues {
-    type Value;
-    fn to_values(&self, data: &mut VecDeque<Felt>, count: usize) -> Option<Vec<Self::Value>>;
-}
+pub type FeltIterator = dyn Iterator<Item = Felt>;
 
 pub trait ToValue {
     type Value;
-    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Self::Value>;
-    fn to_value_multiple(
-        &self,
-        data: &mut VecDeque<Felt>,
-        count: usize,
-    ) -> Option<Vec<Self::Value>> {
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Self::Value>;
+
+    fn to_value_multiple(&self, data: &mut FeltIterator, count: usize) -> Option<Vec<Self::Value>> {
         (0..count)
             .into_iter()
             .map(|_| self.to_value(data))
