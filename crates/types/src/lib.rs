@@ -1,9 +1,9 @@
 use cainome_cairo_serde::{ByteArray, Bytes31};
-use introspect_value::{Custom, Enum, Field, Member, Struct, ToValue, Value};
+use introspect_value::{Custom, Enum, FeltIterator, Field, Member, Struct, ToValue, Value};
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
-use std::collections::{HashMap, VecDeque};
+use std::collections::HashMap;
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub enum TypeDef {
     #[default]
@@ -108,19 +108,19 @@ pub struct ResultDef {
     pub err: Box<TypeDef>,
 }
 
-pub fn pop_primitive<T: TryFrom<Felt>>(data: &mut VecDeque<Felt>) -> Option<T> {
-    data.pop_front()?.try_into().ok()
+pub fn pop_primitive<T: TryFrom<Felt>>(data: &mut FeltIterator) -> Option<T> {
+    data.next()?.try_into().ok()
 }
 
-pub fn pop_short_string(data: &mut VecDeque<Felt>) -> Option<String> {
-    felt_to_utf8_string(data.pop_front()?)
+pub fn pop_short_string(data: &mut FeltIterator) -> Option<String> {
+    felt_to_utf8_string(data.next()?)
 }
 
-pub fn read_serialized_felt_array(data: &mut VecDeque<Felt>) -> Option<Vec<Felt>> {
+pub fn read_serialized_felt_array(data: &mut FeltIterator) -> Option<Vec<Felt>> {
     let len = pop_primitive(data)?;
     (0..len)
         .into_iter()
-        .map(|_| data.pop_front())
+        .map(|_| data.next())
         .collect::<Option<Vec<Felt>>>()
 }
 
@@ -130,15 +130,15 @@ pub fn felt_to_utf8_string(felt: Felt) -> Option<String> {
     String::from_utf8(bytes[first..32].to_vec()).ok()
 }
 
-pub fn byte_array_felts_to_string(data: &mut VecDeque<Felt>) -> Option<String> {
-    let len = data.pop_front()?.try_into().ok()?;
+pub fn byte_array_felts_to_string(data: &mut FeltIterator) -> Option<String> {
+    let len = data.next()?.try_into().ok()?;
 
     let mut bytes: Vec<Bytes31> = Vec::with_capacity(len);
     for _ in 0..len {
-        bytes.push(Bytes31::new(data.pop_front()?).ok()?);
+        bytes.push(Bytes31::new(data.next()?).ok()?);
     }
-    let pending_word = data.pop_front()?;
-    let pending_word_len = data.pop_front()?.try_into().ok()?;
+    let pending_word = data.next()?;
+    let pending_word_len = data.next()?.try_into().ok()?;
 
     Some(
         ByteArray {
@@ -151,22 +151,22 @@ pub fn byte_array_felts_to_string(data: &mut VecDeque<Felt>) -> Option<String> {
     )
 }
 
-fn parse_tuple_to_value(type_defs: &Vec<TypeDef>, data: &mut VecDeque<Felt>) -> Option<Vec<Value>> {
+fn parse_tuple_to_value(type_defs: &Vec<TypeDef>, data: &mut FeltIterator) -> Option<Vec<Value>> {
     type_defs
         .iter()
         .map(|type_def| type_def.to_value(data))
         .collect::<Option<Vec<Value>>>()
 }
 
-fn to_custom_value(name: &str, data: &mut VecDeque<Felt>) -> Option<Custom> {
+fn to_custom_value(name: &str, data: &mut FeltIterator) -> Option<Custom> {
     Some(Custom {
         name: name.to_string(),
         values: read_serialized_felt_array(data)?,
     })
 }
 
-fn to_option_value(type_def: &TypeDef, data: &mut VecDeque<Felt>) -> Option<Option<Value>> {
-    let is_some = data.pop_front()?.is_zero();
+fn to_option_value(type_def: &TypeDef, data: &mut FeltIterator) -> Option<Option<Value>> {
+    let is_some = data.next()?.is_zero();
     match is_some {
         true => type_def.to_value(data).map(Some),
         false => Some(None),
@@ -175,7 +175,7 @@ fn to_option_value(type_def: &TypeDef, data: &mut VecDeque<Felt>) -> Option<Opti
 
 impl ToValue for MemberDef {
     type Value = Member;
-    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Member> {
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Member> {
         Some(Member {
             name: self.name.clone(),
             attrs: self.attrs.clone(),
@@ -186,7 +186,7 @@ impl ToValue for MemberDef {
 
 impl ToValue for StructDef {
     type Value = Struct;
-    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Struct> {
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Struct> {
         Some(Struct {
             name: self.name.clone(),
             attrs: self.attrs.clone(),
@@ -201,14 +201,14 @@ impl ToValue for StructDef {
 
 impl ToValue for FixedArrayDef {
     type Value = Vec<Value>;
-    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Vec<Value>> {
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Vec<Value>> {
         self.type_def.to_value_multiple(data, self.size as usize)
     }
 }
 
 impl ToValue for EnumDef {
     type Value = Enum;
-    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Enum> {
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Enum> {
         let selector = pop_primitive::<Felt>(data)?;
         let field = self.variants.get(&selector)?;
 
@@ -221,11 +221,7 @@ impl ToValue for EnumDef {
         })
     }
 
-    fn to_value_multiple(
-        &self,
-        data: &mut VecDeque<Felt>,
-        count: usize,
-    ) -> Option<Vec<Self::Value>> {
+    fn to_value_multiple(&self, data: &mut FeltIterator, count: usize) -> Option<Vec<Self::Value>> {
         (0..count)
             .into_iter()
             .map(|_| self.to_value(data))
@@ -235,11 +231,11 @@ impl ToValue for EnumDef {
 
 impl ToValue for TypeDef {
     type Value = Value;
-    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Value> {
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Value> {
         match self {
             TypeDef::None => Some(Value::None),
             TypeDef::Felt252 => pop_primitive(data).map(Value::Felt252),
-            TypeDef::Bool => data.pop_front().map(|v| Value::Bool(!v.is_zero())),
+            TypeDef::Bool => data.next().map(|v| Value::Bool(!v.is_zero())),
             TypeDef::U8 => pop_primitive(data).map(Value::U8),
             TypeDef::U16 => pop_primitive(data).map(Value::U16),
             TypeDef::U32 => pop_primitive(data).map(Value::U32),
@@ -256,10 +252,10 @@ impl ToValue for TypeDef {
             TypeDef::I64 => pop_primitive(data).map(Value::I64),
             TypeDef::I128 => pop_primitive(data).map(Value::I128),
             TypeDef::USize => pop_primitive(data).map(Value::USize),
-            TypeDef::ShortString => felt_to_utf8_string(data.pop_front()?).map(Value::ShortString),
+            TypeDef::ShortString => felt_to_utf8_string(data.next()?).map(Value::ShortString),
             TypeDef::ClassHash => pop_primitive(data).map(Value::ClassHash),
-            TypeDef::ContractAddress => data.pop_front().map(Value::ContractAddress),
-            TypeDef::EthAddress => data.pop_front().map(Value::EthAddress),
+            TypeDef::ContractAddress => data.next().map(Value::ContractAddress),
+            TypeDef::EthAddress => data.next().map(Value::EthAddress),
             TypeDef::ByteArray => byte_array_felts_to_string(data).map(Value::ByteArray),
             TypeDef::Tuple(type_defs) => parse_tuple_to_value(type_defs, data).map(Value::Tuple),
             TypeDef::Array(type_def) => {
@@ -286,7 +282,7 @@ impl ToValue for TypeDef {
 
 impl ToValue for FieldDef {
     type Value = Field;
-    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Field> {
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Field> {
         Some(Field {
             selector: self.selector.clone(),
             name: self.name.clone(),
@@ -338,7 +334,7 @@ impl std::ops::DerefMut for FieldDefVec {
 
 impl ToValue for FieldDefVec {
     type Value = Vec<Field>;
-    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Vec<Field>> {
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Vec<Field>> {
         self.0
             .iter()
             .map(|field_def| field_def.to_value(data))

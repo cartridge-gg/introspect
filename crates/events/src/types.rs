@@ -1,7 +1,5 @@
-use std::collections::VecDeque;
-
 use introspect_types::{FieldDef, FieldDefVec};
-use introspect_value::ToValue;
+use introspect_value::{FeltIterator, ToValue};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 
@@ -24,7 +22,7 @@ pub struct TableFieldsDef {
 
 impl ToValue for TableFieldDef {
     type Value = UpdateRecordField;
-    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Self::Value> {
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Self::Value> {
         Some(UpdateRecordField {
             table_id: self.id,
             table_name: self.name.clone(),
@@ -36,7 +34,7 @@ impl ToValue for TableFieldDef {
 
 impl ToValue for TableFieldsDef {
     type Value = UpdateRecordFields;
-    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Self::Value> {
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Self::Value> {
         Some(UpdateRecordFields {
             table_id: self.id,
             table_name: self.name.clone(),
