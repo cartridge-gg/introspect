@@ -1,3 +1,4 @@
 pub mod introspect;
-pub mod ty;
-pub use ty::{CairoResult, Enum, Field, FixedArray, Member, Struct, Ty};
+pub mod type_def;
+pub use introspect::Introspect;
+pub use type_def::{EnumDef, FieldDef, FixedArrayDef, MemberDef, ResultDef, StructDef, TypeDef};

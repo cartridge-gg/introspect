@@ -1,4 +1,4 @@
-use introspect_types::Ty;
+use introspect_types::TypeDef;
 
 #[derive(Drop, Serde, starknet::Event)]
 pub enum VariableEvents {
@@ -12,13 +12,13 @@ pub enum VariableEvents {
 /// Fields:
 /// - `id`: Unique identifier of the variable (e.g., hash of the name or a custom ID).
 /// - `name`: Human-readable name of the variable.
-/// - `ty`: The type description of the variable.
+/// - `type_def`: The type description of the variable.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct DeclareVariable {
     #[key]
     pub id: felt252,
     pub name: ByteArray,
-    pub ty: Ty,
+    pub type_def: TypeDef,
 }
 
 // Emitted when a variable's value is set.

@@ -46,7 +46,7 @@ pub enum TypeDef {
 pub struct FieldDef {
     pub name: String,
     pub attrs: Vec<String>,
-    pub ty: TypeDef,
+    pub type_def: TypeDef,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -65,7 +65,7 @@ pub struct EnumDef {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FixedArrayDef {
-    pub ty: Box<TypeDef>,
+    pub type_def: Box<TypeDef>,
     pub size: u32,
 }
 
@@ -73,7 +73,7 @@ pub struct FixedArrayDef {
 pub struct MemberDef {
     pub name: String,
     pub attrs: Vec<String>,
-    pub ty: TypeDef,
+    pub type_def: TypeDef,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -121,9 +121,10 @@ pub fn byte_array_felts_to_string(data: &mut VecDeque<Felt>) -> Option<String> {
     )
 }
 
-fn parse_tuple_to_value(tys: &Vec<TypeDef>, data: &mut VecDeque<Felt>) -> Option<Vec<Value>> {
-    tys.iter()
-        .map(|ty| ty.to_value(data))
+fn parse_tuple_to_value(type_defs: &Vec<TypeDef>, data: &mut VecDeque<Felt>) -> Option<Vec<Value>> {
+    type_defs
+        .iter()
+        .map(|type_def| type_def.to_value(data))
         .collect::<Option<Vec<Value>>>()
 }
 
@@ -134,10 +135,10 @@ fn to_custom_value(name: &str, data: &mut VecDeque<Felt>) -> Option<Custom> {
     })
 }
 
-fn to_option_value(ty: &TypeDef, data: &mut VecDeque<Felt>) -> Option<Option<Value>> {
+fn to_option_value(type_def: &TypeDef, data: &mut VecDeque<Felt>) -> Option<Option<Value>> {
     let is_some = data.pop_front()?.is_zero();
     match is_some {
-        true => ty.to_value(data).map(Some),
+        true => type_def.to_value(data).map(Some),
         false => Some(None),
     }
 }
@@ -148,7 +149,7 @@ impl ToValue for MemberDef {
         Some(Member {
             name: self.name.clone(),
             attrs: self.attrs.clone(),
-            value: self.ty.to_value(data)?,
+            value: self.type_def.to_value(data)?,
         })
     }
 }
@@ -179,7 +180,7 @@ impl ToValue for EnumDef {
             attrs: self.attrs.clone(),
             variant: field.name.clone(),
             variant_attrs: field.attrs.clone(),
-            value: field.ty.to_value(data)?,
+            value: field.type_def.to_value(data)?,
         })
     }
 
@@ -223,13 +224,13 @@ impl ToValue for TypeDef {
             TypeDef::ContractAddress => data.pop_front().map(Value::ContractAddress),
             TypeDef::EthAddress => data.pop_front().map(Value::EthAddress),
             TypeDef::ByteArray => byte_array_felts_to_string(data).map(Value::ByteArray),
-            TypeDef::Tuple(tys) => parse_tuple_to_value(tys, data).map(Value::Tuple),
-            TypeDef::Array(ty) => {
+            TypeDef::Tuple(type_defs) => parse_tuple_to_value(type_defs, data).map(Value::Tuple),
+            TypeDef::Array(type_def) => {
                 let size = pop_primitive(data)?;
-                ty.to_value_multiple(data, size).map(Value::Array)
+                type_def.to_value_multiple(data, size).map(Value::Array)
             }
             TypeDef::FixedArray(fa) => fa
-                .ty
+                .type_def
                 .to_value_multiple(data, fa.size as usize)
                 .map(Value::FixedArray),
             TypeDef::Felt252Dict(_ty) => None,
@@ -238,7 +239,9 @@ impl ToValue for TypeDef {
             TypeDef::Ref(_) => None,
             TypeDef::Schema(_fields) => None,
             TypeDef::Custom(name) => to_custom_value(name, data).map(Value::Custom),
-            TypeDef::Option(ty) => to_option_value(ty, data).map(Box::new).map(Value::Option),
+            TypeDef::Option(type_def) => to_option_value(type_def, data)
+                .map(Box::new)
+                .map(Value::Option),
             TypeDef::Result(_r) => None,
             TypeDef::Nullable(_ty) => None,
             TypeDef::Encoding(_) => None,

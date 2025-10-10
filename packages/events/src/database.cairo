@@ -1,5 +1,4 @@
-use introspect_types::Ty;
-use introspect_types::ty::Field;
+use introspect_types::{FieldDef, TypeDef};
 
 
 #[derive(Drop, Serde, starknet::Event)]
@@ -52,7 +51,7 @@ pub struct DeclareTableWithFields {
     #[key]
     pub id: felt252,
     pub name: ByteArray,
-    pub fields: Span<Field>,
+    pub fields: Span<FieldDef>,
 }
 
 /// Declares a table using a pre-defined schema.
@@ -76,7 +75,7 @@ pub struct UndeclareTable {
 /// - `table` Table ID the field belongs to.
 /// - `name` Field name.
 /// - `attrs` Field attributes.
-/// - `ty` Field type.
+/// - `type_def` Field type.
 
 /// Emitted when a new field is declared for an existing table.
 #[derive(Drop, Serde, starknet::Event)]
@@ -86,7 +85,7 @@ pub struct DeclareTableField {
     pub id: felt252,
     pub name: felt252,
     pub attrs: Span<felt252>,
-    pub ty: Ty,
+    pub type_def: TypeDef,
 }
 
 /// Emitted when multiple new fields are declared for an existing table.
@@ -94,7 +93,7 @@ pub struct DeclareTableField {
 pub struct DeclareTableFields {
     #[key]
     pub table: felt252,
-    pub fields: Span<Field>,
+    pub fields: Span<FieldDef>,
 }
 
 /// Emitted when a field is undeclared from a table.
