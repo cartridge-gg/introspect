@@ -335,3 +335,9 @@ impl ToValue for FieldDefVec {
             .collect::<Option<Vec<Field>>>()
     }
 }
+
+impl From<Vec<FieldDef>> for FieldDefVec {
+    fn from(fields: Vec<FieldDef>) -> Self {
+        FieldDefVec(fields)
+    }
+}
