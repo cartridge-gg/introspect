@@ -103,6 +103,10 @@ pub fn pop_primitive<T: TryFrom<Felt>>(data: &mut VecDeque<Felt>) -> Option<T> {
     data.pop_front()?.try_into().ok()
 }
 
+pub fn pop_short_string(data: &mut VecDeque<Felt>) -> Option<String> {
+    felt_to_utf8_string(data.pop_front()?)
+}
+
 pub fn read_serialized_felt_array(data: &mut VecDeque<Felt>) -> Option<Vec<Felt>> {
     let len = pop_primitive(data)?;
     (0..len)
