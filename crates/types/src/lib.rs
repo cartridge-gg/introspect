@@ -1,5 +1,5 @@
 use cainome_cairo_serde::{ByteArray, Bytes31};
-use introspect_value::{Custom, Enum, Member, Struct, ToValue, Value};
+use introspect_value::{Custom, Enum, Field, Member, Struct, ToValue, Value};
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
@@ -44,19 +44,28 @@ pub enum TypeDef {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TableDef {
-    pub id: Felt,
-    pub name: String,
-    pub attrs: Vec<String>,
-    pub fields: Vec<FieldDef>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct FieldDef {
     pub selector: Felt,
     pub name: String,
     pub attrs: Vec<String>,
     pub type_def: TypeDef,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FieldInfo {
+    pub selector: Felt,
+    pub name: String,
+    pub attrs: Vec<String>,
+}
+
+impl From<&FieldDef> for FieldInfo {
+    fn from(field_def: &FieldDef) -> Self {
+        FieldInfo {
+            selector: field_def.selector.clone(),
+            name: field_def.name.clone(),
+            attrs: field_def.attrs.clone(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -268,5 +277,61 @@ impl ToValue for TypeDef {
             TypeDef::Encoding(_) => None,
             TypeDef::DynamicEncoding => None,
         }
+    }
+}
+
+impl ToValue for FieldDef {
+    type Value = Field;
+    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Field> {
+        Some(Field {
+            selector: self.selector.clone(),
+            name: self.name.clone(),
+            attrs: self.attrs.clone(),
+            value: self.type_def.to_value(data)?,
+        })
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TypeDefVec(pub Vec<TypeDef>);
+
+impl std::ops::Deref for TypeDefVec {
+    type Target = Vec<TypeDef>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for TypeDefVec {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct FieldDefVec(pub Vec<FieldDef>);
+
+impl std::ops::Deref for FieldDefVec {
+    type Target = Vec<FieldDef>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl std::ops::DerefMut for FieldDefVec {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl ToValue for FieldDefVec {
+    type Value = Vec<Field>;
+    fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Vec<Field>> {
+        self.0
+            .iter()
+            .map(|field_def| field_def.to_value(data))
+            .collect::<Option<Vec<Field>>>()
     }
 }

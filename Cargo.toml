@@ -28,3 +28,6 @@ serde = "1.0.228"
 starknet = "0.17.0"
 starknet-crypto = "0.8"
 cainome-cairo-serde = "0.4.0"
+introspect-types = { path = "crates/types" }
+introspect-events = { path = "crates/events" }
+introspect-value = { path = "crates/value" }

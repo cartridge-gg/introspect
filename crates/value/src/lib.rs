@@ -94,6 +94,11 @@ pub struct Custom {
     pub values: Vec<Felt>,
 }
 
+pub trait ToValues {
+    type Value;
+    fn to_values(&self, data: &mut VecDeque<Felt>, count: usize) -> Option<Vec<Self::Value>>;
+}
+
 pub trait ToValue {
     type Value;
     fn to_value(&self, data: &mut VecDeque<Felt>) -> Option<Self::Value>;

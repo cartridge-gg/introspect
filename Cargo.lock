@@ -897,6 +897,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "introspect-events"
+version = "0.1.2"
+dependencies = [
+ "cainome-cairo-serde",
+ "introspect-types",
+ "introspect-value",
+ "serde",
+ "starknet-types-core",
+]
+
+[[package]]
 name = "introspect-types"
 version = "0.1.2"
 dependencies = [
