@@ -898,7 +898,7 @@ dependencies = [
 
 [[package]]
 name = "introspect-types"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "cainome-cairo-serde",
  "introspect-value",
@@ -909,7 +909,7 @@ dependencies = [
 
 [[package]]
 name = "introspect-value"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "cainome-cairo-serde",
  "serde",
