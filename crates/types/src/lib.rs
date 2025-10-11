@@ -1,5 +1,5 @@
 use cainome_cairo_serde::{ByteArray, Bytes31};
-use introspect_value::{Custom, Enum, FeltIterator, Field, Member, Struct, ToValue, Value};
+use introspect_value::{Custom, Enum, FeltIterator, Field, Struct, ToValue, Value};
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
@@ -34,7 +34,7 @@ pub enum TypeDef {
     Struct(StructDef),
     Enum(EnumDef),
     Ref(String),
-    Schema(Vec<FieldDef>),
+    Schema(Vec<ColumnDef>),
     Custom(String),
     Option(Box<TypeDef>),
     Result(ResultDef),
@@ -44,7 +44,7 @@ pub enum TypeDef {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FieldDef {
+pub struct ColumnDef {
     pub selector: Felt,
     pub name: String,
     pub attrs: Vec<String>,
@@ -58,8 +58,8 @@ pub struct FieldInfo {
     pub attrs: Vec<String>,
 }
 
-impl From<&FieldDef> for FieldInfo {
-    fn from(field_def: &FieldDef) -> Self {
+impl From<&ColumnDef> for FieldInfo {
+    fn from(field_def: &ColumnDef) -> Self {
         FieldInfo {
             selector: field_def.selector.clone(),
             name: field_def.name.clone(),
@@ -79,7 +79,7 @@ pub struct VariantDef {
 pub struct StructDef {
     pub name: String,
     pub attrs: Vec<String>,
-    pub members: Vec<MemberDef>,
+    pub fields: Vec<FieldDef>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -96,7 +96,7 @@ pub struct FixedArrayDef {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct MemberDef {
+pub struct FieldDef {
     pub name: String,
     pub attrs: Vec<String>,
     pub type_def: TypeDef,
@@ -173,10 +173,10 @@ fn to_option_value(type_def: &TypeDef, data: &mut FeltIterator) -> Option<Option
     }
 }
 
-impl ToValue for MemberDef {
-    type Value = Member;
-    fn to_value(&self, data: &mut FeltIterator) -> Option<Member> {
-        Some(Member {
+impl ToValue for FieldDef {
+    type Value = Field;
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Field> {
+        Some(Field {
             name: self.name.clone(),
             attrs: self.attrs.clone(),
             value: self.type_def.to_value(data)?,
@@ -190,11 +190,11 @@ impl ToValue for StructDef {
         Some(Struct {
             name: self.name.clone(),
             attrs: self.attrs.clone(),
-            members: self
-                .members
+            fields: self
+                .fields
                 .iter()
                 .map(|child| child.to_value(data))
-                .collect::<Option<Vec<Member>>>()?,
+                .collect::<Option<Vec<Field>>>()?,
         })
     }
 }
@@ -280,11 +280,10 @@ impl ToValue for TypeDef {
     }
 }
 
-impl ToValue for FieldDef {
+impl ToValue for ColumnDef {
     type Value = Field;
     fn to_value(&self, data: &mut FeltIterator) -> Option<Field> {
         Some(Field {
-            selector: self.selector.clone(),
             name: self.name.clone(),
             attrs: self.attrs.clone(),
             value: self.type_def.to_value(data)?,
@@ -310,29 +309,29 @@ impl std::ops::DerefMut for TypeDefVec {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct FieldDefVec(pub Vec<FieldDef>);
+pub struct ColumnDefVec(pub Vec<ColumnDef>);
 
-impl std::ops::Deref for FieldDefVec {
-    type Target = Vec<FieldDef>;
+impl std::ops::Deref for ColumnDefVec {
+    type Target = Vec<ColumnDef>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl FromIterator<FieldDef> for FieldDefVec {
-    fn from_iter<T: IntoIterator<Item = FieldDef>>(iter: T) -> Self {
-        FieldDefVec(iter.into_iter().collect())
+impl FromIterator<ColumnDef> for ColumnDefVec {
+    fn from_iter<T: IntoIterator<Item = ColumnDef>>(iter: T) -> Self {
+        ColumnDefVec(iter.into_iter().collect())
     }
 }
 
-impl std::ops::DerefMut for FieldDefVec {
+impl std::ops::DerefMut for ColumnDefVec {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.0
     }
 }
 
-impl ToValue for FieldDefVec {
+impl ToValue for ColumnDefVec {
     type Value = Vec<Field>;
     fn to_value(&self, data: &mut FeltIterator) -> Option<Vec<Field>> {
         self.0
@@ -342,8 +341,8 @@ impl ToValue for FieldDefVec {
     }
 }
 
-impl From<Vec<FieldDef>> for FieldDefVec {
-    fn from(fields: Vec<FieldDef>) -> Self {
-        FieldDefVec(fields)
+impl From<Vec<ColumnDef>> for ColumnDefVec {
+    fn from(fields: Vec<ColumnDef>) -> Self {
+        ColumnDefVec(fields)
     }
 }

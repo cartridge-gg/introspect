@@ -46,17 +46,10 @@ pub struct U256 {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Member {
-    pub name: String,
-    pub attrs: Vec<String>,
-    pub value: Value,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Struct {
     pub name: String,
     pub attrs: Vec<String>,
-    pub members: Vec<Member>,
+    pub fields: Vec<Field>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Enum {
@@ -69,7 +62,6 @@ pub struct Enum {
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Field {
-    pub selector: Felt,
     pub name: String,
     pub attrs: Vec<String>,
     pub value: Value,
