@@ -1,4 +1,4 @@
-use introspect_types::ColumnDefVec;
+use introspect_types::ColumnDef;
 use introspect_value::{FeltIterator, ToValue};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
@@ -10,7 +10,7 @@ pub struct TableSchema {
     pub table_id: Felt,
     pub table_name: String,
     pub attrs: Vec<String>,
-    pub fields: ColumnDefVec,
+    pub fields: Vec<ColumnDef>,
 }
 
 impl ToValue for TableSchema {
@@ -20,7 +20,11 @@ impl ToValue for TableSchema {
             table_id: self.table_id,
             table_name: self.table_name.clone(),
             attrs: self.attrs.clone(),
-            fields: self.fields.to_value(data)?,
+            fields: self
+                .fields
+                .iter()
+                .map(|f| f.to_value(data))
+                .collect::<Option<Vec<_>>>()?,
         })
     }
 }
