@@ -31,3 +31,4 @@ cainome-cairo-serde = "0.4.0"
 introspect-types = { path = "crates/types" }
 introspect-events = { path = "crates/events" }
 introspect-value = { path = "crates/value" }
+convert_case = "0.8.0"

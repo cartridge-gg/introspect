@@ -9,5 +9,6 @@ version.workspace = true
 cainome-cairo-serde.workspace = true
 serde.workspace = true
 starknet-types-core.workspace = true
+convert_case.workspace = true
 
 [dev-dependencies]

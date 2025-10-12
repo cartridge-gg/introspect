@@ -1,3 +1,4 @@
+use convert_case::{Case, Casing};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 
@@ -43,6 +44,16 @@ pub enum Value {
 pub struct U256 {
     pub low: u128,
     pub high: u128,
+}
+
+impl ToString for U256 {
+    fn to_string(&self) -> String {
+        format!("0x{:016x}{:016x}", self.high, self.low)
+    }
+}
+
+pub fn felt_to_string(value: &Felt) -> String {
+    format!("0x{:016x}", value)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -96,5 +107,63 @@ pub trait ToValue {
             .into_iter()
             .map(|_| self.to_value(data))
             .collect()
+    }
+}
+
+pub trait ToPrimitiveString {
+    fn to_primitive_string(&self) -> Option<String>;
+}
+
+impl ToPrimitiveString for Enum {
+    fn to_primitive_string(&self) -> Option<String> {
+        let value = self.value.to_primitive_string()?.to_case(Case::Snake);
+        Some(format!("{}-{}", self.variant, value))
+    }
+}
+
+impl ToPrimitiveString for Option<Value> {
+    fn to_primitive_string(&self) -> Option<String> {
+        match self {
+            Some(v) => Some(format!("some-{}", v.to_primitive_string()?)),
+            None => Some("none".to_string()),
+        }
+    }
+}
+
+impl ToPrimitiveString for Nullable {
+    fn to_primitive_string(&self) -> Option<String> {
+        match self {
+            Nullable::Null => Some("null".to_string()),
+            Nullable::NotNull(v) => Some(format!("not_null-{}", v.to_primitive_string()?)),
+        }
+    }
+}
+
+impl ToPrimitiveString for Value {
+    fn to_primitive_string(&self) -> Option<String> {
+        match self {
+            Value::Felt252(value)
+            | Value::ClassHash(value)
+            | Value::ContractAddress(value)
+            | Value::EthAddress(value) => Some(felt_to_string(value)),
+            Value::Bool(value) => Some(value.to_string()),
+            Value::U8(value) => Some(value.to_string()),
+            Value::U16(value) => Some(value.to_string()),
+            Value::U32(value) => Some(value.to_string()),
+            Value::U64(value) => Some(value.to_string()),
+            Value::U128(value) => Some(value.to_string()),
+            Value::U256(value) => Some(value.to_string()),
+            Value::I8(value) => Some(value.to_string()),
+            Value::I16(value) => Some(value.to_string()),
+            Value::I32(value) => Some(value.to_string()),
+            Value::I64(value) => Some(value.to_string()),
+            Value::I128(value) => Some(value.to_string()),
+            Value::ShortString(s) => Some(s.clone()),
+            Value::ByteArray(s) => Some(s.clone()),
+            Value::Enum(v) => v.to_primitive_string(),
+            Value::Option(v) => v.to_primitive_string(),
+            Value::Nullable(v) => v.to_primitive_string(),
+            _ => None,
+        }
     }
 }
