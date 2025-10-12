@@ -1,6 +1,7 @@
 use cainome_cairo_serde::{ByteArray, Bytes31};
 use introspect_value::{Custom, Enum, FeltIterator, Field, Struct, ToValue, Value};
 use num_traits::Zero;
+use primitive_types::U256;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
@@ -229,6 +230,13 @@ impl ToValue for EnumDef {
     }
 }
 
+fn pop_u256(data: &mut FeltIterator) -> Option<U256> {
+    match [data.next()?.to_raw(), data.next()?.to_raw()] {
+        [[0, 0, l2, l1], [0, 0, h2, h1]] => Some(U256([h2, h1, l2, l1])),
+        _ => None,
+    }
+}
+
 impl ToValue for TypeDef {
     type Value = Value;
     fn to_value(&self, data: &mut FeltIterator) -> Option<Value> {
@@ -241,11 +249,7 @@ impl ToValue for TypeDef {
             TypeDef::U32 => pop_primitive(data).map(Value::U32),
             TypeDef::U64 => pop_primitive(data).map(Value::U64),
             TypeDef::U128 => pop_primitive(data).map(Value::U128),
-            TypeDef::U256 => {
-                let low = pop_primitive(data)?;
-                let high = pop_primitive(data)?;
-                Some(Value::U256(introspect_value::U256 { low, high }))
-            }
+            TypeDef::U256 => pop_u256(data).map(Value::U256),
             TypeDef::I8 => pop_primitive(data).map(Value::I8),
             TypeDef::I16 => pop_primitive(data).map(Value::I16),
             TypeDef::I32 => pop_primitive(data).map(Value::I32),

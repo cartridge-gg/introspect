@@ -25,10 +25,12 @@ inherits = "release"
 starknet-types-core = "0.2.0"
 num-traits = { version = "0.2", default-features = false }
 serde = "1.0.228"
+serde_json = "1.0.145"
 starknet = "0.17.0"
 starknet-crypto = "0.8"
 cainome-cairo-serde = "0.4.0"
 introspect-types = { path = "crates/types" }
 introspect-events = { path = "crates/events" }
 introspect-value = { path = "crates/value" }
+primitive-types = { version = "0.14.0", features = ["serde"] }
 convert_case = "0.8.0"

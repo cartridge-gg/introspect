@@ -1,7 +1,8 @@
 use convert_case::{Case, Casing};
+use primitive_types::U256;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
-
+mod json;
 #[derive(Clone, Debug, Serialize, Deserialize, Default)]
 pub enum Value {
     #[default]
@@ -38,18 +39,6 @@ pub enum Value {
     Nullable(Box<Nullable>),
     Encoding(Encoded),
     DynamicEncoding(Encoded),
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
-pub struct U256 {
-    pub low: u128,
-    pub high: u128,
-}
-
-impl ToString for U256 {
-    fn to_string(&self) -> String {
-        format!("0x{:016x}{:016x}", self.high, self.low)
-    }
 }
 
 pub fn felt_to_string(value: &Felt) -> String {
