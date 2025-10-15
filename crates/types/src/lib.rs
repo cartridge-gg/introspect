@@ -5,7 +5,7 @@ use primitive_types::U256;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
 pub enum TypeDef {
     #[default]
     None,
@@ -44,7 +44,7 @@ pub enum TypeDef {
     DynamicEncoding,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct ColumnDef {
     pub selector: Felt,
     pub name: String,
@@ -52,7 +52,7 @@ pub struct ColumnDef {
     pub type_def: TypeDef,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct FieldInfo {
     pub selector: Felt,
     pub name: String,
@@ -69,14 +69,14 @@ impl From<&ColumnDef> for FieldInfo {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct VariantDef {
     pub name: String,
     pub attrs: Vec<String>,
     pub type_def: TypeDef,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct StructDef {
     pub name: String,
     pub attrs: Vec<String>,
@@ -90,20 +90,33 @@ pub struct EnumDef {
     pub variants: HashMap<Felt, VariantDef>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+impl PartialEq for EnumDef {
+    fn eq(&self, other: &Self) -> bool {
+        let is_eq = self.name == other.name && self.attrs == other.attrs;
+        if !is_eq {
+            return false;
+        }
+
+        self.variants
+            .iter()
+            .all(|(k, v)| other.variants.get(k).map(|ov| v == ov).unwrap_or(false))
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct FixedArrayDef {
     pub type_def: Box<TypeDef>,
     pub size: u32,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct FieldDef {
     pub name: String,
     pub attrs: Vec<String>,
     pub type_def: TypeDef,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct ResultDef {
     pub ok: Box<TypeDef>,
     pub err: Box<TypeDef>,
