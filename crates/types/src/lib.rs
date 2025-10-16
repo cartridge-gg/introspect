@@ -44,6 +44,64 @@ pub enum TypeDef {
     DynamicEncoding,
 }
 
+pub trait TypeName {
+    fn type_name(&self) -> String;
+}
+
+impl TypeName for TypeDef {
+    fn type_name(&self) -> String {
+        match self {
+            TypeDef::None => "None".to_string(),
+            TypeDef::Felt252 => "Felt252".to_string(),
+            TypeDef::Bool => "bool".to_string(),
+            TypeDef::U8 => "u8".to_string(),
+            TypeDef::U16 => "u16".to_string(),
+            TypeDef::U32 => "u32".to_string(),
+            TypeDef::U64 => "u64".to_string(),
+            TypeDef::U128 => "u128".to_string(),
+            TypeDef::U256 => "u256".to_string(),
+            TypeDef::I8 => "i8".to_string(),
+            TypeDef::I16 => "i16".to_string(),
+            TypeDef::I32 => "i32".to_string(),
+            TypeDef::I64 => "i64".to_string(),
+            TypeDef::I128 => "i128".to_string(),
+            TypeDef::USize => "usize".to_string(),
+            TypeDef::ShortString => "ShortString".to_string(),
+            TypeDef::ClassHash => "ClassHash".to_string(),
+            TypeDef::ContractAddress => "ContractAddress".to_string(),
+            TypeDef::EthAddress => "EthAddress".to_string(),
+            TypeDef::ByteArray => "ByteArray".to_string(),
+            TypeDef::Tuple(inner) => format!(
+                "({})",
+                inner
+                    .iter()
+                    .map(|e| e.type_name())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
+            TypeDef::Array(inner) => format!("Vec<{}>", inner.type_name()),
+            TypeDef::FixedArray(inner) => {
+                format!("[{}; {}]", inner.type_def.type_name(), inner.size)
+            }
+            TypeDef::Felt252Dict(inner) => format!("Felt252Dict<{}>", inner.type_name()),
+            TypeDef::Struct(s) => s.name.clone(),
+            TypeDef::Enum(e) => e.name.clone(),
+            TypeDef::Ref(name) => name.clone(),
+            TypeDef::Schema(_) => "Schema".to_string(),
+            TypeDef::Custom(name) => name.clone(),
+            TypeDef::Option(inner) => format!("Option<{}>", inner.type_name()),
+            TypeDef::Result(inner) => format!(
+                "Result<{}, {}>",
+                inner.ok.type_name(),
+                inner.err.type_name()
+            ),
+            TypeDef::Nullable(inner) => format!("Nullable<{}>", inner.type_name()),
+            TypeDef::Encoding(name) => format!("Encoding<{}>", name),
+            TypeDef::DynamicEncoding => "DynamicEncoding".to_string(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct ColumnDef {
     pub selector: Felt,
@@ -244,7 +302,10 @@ impl ToValue for EnumDef {
 }
 
 fn pop_u256(data: &mut FeltIterator) -> Option<U256> {
-    match [data.next()?.to_raw(), data.next()?.to_raw()] {
+    match [
+        pop_primitive::<Felt>(data)?.to_be_digits(),
+        pop_primitive::<Felt>(data)?.to_be_digits(),
+    ] {
         [[0, 0, l2, l1], [0, 0, h2, h1]] => Some(U256([h2, h1, l2, l1])),
         _ => None,
     }
