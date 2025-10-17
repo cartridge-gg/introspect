@@ -218,8 +218,7 @@ pub fn byte_array_felts_to_string(data: &mut FeltIterator) -> Option<String> {
             pending_word,
             pending_word_len,
         }
-        .to_string()
-        .ok()?,
+        .to_string_lossy(),
     )
 }
 
