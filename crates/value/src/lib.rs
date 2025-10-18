@@ -3,7 +3,7 @@ use primitive_types::U256;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 mod json;
-#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
 pub enum Value {
     #[default]
     None,
@@ -45,13 +45,13 @@ pub fn felt_to_string(value: &Felt) -> String {
     format!("0x{:016x}", value)
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Struct {
     pub name: String,
     pub attrs: Vec<String>,
     pub fields: Vec<Field>,
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Enum {
     pub name: String,
     pub attrs: Vec<String>,
@@ -60,26 +60,26 @@ pub struct Enum {
     pub value: Value,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Field {
     pub name: String,
     pub attrs: Vec<String>,
     pub value: Value,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Nullable {
     Null,
     NotNull(Value),
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Encoded {
     pub encoding: String,
     pub value: Vec<u8>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Custom {
     pub name: String,
     pub values: Vec<Felt>,
