@@ -146,6 +146,7 @@ pub struct EnumDef {
     pub name: String,
     pub attrs: Vec<String>,
     pub variants: HashMap<Felt, VariantDef>,
+    pub order: Vec<Felt>,
 }
 
 impl PartialEq for EnumDef {
