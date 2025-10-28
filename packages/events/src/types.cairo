@@ -1,4 +1,4 @@
-use introspect_types::{FieldDef, TypeDef};
+use introspect_types::{ColumnDef, TypeDef};
 
 pub enum TypeEvents {
     DeclareSchema: DeclareSchema,
@@ -16,7 +16,7 @@ pub struct DeclareSchema {
     #[key]
     pub id: felt252,
     pub version: felt252,
-    pub fields: Span<FieldDef>,
+    pub columns: Span<ColumnDef>,
 }
 
 #[derive(Drop, Serde, starknet::Event)]

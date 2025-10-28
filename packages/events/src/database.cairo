@@ -4,12 +4,12 @@ use introspect_types::{ColumnDef, TypeDef};
 #[derive(Drop, Serde, starknet::Event)]
 pub enum DatabaseEvents {
     CreateTable: CreateTable,
-    CreateTableWithFields: CreateTableWithFields,
+    CreateTableWithColumns: CreateTableWithColumns,
     CreateTableWithSchema: CreateTableWithSchema,
     RenameTable: RenameTable,
     DropTable: DropTable,
-    AddTableColumn: AddTableColumn,
-    AddTableColumns: AddTableColumns,
+    AddColumn: AddTableColumn,
+    AddColumns: AddTableColumns,
     DropColumn: DropColumn,
     RenameColumn: RenameColumn,
     RenameColumns: RenameColumns,
@@ -50,7 +50,7 @@ pub struct CreateTable {
 
 /// Emitted when a new table is declared with inline field definitions.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct CreateTableWithFields {
+pub struct CreateTableWithColumns {
     #[key]
     pub id: felt252,
     pub name: ByteArray,
