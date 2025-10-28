@@ -28,7 +28,7 @@ pub enum TypeDef {
     Struct: StructDef,
     Enum: EnumDef,
     Ref: felt252,
-    Schema: Span<FieldDef>,
+    Schema: Span<ColumnDef>,
     Encoded: felt252,
     Custom: felt252,
     Option: Box<TypeDef>,
@@ -38,8 +38,15 @@ pub enum TypeDef {
 }
 
 #[derive(Drop, Serde, PartialEq)]
+pub struct ColumnDef {
+    pub id: felt252,
+    pub name: ByteArray,
+    pub attrs: Span<felt252>,
+    pub type_def: TypeDef,
+}
+
+#[derive(Drop, Serde, PartialEq)]
 pub struct FieldDef {
-    pub selector: felt252,
     pub name: ByteArray,
     pub attrs: Span<felt252>,
     pub type_def: TypeDef,
