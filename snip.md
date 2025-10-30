@@ -205,13 +205,29 @@ struct DropColumns {
 ```rust
 /// Database values common fields
 ///
-/// - `table` Table ID.
-/// - `record`/`records` Record ID.
-/// - `field`/`fields` Field selector.
-/// - `data` Serialised data being set.
-///
+/// - table - Table ID.
+/// - record/records - Record ID.
+/// - column/columns - Column ID.
+/// - data - Serialised data being set.
+/// - records_data - Pairs of Record IDs and their serialised data being set.
+/// - schema - Schema ID.
 
-struct InsertRecordField {
+
+struct InsertRecord {
+    #[key]
+    table: felt252,
+    #[key]
+    record: felt252,
+    data: Span<felt252>,
+}
+
+struct InsertRecords {
+    #[key]
+    table: felt252,
+    records_data: Span<(felt252, Span<felt252>)>,
+}
+
+struct InsertField {
     #[key]
     table: felt252,
     #[key]
@@ -222,7 +238,7 @@ struct InsertRecordField {
 }
 
 
-struct InsertRecordFields {
+struct InsertFields {
     #[key]
     table: felt252,
     #[key]
@@ -235,41 +251,20 @@ struct InsertRecordFields {
 struct InsertRecordsField {
     #[key]
     table: felt252,
-    records: Span<felt252>,
     #[key]
     column: felt252,
-    data: Span<felt252>,
+    records_data: Span<(felt252, Span<felt252>)>,
 }
 
 
 struct InsertRecordsFields {
     #[key]
     table: felt252,
-    records: Span<felt252>,
-    fields: Span<felt252>,
-    data: Span<felt252>,
+    columns: Span<felt252>,
+    records_data: Span<(felt252, Span<felt252>)>,
 }
 
-
-struct InsertRecord {
-    #[key]
-    table: felt252,
-    #[key]
-    record: felt252,
-    data: Span<felt252>,
-}
-
-
-
-struct InsertRecords {
-    #[key]
-    table: felt252,
-    records: Span<felt252>,
-    data: Span<felt252>,
-}
-
-
-struct InsertRecordDataFromSchema {
+struct InsertSchema {
     #[key]
     table: felt252,
     #[key]
@@ -279,27 +274,14 @@ struct InsertRecordDataFromSchema {
     data: Span<felt252>,
 }
 
-
-
-struct InsertRecordsDataFromSchema {
+struct InsertRecordsSchema {
     #[key]
     table: felt252,
-    records: Span<felt252>,
     #[key]
     schema: felt252,
-    data: Span<felt252>,
+    records_data: Span<(felt252, Span<felt252>)>,
 }
 
-
-
-struct DropValue {
-    #[key]
-    table: felt252,
-    #[key]
-    record: felt252,
-    #[key]
-    field: felt252,
-}
 
 
 struct DropRecord {
@@ -316,31 +298,41 @@ struct DropRecords {
     records: Span<felt252>,
 }
 
+struct DropField {
+    #[key]
+    table: felt252,
+    #[key]
+    record: felt252,
+    #[key]
+    column: felt252,
+}
 
-struct DropRecordFields {
+
+struct DropFields {
     #[key]
     table: felt252,
     #[key]
     row: felt252,
-    fields: Span<felt252>,
+    columns: Span<felt252>,
 }
 
 struct DropRecordsField {
     #[key]
     table: felt252,
-    records: Span<felt252>,
     #[key]
     column: felt252,
+    records: Span<felt252>,
+
 }
 
 struct DropRecordsFields {
     #[key]
     table: felt252,
     records: Span<felt252>,
-    fields: Span<felt252>,
+    columns: Span<felt252>,
 }
 
-struct DropRecordFromSchema {
+struct DropSchema {
     #[key]
     table: felt252,
     #[key]
@@ -350,12 +342,12 @@ struct DropRecordFromSchema {
 }
 
 
-struct DropRecordsFromSchema {
+struct DropRecordsSchema {
     #[key]
     table: felt252,
-    records: Span<felt252>,
     #[key]
     schema: felt252,
+    records: Span<felt252>,
 }
 ```
 
@@ -367,6 +359,42 @@ These events are for values that don't fit into the table/record model, such as 
 - `SetVariable`: Set the value of an existing variable.
 - `DeclareVariable`: Register a new variable with value.
 - `DeleteVariable`: Delete an existing variable.
+
+```rust
+/// id: felt252 - Unique identifier for the variable.
+/// name: ByteArray - Name of the variable.
+/// type_def: TypeDef - Type definition of the variable.
+/// data: Span<felt252> - Serialised data being set.
+
+
+struct RegisterVariable {
+    #[key]
+    id: felt252,
+    name: ByteArray,
+    type_def: TypeDef,
+}
+
+struct DeclareVariable {
+    #[key]
+    id: felt252,
+    name: ByteArray,
+    type_def: TypeDef,
+    data: Span<felt252>,
+}
+
+struct SetVariable {
+    #[key]
+    id: felt252,
+    data: Span<felt252>,
+}
+
+
+struct DeleteVariable {
+    #[key]
+    id: felt252,
+}
+
+```
 
 ### Type Definitions
 
