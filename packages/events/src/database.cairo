@@ -12,7 +12,9 @@ pub enum DatabaseEvents {
     AddColumns: AddTableColumns,
     DropColumn: DropColumn,
     RenameColumn: RenameColumn,
+    RetypeColumn: RetypeColumn,
     RenameColumns: RenameColumns,
+    RetypeColumns: RetypeColumns,
     DropColumns: DropColumns,
     InsertRecordField: InsertRecordField,
     InsertRecord: InsertRecord,
@@ -121,7 +123,24 @@ pub struct RenameColumn {
 pub struct RenameColumns {
     #[key]
     pub table: felt252,
-    pub columns_names: Span<(felt252, ByteArray)>,
+    pub columns: Span<(felt252, ByteArray)>,
+}
+
+/// Emitted when a column is retyped in a table.
+#[derive(Drop, Serde, starknet::Event)]
+pub struct RetypeColumn {
+    #[key]
+    pub table: felt252,
+    pub column: felt252,
+    pub type_def: TypeDef,
+}
+
+/// Emitted when multiple columns are retyped in a table.
+#[derive(Drop, Serde, starknet::Event)]
+pub struct RetypeColumns {
+    #[key]
+    pub table: felt252,
+    pub columns: Span<(felt252, TypeDef)>,
 }
 
 /// Emitted when a column is undeclared from a table.
@@ -155,7 +174,7 @@ pub struct InsertRecordField {
     #[key]
     pub record: felt252,
     #[key]
-    pub field: felt252,
+    pub column: felt252,
     pub data: Span<felt252>,
 }
 
@@ -165,7 +184,7 @@ pub struct InsertRecordFields {
     pub table: felt252,
     #[key]
     pub record: felt252,
-    pub fields: Span<felt252>,
+    pub columns: Span<felt252>,
     pub data: Span<felt252>,
 }
 
@@ -173,10 +192,9 @@ pub struct InsertRecordFields {
 pub struct InsertRecordsField {
     #[key]
     pub table: felt252,
-    pub records: Span<felt252>,
     #[key]
-    pub field: felt252,
-    pub data: Span<felt252>,
+    pub column: felt252,
+    pub records_data: Span<(felt252, Span<felt252>)>,
 }
 
 #[derive(Drop, Serde, starknet::Event)]
@@ -184,7 +202,7 @@ pub struct InsertRecordsFields {
     #[key]
     pub table: felt252,
     pub records: Span<felt252>,
-    pub fields: Span<felt252>,
+    pub columns: Span<felt252>,
     pub data: Span<felt252>,
 }
 
@@ -202,8 +220,7 @@ pub struct InsertRecord {
 pub struct InsertRecords {
     #[key]
     pub table: felt252,
-    pub records: Span<felt252>,
-    pub data: Span<felt252>,
+    pub records_data: Span<(felt252, Span<felt252>)>,
 }
 
 #[derive(Drop, Serde, starknet::Event)]
@@ -236,7 +253,7 @@ pub struct DropValue {
     #[key]
     pub record: felt252,
     #[key]
-    pub field: felt252,
+    pub column: felt252,
 }
 
 #[derive(Drop, Serde, starknet::Event)]
@@ -260,7 +277,7 @@ pub struct DropRecordFields {
     pub table: felt252,
     #[key]
     pub row: felt252,
-    pub fields: Span<felt252>,
+    pub columns: Span<felt252>,
 }
 
 

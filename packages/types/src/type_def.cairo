@@ -28,7 +28,7 @@ pub enum TypeDef {
     Struct: StructDef,
     Enum: EnumDef,
     Ref: felt252,
-    Schema: Span<ColumnDef>,
+    Recursive: felt252,
     Encoded: felt252,
     Custom: felt252,
     Option: Box<TypeDef>,
@@ -123,8 +123,8 @@ mod selectors {
     pub const Struct: felt252 = selector!("struct");
     pub const Enum: felt252 = selector!("enum");
     pub const Ref: felt252 = selector!("ref");
+    pub const Recursive: felt252 = selector!("recursive");
     pub const Custom: felt252 = selector!("custom");
-    pub const Schema: felt252 = selector!("schema");
     pub const Option: felt252 = selector!("option");
     pub const Result: felt252 = selector!("result");
     pub const Nullable: felt252 = selector!("nullable");
@@ -163,7 +163,6 @@ impl TyImpl of TyTrait {
             TypeDef::Struct(_) => selectors::Struct,
             TypeDef::Enum(_) => selectors::Enum,
             TypeDef::Ref(_) => selectors::Ref,
-            TypeDef::Schema(_) => selectors::Schema,
             TypeDef::Custom(_) => selectors::Custom,
             TypeDef::Option(_) => selectors::Option,
             TypeDef::Result(_) => selectors::Result,
@@ -213,10 +212,6 @@ impl TySerde of Serde<TypeDef> {
             },
             TypeDef::Result(t) => {
                 output.append(selectors::Result);
-                Serde::serialize(t, ref output);
-            },
-            TypeDef::Schema(t) => {
-                output.append(selectors::Schema);
                 Serde::serialize(t, ref output);
             },
         }
@@ -281,8 +276,6 @@ impl TySerde of Serde<TypeDef> {
             Option::Some(TypeDef::Ref(*serialized.pop_front()?))
         } else if tag == selectors::Custom {
             Option::Some(TypeDef::Custom(*serialized.pop_front()?))
-        } else if tag == selectors::Schema {
-            Option::Some(TypeDef::Schema(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Option {
             Option::Some(TypeDef::Option(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Result {
