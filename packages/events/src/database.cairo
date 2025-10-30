@@ -10,39 +10,38 @@ pub enum DatabaseEvents {
     DropTable: DropTable,
     AddColumn: AddTableColumn,
     AddColumns: AddTableColumns,
-    DropColumn: DropColumn,
     RenameColumn: RenameColumn,
-    RetypeColumn: RetypeColumn,
     RenameColumns: RenameColumns,
+    RetypeColumn: RetypeColumn,
     RetypeColumns: RetypeColumns,
+    DropColumn: DropColumn,
     DropColumns: DropColumns,
-    InsertRecordField: InsertRecordField,
     InsertRecord: InsertRecord,
     InsertRecords: InsertRecords,
-    InsertRecordFields: InsertRecordFields,
+    InsertField: InsertField,
+    InsertFields: InsertFields,
     InsertRecordsField: InsertRecordsField,
     InsertRecordsFields: InsertRecordsFields,
-    InsertRecordDataFromSchema: InsertRecordDataFromSchema,
-    InsertRecordsDataFromSchema: InsertRecordsDataFromSchema,
-    DropValue: DropValue,
+    InsertSchema: InsertSchema,
+    InsertRecordsSchema: InsertRecordsSchema,
     DropRecord: DropRecord,
     DropRecords: DropRecords,
-    DropRecordFields: DropRecordFields,
+    DropField: DropField,
+    DropFields: DropFields,
     DropRecordsField: DropRecordsField,
     DropRecordsFields: DropRecordsFields,
-    DropRecordFromSchema: DropRecordFromSchema,
-    DropRecordsFromSchema: DropRecordsFromSchema,
+    DropSchema: DropSchema,
+    DropRecordsSchema: DropRecordsSchema,
 }
 
 
-/// Table createion common fields
-///
-/// - `id` Table ID.
-/// - `name` in table events: Table name, in field events: Table ID the field name.
-/// - `fields` in table events: Table fields.
-/// - `schema` in table events: Schema ID.
+/// Table management events
+/// - id: felt252 - Unique identifier for the table.
+/// - name: ByteArray - Name of the table.
+/// - columns: Span<ColumnDef> - Definitions of the columns in the table.
+/// - schema: felt252 - Identifier of the schema used by the table.
 
-///Emitted when a new table is declared without field definitions.
+/// Emitted when a new table is created.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct CreateTable {
     #[key]
@@ -50,7 +49,7 @@ pub struct CreateTable {
     pub name: ByteArray,
 }
 
-/// Emitted when a new table is declared with inline field definitions.
+/// Emitted when a new table is created with specified columns.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct CreateTableWithColumns {
     #[key]
@@ -58,6 +57,7 @@ pub struct CreateTableWithColumns {
     pub name: ByteArray,
     pub columns: Span<ColumnDef>,
 }
+
 
 /// Declares a table using a pre-defined schema.
 #[derive(Drop, Serde, starknet::Event)]
@@ -68,6 +68,7 @@ pub struct CreateTableWithSchema {
     pub schema: felt252,
 }
 
+
 ///Emitted when a table is renamed.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct RenameTable {
@@ -76,23 +77,22 @@ pub struct RenameTable {
     pub new_name: ByteArray,
 }
 
-///Emitted when a table is undeclared.
+///Emitted when a table is dropped.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct DropTable {
     #[key]
     pub id: felt252,
 }
 
-/// Table column management common fields
-///
-/// - `table` Table ID the column belongs to.
-/// - `name` Column name.
-/// - `attrs` Column attributes.
-/// - `type_def` Column type.
+/// Column management events
+/// - table: felt252 - Unique identifier for the table.
+/// - column: felt252 - Unique identifier for the column.
+/// - name: ByteArray - Name of the column.
+/// - attrs: Span<felt252> - Attributes of the column.
+/// - type_def: TypeDef - Type definition of the column.
 
-/// Emitted when a new column is declared for an existing table.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct AddTableColumn {
+pub struct AddColumn {
     #[key]
     pub table: felt252,
     pub id: felt252,
@@ -102,8 +102,9 @@ pub struct AddTableColumn {
 }
 
 /// Emitted when multiple new columns are declared for an existing table.
+/// - columns: Definitions of the columns being added.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct AddTableColumns {
+pub struct AddColumns {
     #[key]
     pub table: felt252,
     pub columns: Span<ColumnDef>,
@@ -118,7 +119,9 @@ pub struct RenameColumn {
     pub name: ByteArray,
 }
 
+
 // Emitted when a columns is renamed in a table.
+/// - columns: List of (column ID, new name) pairs.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct RenameColumns {
     #[key]
@@ -126,6 +129,8 @@ pub struct RenameColumns {
     pub columns: Span<(felt252, ByteArray)>,
 }
 
+
+/// Remove a single record from a table.
 /// Emitted when a column is retyped in a table.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct RetypeColumn {
@@ -136,6 +141,7 @@ pub struct RetypeColumn {
 }
 
 /// Emitted when multiple columns are retyped in a table.
+/// - columns: List of (column ID, new TypeDef) pairs.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct RetypeColumns {
     #[key]
@@ -152,6 +158,7 @@ pub struct DropColumn {
 }
 
 /// Emitted when multiple columns are undeclared from a table.
+/// - columns: List of column IDs being dropped.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct DropColumns {
     #[key]
@@ -160,51 +167,13 @@ pub struct DropColumns {
 }
 
 
-/// Database values common fields
-///
-/// - `table` Table ID.
-/// - `record`/`records` Record ID.
-/// - `field`/`fields` Field selector.
-/// - `data` Serialised data being set.
-///
-#[derive(Drop, Serde, starknet::Event)]
-pub struct InsertRecordField {
-    #[key]
-    pub table: felt252,
-    #[key]
-    pub record: felt252,
-    #[key]
-    pub column: felt252,
-    pub data: Span<felt252>,
-}
-
-#[derive(Drop, Serde, starknet::Event)]
-pub struct InsertRecordFields {
-    #[key]
-    pub table: felt252,
-    #[key]
-    pub record: felt252,
-    pub columns: Span<felt252>,
-    pub data: Span<felt252>,
-}
-
-#[derive(Drop, Serde, starknet::Event)]
-pub struct InsertRecordsField {
-    #[key]
-    pub table: felt252,
-    #[key]
-    pub column: felt252,
-    pub records_data: Span<(felt252, Span<felt252>)>,
-}
-
-#[derive(Drop, Serde, starknet::Event)]
-pub struct InsertRecordsFields {
-    #[key]
-    pub table: felt252,
-    pub records: Span<felt252>,
-    pub columns: Span<felt252>,
-    pub data: Span<felt252>,
-}
+/// Record management events
+/// - table - Table ID.
+/// - record/records - Record ID.
+/// - column/columns - Column ID.
+/// - data - Serialised data being set.
+/// - records_data - Pairs of Record IDs and their serialised data being set.
+/// - schema - Schema ID.
 
 #[derive(Drop, Serde, starknet::Event)]
 pub struct InsertRecord {
@@ -215,7 +184,7 @@ pub struct InsertRecord {
     pub data: Span<felt252>,
 }
 
-
+/// Remove a record from a table using a schema.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct InsertRecords {
     #[key]
@@ -223,39 +192,72 @@ pub struct InsertRecords {
     pub records_data: Span<(felt252, Span<felt252>)>,
 }
 
+
+//// Insert a single field into a record.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct InsertRecordDataFromSchema {
-    #[key]
-    pub table: felt252,
-    #[key]
-    pub record: felt252,
-    #[key]
-    pub schema: felt252,
-    pub data: Span<felt252>,
-}
-
-
-#[derive(Drop, Serde, starknet::Event)]
-pub struct InsertRecordsDataFromSchema {
-    #[key]
-    pub table: felt252,
-    pub records: Span<felt252>,
-    #[key]
-    pub schema: felt252,
-    pub data: Span<felt252>,
-}
-
-
-#[derive(Drop, Serde, starknet::Event)]
-pub struct DropValue {
+pub struct InsertField {
     #[key]
     pub table: felt252,
     #[key]
     pub record: felt252,
     #[key]
     pub column: felt252,
+    pub data: Span<felt252>,
 }
 
+/// Insert multiple fields into a record.
+#[derive(Drop, Serde, starknet::Event)]
+pub struct InsertFields {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub record: felt252,
+    pub columns: Span<felt252>,
+    pub data: Span<felt252>,
+}
+
+/// Insert a single field into multiple records.
+#[derive(Drop, Serde, starknet::Event)]
+pub struct InsertRecordsField {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub column: felt252,
+    pub records_data: Span<(felt252, Span<felt252>)>,
+}
+
+/// Insert multiple fields into multiple records.
+#[derive(Drop, Serde, starknet::Event)]
+pub struct InsertRecordsFields {
+    #[key]
+    pub table: felt252,
+    pub columns: Span<felt252>,
+    pub records_data: Span<(felt252, Span<felt252>)>,
+}
+
+/// Insert a schema into a record.
+#[derive(Drop, Serde, starknet::Event)]
+pub struct InsertSchema {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub record: felt252,
+    #[key]
+    pub schema: felt252,
+    pub data: Span<felt252>,
+}
+
+/// Insert multiple records into a table using a schema.
+#[derive(Drop, Serde, starknet::Event)]
+pub struct InsertRecordsSchema {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub schema: felt252,
+    pub records_data: Span<(felt252, Span<felt252>)>,
+}
+
+/// Remove a single record from a table.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct DropRecord {
     #[key]
@@ -264,6 +266,7 @@ pub struct DropRecord {
     pub record: felt252,
 }
 
+/// Remove multiple records from a table.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct DropRecords {
     #[key]
@@ -271,8 +274,22 @@ pub struct DropRecords {
     pub records: Span<felt252>,
 }
 
+
+/// Remove a single field from a record.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct DropRecordFields {
+pub struct DropField {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub record: felt252,
+    #[key]
+    pub column: felt252,
+}
+
+
+/// Remove multiple fields from a record.
+#[derive(Drop, Serde, starknet::Event)]
+pub struct DropFields {
     #[key]
     pub table: felt252,
     #[key]
@@ -281,25 +298,29 @@ pub struct DropRecordFields {
 }
 
 
+/// Remove a single field from multiple records.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct DropRecordsField {
     #[key]
     pub table: felt252,
-    pub records: Span<felt252>,
     #[key]
     pub column: felt252,
+    pub records: Span<felt252>,
 }
 
+/// Remove multiple fields from multiple records.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct DropRecordsFields {
     #[key]
     pub table: felt252,
     pub records: Span<felt252>,
-    pub fields: Span<felt252>,
+    pub columns: Span<felt252>,
 }
 
+
+/// Remove a schema from a record.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct DropRecordFromSchema {
+pub struct DropSchema {
     #[key]
     pub table: felt252,
     #[key]
@@ -308,12 +329,13 @@ pub struct DropRecordFromSchema {
     pub schema: felt252,
 }
 
+/// Remove multiple fields from multiple records.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct DropRecordsFromSchema {
+pub struct DropRecordsSchema {
     #[key]
     pub table: felt252,
-    pub records: Span<felt252>,
     #[key]
     pub schema: felt252,
+    pub records: Span<felt252>,
 }
 

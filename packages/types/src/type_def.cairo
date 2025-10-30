@@ -37,11 +37,16 @@ pub enum TypeDef {
     DynamicEncoding,
 }
 
-struct DynamicEncoding {
-    encoding: felt252,
-    data: ByteArray,
+
+pub struct TypeWithAttributes {
+    pub attrs: Span<felt252>,
+    pub type_def: TypeDef,
 }
 
+pub struct Felt252DictDef {
+    pub key_type: TypeDef,
+    pub value_type: TypeDef,
+}
 
 #[derive(Drop, Serde, PartialEq)]
 pub struct ColumnDef {
