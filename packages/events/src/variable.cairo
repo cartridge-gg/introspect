@@ -3,6 +3,7 @@ use introspect_types::TypeDef;
 #[derive(Drop, Serde, starknet::Event)]
 pub enum VariableEvents {
     DeclareVariable: DeclareVariable,
+    RegisterVariable: RegisterVariable,
     SetVariable: SetVariable,
     DeleteVariable: DeleteVariable,
 }
@@ -32,7 +33,7 @@ pub struct DeclareVariable {
     pub id: felt252,
     pub name: ByteArray,
     pub type_def: TypeDef,
-    pub value: Span<felt252>,
+    pub data: Span<felt252>,
 }
 
 // Emitted when a variable's value is set.
@@ -43,7 +44,7 @@ pub struct DeclareVariable {
 pub struct SetVariable {
     #[key]
     pub id: felt252,
-    pub value: Span<felt252>,
+    pub data: Span<felt252>,
 }
 
 #[derive(Drop, Serde, starknet::Event)]

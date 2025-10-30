@@ -10,17 +10,17 @@ pub enum TypeDef {
     U64,
     U128,
     U256,
+    U512,
     I8,
     I16,
     I32,
     I64,
     I128,
-    USize,
-    ShortString,
     ClassHash,
     ContractAddress,
     EthAddress,
     ByteArray,
+    ShortString,
     Tuple: Span<TypeDef>,
     Array: Box<TypeDef>,
     FixedArray: Box<FixedArrayDef>,
@@ -36,6 +36,12 @@ pub enum TypeDef {
     Nullable: Box<TypeDef>,
     DynamicEncoding,
 }
+
+struct DynamicEncoding {
+    encoding: felt252,
+    data: ByteArray,
+}
+
 
 #[derive(Drop, Serde, PartialEq)]
 pub struct ColumnDef {
@@ -79,6 +85,13 @@ pub struct VariantDef {
     pub name: ByteArray,
     pub attrs: Span<felt252>,
     pub type_def: TypeDef,
+}
+
+#[derive(Drop, Serde, PartialEq)]
+pub struct VoidVariantDef {
+    pub selector: felt252,
+    pub name: ByteArray,
+    pub attrs: Span<felt252>,
 }
 
 #[derive(Drop, Serde, PartialEq)]
