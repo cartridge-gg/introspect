@@ -1,3 +1,4 @@
+use introspect_types::type_def::FieldDef;
 use introspect_types::{ColumnDef, TypeDef};
 
 
@@ -8,8 +9,8 @@ pub enum DatabaseEvents {
     CreateTableWithSchema: CreateTableWithSchema,
     RenameTable: RenameTable,
     DropTable: DropTable,
-    AddColumn: AddTableColumn,
-    AddColumns: AddTableColumns,
+    AddColumn: AddColumn,
+    AddColumns: AddColumns,
     RenameColumn: RenameColumn,
     RenameColumns: RenameColumns,
     RetypeColumn: RetypeColumn,
@@ -47,6 +48,7 @@ pub struct CreateTable {
     #[key]
     pub id: felt252,
     pub name: ByteArray,
+    pub primary: FieldDef,
 }
 
 /// Emitted when a new table is created with specified columns.
@@ -55,6 +57,8 @@ pub struct CreateTableWithColumns {
     #[key]
     pub id: felt252,
     pub name: ByteArray,
+    pub attrs: Span<felt252>,
+    pub primary: FieldDef,
     pub columns: Span<ColumnDef>,
 }
 
@@ -65,6 +69,7 @@ pub struct CreateTableWithSchema {
     #[key]
     pub id: felt252,
     pub name: ByteArray,
+    pub primary: FieldDef,
     pub schema: felt252,
 }
 

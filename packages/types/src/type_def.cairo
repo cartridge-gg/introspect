@@ -27,14 +27,20 @@ pub enum TypeDef {
     Felt252Dict: Box<TypeDef>,
     Struct: StructDef,
     Enum: EnumDef,
-    Ref: felt252,
-    Recursive: felt252,
-    Encoded: felt252,
-    Custom: felt252,
+    VoidEnum,
     Option: Box<TypeDef>,
     Result: Box<ResultDef>,
     Nullable: Box<TypeDef>,
-    DynamicEncoding,
+    Ref: felt252,
+    Recursive: felt252,
+    Custom: felt252,
+}
+
+
+#[derive(Drop, PartialEq)]
+pub struct TypeWithAttr {
+    pub attrs: Span<felt252>,
+    pub type_def: TypeDef,
 }
 
 
