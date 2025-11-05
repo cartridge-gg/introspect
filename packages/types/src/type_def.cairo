@@ -27,31 +27,21 @@ pub enum TypeDef {
     Felt252Dict: Box<TypeDef>,
     Struct: StructDef,
     Enum: EnumDef,
-    VoidEnum,
+    UnitEnum: UnitEnumDef,
     Option: Box<TypeDef>,
     Result: Box<ResultDef>,
     Nullable: Box<TypeDef>,
     Ref: felt252,
+    Self,
     Recursive: felt252,
     Custom: felt252,
+
 }
 
-
-#[derive(Drop, PartialEq)]
-pub struct TypeWithAttr {
-    pub attrs: Span<felt252>,
-    pub type_def: TypeDef,
-}
-
-
-pub struct TypeWithAttributes {
-    pub attrs: Span<felt252>,
-    pub type_def: TypeDef,
-}
-
-pub struct Felt252DictDef {
-    pub key_type: TypeDef,
-    pub value_type: TypeDef,
+#[derive(Drop, Serde, PartialEq)]
+struct Attribute {
+    pub id: felt252,
+    pub data: Span<felt252>,
 }
 
 #[derive(Drop, Serde, PartialEq)]
@@ -86,23 +76,30 @@ pub struct MemberDef {
 #[derive(Drop, Serde, PartialEq)]
 pub struct EnumDef {
     pub name: ByteArray,
-    pub attrs: Span<felt252>,
+    pub attrs: Span<Attribute>,
     pub variants: Span<VariantDef>,
 }
+
+pub struct UnitEnumDef {
+    pub name: ByteArray,
+    pub attrs: Span<Attribute>,
+    pub variants: Span<UnitVariantDef>,
+}
+
+
 
 #[derive(Drop, Serde, PartialEq)]
 pub struct VariantDef {
     pub selector: felt252,
     pub name: ByteArray,
-    pub attrs: Span<felt252>,
+    pub attrs: Span<Attribute>,
     pub type_def: TypeDef,
 }
 
 #[derive(Drop, Serde, PartialEq)]
-pub struct VoidVariantDef {
+pub struct UnitVariantDef {
     pub selector: felt252,
     pub name: ByteArray,
-    pub attrs: Span<felt252>,
 }
 
 #[derive(Drop, Serde, PartialEq)]

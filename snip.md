@@ -120,7 +120,7 @@ struct DropTable {
 /// attrs: Span<felt252> - Attributes of the column.
 /// type_def: TypeDef - Type definition of the column.
 
-struct AddTableColumn {
+struct AddColumn {
     #[key]
     table: felt252,
     /// id: Unique identifier for the column.
@@ -131,7 +131,7 @@ struct AddTableColumn {
     type_def: TypeDef,
 }
 
-struct AddTableColumns {
+struct AddColumns {
     #[key]
     table: felt252,
     /// columns: Definitions of the columns being added.
@@ -185,22 +185,22 @@ struct DropColumns {
 
 #### Record Manipulation Events:
 
-- `InsertRecordField`: Insert or update a field in a record.
 - `InsertRecord`: Insert or update a record in a table.
 - `InsertRecords`: Insert or update multiple records in a table.
-- `InsertRecordFields`: Insert or update multiple fields in a record.
-- `InsertRecordsField`: Insert or update a field in multiple records.
-- `InsertRecordsFields`: Insert or update multiple fields in multiple records.
-- `InsertRecordDataFromSchema`: Insert or update a record in a table using a schema.
-- `InsertRecordsDataFromSchema`: Insert or update multiple records in a table using a schema.
-- `DropValue`: Drop an existing value from a record.
-- `DropRecord`: Drop an existing record from a table.
-- `DropRecords`: Drop multiple existing records from a table.
-- `DropRecordFields`: Drop multiple existing fields from a record.
-- `DropRecordsField`: Drop an existing field from multiple records.
-- `DropRecordsFields`: Drop multiple existing fields from multiple records.
-- `DropRecordFromSchema`: Drop an existing record from a schema.
-- `DropRecordsFromSchema`: Drop multiple existing records from a schema.
+- `InsertField`: Insert or update a field in a record.
+- `InsertFields`: Insert or update multiple fields in a record.
+- `InsertsField`: Insert or update a field in multiple records.
+- `InsertsFields`: Insert or update multiple fields in multiple records.
+- `InsertSchema`: Insert or update a record in a table using a schema.
+- `InsertsSchema`: Insert or update multiple records in a table using a schema.
+- `DeleteRecord`: Drop an existing record from a table.
+- `DeleteRecords`: Drop multiple existing records from a table.
+- `DeleteField`: Drop an existing field from a record.
+- `DeleteFields`: Drop multiple existing fields from a record.
+- `DeletesField`: Drop an existing field from multiple records.
+- `DeletesFields`: Drop multiple existing fields from multiple records.
+- `DeleteSchema`: Drop an existing record from a schema.
+- `DeletesSchema`: Drop multiple existing records from a schema.
 
 ```rust
 /// Database values common fields
@@ -284,7 +284,7 @@ struct InsertRecordsSchema {
 
 
 
-struct DropRecord {
+struct DeleteRecord {
     #[key]
     table: felt252,
     #[key]
@@ -292,13 +292,13 @@ struct DropRecord {
 }
 
 
-struct DropRecords {
+struct DeleteRecords {
     #[key]
     table: felt252,
     records: Span<felt252>,
 }
 
-struct DropField {
+struct DeleteField {
     #[key]
     table: felt252,
     #[key]
@@ -308,7 +308,7 @@ struct DropField {
 }
 
 
-struct DropFields {
+struct DeleteFields {
     #[key]
     table: felt252,
     #[key]
@@ -316,7 +316,7 @@ struct DropFields {
     columns: Span<felt252>,
 }
 
-struct DropRecordsField {
+struct DeletesField {
     #[key]
     table: felt252,
     #[key]
@@ -325,14 +325,14 @@ struct DropRecordsField {
 
 }
 
-struct DropRecordsFields {
+struct DeletesFields {
     #[key]
     table: felt252,
     records: Span<felt252>,
     columns: Span<felt252>,
 }
 
-struct DropSchema {
+struct DeleteSchema {
     #[key]
     table: felt252,
     #[key]
@@ -342,7 +342,7 @@ struct DropSchema {
 }
 
 
-struct DropRecordsSchema {
+struct DeletesSchema {
     #[key]
     table: felt252,
     #[key]
@@ -355,9 +355,9 @@ struct DropRecordsSchema {
 
 These events are for values that don't fit into the table/record model, such as global variables or configuration settings.
 
-- `RegisterVariable`: Register a new variable with a given name and type.
+- `RegisterVariable`: Register a new variable with value.
 - `SetVariable`: Set the value of an existing variable.
-- `DeclareVariable`: Register a new variable with value.
+- `DeclareVariable`: Register a new variable with a given name and type.
 - `DeleteVariable`: Delete an existing variable.
 
 ```rust
@@ -372,6 +372,7 @@ struct RegisterVariable {
     id: felt252,
     name: ByteArray,
     type_def: TypeDef,
+    data: Span<felt252>,
 }
 
 struct DeclareVariable {
@@ -379,7 +380,6 @@ struct DeclareVariable {
     id: felt252,
     name: ByteArray,
     type_def: TypeDef,
-    data: Span<felt252>,
 }
 
 struct SetVariable {

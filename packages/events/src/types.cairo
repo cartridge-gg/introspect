@@ -28,3 +28,12 @@ pub struct DeclareType {
     pub type_def: TypeDef,
 }
 
+#[derive(Drop, Serde, starknet::Event)]
+pub struct DeclareSchemaFromClass {
+    #[key]
+    pub id: felt252,
+    pub version: felt252,
+    pub class_hash: ClassHash,
+}
+
+
