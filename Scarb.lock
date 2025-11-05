@@ -6,6 +6,7 @@ name = "introspect"
 version = "0.1.2"
 dependencies = [
  "introspect_events",
+ "introspect_macros",
  "introspect_types",
 ]
 
@@ -17,5 +18,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "introspect_macros"
+version = "0.1.0"
+
+[[package]]
 name = "introspect_types"
 version = "0.1.2"
+
+[[package]]
+name = "test"
+version = "0.1.2"
+dependencies = [
+ "introspect_macros",
+]

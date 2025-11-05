@@ -9,6 +9,7 @@ experimental-features = ["associated_item_constraints"]
 
 [dependencies]
 starknet.workspace = true
+
 [dev-dependencies]
 cairo_test = "2.12.2"
 

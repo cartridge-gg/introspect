@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 
-members = ["crates/*"]
+members = ["crates/*", "packages/macros"]
 exclude = ["crates/type_library"]
 
 [workspace.package]
@@ -34,3 +34,4 @@ introspect-events = { path = "crates/events" }
 introspect-value = { path = "crates/value" }
 primitive-types = { version = "0.14.0", features = ["serde"] }
 convert_case = "0.8.0"
+thiserror = "2.0.17"

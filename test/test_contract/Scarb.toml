@@ -1,5 +1,5 @@
 [package]
-name = "introspect_events"
+name = "test"
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
@@ -8,10 +8,10 @@ repository.workspace = true
 
 [dependencies]
 starknet.workspace = true
-introspect_types.workspace = true
+introspect_macros.workspace = true
 
 [dev-dependencies]
-cairo_test = "2.13.1"
+cairo_test = "2.12.2"
 
 [tool]
 fmt.workspace = true

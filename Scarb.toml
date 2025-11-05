@@ -1,18 +1,22 @@
 [workspace.package]
 version = "0.1.2"
 edition = "2024_07"
-cairo-version = "2.12.2"
-scarb-version = "2.12.2"
+cairo-version = "2.13.1"
+scarb-version = "2.13.1"
 repository = "https://github.com/cartridge-gg/introspect"
 
 [workspace]
-members = ["packages/*"]
+members = ["packages/*", "test/test_contract"]
+
 
 [workspace.dependencies]
-starknet = "2.12.2"
+starknet = "2.13.1"
+introspect_types = { path = "packages/types" }
+introspect_events = { path = "packages/events" }
+introspect_macros = { path = "packages/macros" }
 
 [workspace.dev-dependencies]
-cairo_test = "2.12.2"
+cairo_test = "2.13.1"
 
 [workspace.tool.fmt]
 sort-module-level-items = true
@@ -27,13 +31,15 @@ edition.workspace = true
 cairo-version.workspace = true
 scarb-version.workspace = true
 
+
 [dependencies]
 starknet.workspace = true
-introspect_types = { path = "packages/types" }
-introspect_events = { path = "packages/events" }
+introspect_types.workspace = true
+introspect_events.workspace = true
+introspect_macros.workspace = true
 
 [dev-dependencies]
-cairo_test = "2.12.2"
+cairo_test = "2.13.1"
 
 [lib]
 
