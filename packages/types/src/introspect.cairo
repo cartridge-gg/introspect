@@ -9,9 +9,6 @@ pub trait Introspect<T> {
     fn child_defs() -> Array<(felt252, TypeDef)> {
         Default::default()
     }
-    const fn size() -> Option<u32> {
-        None
-    }
     fn hash() -> felt252 {
         let mut serialized: Array<felt252> = Default::default();
         Serde::<TypeDef>::serialize(@Self::type_def(), ref serialized);
@@ -48,47 +45,34 @@ pub fn merge_defs(
 pub mod primitive_impl {
     use crate::TypeDef;
     use super::Introspect;
-    pub impl PrimitiveIntrospect<T, const TY: TypeDef, const SIZE: u32> of Introspect<T> {
+    pub impl PrimitiveIntrospect<T, const TY: TypeDef> of Introspect<T> {
         fn type_def() -> TypeDef {
             TY
-        }
-        const fn size() -> Option<u32> {
-            Some(SIZE)
         }
     }
 }
 
-pub mod short_string {
-    use crate::TypeDef;
-
-    pub impl ShortStringIntrospectImpl =
-        super::primitive_impl::PrimitiveIntrospect<felt252, TypeDef::ShortString, 1>;
-}
-
-
-pub impl Felt252Introspect = primitive_impl::PrimitiveIntrospect<felt252, TypeDef::Felt252, 1>;
-pub impl BoolIntrospect = primitive_impl::PrimitiveIntrospect<bool, TypeDef::Bool, 1>;
-pub impl U8Introspect = primitive_impl::PrimitiveIntrospect<u8, TypeDef::U8, 1>;
-pub impl U16Introspect = primitive_impl::PrimitiveIntrospect<u16, TypeDef::U16, 1>;
-pub impl U32Introspect = primitive_impl::PrimitiveIntrospect<u32, TypeDef::U32, 1>;
-pub impl U64Introspect = primitive_impl::PrimitiveIntrospect<u64, TypeDef::U64, 1>;
-pub impl U128Introspect = primitive_impl::PrimitiveIntrospect<u128, TypeDef::U128, 1>;
-pub impl U256Introspect = primitive_impl::PrimitiveIntrospect<u256, TypeDef::U256, 2>;
-pub impl I8Introspect = primitive_impl::PrimitiveIntrospect<i8, TypeDef::I8, 1>;
-pub impl I16Introspect = primitive_impl::PrimitiveIntrospect<i16, TypeDef::I16, 1>;
-pub impl I32Introspect = primitive_impl::PrimitiveIntrospect<i32, TypeDef::I32, 1>;
-pub impl I64Introspect = primitive_impl::PrimitiveIntrospect<i64, TypeDef::I64, 1>;
-pub impl I128Introspect = primitive_impl::PrimitiveIntrospect<i128, TypeDef::I128, 1>;
-pub impl USizeIntrospect = primitive_impl::PrimitiveIntrospect<usize, TypeDef::USize, 1>;
-pub impl ClassHashIntrospect =
-    primitive_impl::PrimitiveIntrospect<ClassHash, TypeDef::ClassHash, 1>;
+pub impl Felt252Introspect = primitive_impl::PrimitiveIntrospect<felt252, TypeDef::Felt252>;
+pub impl BoolIntrospect = primitive_impl::PrimitiveIntrospect<bool, TypeDef::Bool>;
+pub impl U8Introspect = primitive_impl::PrimitiveIntrospect<u8, TypeDef::U8>;
+pub impl U16Introspect = primitive_impl::PrimitiveIntrospect<u16, TypeDef::U16>;
+pub impl U32Introspect = primitive_impl::PrimitiveIntrospect<u32, TypeDef::U32>;
+pub impl U64Introspect = primitive_impl::PrimitiveIntrospect<u64, TypeDef::U64>;
+pub impl U128Introspect = primitive_impl::PrimitiveIntrospect<u128, TypeDef::U128>;
+pub impl U256Introspect = primitive_impl::PrimitiveIntrospect<u256, TypeDef::U256>;
+pub impl I8Introspect = primitive_impl::PrimitiveIntrospect<i8, TypeDef::I8>;
+pub impl I16Introspect = primitive_impl::PrimitiveIntrospect<i16, TypeDef::I16>;
+pub impl I32Introspect = primitive_impl::PrimitiveIntrospect<i32, TypeDef::I32>;
+pub impl I64Introspect = primitive_impl::PrimitiveIntrospect<i64, TypeDef::I64>;
+pub impl I128Introspect = primitive_impl::PrimitiveIntrospect<i128, TypeDef::I128>;
+pub impl ClassHashIntrospect = primitive_impl::PrimitiveIntrospect<ClassHash, TypeDef::ClassHash>;
 pub impl ContractAddressIntrospect =
-    primitive_impl::PrimitiveIntrospect<ContractAddress, TypeDef::ContractAddress, 2>;
+    primitive_impl::PrimitiveIntrospect<ContractAddress, TypeDef::ContractAddress>;
 pub impl EthAddressIntrospect =
-    primitive_impl::PrimitiveIntrospect<EthAddress, TypeDef::EthAddress, 1>;
+    primitive_impl::PrimitiveIntrospect<EthAddress, TypeDef::EthAddress>;
 
 
-pub impl Tuple0Introspect = primitive_impl::PrimitiveIntrospect<(), TypeDef::None, 0>;
+pub impl Tuple0Introspect = primitive_impl::PrimitiveIntrospect<(), TypeDef::None>;
 
 pub impl ByteArrayIntrospect of Introspect<ByteArray> {
     fn type_def() -> TypeDef {
@@ -106,18 +90,21 @@ pub impl TArrayIntrospect<T, impl I: Introspect<T>> of Introspect<Array<T>> {
     }
 }
 
+pub impl TSpanIntrospect<T, impl I: Introspect<T>> of Introspect<Span<T>> {
+    fn type_def() -> TypeDef {
+        TypeDef::Array(BoxTrait::new(I::type_def()))
+    }
+    fn child_defs() -> Array<(felt252, TypeDef)> {
+        I::child_defs()
+    }
+}
+
 pub impl FixedArrayIntrospect<T, const SIZE: u32, impl I: Introspect<T>> of Introspect<[T; SIZE]> {
     fn type_def() -> TypeDef {
         TypeDef::FixedArray(BoxTrait::new(FixedArrayDef { type_def: I::type_def(), size: SIZE }))
     }
     fn child_defs() -> Array<(felt252, TypeDef)> {
         I::child_defs()
-    }
-    const fn size() -> Option<u32> {
-        match I::size() {
-            Option::Some(size) => Option::Some(size * SIZE),
-            Option::None => Option::None,
-        }
     }
 }
 
@@ -127,9 +114,6 @@ pub impl Tuple1Introspect<T0, impl I0: Introspect<T0>> of Introspect<(T0,)> {
     }
     fn child_defs() -> Array<(felt252, TypeDef)> {
         I0::child_defs()
-    }
-    const fn size() -> Option<u32> {
-        I0::size()
     }
 }
 
@@ -142,12 +126,6 @@ pub impl Tuple2Introspect<
     fn child_defs() -> Array<(felt252, TypeDef)> {
         merge_defs(array![I0::child_defs(), I1::child_defs()])
     }
-    const fn size() -> Option<u32> {
-        match (I0::size(), I1::size()) {
-            (Option::Some(size0), Option::Some(size1)) => Option::Some(size0 + size1),
-            _ => Option::None,
-        }
-    }
 }
 
 pub impl Tuple3Introspect<
@@ -158,14 +136,6 @@ pub impl Tuple3Introspect<
     }
     fn child_defs() -> Array<(felt252, TypeDef)> {
         merge_defs(array![I0::child_defs(), I1::child_defs(), I2::child_defs()])
-    }
-    const fn size() -> Option<u32> {
-        match (I0::size(), I1::size(), I2::size()) {
-            (
-                Option::Some(size0), Option::Some(size1), Option::Some(size2),
-            ) => Option::Some(size0 + size1 + size2),
-            _ => Option::None,
-        }
     }
 }
 
@@ -184,14 +154,6 @@ pub impl Tuple4Introspect<
     }
     fn child_defs() -> Array<(felt252, TypeDef)> {
         merge_defs(array![I0::child_defs(), I1::child_defs(), I2::child_defs(), I3::child_defs()])
-    }
-    const fn size() -> Option<u32> {
-        match (I0::size(), I1::size(), I2::size(), I3::size()) {
-            (
-                Option::Some(size0), Option::Some(size1), Option::Some(size2), Option::Some(size3),
-            ) => Option::Some(size0 + size1 + size2 + size3),
-            _ => Option::None,
-        }
     }
 }
 
@@ -220,18 +182,6 @@ pub impl Tuple5Introspect<
                 I4::child_defs(),
             ],
         )
-    }
-    const fn size() -> Option<u32> {
-        match (I0::size(), I1::size(), I2::size(), I3::size(), I4::size()) {
-            (
-                Option::Some(size0),
-                Option::Some(size1),
-                Option::Some(size2),
-                Option::Some(size3),
-                Option::Some(size4),
-            ) => Option::Some(size0 + size1 + size2 + size3 + size4),
-            _ => Option::None,
-        }
     }
 }
 
@@ -265,19 +215,6 @@ pub impl Tuple6Introspect<
                 I4::child_defs(), I5::child_defs(),
             ],
         )
-    }
-    const fn size() -> Option<u32> {
-        match (I0::size(), I1::size(), I2::size(), I3::size(), I4::size(), I5::size()) {
-            (
-                Option::Some(size0),
-                Option::Some(size1),
-                Option::Some(size2),
-                Option::Some(size3),
-                Option::Some(size4),
-                Option::Some(size5),
-            ) => Option::Some(size0 + size1 + size2 + size3 + size4 + size5),
-            _ => Option::None,
-        }
     }
 }
 

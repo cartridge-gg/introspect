@@ -10,13 +10,8 @@
 /// - `field`/`fields` Field selector(s).
 /// - `schema` Schema ID for schema-based operations.
 /// - `data` Serialized data payload.
+///
 #[derive(Drop, Serde, starknet::Event)]
-pub enum MultiPartMessages {
-    MultiPartMessageStart: MultiPartMessageStart,
-    MultiPartMessageEnd: MultiPartMessageEnd,
-}
-
-
 pub struct MultiPartMessage {
     #[key]
     pub selector: felt252,
@@ -27,6 +22,7 @@ pub struct MultiPartMessage {
     pub data: Span<felt252>,
 }
 
+#[derive(Drop, Serde, starknet::Event)]
 pub struct MultiPartMessageEnd {
     #[key]
     pub selector: felt252,

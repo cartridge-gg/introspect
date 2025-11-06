@@ -1,4 +1,5 @@
 use introspect_types::{ColumnDef, TypeDef};
+use starknet::ClassHash;
 
 pub enum TypeEvents {
     DeclareSchema: DeclareSchema,
@@ -35,5 +36,4 @@ pub struct DeclareSchemaFromClass {
     pub version: felt252,
     pub class_hash: ClassHash,
 }
-
 

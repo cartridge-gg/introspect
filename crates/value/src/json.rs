@@ -1,4 +1,4 @@
-use crate::{felt_to_string, Enum, Struct, Value};
+use crate::{Enum, Struct, Value, felt_to_string};
 use serde_json::Value::{
     Array as JsonArray, Bool as JsonBool, Null as JsonNull, Number as JsonNumber,
     Object as JsonObject, String as JsonString,

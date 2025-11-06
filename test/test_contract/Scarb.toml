@@ -9,6 +9,7 @@ repository.workspace = true
 [dependencies]
 starknet.workspace = true
 introspect_macros.workspace = true
+introspect = { path = "../.." }
 
 [dev-dependencies]
 cairo_test = "2.12.2"

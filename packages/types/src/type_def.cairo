@@ -32,14 +32,11 @@ pub enum TypeDef {
     Result: Box<ResultDef>,
     Nullable: Box<TypeDef>,
     Ref: felt252,
-    Self,
-    Recursive: felt252,
     Custom: felt252,
-
 }
 
 #[derive(Drop, Serde, PartialEq)]
-struct Attribute {
+pub struct Attribute {
     pub id: felt252,
     pub data: Span<felt252>,
 }
@@ -62,14 +59,14 @@ pub struct FieldDef {
 #[derive(Drop, Serde, PartialEq)]
 pub struct StructDef {
     pub name: ByteArray,
-    pub attrs: Span<felt252>,
+    pub attrs: Span<Attribute>,
     pub members: Span<MemberDef>,
 }
 
 #[derive(Drop, Serde, PartialEq)]
 pub struct MemberDef {
     pub name: ByteArray,
-    pub attrs: Span<felt252>,
+    pub attrs: Span<Attribute>,
     pub type_def: TypeDef,
 }
 
@@ -80,13 +77,12 @@ pub struct EnumDef {
     pub variants: Span<VariantDef>,
 }
 
+#[derive(Drop, Serde, PartialEq)]
 pub struct UnitEnumDef {
     pub name: ByteArray,
     pub attrs: Span<Attribute>,
     pub variants: Span<UnitVariantDef>,
 }
-
-
 
 #[derive(Drop, Serde, PartialEq)]
 pub struct VariantDef {
@@ -126,6 +122,7 @@ mod selectors {
     pub const U64: felt252 = selector!("u64");
     pub const U128: felt252 = selector!("u128");
     pub const U256: felt252 = selector!("u256");
+    pub const U512: felt252 = selector!("u512");
     pub const I8: felt252 = selector!("i8");
     pub const I16: felt252 = selector!("i16");
     pub const I32: felt252 = selector!("i32");
@@ -143,14 +140,14 @@ mod selectors {
     pub const Felt252Dict: felt252 = selector!("felt252_dict");
     pub const Struct: felt252 = selector!("struct");
     pub const Enum: felt252 = selector!("enum");
+    pub const UnitEnum: felt252 = selector!("unit_enum");
     pub const Ref: felt252 = selector!("ref");
-    pub const Recursive: felt252 = selector!("recursive");
+    pub const RecursiveSelf: felt252 = selector!("recursive_self");
+    pub const Recursive: felt252 = selector!("recursive_type");
     pub const Custom: felt252 = selector!("custom");
     pub const Option: felt252 = selector!("option");
     pub const Result: felt252 = selector!("result");
     pub const Nullable: felt252 = selector!("nullable");
-    pub const Encoded: felt252 = selector!("encoded");
-    pub const DynamicEncoding: felt252 = selector!("dynamic_encoding");
 }
 
 #[generate_trait]
@@ -166,12 +163,12 @@ impl TyImpl of TyTrait {
             TypeDef::U64 => selectors::U64,
             TypeDef::U128 => selectors::U128,
             TypeDef::U256 => selectors::U256,
+            TypeDef::U512 => selectors::U512,
             TypeDef::I8 => selectors::I8,
             TypeDef::I16 => selectors::I16,
             TypeDef::I32 => selectors::I32,
             TypeDef::I64 => selectors::I64,
             TypeDef::I128 => selectors::I128,
-            TypeDef::USize => selectors::USize,
             TypeDef::ShortString => selectors::ShortString,
             TypeDef::ClassHash => selectors::ClassHash,
             TypeDef::ContractAddress => selectors::ContractAddress,
@@ -183,13 +180,12 @@ impl TyImpl of TyTrait {
             TypeDef::Felt252Dict(_) => selectors::Felt252Dict,
             TypeDef::Struct(_) => selectors::Struct,
             TypeDef::Enum(_) => selectors::Enum,
+            TypeDef::UnitEnum(_) => selectors::UnitEnum,
             TypeDef::Ref(_) => selectors::Ref,
             TypeDef::Custom(_) => selectors::Custom,
             TypeDef::Option(_) => selectors::Option,
             TypeDef::Result(_) => selectors::Result,
             TypeDef::Nullable(_) => selectors::Nullable,
-            TypeDef::Encoded(_) => selectors::Encoded,
-            TypeDef::DynamicEncoding(_) => selectors::DynamicEncoding,
         }
     }
 }
@@ -199,16 +195,18 @@ impl TySerde of Serde<TypeDef> {
     fn serialize(self: @TypeDef, ref output: Array<felt252>) {
         match self {
             TypeDef::None | TypeDef::Felt252 | TypeDef::Bool | TypeDef::U8 | TypeDef::U16 |
-            TypeDef::U32 | TypeDef::U64 | TypeDef::U128 | TypeDef::U256 | TypeDef::I8 |
-            TypeDef::I16 | TypeDef::I32 | TypeDef::I64 | TypeDef::I128 | TypeDef::USize |
+            TypeDef::U32 | TypeDef::U64 | TypeDef::U128 | TypeDef::U256 | TypeDef::U512 |
+            TypeDef::I8 | TypeDef::I16 | TypeDef::I32 | TypeDef::I64 | TypeDef::I128 |
             TypeDef::ShortString | TypeDef::ClassHash | TypeDef::ContractAddress |
-            TypeDef::EthAddress | TypeDef::ByteArray |
-            TypeDef::DynamicEncoding => { output.append(self.selector()); },
-            TypeDef::Ref(t) | TypeDef::Custom(t) |
-            TypeDef::Encoded(t) => { output.append_span([self.selector(), *t].span()); },
-            TypeDef::Array(t) | TypeDef::Option(t) |
-            TypeDef::Nullable(t) => {
-                output.append(selectors::Array);
+            TypeDef::EthAddress | TypeDef::ByteArray => { output.append(self.selector()); },
+            TypeDef::Ref(t) |
+            TypeDef::Custom(t) => {
+                output.append(self.selector());
+                output.append(*t);
+            },
+            TypeDef::Nullable(t) | TypeDef::Array(t) | TypeDef::Option(t) |
+            TypeDef::Felt252Dict(t) => {
+                output.append(self.selector());
                 Serde::serialize(t, ref output);
             },
             TypeDef::Tuple(t) => {
@@ -219,16 +217,16 @@ impl TySerde of Serde<TypeDef> {
                 output.append(selectors::FixedArray);
                 Serde::serialize(t, ref output);
             },
-            TypeDef::Felt252Dict(t) => {
-                output.append(selectors::Felt252Dict);
-                Serde::serialize(t, ref output);
-            },
             TypeDef::Struct(t) => {
                 output.append(selectors::Struct);
                 Serde::serialize(t, ref output);
             },
             TypeDef::Enum(t) => {
                 output.append(selectors::Enum);
+                Serde::serialize(t, ref output);
+            },
+            TypeDef::UnitEnum(t) => {
+                output.append(selectors::UnitEnum);
                 Serde::serialize(t, ref output);
             },
             TypeDef::Result(t) => {
@@ -269,8 +267,6 @@ impl TySerde of Serde<TypeDef> {
             Option::Some(TypeDef::I64)
         } else if tag == selectors::I128 {
             Option::Some(TypeDef::I128)
-        } else if tag == selectors::USize {
-            Option::Some(TypeDef::USize)
         } else if tag == selectors::ShortString {
             Option::Some(TypeDef::ShortString)
         } else if tag == selectors::ClassHash {
@@ -303,8 +299,6 @@ impl TySerde of Serde<TypeDef> {
             Option::Some(TypeDef::Result(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Nullable {
             Option::Some(TypeDef::Nullable(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Encoded {
-            Option::Some(TypeDef::Encoded(*serialized.pop_front()?))
         } else {
             Option::None
         }
