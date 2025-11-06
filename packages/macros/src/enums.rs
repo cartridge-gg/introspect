@@ -17,15 +17,18 @@ pub struct Enum<'db> {
 
 pub struct Variant<'db> {
     pub db: &'db dyn Database,
+    pub n: u32,
+
     pub attributes: Vec<Attribute<'db>>,
     pub name: String,
     pub ty: Option<String>,
 }
 
 impl<'db> Variant<'db> {
-    pub fn new(variant: &VariantAst<'db>, db: &'db dyn Database) -> Self {
+    pub fn new(variant: &VariantAst<'db>, db: &'db dyn Database, n: u32) -> Self {
         Self {
             db,
+            n,
             name: variant.name(db).text(db).to_string(db),
             attributes: parse_attributes(variant.attributes(db), db),
             ty: match variant.type_clause(db) {
@@ -53,7 +56,8 @@ impl<'db> Enum<'db> {
             variants: item
                 .variants(db)
                 .elements(db)
-                .map(|m| Variant::new(&m, db))
+                .enumerate()
+                .map(|(n, m)| Variant::new(&m, db, n as u32))
                 .collect(),
         }
     }

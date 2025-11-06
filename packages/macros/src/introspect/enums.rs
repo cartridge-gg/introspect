@@ -11,13 +11,14 @@ impl ToTypeDef for Variant<'_> {
     fn to_type_def(&self) -> String {
         let attributes_str = make_attributes_string(&self.attributes);
         let ty_str = match &self.ty {
-            Some(ty) => ty.clone(),
+            Some(ty) => format!("introspect::Introspect::<{ty}>::type_def()"),
             None => "introspect::types::TypeDef::None".to_string(),
         };
         VARIANT_TYPE_DEF_TPL
+            .replace("{{selector}}", self.n.to_string().as_str())
             .replace("{{name}}", &self.name)
             .replace("{{attrs_str}}", indent_by(8, attributes_str).as_str())
-            .replace("{{variant_type}}", &ty_str)
+            .replace("{{type_def}}", &ty_str)
     }
 }
 

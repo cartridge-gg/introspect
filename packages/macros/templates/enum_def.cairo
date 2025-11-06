@@ -1,5 +1,5 @@
 introspect::types::EnumDef {
-    name: {{name}},
+    name: "{{name}}",
     attrs: [{{attrs_str}}].span(),
     variants: [{{variants_str}}].span(),
 }
