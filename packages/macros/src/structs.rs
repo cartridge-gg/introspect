@@ -65,12 +65,12 @@ impl<'db> Struct<'db> {
 }
 
 pub fn get_struct<'db>(db: &'db dyn Database, file: SyntaxNode<'db>) -> Result<Struct<'db>> {
-    let item = file.get_children(db)[0].get_children(db)[0];
-    let kind = item.kind(db);
-    match kind {
-        SyntaxKind::ItemStruct => Ok(Struct::from_syntax_node(db, item)),
-        _ => Err(IntrospectError::NotAStruct(kind.to_string())),
+    for child in file.get_children(db)[0].get_children(db) {
+        if (&child).kind(db) == SyntaxKind::ItemStruct {
+            return Ok(Struct::from_syntax_node(db, *child));
+        }
     }
+    Err(IntrospectError::NoItem())
 }
 
 impl<'db> ToString for Member<'db> {

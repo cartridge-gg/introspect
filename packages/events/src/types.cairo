@@ -24,7 +24,6 @@ pub struct DeclareSchema {
 pub struct DeclareType {
     #[key]
     pub id: felt252,
-    pub name: felt252,
     pub version: felt252,
     pub type_def: TypeDef,
 }

@@ -1,5 +1,6 @@
-use crate::ColumnDef;
+use crate::{ColumnDef, TypeDef};
 
-trait Schema<T> {
+pub trait Schema<T> {
     fn columns() -> Span<ColumnDef>;
+    fn child_defs() -> Array<(felt252, TypeDef)>;
 }

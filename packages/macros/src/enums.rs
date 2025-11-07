@@ -1,4 +1,5 @@
 use crate::attribute::{Attribute, attributes_to_string, parse_attributes};
+use crate::derive::make_derives_attributes_line;
 use crate::params::parse_params;
 use crate::{Visibility, split_derives_attribute};
 use cairo_lang_syntax::node::ast::{ItemEnum, OptionTypeClause, Variant as VariantAst};
@@ -77,6 +78,29 @@ impl<'db> ToString for Variant<'db> {
             "{attrs}{name}{ty_str},",
             attrs = attributes_to_string(&self.attributes, 1),
             name = self.name,
+        )
+    }
+}
+
+impl<'db> ToString for Enum<'db> {
+    fn to_string(&self) -> String {
+        let params_str = match &self.generic_params {
+            Some(p) => format!("<{}>", p.join(", ")),
+            None => "".to_string(),
+        };
+        let variants_str = self
+            .variants
+            .iter()
+            .map(Variant::to_string)
+            .collect::<Vec<String>>()
+            .join("\n    ");
+
+        format!(
+            "{derives}{attrs}{vis}enum {name}{params_str}{{\n    {variants_str}\n}}",
+            derives = make_derives_attributes_line(&self.derives),
+            attrs = attributes_to_string(&self.attributes, 0),
+            name = self.name,
+            vis = self.visibility.to_code_string(),
         )
     }
 }

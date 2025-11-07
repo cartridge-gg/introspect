@@ -1,6 +1,6 @@
-use crate::introspect::attribute::make_attributes_string;
-use crate::introspect::utils::stack_type_defs;
-use crate::introspect::{ItemTrait, ToTypeDef, type_child_defs};
+use crate::type_def::{
+    ItemTrait, ToTypeDef, make_attributes_string, stack_type_defs, type_child_defs,
+};
 use crate::{Enum, Variant};
 use indent::indent_by;
 
@@ -12,7 +12,7 @@ impl ToTypeDef for Variant<'_> {
         let attributes_str = make_attributes_string(&self.attributes);
         let ty_str = match &self.ty {
             Some(ty) => format!("introspect::Introspect::<{ty}>::type_def()"),
-            None => "introspect::types::TypeDef::None".to_string(),
+            None => "introspect::TypeDef::None".to_string(),
         };
         VARIANT_TYPE_DEF_TPL
             .replace("{{selector}}", self.n.to_string().as_str())
@@ -29,7 +29,7 @@ impl ToTypeDef for Enum<'_> {
         ENUM_TYPE_DEF_TPL
             .replace("{{name}}", &self.name)
             .replace("{{attrs_str}}", indent_by(8, attributes_str).as_str())
-            .replace("{{variants_str}}", indent_by(8, variants_str).as_str())
+            .replace("{{variants_str}}", indent_by(4, variants_str).as_str())
     }
 }
 

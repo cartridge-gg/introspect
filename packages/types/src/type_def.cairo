@@ -1,4 +1,6 @@
-#[derive(Drop, PartialEq, Default)]
+use TypeDef::TypeWithAttributes;
+
+#[derive(Drop, PartialEq, Default, Debug)]
 pub enum TypeDef {
     #[default]
     None,
@@ -35,13 +37,13 @@ pub enum TypeDef {
     Custom: felt252,
 }
 
-#[derive(Drop, Serde, PartialEq)]
+#[derive(Drop, Serde, PartialEq, Debug)]
 pub struct Attribute {
     pub id: felt252,
-    pub data: Span<felt252>,
+    pub data: Span<Span<felt252>>,
 }
 
-#[derive(Drop, Serde, PartialEq)]
+#[derive(Drop, Serde, PartialEq, Debug)]
 pub struct ColumnDef {
     pub id: felt252,
     pub name: ByteArray,
@@ -49,42 +51,42 @@ pub struct ColumnDef {
     pub type_def: TypeDef,
 }
 
-#[derive(Drop, Serde, PartialEq)]
+#[derive(Drop, Serde, PartialEq, Debug)]
 pub struct FieldDef {
     pub name: ByteArray,
     pub attrs: Span<felt252>,
     pub type_def: TypeDef,
 }
 
-#[derive(Drop, Serde, PartialEq)]
+#[derive(Drop, Serde, PartialEq, Debug)]
 pub struct StructDef {
     pub name: ByteArray,
     pub attrs: Span<Attribute>,
     pub members: Span<MemberDef>,
 }
 
-#[derive(Drop, Serde, PartialEq)]
+#[derive(Drop, Serde, PartialEq, Debug)]
 pub struct MemberDef {
     pub name: ByteArray,
     pub attrs: Span<Attribute>,
     pub type_def: TypeDef,
 }
 
-#[derive(Drop, Serde, PartialEq)]
+#[derive(Drop, Serde, PartialEq, Debug)]
 pub struct EnumDef {
     pub name: ByteArray,
     pub attrs: Span<Attribute>,
     pub variants: Span<VariantDef>,
 }
 
-#[derive(Drop, Serde, PartialEq)]
+#[derive(Drop, Serde, PartialEq, Debug)]
 pub struct UnitEnumDef {
     pub name: ByteArray,
     pub attrs: Span<Attribute>,
     pub variants: Span<UnitVariantDef>,
 }
 
-#[derive(Drop, Serde, PartialEq)]
+#[derive(Drop, Serde, PartialEq, Debug)]
 pub struct VariantDef {
     pub selector: felt252,
     pub name: ByteArray,
@@ -92,20 +94,20 @@ pub struct VariantDef {
     pub type_def: TypeDef,
 }
 
-#[derive(Drop, Serde, PartialEq)]
+#[derive(Drop, Serde, PartialEq, Debug)]
 pub struct UnitVariantDef {
     pub selector: felt252,
     pub name: ByteArray,
 }
 
-#[derive(Drop, Serde, PartialEq)]
+#[derive(Drop, Serde, PartialEq, Debug)]
 pub struct FixedArrayDef {
     pub type_def: TypeDef,
     pub size: u32,
 }
 
 
-#[derive(Drop, Serde, PartialEq)]
+#[derive(Drop, Serde, PartialEq, Debug)]
 pub struct ResultDef {
     pub ok: TypeDef,
     pub err: TypeDef,

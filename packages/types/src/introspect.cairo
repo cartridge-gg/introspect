@@ -3,6 +3,9 @@ use core::poseidon::poseidon_hash_span;
 use starknet::{ClassHash, ContractAddress, EthAddress};
 use crate::{FixedArrayDef, ResultDef, TypeDef};
 
+pub trait IntroSerde<T> {
+    fn intro_serialize(self: T, ref output: Array<felt252>);
+}
 
 pub trait Introspect<T> {
     fn type_def() -> TypeDef;

@@ -4,8 +4,8 @@ use thiserror::Error;
 pub enum IntrospectError {
     #[error("'{0}' cannot be introspected. Only structs and enums are supported.")]
     UnsupportedItem(String),
-    #[error("'{0}' is not  a struct.")]
-    NotAStruct(String),
+    #[error("Could not find item to introspect.")]
+    NoItem(),
     #[error("Derive '{0}' not unnamed variant.")]
     WrongDeriveVariant(String),
     #[error("Derive macro must have arguments.")]

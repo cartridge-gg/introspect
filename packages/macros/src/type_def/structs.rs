@@ -1,7 +1,6 @@
-use super::{ToTypeDef, type_child_defs};
-use crate::introspect::ItemTrait;
-use crate::introspect::attribute::make_attributes_string;
-use crate::introspect::utils::stack_type_defs;
+use crate::type_def::{
+    ItemTrait, ToTypeDef, make_attributes_string, stack_type_defs, type_child_defs,
+};
 use crate::{Member, Struct};
 use indent::indent_by;
 
@@ -25,7 +24,7 @@ impl ToTypeDef for Struct<'_> {
         STRUCT_TYPE_DEF_TPL
             .replace("{{name}}", &self.name)
             .replace("{{attrs_str}}", indent_by(8, attributes_str).as_str())
-            .replace("{{members_str}}", indent_by(8, members_str).as_str())
+            .replace("{{members_str}}", indent_by(4, members_str).as_str())
     }
 }
 
