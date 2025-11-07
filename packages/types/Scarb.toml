@@ -5,7 +5,7 @@ edition.workspace = true
 cairo-version.workspace = true
 scarb-version.workspace = true
 repository.workspace = true
-experimental-features = ["associated_item_constraints"]
+experimental-features = ["associated_item_constraints", "negative_impls"]
 
 [dependencies]
 starknet.workspace = true

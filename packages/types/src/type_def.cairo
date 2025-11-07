@@ -1,4 +1,5 @@
 use TypeDef::TypeWithAttributes;
+use crate::Introspect;
 
 #[derive(Drop, PartialEq, Default, Debug)]
 pub enum TypeDef {
@@ -70,6 +71,13 @@ pub struct MemberDef {
     pub name: ByteArray,
     pub attrs: Span<Attribute>,
     pub type_def: TypeDef,
+}
+
+#[generate_trait]
+pub impl MemberDefImpl of MemberDefTrait {
+    fn new<T, +Introspect<T>>(name: ByteArray, attrs: Span<Attribute>) -> MemberDef {
+        MemberDef { name, type_def: Introspect::<T>::type_def(), attrs }
+    }
 }
 
 #[derive(Drop, Serde, PartialEq, Debug)]

@@ -1,11 +1,8 @@
 use core::dict::Felt252Dict;
 use core::poseidon::poseidon_hash_span;
 use starknet::{ClassHash, ContractAddress, EthAddress};
-use crate::{FixedArrayDef, ResultDef, TypeDef};
-
-pub trait IntroSerde<T> {
-    fn intro_serialize(self: T, ref output: Array<felt252>);
-}
+use crate::type_def::MemberDefTrait;
+use crate::{FixedArrayDef, ResultDef, StructDef, TypeDef};
 
 pub trait Introspect<T> {
     fn type_def() -> TypeDef;
@@ -83,7 +80,6 @@ pub impl ByteArrayIntrospect of Introspect<ByteArray> {
     }
 }
 
-
 pub impl TArrayIntrospect<T, impl I: Introspect<T>> of Introspect<Array<T>> {
     fn type_def() -> TypeDef {
         TypeDef::Array(BoxTrait::new(I::type_def()))
@@ -110,6 +106,7 @@ pub impl FixedArrayIntrospect<T, const SIZE: u32, impl I: Introspect<T>> of Intr
         I::child_defs()
     }
 }
+
 
 pub impl Tuple1Introspect<T0, impl I0: Introspect<T0>> of Introspect<(T0,)> {
     fn type_def() -> TypeDef {
@@ -221,8 +218,7 @@ pub impl Tuple6Introspect<
     }
 }
 
-
-pub impl OptionIntrospect<T, impl I: Introspect<T>> of Introspect<Option<T>> {
+pub impl OptionTIntrospect<T, impl I: Introspect<T>> of Introspect<Option<T>> {
     fn type_def() -> TypeDef {
         TypeDef::Option(BoxTrait::new(I::type_def()))
     }
@@ -231,7 +227,7 @@ pub impl OptionIntrospect<T, impl I: Introspect<T>> of Introspect<Option<T>> {
     }
 }
 
-pub impl ResultIntrospect<
+pub impl ResultTEIntrospect<
     T, E, impl IT: Introspect<T>, impl IE: Introspect<E>,
 > of Introspect<Result<T, E>> {
     fn type_def() -> TypeDef {
@@ -242,3 +238,81 @@ pub impl ResultIntrospect<
     }
 }
 
+
+pub impl BlockInfoIntrospect of Introspect<starknet::BlockInfo> {
+    fn type_def() -> TypeDef {
+        TypeDef::Struct(
+            StructDef {
+                name: "BlockInfo",
+                attrs: [].span(),
+                members: [
+                    MemberDefTrait::new::<felt252>("block_hash", [].span()),
+                    MemberDefTrait::new::<u64>("block_number", [].span()),
+                    MemberDefTrait::new::<u64>("block_timestamp", [].span()),
+                    MemberDefTrait::new::<
+                        starknet::ContractAddress,
+                    >("sequencer_address", [].span()),
+                ]
+                    .span(),
+            },
+        )
+    }
+    fn child_defs() -> Array<(felt252, TypeDef)> {
+        array![]
+    }
+}
+
+pub impl ResourceBoundsIntrospect of Introspect<starknet::ResourcesBounds> {
+    fn type_def() -> TypeDef {
+        TypeDef::Struct(
+            StructDef {
+                name: "ResourceBounds",
+                attrs: [].span(),
+                members: [
+                    MemberDefTrait::new::<felt252>("resource", [].span()),
+                    MemberDefTrait::new::<u64>("max_amount", [].span()),
+                    MemberDefTrait::new::<u128>("max_price_per_unit", [].span()),
+                ]
+                    .span(),
+            },
+        )
+    }
+
+    fn child_defs() -> Array<(felt252, TypeDef)> {
+        array![]
+    }
+}
+
+
+pub impl TxInfoV2Introspect of Introspect<starknet::TxInfo> {
+    fn type_def() -> TypeDef {
+        TypeDef::Struct(
+            StructDef {
+                name: "TxInfo",
+                attrs: [].span(),
+                members: [
+                    MemberDefTrait::new::<felt252>("version", [].span()),
+                    MemberDefTrait::new::<ContractAddress>("account_contract_address", [].span()),
+                    MemberDefTrait::new::<u128>("max_fee", [].span()),
+                    MemberDefTrait::new::<Span<felt252>>("signature", [].span()),
+                    MemberDefTrait::new::<felt252>("transaction_hash", [].span()),
+                    MemberDefTrait::new::<felt252>("chain_id", [].span()),
+                    MemberDefTrait::new::<felt252>("nonce", [].span()),
+                    MemberDefTrait::new::<
+                        Span<starknet::ResourcesBounds>,
+                    >("resource_bounds", [].span()),
+                    MemberDefTrait::new::<u128>("tip", [].span()),
+                    MemberDefTrait::new::<Span<felt252>>("paymaster_data", [].span()),
+                    MemberDefTrait::new::<u32>("nonce_data_availability_mode", [].span()),
+                    MemberDefTrait::new::<u32>("fee_data_availability_mode", [].span()),
+                    MemberDefTrait::new::<Span<felt252>>("account_deployment_data", [].span()),
+                ]
+                    .span(),
+            },
+        )
+    }
+
+    fn child_defs() -> Array<(felt252, TypeDef)> {
+        array![]
+    }
+}
