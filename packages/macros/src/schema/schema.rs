@@ -1,4 +1,3 @@
-use crate::params::make_params;
 use crate::type_def::{ItemTrait, make_attributes_string, merge_defs, nl_non_empty_list};
 use crate::{Member, Struct};
 use indent::indent_by;
@@ -9,9 +8,9 @@ const COLUMN_TYPE_DEF_TPL: &str = include_str!("../../templates/column_def.cairo
 pub fn to_column_def<'db>(member: &Member<'_>) -> String {
     let attributes_str = make_attributes_string(&member.attributes);
     COLUMN_TYPE_DEF_TPL
-        .replace("{{id}}", format!("'{}'", &member.name).as_str())
+        .replace("{{id}}", &format!("'{}'", &member.name))
         .replace("{{name}}", &member.name)
-        .replace("{{attrs_str}}", indent_by(8, attributes_str).as_str())
+        .replace("{{attrs_str}}", &indent_by(8, attributes_str))
         .replace("{{type_def}}", &member.ty)
 }
 
@@ -30,18 +29,15 @@ impl<'db> ToSchemaImpl for Struct<'db> {
         );
         SCHEMA_IMPL_TPL
             .replace("{{name}}", self.name())
+            .replace("{{full_name}}", &self.full_name())
             .replace(
                 "{{impl_params}}",
-                make_params(self.generic_params(), &["introspect::Introspect"], false).as_str(),
+                &self.generics_with_traits(&["introspect::Introspect"]),
             )
-            .replace(
-                "{{params}}",
-                make_params(self.generic_params(), &[], false).as_str(),
-            )
-            .replace("{{column_defs}}", indent_by(8, column_defs_str).as_str())
+            .replace("{{column_defs}}", &indent_by(8, column_defs_str))
             .replace(
                 "{{child_defs}}",
-                indent_by(8, merge_defs(self.child_defs())).as_str(),
+                &indent_by(8, merge_defs(self.child_defs())),
             )
     }
 }

@@ -1,4 +1,3 @@
-use TypeDef::TypeWithAttributes;
 use crate::Introspect;
 
 #[derive(Drop, PartialEq, Default, Debug)]
@@ -22,6 +21,7 @@ pub enum TypeDef {
     ClassHash,
     ContractAddress,
     EthAddress,
+    StorageAddress,
     ByteArray,
     ShortString,
     Tuple: Span<TypeDef>,
@@ -143,6 +143,7 @@ mod selectors {
     pub const ClassHash: felt252 = selector!("class_hash");
     pub const ContractAddress: felt252 = selector!("contract_address");
     pub const EthAddress: felt252 = selector!("eth_address");
+    pub const StorageAddress: felt252 = selector!("storage_address");
     pub const ByteArray: felt252 = selector!("byte_array");
     pub const Tuple: felt252 = selector!("tuple");
     pub const Array: felt252 = selector!("array");
@@ -183,6 +184,7 @@ impl TyImpl of TyTrait {
             TypeDef::ClassHash => selectors::ClassHash,
             TypeDef::ContractAddress => selectors::ContractAddress,
             TypeDef::EthAddress => selectors::EthAddress,
+            TypeDef::StorageAddress => selectors::StorageAddress,
             TypeDef::ByteArray => selectors::ByteArray,
             TypeDef::Tuple(_) => selectors::Tuple,
             TypeDef::Array(_) => selectors::Array,
@@ -208,7 +210,8 @@ impl TySerde of Serde<TypeDef> {
             TypeDef::U32 | TypeDef::U64 | TypeDef::U128 | TypeDef::U256 | TypeDef::U512 |
             TypeDef::I8 | TypeDef::I16 | TypeDef::I32 | TypeDef::I64 | TypeDef::I128 |
             TypeDef::ShortString | TypeDef::ClassHash | TypeDef::ContractAddress |
-            TypeDef::EthAddress | TypeDef::ByteArray => { output.append(self.selector()); },
+            TypeDef::EthAddress | TypeDef::StorageAddress |
+            TypeDef::ByteArray => { output.append(self.selector()); },
             TypeDef::Ref(t) |
             TypeDef::Custom(t) => {
                 output.append(self.selector());

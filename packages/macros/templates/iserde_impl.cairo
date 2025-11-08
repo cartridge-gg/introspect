@@ -1,5 +1,5 @@
-pub impl ISerde{{name}}Impl of super::ISerde<{{item}}> {
-    fn iserialize(self: @{{item}}, ref output: Array<felt252>) {
-        {{BoxTySerdeImpl}}
+pub impl Gen{{name}}ISerdeImpl{{impl_params}} of introspect::ISerde<{{full_name}}> {
+    fn iserialize(self: @{{full_name}}, ref output: Array<felt252>) {
+        {{body}}
     }
 }

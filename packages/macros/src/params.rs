@@ -17,17 +17,3 @@ pub fn parse_params<'db>(
         ),
     }
 }
-
-pub fn make_params(generic_params: &Option<Vec<String>>, traits: &[&str], prefix: bool) -> String {
-    match generic_params {
-        Some(params) => {
-            let mut items = params.clone();
-            let prefix_str = if prefix { "::" } else { "" };
-            params
-                .iter()
-                .for_each(|p| traits.iter().for_each(|t| items.push(format!("+{t}<{p}>"))));
-            format!("{prefix_str}<{}>", items.join(", "))
-        }
-        None => Default::default(),
-    }
-}

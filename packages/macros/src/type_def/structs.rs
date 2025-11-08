@@ -29,7 +29,9 @@ impl ToTypeDef for Struct<'_> {
 }
 
 impl<'db> ItemTrait for Struct<'db> {
-    const ITEM: &'static str = "Struct";
+    fn kind(&self) -> &str {
+        "Struct"
+    }
     fn name(&self) -> &str {
         &self.name
     }

@@ -5,6 +5,7 @@ pub mod error;
 pub mod introspect;
 pub mod params;
 pub mod schema;
+pub mod serde;
 pub mod structs;
 pub mod type_def;
 pub mod utils;

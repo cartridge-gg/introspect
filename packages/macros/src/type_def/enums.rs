@@ -34,7 +34,9 @@ impl ToTypeDef for Enum<'_> {
 }
 
 impl<'db> ItemTrait for Enum<'db> {
-    const ITEM: &'static str = "Enum";
+    fn kind(&self) -> &str {
+        "Enum"
+    }
     fn name(&self) -> &str {
         &self.name
     }

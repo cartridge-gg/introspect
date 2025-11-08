@@ -70,7 +70,12 @@ pub impl ContractAddressIntrospect =
     primitive_impl::PrimitiveIntrospect<ContractAddress, TypeDef::ContractAddress>;
 pub impl EthAddressIntrospect =
     primitive_impl::PrimitiveIntrospect<EthAddress, TypeDef::EthAddress>;
-
+pub impl StorageAddressIntrospect =
+    primitive_impl::PrimitiveIntrospect<starknet::StorageAddress, TypeDef::StorageAddress>;
+pub impl StorageBaseAddressIntrospect =
+    primitive_impl::PrimitiveIntrospect<
+        starknet::storage_access::StorageBaseAddress, TypeDef::StorageAddress,
+    >;
 
 pub impl Tuple0Introspect = primitive_impl::PrimitiveIntrospect<(), TypeDef::None>;
 
@@ -238,6 +243,25 @@ pub impl ResultTEIntrospect<
     }
 }
 
+pub impl CallIntrospect of Introspect<starknet::account::Call> {
+    fn type_def() -> TypeDef {
+        TypeDef::Struct(
+            StructDef {
+                name: "Call",
+                attrs: [].span(),
+                members: [
+                    MemberDefTrait::new::<ContractAddress>("to", [].span()),
+                    MemberDefTrait::new::<felt252>("selector", [].span()),
+                    MemberDefTrait::new::<Span<felt252>>("calldata", [].span()),
+                ]
+                    .span(),
+            },
+        )
+    }
+    fn child_defs() -> Array<(felt252, TypeDef)> {
+        array![]
+    }
+}
 
 pub impl BlockInfoIntrospect of Introspect<starknet::BlockInfo> {
     fn type_def() -> TypeDef {
@@ -249,9 +273,7 @@ pub impl BlockInfoIntrospect of Introspect<starknet::BlockInfo> {
                     MemberDefTrait::new::<felt252>("block_hash", [].span()),
                     MemberDefTrait::new::<u64>("block_number", [].span()),
                     MemberDefTrait::new::<u64>("block_timestamp", [].span()),
-                    MemberDefTrait::new::<
-                        starknet::ContractAddress,
-                    >("sequencer_address", [].span()),
+                    MemberDefTrait::new::<ContractAddress>("sequencer_address", [].span()),
                 ]
                     .span(),
             },

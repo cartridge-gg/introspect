@@ -1,4 +1,5 @@
 use crate::introspect::IntrospectImpl;
+use crate::type_def::ItemTrait;
 use crate::{Enum, IntrospectError, Result, Struct};
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -50,4 +51,31 @@ pub fn get_introspection_type<'db>(
         }
     }
     Err(IntrospectError::NoItem())
+}
+
+impl<'db> ItemTrait for IntrospectItem<'db> {
+    fn kind(&self) -> &str {
+        match self {
+            IntrospectItem::Struct(s) => s.kind(),
+            IntrospectItem::Enum(e) => e.kind(),
+        }
+    }
+    fn name(&self) -> &str {
+        match self {
+            IntrospectItem::Struct(s) => s.name(),
+            IntrospectItem::Enum(e) => e.name(),
+        }
+    }
+    fn generic_params(&self) -> &Option<Vec<String>> {
+        match self {
+            IntrospectItem::Struct(s) => s.generic_params(),
+            IntrospectItem::Enum(e) => e.generic_params(),
+        }
+    }
+    fn child_defs(&self) -> Vec<String> {
+        match self {
+            IntrospectItem::Struct(s) => s.child_defs(),
+            IntrospectItem::Enum(e) => e.child_defs(),
+        }
+    }
 }
