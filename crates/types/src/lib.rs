@@ -106,7 +106,7 @@ impl TypeName for TypeDef {
 pub struct ColumnDef {
     pub selector: Felt,
     pub name: String,
-    pub attrs: Vec<String>,
+    pub attributes: Vec<String>,
     pub type_def: TypeDef,
 }
 
@@ -114,7 +114,7 @@ pub struct ColumnDef {
 pub struct FieldInfo {
     pub selector: Felt,
     pub name: String,
-    pub attrs: Vec<String>,
+    pub attributes: Vec<String>,
 }
 
 impl From<&ColumnDef> for FieldInfo {
@@ -122,7 +122,7 @@ impl From<&ColumnDef> for FieldInfo {
         FieldInfo {
             selector: field_def.selector.clone(),
             name: field_def.name.clone(),
-            attrs: field_def.attrs.clone(),
+            attributes: field_def.attributes.clone(),
         }
     }
 }
@@ -130,28 +130,28 @@ impl From<&ColumnDef> for FieldInfo {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct VariantDef {
     pub name: String,
-    pub attrs: Vec<String>,
+    pub attributes: Vec<String>,
     pub type_def: TypeDef,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct StructDef {
     pub name: String,
-    pub attrs: Vec<String>,
+    pub attributes: Vec<String>,
     pub fields: Vec<FieldDef>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct EnumDef {
     pub name: String,
-    pub attrs: Vec<String>,
+    pub attributes: Vec<String>,
     pub variants: HashMap<Felt, VariantDef>,
     pub order: Vec<Felt>,
 }
 
 impl PartialEq for EnumDef {
     fn eq(&self, other: &Self) -> bool {
-        let is_eq = self.name == other.name && self.attrs == other.attrs;
+        let is_eq = self.name == other.name && self.attributes == other.attributes;
         if !is_eq {
             return false;
         }
@@ -171,7 +171,7 @@ pub struct FixedArrayDef {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct FieldDef {
     pub name: String,
-    pub attrs: Vec<String>,
+    pub attributes: Vec<String>,
     pub type_def: TypeDef,
 }
 
@@ -250,7 +250,7 @@ impl ToValue for FieldDef {
     fn to_value(&self, data: &mut FeltIterator) -> Option<Field> {
         Some(Field {
             name: self.name.clone(),
-            attrs: self.attrs.clone(),
+            attributes: self.attributes.clone(),
             value: self.type_def.to_value(data)?,
         })
     }
@@ -261,7 +261,7 @@ impl ToValue for StructDef {
     fn to_value(&self, data: &mut FeltIterator) -> Option<Struct> {
         Some(Struct {
             name: self.name.clone(),
-            attrs: self.attrs.clone(),
+            attributes: self.attributes.clone(),
             fields: self
                 .fields
                 .iter()
@@ -286,9 +286,9 @@ impl ToValue for EnumDef {
 
         Some(Enum {
             name: self.name.clone(),
-            attrs: self.attrs.clone(),
+            attributes: self.attributes.clone(),
             variant: field.name.clone(),
-            variant_attrs: field.attrs.clone(),
+            variant_attributes: field.attributes.clone(),
             value: field.type_def.to_value(data)?,
         })
     }
@@ -363,7 +363,7 @@ impl ToValue for ColumnDef {
     fn to_value(&self, data: &mut FeltIterator) -> Option<Field> {
         Some(Field {
             name: self.name.clone(),
-            attrs: self.attrs.clone(),
+            attributes: self.attributes.clone(),
             value: self.type_def.to_value(data)?,
         })
     }

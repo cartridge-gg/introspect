@@ -14,6 +14,7 @@ pub struct CreateTable {
     #[key]
     pub id: felt252,
     pub name: ByteArray,
+    pub attributes: Span<Attribute>,
     pub primary: PrimaryDef,
 }
 
@@ -35,6 +36,7 @@ pub struct CreateTableWithSchema {
     #[key]
     pub id: felt252,
     pub name: ByteArray,
+    pub attributes: Span<Attribute>,
     pub primary: PrimaryDef,
     pub schema: felt252,
 }

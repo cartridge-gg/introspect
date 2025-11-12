@@ -1,5 +1,5 @@
+use crate::items::ItemTrait;
 use crate::serde::{ISERDE_SERIALIZE_CALL, ToISerdeImpl};
-use crate::type_def::ItemTrait;
 use crate::{Enum, Variant};
 use indent::indent_by;
 use indoc::formatdoc;
@@ -24,8 +24,19 @@ impl<'db> ToISerdeImpl for Enum<'db> {
 }
 
 fn iserde_variant<'db>(enum_name: &str, variant: &Variant<'db>) -> String {
-    format!(
-        "{enum_name}::{}(value) => {ISERDE_SERIALIZE_CALL}(value, ref output),",
-        variant.name
-    )
+    match variant.ty {
+        None => formatdoc!(
+            "{enum_name}::{variant_name} => output.append({selector}),",
+            selector = variant.selector,
+            variant_name = variant.name
+        ),
+        Some(_) => formatdoc!(
+            "{enum_name}::{variant_name}(value) => {{
+                output.append({selector});
+                {ISERDE_SERIALIZE_CALL}((value), ref output)
+            }},",
+            selector = variant.selector,
+            variant_name = variant.name
+        ),
+    }
 }

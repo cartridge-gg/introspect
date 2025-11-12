@@ -48,22 +48,22 @@ pub fn felt_to_string(value: &Felt) -> String {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Struct {
     pub name: String,
-    pub attrs: Vec<String>,
+    pub attributes: Vec<String>,
     pub fields: Vec<Field>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Enum {
     pub name: String,
-    pub attrs: Vec<String>,
+    pub attributes: Vec<String>,
     pub variant: String,
-    pub variant_attrs: Vec<String>,
+    pub variant_attributes: Vec<String>,
     pub value: Value,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Field {
     pub name: String,
-    pub attrs: Vec<String>,
+    pub attributes: Vec<String>,
     pub value: Value,
 }
 

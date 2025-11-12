@@ -1,5 +1,5 @@
 use crate::introspect::IntrospectImpl;
-use crate::type_def::ItemTrait;
+use crate::items::ItemTrait;
 use crate::{Enum, IntrospectError, Result, Struct};
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::kind::SyntaxKind;

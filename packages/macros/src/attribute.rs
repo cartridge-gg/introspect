@@ -12,10 +12,10 @@ pub struct Attribute<'db> {
 }
 
 pub fn parse_attributes<'db>(
-    attrs: AttributeList<'db>,
+    attributes: AttributeList<'db>,
     db: &'db dyn Database,
 ) -> Vec<Attribute<'db>> {
-    attrs
+    attributes
         .elements(db)
         .map(|attr| Attribute::new(attr, db))
         .collect()

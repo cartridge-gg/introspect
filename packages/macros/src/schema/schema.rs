@@ -1,4 +1,4 @@
-use crate::type_def::{ItemTrait, make_attributes_string, merge_defs, nl_non_empty_list};
+use crate::items::{ItemTrait, make_attributes_string, merge_defs, nl_non_empty_list};
 use crate::{Member, Struct};
 use indent::indent_by;
 
@@ -10,7 +10,7 @@ pub fn to_column_def<'db>(member: &Member<'_>) -> String {
     COLUMN_TYPE_DEF_TPL
         .replace("{{id}}", &format!("'{}'", &member.name))
         .replace("{{name}}", &member.name)
-        .replace("{{attrs_str}}", &indent_by(8, attributes_str))
+        .replace("{{attributes_str}}", &indent_by(8, attributes_str))
         .replace("{{type_def}}", &member.ty)
 }
 

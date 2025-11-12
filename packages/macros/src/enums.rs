@@ -1,6 +1,7 @@
 use crate::attribute::{Attribute, attributes_to_string, parse_attributes};
 use crate::derive::make_derives_attributes_line;
 use crate::params::parse_params;
+use crate::utils::string_to_keccak_hex;
 use crate::{Visibility, split_derives_attribute};
 use cairo_lang_syntax::node::ast::{ItemEnum, OptionTypeClause, Variant as VariantAst};
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
@@ -18,28 +19,38 @@ pub struct Enum<'db> {
 
 pub struct Variant<'db> {
     pub db: &'db dyn Database,
-    pub n: u32,
-
+    pub selector: String,
     pub attributes: Vec<Attribute<'db>>,
     pub name: String,
     pub ty: Option<String>,
 }
 
+fn parse_variant_type<'db>(variant: &VariantAst<'db>, db: &'db dyn Database) -> Option<String> {
+    match variant.type_clause(db) {
+        OptionTypeClause::Empty(_) => None,
+        OptionTypeClause::TypeClause(ty) => {
+            let ty_string = ty
+                .ty(db)
+                .as_syntax_node()
+                .get_text_without_all_comment_trivia(db);
+            if ty_string == "()" {
+                None
+            } else {
+                Some(ty_string)
+            }
+        }
+    }
+}
+
 impl<'db> Variant<'db> {
-    pub fn new(variant: &VariantAst<'db>, db: &'db dyn Database, n: u32) -> Self {
+    pub fn new(variant: &VariantAst<'db>, db: &'db dyn Database) -> Self {
+        let name = variant.name(db).text(db).to_string(db);
         Self {
             db,
-            n,
-            name: variant.name(db).text(db).to_string(db),
+            selector: string_to_keccak_hex(&name),
+            name,
             attributes: parse_attributes(variant.attributes(db), db),
-            ty: match variant.type_clause(db) {
-                OptionTypeClause::Empty(_) => None,
-                OptionTypeClause::TypeClause(ty) => Some(
-                    ty.ty(db)
-                        .as_syntax_node()
-                        .get_text_without_all_comment_trivia(db),
-                ),
-            },
+            ty: parse_variant_type(variant, db),
         }
     }
 }
@@ -57,10 +68,13 @@ impl<'db> Enum<'db> {
             variants: item
                 .variants(db)
                 .elements(db)
-                .enumerate()
-                .map(|(n, m)| Variant::new(&m, db, n as u32))
+                .map(|m| Variant::new(&m, db))
                 .collect(),
         }
+    }
+
+    pub fn parse_variant_selector(&self, n: usize) -> String {
+        format!("{}", n)
     }
 
     pub fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
@@ -75,8 +89,8 @@ impl<'db> ToString for Variant<'db> {
             None => "".to_string(),
         };
         format!(
-            "{attrs}{name}{ty_str},",
-            attrs = attributes_to_string(&self.attributes, 1),
+            "{attributes}{name}{ty_str},",
+            attributes = attributes_to_string(&self.attributes, 1),
             name = self.name,
         )
     }
@@ -96,9 +110,9 @@ impl<'db> ToString for Enum<'db> {
             .join("\n    ");
 
         format!(
-            "{derives}{attrs}{vis}enum {name}{params_str}{{\n    {variants_str}\n}}",
+            "{derives}{attributes}{vis}enum {name}{params_str}{{\n    {variants_str}\n}}",
             derives = make_derives_attributes_line(&self.derives),
-            attrs = attributes_to_string(&self.attributes, 0),
+            attributes = attributes_to_string(&self.attributes, 0),
             name = self.name,
             vis = self.visibility.to_code_string(),
         )

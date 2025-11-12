@@ -6,12 +6,12 @@ struct TestStruct<T, S> {
     pub value2: (felt252, S),
 }
 
-
 #[derive(Introspect, ISerde)]
 enum TestEnum {
     Variant1,
     Variant2: TestStruct<felt252, felt252>,
 }
+
 #[derive(Copy, Drop, Serde, ISerde, IntrospectRef, Schema, Debug, PartialEq)]
 struct Foo {
     #[key]
@@ -236,3 +236,4 @@ struct AStructWithOne {
     a: u8,
 }
 
+emit_schemas!(TestStruct, Foo);

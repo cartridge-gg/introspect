@@ -5,6 +5,7 @@ pub enum TypeDef {
     #[default]
     None,
     Felt252,
+    Bytes31,
     Bool,
     U8,
     U16,
@@ -22,6 +23,7 @@ pub enum TypeDef {
     ContractAddress,
     EthAddress,
     StorageAddress,
+    StorageBaseAddress,
     ByteArray,
     ShortString,
     Tuple: Span<TypeDef>,
@@ -30,7 +32,6 @@ pub enum TypeDef {
     Felt252Dict: Box<TypeDef>,
     Struct: StructDef,
     Enum: EnumDef,
-    UnitEnum: UnitEnumDef,
     Option: Box<TypeDef>,
     Result: Box<ResultDef>,
     Nullable: Box<TypeDef>,
@@ -39,73 +40,65 @@ pub enum TypeDef {
 }
 
 #[derive(Drop, Serde, PartialEq, Debug)]
+pub struct TypeWithAttributes {
+    pub type_def: TypeDef,
+    pub attributes: Span<Attribute>,
+}
+
+#[generate_trait]
+impl TypeDefImpl of TypeDefTrait {
+    fn allowed_as_primary(self: @TypeDef) -> bool {
+        match self {
+            TypeDef::Felt252 | TypeDef::Bytes31 | TypeDef::Bool | TypeDef::U8 | TypeDef::U16 |
+            TypeDef::U32 | TypeDef::U64 | TypeDef::U128 | TypeDef::ClassHash |
+            TypeDef::ContractAddress | TypeDef::EthAddress => true,
+            _ => false,
+        }
+    }
+}
+
+
+#[derive(Drop, Serde, PartialEq, Debug)]
 pub struct Attribute {
     pub id: felt252,
-    pub data: Span<Span<felt252>>,
-}
-
-#[derive(Drop, Serde, PartialEq, Debug)]
-pub struct ColumnDef {
-    pub id: felt252,
-    pub name: ByteArray,
-    pub attrs: Span<felt252>,
-    pub type_def: TypeDef,
-}
-
-#[derive(Drop, Serde, PartialEq, Debug)]
-pub struct FieldDef {
-    pub name: ByteArray,
-    pub attrs: Span<felt252>,
-    pub type_def: TypeDef,
+    pub data: Span<felt252>,
 }
 
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct StructDef {
     pub name: ByteArray,
-    pub attrs: Span<Attribute>,
+    pub attributes: Span<Attribute>,
     pub members: Span<MemberDef>,
 }
 
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct MemberDef {
     pub name: ByteArray,
-    pub attrs: Span<Attribute>,
+    pub attributes: Span<Attribute>,
     pub type_def: TypeDef,
 }
 
 #[generate_trait]
 pub impl MemberDefImpl of MemberDefTrait {
-    fn new<T, +Introspect<T>>(name: ByteArray, attrs: Span<Attribute>) -> MemberDef {
-        MemberDef { name, type_def: Introspect::<T>::type_def(), attrs }
+    fn new<T, +Introspect<T>>(name: ByteArray, attributes: Span<Attribute>) -> MemberDef {
+        MemberDef { name, type_def: Introspect::<T>::type_def(), attributes }
     }
 }
 
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct EnumDef {
     pub name: ByteArray,
-    pub attrs: Span<Attribute>,
+    pub attributes: Span<Attribute>,
     pub variants: Span<VariantDef>,
 }
 
-#[derive(Drop, Serde, PartialEq, Debug)]
-pub struct UnitEnumDef {
-    pub name: ByteArray,
-    pub attrs: Span<Attribute>,
-    pub variants: Span<UnitVariantDef>,
-}
 
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct VariantDef {
     pub selector: felt252,
     pub name: ByteArray,
-    pub attrs: Span<Attribute>,
+    pub attributes: Span<Attribute>,
     pub type_def: TypeDef,
-}
-
-#[derive(Drop, Serde, PartialEq, Debug)]
-pub struct UnitVariantDef {
-    pub selector: felt252,
-    pub name: ByteArray,
 }
 
 #[derive(Drop, Serde, PartialEq, Debug)]
@@ -124,41 +117,41 @@ pub struct ResultDef {
 
 mod selectors {
     pub const None: felt252 = 0;
-    pub const Felt252: felt252 = selector!("felt252");
-    pub const Bool: felt252 = selector!("bool");
-    pub const U8: felt252 = selector!("u8");
-    pub const U16: felt252 = selector!("u16");
-    pub const U32: felt252 = selector!("u32");
-    pub const U64: felt252 = selector!("u64");
-    pub const U128: felt252 = selector!("u128");
-    pub const U256: felt252 = selector!("u256");
-    pub const U512: felt252 = selector!("u512");
-    pub const I8: felt252 = selector!("i8");
-    pub const I16: felt252 = selector!("i16");
-    pub const I32: felt252 = selector!("i32");
-    pub const I64: felt252 = selector!("i64");
-    pub const I128: felt252 = selector!("i128");
-    pub const USize: felt252 = selector!("usize");
-    pub const ShortString: felt252 = selector!("short_string");
-    pub const ClassHash: felt252 = selector!("class_hash");
-    pub const ContractAddress: felt252 = selector!("contract_address");
-    pub const EthAddress: felt252 = selector!("eth_address");
-    pub const StorageAddress: felt252 = selector!("storage_address");
-    pub const ByteArray: felt252 = selector!("byte_array");
-    pub const Tuple: felt252 = selector!("tuple");
-    pub const Array: felt252 = selector!("array");
-    pub const FixedArray: felt252 = selector!("fixed_array");
-    pub const Felt252Dict: felt252 = selector!("felt252_dict");
-    pub const Struct: felt252 = selector!("struct");
-    pub const Enum: felt252 = selector!("enum");
-    pub const UnitEnum: felt252 = selector!("unit_enum");
-    pub const Ref: felt252 = selector!("ref");
-    pub const RecursiveSelf: felt252 = selector!("recursive_self");
-    pub const Recursive: felt252 = selector!("recursive_type");
-    pub const Custom: felt252 = selector!("custom");
-    pub const Option: felt252 = selector!("option");
-    pub const Result: felt252 = selector!("result");
-    pub const Nullable: felt252 = selector!("nullable");
+    pub const Felt252: felt252 = 'felt252';
+    pub const Bool: felt252 = 'bool';
+    pub const U8: felt252 = 'u8';
+    pub const U16: felt252 = 'u16';
+    pub const U32: felt252 = 'u32';
+    pub const U64: felt252 = 'u64';
+    pub const U128: felt252 = 'u128';
+    pub const U256: felt252 = 'u256';
+    pub const U512: felt252 = 'u512';
+    pub const I8: felt252 = 'i8';
+    pub const I16: felt252 = 'i16';
+    pub const I32: felt252 = 'i32';
+    pub const I64: felt252 = 'i64';
+    pub const I128: felt252 = 'i128';
+    pub const Bytes31: felt252 = 'bytes31';
+    pub const ShortString: felt252 = 'short_string';
+    pub const ClassHash: felt252 = 'class_hash';
+    pub const ContractAddress: felt252 = 'contract_address';
+    pub const EthAddress: felt252 = 'eth_address';
+    pub const StorageAddress: felt252 = 'storage_address';
+    pub const StorageBaseAddress: felt252 = 'storage_base_address';
+    pub const ByteArray: felt252 = 'byte_array';
+    pub const Tuple: felt252 = 'tuple';
+    pub const Array: felt252 = 'array';
+    pub const FixedArray: felt252 = 'fixed_array';
+    pub const Felt252Dict: felt252 = 'felt252_dict';
+    pub const Struct: felt252 = 'struct';
+    pub const Enum: felt252 = 'enum';
+    pub const Ref: felt252 = 'ref';
+    pub const RecursiveSelf: felt252 = 'recursive_self';
+    pub const Recursive: felt252 = 'recursive_type';
+    pub const Custom: felt252 = 'custom';
+    pub const Option: felt252 = 'option';
+    pub const Result: felt252 = 'result';
+    pub const Nullable: felt252 = 'nullable';
 }
 
 #[generate_trait]
@@ -167,6 +160,7 @@ impl TyImpl of TyTrait {
         match self {
             TypeDef::None => selectors::None,
             TypeDef::Felt252 => selectors::Felt252,
+            TypeDef::Bytes31 => selectors::Bytes31,
             TypeDef::Bool => selectors::Bool,
             TypeDef::U8 => selectors::U8,
             TypeDef::U16 => selectors::U16,
@@ -185,6 +179,7 @@ impl TyImpl of TyTrait {
             TypeDef::ContractAddress => selectors::ContractAddress,
             TypeDef::EthAddress => selectors::EthAddress,
             TypeDef::StorageAddress => selectors::StorageAddress,
+            TypeDef::StorageBaseAddress => selectors::StorageBaseAddress,
             TypeDef::ByteArray => selectors::ByteArray,
             TypeDef::Tuple(_) => selectors::Tuple,
             TypeDef::Array(_) => selectors::Array,
@@ -192,7 +187,6 @@ impl TyImpl of TyTrait {
             TypeDef::Felt252Dict(_) => selectors::Felt252Dict,
             TypeDef::Struct(_) => selectors::Struct,
             TypeDef::Enum(_) => selectors::Enum,
-            TypeDef::UnitEnum(_) => selectors::UnitEnum,
             TypeDef::Ref(_) => selectors::Ref,
             TypeDef::Custom(_) => selectors::Custom,
             TypeDef::Option(_) => selectors::Option,
@@ -206,11 +200,12 @@ impl TyImpl of TyTrait {
 impl TySerde of Serde<TypeDef> {
     fn serialize(self: @TypeDef, ref output: Array<felt252>) {
         match self {
-            TypeDef::None | TypeDef::Felt252 | TypeDef::Bool | TypeDef::U8 | TypeDef::U16 |
-            TypeDef::U32 | TypeDef::U64 | TypeDef::U128 | TypeDef::U256 | TypeDef::U512 |
-            TypeDef::I8 | TypeDef::I16 | TypeDef::I32 | TypeDef::I64 | TypeDef::I128 |
-            TypeDef::ShortString | TypeDef::ClassHash | TypeDef::ContractAddress |
+            TypeDef::None | TypeDef::Felt252 | TypeDef::Bytes31 | TypeDef::Bool | TypeDef::U8 |
+            TypeDef::U16 | TypeDef::U32 | TypeDef::U64 | TypeDef::U128 | TypeDef::U256 |
+            TypeDef::U512 | TypeDef::I8 | TypeDef::I16 | TypeDef::I32 | TypeDef::I64 |
+            TypeDef::I128 | TypeDef::ShortString | TypeDef::ClassHash | TypeDef::ContractAddress |
             TypeDef::EthAddress | TypeDef::StorageAddress |
+            TypeDef::StorageBaseAddress => { output.append(self.selector()); },
             TypeDef::ByteArray => { output.append(self.selector()); },
             TypeDef::Ref(t) |
             TypeDef::Custom(t) => {
@@ -236,10 +231,6 @@ impl TySerde of Serde<TypeDef> {
             },
             TypeDef::Enum(t) => {
                 output.append(selectors::Enum);
-                Serde::serialize(t, ref output);
-            },
-            TypeDef::UnitEnum(t) => {
-                output.append(selectors::UnitEnum);
                 Serde::serialize(t, ref output);
             },
             TypeDef::Result(t) => {

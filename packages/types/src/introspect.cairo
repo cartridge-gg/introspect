@@ -1,6 +1,8 @@
 use core::dict::Felt252Dict;
+use core::integer::u512;
 use core::poseidon::poseidon_hash_span;
-use starknet::{ClassHash, ContractAddress, EthAddress};
+use starknet::storage_access::StorageBaseAddress;
+use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
 use crate::type_def::MemberDefTrait;
 use crate::{FixedArrayDef, ResultDef, StructDef, TypeDef};
 
@@ -51,8 +53,18 @@ pub mod primitive_impl {
         }
     }
 }
+pub mod empty_impl {
+    use crate::TypeDef;
+    use super::Introspect;
+    pub impl EmptyIntrospect<T> of Introspect<T> {
+        fn type_def() -> TypeDef {
+            TypeDef::None
+        }
+    }
+}
 
 pub impl Felt252Introspect = primitive_impl::PrimitiveIntrospect<felt252, TypeDef::Felt252>;
+pub impl Bytes31Introspect = primitive_impl::PrimitiveIntrospect<bytes31, TypeDef::Bytes31>;
 pub impl BoolIntrospect = primitive_impl::PrimitiveIntrospect<bool, TypeDef::Bool>;
 pub impl U8Introspect = primitive_impl::PrimitiveIntrospect<u8, TypeDef::U8>;
 pub impl U16Introspect = primitive_impl::PrimitiveIntrospect<u16, TypeDef::U16>;
@@ -60,6 +72,7 @@ pub impl U32Introspect = primitive_impl::PrimitiveIntrospect<u32, TypeDef::U32>;
 pub impl U64Introspect = primitive_impl::PrimitiveIntrospect<u64, TypeDef::U64>;
 pub impl U128Introspect = primitive_impl::PrimitiveIntrospect<u128, TypeDef::U128>;
 pub impl U256Introspect = primitive_impl::PrimitiveIntrospect<u256, TypeDef::U256>;
+pub impl U512Introspect = primitive_impl::PrimitiveIntrospect<u512, TypeDef::U512>;
 pub impl I8Introspect = primitive_impl::PrimitiveIntrospect<i8, TypeDef::I8>;
 pub impl I16Introspect = primitive_impl::PrimitiveIntrospect<i16, TypeDef::I16>;
 pub impl I32Introspect = primitive_impl::PrimitiveIntrospect<i32, TypeDef::I32>;
@@ -71,13 +84,11 @@ pub impl ContractAddressIntrospect =
 pub impl EthAddressIntrospect =
     primitive_impl::PrimitiveIntrospect<EthAddress, TypeDef::EthAddress>;
 pub impl StorageAddressIntrospect =
-    primitive_impl::PrimitiveIntrospect<starknet::StorageAddress, TypeDef::StorageAddress>;
+    primitive_impl::PrimitiveIntrospect<StorageAddress, TypeDef::StorageAddress>;
 pub impl StorageBaseAddressIntrospect =
-    primitive_impl::PrimitiveIntrospect<
-        starknet::storage_access::StorageBaseAddress, TypeDef::StorageAddress,
-    >;
+    primitive_impl::PrimitiveIntrospect<StorageBaseAddress, TypeDef::StorageBaseAddress>;
 
-pub impl Tuple0Introspect = primitive_impl::PrimitiveIntrospect<(), TypeDef::None>;
+pub impl Tuple0Introspect = empty_impl::EmptyIntrospect<()>;
 
 pub impl ByteArrayIntrospect of Introspect<ByteArray> {
     fn type_def() -> TypeDef {
@@ -106,6 +117,16 @@ pub impl TSpanIntrospect<T, impl I: Introspect<T>> of Introspect<Span<T>> {
 pub impl FixedArrayIntrospect<T, const SIZE: u32, impl I: Introspect<T>> of Introspect<[T; SIZE]> {
     fn type_def() -> TypeDef {
         TypeDef::FixedArray(BoxTrait::new(FixedArrayDef { type_def: I::type_def(), size: SIZE }))
+    }
+    fn child_defs() -> Array<(felt252, TypeDef)> {
+        I::child_defs()
+    }
+}
+
+
+pub impl BoxIntrospect<T, impl I: Introspect<T>> of Introspect<Box<T>> {
+    fn type_def() -> TypeDef {
+        I::type_def()
     }
     fn child_defs() -> Array<(felt252, TypeDef)> {
         I::child_defs()
@@ -248,7 +269,7 @@ pub impl CallIntrospect of Introspect<starknet::account::Call> {
         TypeDef::Struct(
             StructDef {
                 name: "Call",
-                attrs: [].span(),
+                attributes: [].span(),
                 members: [
                     MemberDefTrait::new::<ContractAddress>("to", [].span()),
                     MemberDefTrait::new::<felt252>("selector", [].span()),
@@ -268,7 +289,7 @@ pub impl BlockInfoIntrospect of Introspect<starknet::BlockInfo> {
         TypeDef::Struct(
             StructDef {
                 name: "BlockInfo",
-                attrs: [].span(),
+                attributes: [].span(),
                 members: [
                     MemberDefTrait::new::<felt252>("block_hash", [].span()),
                     MemberDefTrait::new::<u64>("block_number", [].span()),
@@ -289,7 +310,7 @@ pub impl ResourceBoundsIntrospect of Introspect<starknet::ResourcesBounds> {
         TypeDef::Struct(
             StructDef {
                 name: "ResourceBounds",
-                attrs: [].span(),
+                attributes: [].span(),
                 members: [
                     MemberDefTrait::new::<felt252>("resource", [].span()),
                     MemberDefTrait::new::<u64>("max_amount", [].span()),
@@ -311,7 +332,7 @@ pub impl TxInfoV2Introspect of Introspect<starknet::TxInfo> {
         TypeDef::Struct(
             StructDef {
                 name: "TxInfo",
-                attrs: [].span(),
+                attributes: [].span(),
                 members: [
                     MemberDefTrait::new::<felt252>("version", [].span()),
                     MemberDefTrait::new::<ContractAddress>("account_contract_address", [].span()),

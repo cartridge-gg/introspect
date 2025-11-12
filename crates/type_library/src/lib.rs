@@ -64,7 +64,7 @@ pub trait TypeLibrary {
     fn expand_struct(&self, s: StructDef) -> StructDef {
         StructDef {
             name: s.name,
-            attrs: s.attrs,
+            attributes: s.attributes,
             variants: s
                 .variants
                 .into_iter()
@@ -80,7 +80,7 @@ pub trait TypeLibrary {
     fn expand_enum(&self, e: EnumDef) -> EnumDef {
         EnumDef {
             name: e.name,
-            attrs: e.attrs,
+            attributes: e.attributes,
             variants: e
                 .variants
                 .into_iter()
@@ -97,7 +97,7 @@ pub trait TypeLibrary {
     fn expand_variant(&self, variant: VariantDef) -> VariantDef {
         VariantDef {
             name: variant.name,
-            attrs: variant.attrs,
+            attributes: variant.attributes,
             type_def: self.expand_type(variant.type_def),
         }
     }
@@ -110,7 +110,7 @@ pub trait TypeLibrary {
         FieldDef {
             selector: field.selector,
             name: field.name,
-            attrs: field.attrs,
+            attributes: field.attributes,
             type_def: self.expand_type(field.type_def),
         }
     }
@@ -120,7 +120,7 @@ pub trait TypeLibrary {
     fn expand_member(&self, member: MemberDef) -> MemberDef {
         MemberDef {
             name: member.name,
-            attrs: member.attrs,
+            attributes: member.attributes,
             type_def: self.expand_type(member.type_def),
         }
     }

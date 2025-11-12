@@ -1,4 +1,4 @@
-use crate::type_def::{
+use crate::items::{
     ItemTrait, ToTypeDef, make_attributes_string, stack_type_defs, type_child_defs,
 };
 use crate::{Member, Struct};
@@ -12,7 +12,7 @@ impl ToTypeDef for Member<'_> {
         let attributes_str = make_attributes_string(&self.attributes);
         MEMBER_TYPE_DEF_TPL
             .replace("{{name}}", &self.name)
-            .replace("{{attrs_str}}", indent_by(8, attributes_str).as_str())
+            .replace("{{attributes_str}}", indent_by(8, attributes_str).as_str())
             .replace("{{member_type}}", &self.ty)
     }
 }
@@ -23,7 +23,7 @@ impl ToTypeDef for Struct<'_> {
         let members_str = stack_type_defs(&self.members);
         STRUCT_TYPE_DEF_TPL
             .replace("{{name}}", &self.name)
-            .replace("{{attrs_str}}", indent_by(8, attributes_str).as_str())
+            .replace("{{attributes_str}}", indent_by(8, attributes_str).as_str())
             .replace("{{members_str}}", indent_by(4, members_str).as_str())
     }
 }

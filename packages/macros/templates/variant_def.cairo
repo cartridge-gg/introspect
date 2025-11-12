@@ -1,6 +1,6 @@
 introspect::types::VariantDef {
     selector: {{selector}},
     name: "{{name}}",
-    attrs: [{{attrs_str}}].span(),
+    attributes: [{{attributes_str}}].span(),
     type_def: {{type_def}},
 }

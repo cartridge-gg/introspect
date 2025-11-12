@@ -9,7 +9,7 @@ use crate::value::UpdateRecordFields;
 pub struct TableSchema {
     pub table_id: Felt,
     pub table_name: String,
-    pub attrs: Vec<String>,
+    pub attributes: Vec<String>,
     pub fields: Vec<ColumnDef>,
 }
 
@@ -19,7 +19,7 @@ impl ToValue for TableSchema {
         Some(UpdateRecordFields {
             table_id: self.table_id,
             table_name: self.table_name.clone(),
-            attrs: self.attrs.clone(),
+            attributes: self.attributes.clone(),
             fields: self
                 .fields
                 .iter()

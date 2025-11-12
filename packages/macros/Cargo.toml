@@ -11,6 +11,7 @@ crate-type = ["cdylib"]
 cairo-lang-macro = "0.2.1"
 cairo-lang-parser = "2.13.1"
 cairo-lang-syntax = "2.13.1"
+cairo-lang-starknet-classes = "2.13.1"
 salsa = "0.24.0"
 thiserror.workspace = true
 indent = "0.1.1"

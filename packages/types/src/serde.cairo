@@ -1,3 +1,4 @@
+use core::integer::u512;
 use core::metaprogramming::TypeEqual;
 use starknet::{ClassHash, ContractAddress};
 
@@ -28,6 +29,7 @@ pub impl Felt252ISerde of ISerde<felt252> {
 pub impl FixedArrayT0ISerde<T> = empty::ISerdeImpl<[T; 0]>;
 pub impl EmptyTupleISerde = empty::ISerdeImpl<()>;
 
+pub impl Byte31ISerde = into_felt252::ISerdeImpl<bytes31>;
 pub impl BoolISerde = into_felt252::ISerdeImpl<bool>;
 pub impl U8ISerde = into_felt252::ISerdeImpl<u8>;
 pub impl U16ISerde = into_felt252::ISerdeImpl<u16>;
@@ -40,8 +42,17 @@ pub impl EthAddressISerde = into_felt252::ISerdeImpl<starknet::EthAddress>;
 
 pub impl U256ISerde of ISerde<u256> {
     fn iserialize(self: @u256, ref output: Array<felt252>) {
-        self.low.iserialize(ref output);
-        self.high.iserialize(ref output);
+        output.append((*self.low).into());
+        output.append((*self.high).into());
+    }
+}
+
+pub impl U512ISerde of ISerde<u512> {
+    fn iserialize(self: @u512, ref output: Array<felt252>) {
+        output.append((*self.limb0).into());
+        output.append((*self.limb1).into());
+        output.append((*self.limb2).into());
+        output.append((*self.limb3).into());
     }
 }
 
@@ -67,6 +78,7 @@ pub impl OptionTISerde<T, impl S: ISerde<T>> of ISerde<Option<T>> {
         }
     }
 }
+
 
 pub impl ResultISerde<
     Ok, Err, impl SOk: ISerde<Ok>, impl SErr: ISerde<Err>,
@@ -102,6 +114,14 @@ pub impl SpanTISerde<T, impl S: ISerde<T>> of ISerde<Span<T>> {
         }
     }
 }
+
+
+pub impl BoxTISerde<T, impl S: ISerde<T>> of ISerde<Box<T>> {
+    fn iserialize(self: @Box<T>, ref output: Array<felt252>) {
+        S::iserialize(self.as_snapshot().unbox(), ref output);
+    }
+}
+
 
 pub impl Tuple1ISerde<T0, impl S: ISerde<T0>> of ISerde<(T0,)> {
     fn iserialize(self: @(T0,), ref output: Array<felt252>) {
@@ -328,3 +348,4 @@ pub impl Tuple10ISerde<
         S9::iserialize(val9, ref output);
     }
 }
+

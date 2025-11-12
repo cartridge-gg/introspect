@@ -1,5 +1,5 @@
 introspect::types::StructDef {
     name: "{{name}}",
-    attrs: [{{attrs_str}}].span(),
+    attributes: [{{attributes_str}}].span(),
     members: [{{members_str}}].span(),
 }

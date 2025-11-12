@@ -1,7 +1,7 @@
 use indent::indent_by;
 
 use crate::introspect::item::IntrospectItem;
-use crate::type_def::ItemTrait;
+use crate::items::ItemTrait;
 
 mod derive;
 mod enums;

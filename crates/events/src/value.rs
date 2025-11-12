@@ -7,7 +7,7 @@ use starknet_types_core::felt::Felt;
 pub struct UpdateRecordField {
     pub table_id: Felt,
     pub table_name: String,
-    pub attrs: Vec<String>,
+    pub attributes: Vec<String>,
     pub field: Field,
 }
 
@@ -15,7 +15,7 @@ pub struct UpdateRecordField {
 pub struct UpdateRecordFields {
     pub table_id: Felt,
     pub table_name: String,
-    pub attrs: Vec<String>,
+    pub attributes: Vec<String>,
     pub fields: Vec<Field>,
 }
 
@@ -23,7 +23,7 @@ pub struct UpdateRecordFields {
 pub struct UpdateRecordsField {
     pub table_id: Felt,
     pub table_name: String,
-    pub attrs: Vec<String>,
+    pub attributes: Vec<String>,
     pub field_info: FieldInfo,
     pub values: Vec<Value>,
 }
@@ -32,7 +32,7 @@ pub struct UpdateRecordsField {
 pub struct UpdateRecordsFields {
     pub table_id: Felt,
     pub table_name: String,
-    pub attrs: Vec<String>,
+    pub attributes: Vec<String>,
     pub field_infos: Vec<FieldInfo>,
     pub values: Vec<Vec<Value>>, //row-major
 }

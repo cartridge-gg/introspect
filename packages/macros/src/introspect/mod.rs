@@ -1,6 +1,6 @@
 use indent::indent_by;
 
-use crate::type_def::{ItemTrait, ToTypeDef, merge_defs, pad_nl};
+use crate::items::{ItemTrait, ToTypeDef, merge_defs, pad_nl};
 
 pub mod attribute;
 pub mod derive;

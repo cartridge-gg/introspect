@@ -1,4 +1,4 @@
-use crate::type_def::{
+use crate::items::{
     ItemTrait, ToTypeDef, make_attributes_string, stack_type_defs, type_child_defs,
 };
 use crate::{Enum, Variant};
@@ -15,9 +15,9 @@ impl ToTypeDef for Variant<'_> {
             None => "introspect::TypeDef::None".to_string(),
         };
         VARIANT_TYPE_DEF_TPL
-            .replace("{{selector}}", self.n.to_string().as_str())
+            .replace("{{selector}}", &self.selector)
             .replace("{{name}}", &self.name)
-            .replace("{{attrs_str}}", indent_by(8, attributes_str).as_str())
+            .replace("{{attributes_str}}", indent_by(8, attributes_str).as_str())
             .replace("{{type_def}}", &ty_str)
     }
 }
@@ -28,7 +28,7 @@ impl ToTypeDef for Enum<'_> {
         let attributes_str = make_attributes_string(&self.attributes);
         ENUM_TYPE_DEF_TPL
             .replace("{{name}}", &self.name)
-            .replace("{{attrs_str}}", indent_by(8, attributes_str).as_str())
+            .replace("{{attributes_str}}", indent_by(8, attributes_str).as_str())
             .replace("{{variants_str}}", indent_by(4, variants_str).as_str())
     }
 }

@@ -16,7 +16,6 @@ pub enum TypeEvents {
 pub struct DeclareSchema {
     #[key]
     pub id: felt252,
-    pub version: felt252,
     pub columns: Span<ColumnDef>,
 }
 
@@ -24,8 +23,15 @@ pub struct DeclareSchema {
 pub struct DeclareType {
     #[key]
     pub id: felt252,
-    pub version: felt252,
     pub type_def: TypeDef,
+}
+
+
+#[derive(Drop, Serde, starknet::Event)]
+pub struct DeclareTypeFromClass {
+    #[key]
+    pub id: felt252,
+    pub class_hash: ClassHash,
 }
 
 #[derive(Drop, Serde, starknet::Event)]
@@ -35,4 +41,3 @@ pub struct DeclareSchemaFromClass {
     pub version: felt252,
     pub class_hash: ClassHash,
 }
-

@@ -1,6 +1,7 @@
 use cairo_lang_macro::{ProcMacroResult, TextSpan, Token, TokenStream, TokenTree, derive_macro};
 use cairo_lang_parser::printer::print_tree;
 use cairo_lang_parser::utils::SimpleParserDatabase;
+use cairo_lang_starknet_classes::keccak::starknet_keccak;
 use cairo_lang_syntax::node::ast::Visibility as AstVisibility;
 
 pub fn str_to_token_stream(s: &str) -> TokenStream {
@@ -43,4 +44,8 @@ pub fn print_all(token_stream: TokenStream) -> ProcMacroResult {
     let (parsed, _diag) = db.parse_virtual_with_diagnostics(token_stream.clone());
     println!("{}", print_tree(&db, &parsed, true, true));
     ProcMacroResult::new(str_to_token_stream("mod something {}"))
+}
+
+pub fn string_to_keccak_hex(s: &str) -> String {
+    format!("0x{}", starknet_keccak(s.as_bytes()).to_str_radix(16))
 }

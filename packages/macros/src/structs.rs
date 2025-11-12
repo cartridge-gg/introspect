@@ -76,8 +76,8 @@ pub fn get_struct<'db>(db: &'db dyn Database, file: SyntaxNode<'db>) -> Result<S
 impl<'db> ToString for Member<'db> {
     fn to_string(&self) -> String {
         format!(
-            "{attrs}{vis}{name}: {ty},",
-            attrs = attributes_to_string(&self.attributes, 1),
+            "{attributes}{vis}{name}: {ty},",
+            attributes = attributes_to_string(&self.attributes, 1),
             vis = self.visibility.to_code_string(),
             name = self.name,
             ty = self.ty
@@ -99,10 +99,10 @@ impl<'db> ToString for Struct<'db> {
             .join("\n    ");
 
         format!(
-            "{derives}{attrs}{vis}struct {name}{params_str}{{\n    {members_str}\n}}
+            "{derives}{attributes}{vis}struct {name}{params_str}{{\n    {members_str}\n}}
             ",
             derives = make_derives_attributes_line(&self.derives),
-            attrs = attributes_to_string(&self.attributes, 0),
+            attributes = attributes_to_string(&self.attributes, 0),
             name = self.name,
             vis = self.visibility.to_code_string(),
         )
