@@ -236,4 +236,133 @@ struct AStructWithOne {
     a: u8,
 }
 
-emit_schemas!(TestStruct, Foo);
+#[derive(Drop, Introspect, starknet::Store)]
+enum Element {
+    #[default]
+    None,
+    Air: u8,
+    Fire: u8,
+    Earth: u8,
+    Water: u8,
+}
+
+#[derive(Drop, Introspect, starknet::Store)]
+enum Material {
+    #[default]
+    Cloth,
+    Leather,
+    Iron,
+    Steel,
+    Mythril,
+    Elemental: Element,
+}
+
+#[derive(Drop, Introspect, starknet::Store)]
+struct ArmourPiece {
+    experience: u32,
+    wear: u8,
+    material: Material,
+}
+
+
+#[derive(Drop, Introspect)]
+enum WeaponType {
+    Sword,
+    Axe,
+    Bow,
+}
+
+
+#[derive(Drop, Schema)]
+struct Weapon {
+    name: ByteArray,
+    level: u16,
+    material: Material,
+    weapon_type: WeaponType,
+}
+
+
+#[derive(Drop, Introspect)]
+struct ArmourSet {
+    head: ArmourPiece,
+    chest: ArmourPiece,
+    legs: ArmourPiece,
+    gloves: ArmourPiece,
+    boots: ArmourPiece,
+}
+
+#[derive(Drop, Introspect)]
+struct WeaponHit {
+    damage: u16,
+    element: Element,
+}
+
+#[derive(Drop, Introspect)]
+struct ArmourSetIds {
+    head: felt252,
+    chest: felt252,
+    legs: felt252,
+    gloves: felt252,
+    boots: felt252,
+}
+
+
+#[derive(Drop, Schema)]
+struct WarriorTable {
+    name: ByteArray,
+    level: u8,
+    health: u16,
+    weapons: felt252,
+    armour: ArmourSetIds,
+    gold: u128,
+    alive: bool,
+}
+
+#[derive(Drop, Introspect)]
+struct Water {
+    depth: u8,
+    current_speed: u8,
+    fish: bool,
+}
+
+#[derive(Drop, Introspect)]
+struct Mountain {
+    height: u32,
+    trolls: u8,
+}
+
+#[derive(Drop, Introspect)]
+enum Terrain {
+    Grass,
+    Water: Water,
+    Mountain: Mountain,
+    Desert,
+}
+
+#[derive(Drop, Schema)]
+struct MapPosition {
+    x: u8,
+    y: u8,
+    terrain: Terrain,
+    warrior: Option<felt252>,
+}
+
+#[derive(Drop, Introspect)]
+struct Weather {
+    wind: u8,
+    temperature: i8,
+}
+
+#[starknet::contract]
+mod a_contract {
+    use starknet::storage::Map;
+    use crate::ArmourPiece;
+    use super::{MapPosition, Warrior};
+
+    #[storage]
+    struct Storage {
+        map: Map<(u8, u8), MapPosition>,
+        warriors: Map<felt252, Warrior>,
+        armours: Map<felt252, ArmourPiece>,
+    }
+}

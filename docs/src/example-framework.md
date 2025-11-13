@@ -1,20 +1,21 @@
-use core::poseidon;
-use introspect::{
-    Attribute, ColumnDef, ISerde, PrimaryDef, PrimaryTrait, PrimaryTypeDef, RecordPrimary, Schema,
-    TypeDef,
-};
-use poseidon::poseidon_hash_span;
-use crate::table::ITable;
+# Example Framework
 
-// #[derive(Table)]
-#[derive(Drop)]
+Although the tools in the base repository can be used directly to build applications, we provide an example framework that builds on top of them to provide a higher-level interface for defining and managing tables.
+
+This framework works by providing imps for each table which can then be used to declare, and perform operations on the tables.
+
+Tables can either be defined directly using the `Table` macro with one or multiple `#[key]` fields. If a single` #[key]` of primary key type (base type that can be serialised to a single felt) is used then this is treated as the primary key for the table. If multiple `#[key]` fields are used then these are combined to form a composite primary key with the id `__id`.
+
+```rust
+#[derive(Drop, Table)]
 pub struct Foo {
     #[key]
-    pub a_key: u128,
+    pub id: felt252,
     pub name: ByteArray,
     pub something: ByteArray,
 }
 
+/// GENERATED CODE
 impl FooSchema of Schema<Foo> {
     fn columns() -> Span<ColumnDef> {
         [
@@ -75,7 +76,10 @@ pub impl FooTable of ITable<Foo> {
     }
 }
 
-#[derive(Drop)]
+///-----------------------------
+/// Another Table with Composite Key
+///
+#[derive(Drop, Table)]
 pub struct Foo2 {
     #[key]
     pub key1: felt252,
@@ -84,6 +88,8 @@ pub struct Foo2 {
     pub name: ByteArray,
     pub something: ByteArray,
 }
+
+/// GENERATED CODE
 
 impl Foo2Schema of Schema<Foo2> {
     fn columns() -> Span<ColumnDef> {
@@ -161,13 +167,19 @@ pub impl Foo2Table of ITable<Foo2> {
         Schema::<Foo2>::child_defs()
     }
 }
+```
 
+A table can also be defined from a schema and a primary key using an inline `table!` macro.
+
+```rust
 #[derive(Drop, Schema)]
 pub struct Bar {
     pub name: ByteArray,
     pub something: ByteArray,
 }
+table!(Bar, {primary_type: u128, primary_name: "id", impl_name: BarTable, table_name: "Bar"});
 
+/// GENERATED CODE
 pub impl BarTable of ITable<(felt252, @Bar)> {
     const SELECTOR: felt252 = selector!("Bar");
     fn name() -> ByteArray {
@@ -186,4 +198,35 @@ pub impl BarTable of ITable<(felt252, @Bar)> {
         Schema::<Bar>::child_defs()
     }
 }
+```
 
+These table can then be used like in the example contract below:
+
+```rust
+#[starknet::contract]
+mod example_contract {
+    use crate::example_gen::{Bar, BarTable, Foo, Foo2Table, FooTable};
+    #[storage]
+    struct Storage {}
+
+
+    #[constructor]
+    fn constructor(ref self: ContractState) {
+        FooTable::register_table();
+        Foo2Table::register_table();
+        BarTable::register_table();
+    }
+
+    #[external(v0)]
+    fn update_foo(ref self: ContractState, a_key: u128, name: ByteArray, something: ByteArray) {
+        let foo = Foo { a_key, name, something };
+        FooTable::insert_record(@foo);
+    }
+
+    #[external(v0)]
+    fn update_bar(ref self: ContractState, id: felt252, name: ByteArray, something: ByteArray) {
+        let bar = Bar { name, something };
+        BarTable::insert_record(@(id, @bar));
+    }
+}
+```

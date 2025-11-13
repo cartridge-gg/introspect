@@ -8,7 +8,7 @@ use introspect::events::emit_declare_type;
 use introspect::{Attribute, ColumnDef, IdData, IdDataTrait, PrimaryDef, TypeDef};
 
 
-pub trait ITable<R, +IdDataTrait<R>> {
+pub trait ITable<R, +IdDataTrait<R>, +Drop<R>> {
     const SELECTOR: felt252;
     fn name() -> ByteArray;
     fn attributes() -> Span<Attribute>;
@@ -35,7 +35,7 @@ pub trait ITable<R, +IdDataTrait<R>> {
     }
 
     fn insert_records(
-        records: Span<@R>,
+        records: Span<R>,
     ) {
         let mut id_datas: Array<IdData> = Default::default();
         for record in records {
