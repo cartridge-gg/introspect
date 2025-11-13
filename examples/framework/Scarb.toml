@@ -1,0 +1,27 @@
+[package]
+name = "introspect_example_framework"
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+scarb-version.workspace = true
+repository.workspace = true
+experimental-features = ["associated_item_constraints", "negative_impls"]
+
+[dependencies]
+starknet.workspace = true
+introspect = { path = "../../" }
+introspect_macros.workspace = true
+
+[dev-dependencies]
+cairo_test = "2.13.1"
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
+
+[lib]
+
+
+[[target.starknet-contract]]
+sierra = true
+casm = true

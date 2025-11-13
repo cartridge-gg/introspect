@@ -11,10 +11,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "introspect_client"
+version = "0.1.2"
+dependencies = [
+ "introspect_events",
+ "introspect_types",
+]
+
+[[package]]
 name = "introspect_events"
 version = "0.1.2"
 dependencies = [
  "introspect_types",
+]
+
+[[package]]
+name = "introspect_example_framework"
+version = "0.1.2"
+dependencies = [
+ "introspect",
+ "introspect_macros",
 ]
 
 [[package]]
