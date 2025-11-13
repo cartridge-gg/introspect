@@ -14,10 +14,10 @@ pub fn emit_declare_type(id: felt252, type_def: TypeDef) {
     emit_event_syscall([id].span(), data.span()).unwrap_syscall();
 }
 
-pub fn emit_declare_type_from_class(id: felt252, class_hash: ClassHash) {
-    emit_event_syscall([id].span(), [class_hash.into()].span()).unwrap_syscall();
+pub fn emit_declare_type_from_class(class_hash: ClassHash) {
+    emit_event_syscall([class_hash.into()].span(), [].span()).unwrap_syscall();
 }
 
-pub fn emit_declare_schema_from_class(id: felt252, class_hash: ClassHash) {
-    emit_event_syscall([id].span(), [class_hash.into()].span()).unwrap_syscall();
+pub fn emit_declare_schema_from_class(class_hash: ClassHash) {
+    emit_event_syscall([class_hash.into()].span(), [].span()).unwrap_syscall();
 }

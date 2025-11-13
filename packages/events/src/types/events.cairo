@@ -25,13 +25,11 @@ pub struct DeclareType {
 #[derive(Drop, Serde, starknet::Event)]
 pub struct DeclareTypeFromClass {
     #[key]
-    pub id: felt252,
     pub class_hash: ClassHash,
 }
 
 #[derive(Drop, Serde, starknet::Event)]
 pub struct DeclareSchemaFromClass {
     #[key]
-    pub id: felt252,
     pub class_hash: ClassHash,
 }
