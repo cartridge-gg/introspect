@@ -7,7 +7,14 @@ repository = "https://github.com/cartridge-gg/introspect"
 name = "introspect"
 
 [workspace]
-members = ["packages/*", "test/test_contract"]
+members = [
+    "packages/events",
+    "packages/types",
+    "packages/macros",
+    "packages/client",
+    "test/test_contract",
+    "examples/framework",
+]
 
 
 [workspace.dependencies]
@@ -50,4 +57,4 @@ scarb.workspace = true
 
 [[target.starknet-contract]]
 sierra = true
-casm = false
+casm = true

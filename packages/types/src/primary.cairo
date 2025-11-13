@@ -35,31 +35,42 @@ pub enum PrimaryTypeDef {
 
 pub trait PrimaryTrait<T> {
     fn to_type_def() -> PrimaryTypeDef;
+    fn to_felt252(self: @T) -> felt252;
 }
+pub mod tmp_impl {
+    use super::{PrimaryTrait, PrimaryTypeDef};
 
-impl IPrimaryImpl<T, const Enum: PrimaryTypeDef> of PrimaryTrait<T> {
-    fn to_type_def() -> PrimaryTypeDef {
-        Enum
+    pub impl IPrimaryImpl<
+        T, const Enum: PrimaryTypeDef, +Copy<T>, +Into<T, felt252>,
+    > of PrimaryTrait<T> {
+        fn to_type_def() -> PrimaryTypeDef {
+            Enum
+        }
+        fn to_felt252(self: @T) -> felt252 {
+            (*self).into()
+        }
     }
 }
 
-impl Felt252PrimaryImpl = IPrimaryImpl<felt252, PrimaryTypeDef::Felt252>;
-impl Bytes31PrimaryImpl = IPrimaryImpl<bytes31, PrimaryTypeDef::Bytes31>;
-impl BoolPrimaryImpl = IPrimaryImpl<bool, PrimaryTypeDef::Bool>;
-impl U8PrimaryImpl = IPrimaryImpl<u8, PrimaryTypeDef::U8>;
-impl U16PrimaryImpl = IPrimaryImpl<u16, PrimaryTypeDef::U16>;
-impl U32PrimaryImpl = IPrimaryImpl<u32, PrimaryTypeDef::U32>;
-impl U64PrimaryImpl = IPrimaryImpl<u64, PrimaryTypeDef::U64>;
-impl U128PrimaryImpl = IPrimaryImpl<u128, PrimaryTypeDef::U128>;
-impl I8PrimaryImpl = IPrimaryImpl<i8, PrimaryTypeDef::I8>;
-impl I16PrimaryImpl = IPrimaryImpl<i16, PrimaryTypeDef::I16>;
-impl I32PrimaryImpl = IPrimaryImpl<i32, PrimaryTypeDef::I32>;
-impl I64PrimaryImpl = IPrimaryImpl<i64, PrimaryTypeDef::I64>;
-impl I128PrimaryImpl = IPrimaryImpl<i128, PrimaryTypeDef::I128>;
-impl ClassHashPrimaryImpl = IPrimaryImpl<ClassHash, PrimaryTypeDef::ClassHash>;
-impl ContractAddressPrimaryImpl = IPrimaryImpl<ContractAddress, PrimaryTypeDef::ContractAddress>;
-impl EthAddressPrimaryImpl = IPrimaryImpl<EthAddress, PrimaryTypeDef::EthAddress>;
-impl StorageAddressPrimaryImpl = IPrimaryImpl<StorageAddress, PrimaryTypeDef::StorageAddress>;
+impl Felt252PrimaryImpl = tmp_impl::IPrimaryImpl<felt252, PrimaryTypeDef::Felt252>;
+impl Bytes31PrimaryImpl = tmp_impl::IPrimaryImpl<bytes31, PrimaryTypeDef::Bytes31>;
+impl BoolPrimaryImpl = tmp_impl::IPrimaryImpl<bool, PrimaryTypeDef::Bool>;
+impl U8PrimaryImpl = tmp_impl::IPrimaryImpl<u8, PrimaryTypeDef::U8>;
+impl U16PrimaryImpl = tmp_impl::IPrimaryImpl<u16, PrimaryTypeDef::U16>;
+impl U32PrimaryImpl = tmp_impl::IPrimaryImpl<u32, PrimaryTypeDef::U32>;
+impl U64PrimaryImpl = tmp_impl::IPrimaryImpl<u64, PrimaryTypeDef::U64>;
+impl U128PrimaryImpl = tmp_impl::IPrimaryImpl<u128, PrimaryTypeDef::U128>;
+impl I8PrimaryImpl = tmp_impl::IPrimaryImpl<i8, PrimaryTypeDef::I8>;
+impl I16PrimaryImpl = tmp_impl::IPrimaryImpl<i16, PrimaryTypeDef::I16>;
+impl I32PrimaryImpl = tmp_impl::IPrimaryImpl<i32, PrimaryTypeDef::I32>;
+impl I64PrimaryImpl = tmp_impl::IPrimaryImpl<i64, PrimaryTypeDef::I64>;
+impl I128PrimaryImpl = tmp_impl::IPrimaryImpl<i128, PrimaryTypeDef::I128>;
+impl ClassHashPrimaryImpl = tmp_impl::IPrimaryImpl<ClassHash, PrimaryTypeDef::ClassHash>;
+impl ContractAddressPrimaryImpl =
+    tmp_impl::IPrimaryImpl<ContractAddress, PrimaryTypeDef::ContractAddress>;
+impl EthAddressPrimaryImpl = tmp_impl::IPrimaryImpl<EthAddress, PrimaryTypeDef::EthAddress>;
+impl StorageAddressPrimaryImpl =
+    tmp_impl::IPrimaryImpl<StorageAddress, PrimaryTypeDef::StorageAddress>;
 impl StorageBaseAddressPrimaryImpl =
-    IPrimaryImpl<StorageBaseAddress, PrimaryTypeDef::StorageBaseAddress>;
+    tmp_impl::IPrimaryImpl<StorageBaseAddress, PrimaryTypeDef::StorageBaseAddress>;
 

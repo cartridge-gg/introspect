@@ -1,4 +1,4 @@
-use introspect_types::{Attribute, ColumnDef, PrimaryDef, PrimaryTypeDef, TypeDef};
+use introspect_types::{Attribute, ColumnDef, IdData, PrimaryDef, PrimaryTypeDef, TypeDef};
 
 
 /// Table management events
@@ -188,7 +188,7 @@ pub struct InsertRecord {
 pub struct InsertRecords {
     #[key]
     pub table: felt252,
-    pub records_data: Span<RecordData>,
+    pub records_data: Span<IdData>,
 }
 
 
@@ -198,9 +198,9 @@ pub struct InsertField {
     #[key]
     pub table: felt252,
     #[key]
-    pub record: felt252,
-    #[key]
     pub column: felt252,
+    #[key]
+    pub record: felt252,
     pub data: Span<felt252>,
 }
 
@@ -222,7 +222,7 @@ pub struct InsertsField {
     pub table: felt252,
     #[key]
     pub column: felt252,
-    pub records_data: Span<RecordData>,
+    pub records_data: Span<IdData>,
 }
 
 /// Insert multiple fields into multiple records.
@@ -231,29 +231,29 @@ pub struct InsertsFields {
     #[key]
     pub table: felt252,
     pub columns: Span<felt252>,
-    pub records_data: Span<RecordData>,
+    pub records_data: Span<IdData>,
 }
 
 /// Insert a schema into a record.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct InsertSchema {
+pub struct InsertColumnGroup {
     #[key]
     pub table: felt252,
     #[key]
     pub record: felt252,
     #[key]
-    pub schema: felt252,
+    pub group: felt252,
     pub data: Span<felt252>,
 }
 
 /// Insert multiple records into a table using a schema.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct InsertsSchema {
+pub struct InsertsColumnGroup {
     #[key]
     pub table: felt252,
     #[key]
-    pub schema: felt252,
-    pub records_data: Span<RecordData>,
+    pub group: felt252,
+    pub records_data: Span<IdData>,
 }
 
 /// Remove a single record from a table.
@@ -292,7 +292,7 @@ pub struct DeleteFields {
     #[key]
     pub table: felt252,
     #[key]
-    pub row: felt252,
+    pub record: felt252,
     pub columns: Span<felt252>,
 }
 
@@ -354,8 +354,8 @@ pub struct IdTypeAttributes {
 }
 
 
-#[derive(Drop, Serde)]
-pub struct RecordData {
-    pub record: felt252,
-    pub data: Span<felt252>,
+#[derive(Drop, Serde, starknet::Event)]
+pub struct CreateColumnGroup {
+    pub id: felt252,
+    pub columns: Span<felt252>,
 }

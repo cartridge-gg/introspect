@@ -4,6 +4,15 @@ use starknet::{ClassHash, ContractAddress};
 
 pub trait ISerde<T> {
     fn iserialize(self: @T, ref output: Array<felt252>);
+    fn iserialize_inline(
+        self: @T,
+    ) -> Span<
+        felt252,
+    > {
+        let mut data: Array<felt252> = Default::default();
+        Self::iserialize(self, ref data);
+        data.span()
+    }
 }
 
 pub mod into_felt252 {
@@ -79,6 +88,11 @@ pub impl OptionTISerde<T, impl S: ISerde<T>> of ISerde<Option<T>> {
     }
 }
 
+pub impl ByteArrayISerde of ISerde<ByteArray> {
+    fn iserialize(self: @ByteArray, ref output: Array<felt252>) {
+        self.serialize(ref output)
+    }
+}
 
 pub impl ResultISerde<
     Ok, Err, impl SOk: ISerde<Ok>, impl SErr: ISerde<Err>,

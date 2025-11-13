@@ -1,7 +1,7 @@
-use introspect_types::{Attribute, ColumnDef, PrimaryDef, PrimaryTypeDef, TypeDef};
+use introspect_types::{Attribute, ColumnDef, IdData, PrimaryDef, PrimaryTypeDef, TypeDef};
 use starknet::SyscallResultTrait;
 use starknet::syscalls::emit_event_syscall;
-use super::events::{IdName, IdTypeAttributes, RecordData};
+use super::events::{IdName, IdTypeAttributes};
 
 pub fn emit_create_table(
     id: felt252, name: ByteArray, attributes: Span<Attribute>, primary: PrimaryDef,
@@ -127,7 +127,7 @@ pub fn emit_insert_record(table: felt252, record: felt252, data: Span<felt252>) 
     emit_event_syscall([table, record].span(), event_data.span()).unwrap_syscall();
 }
 
-pub fn emit_insert_records(table: felt252, records: Span<RecordData>) {
+pub fn emit_insert_records(table: felt252, records: Span<IdData>) {
     let mut event_data: Array<felt252> = Default::default();
     records.serialize(ref event_data);
     emit_event_syscall([table].span(), event_data.span()).unwrap_syscall();
@@ -148,26 +148,26 @@ pub fn emit_insert_fields(
     emit_event_syscall([table, record].span(), event_data.span()).unwrap_syscall();
 }
 
-pub fn emit_inserts_field(table: felt252, column: felt252, records_data: Span<RecordData>) {
+pub fn emit_inserts_field(table: felt252, column: felt252, records_data: Span<IdData>) {
     let mut event_data: Array<felt252> = Default::default();
     records_data.serialize(ref event_data);
     emit_event_syscall([table, column].span(), event_data.span()).unwrap_syscall();
 }
 
-pub fn emit_inserts_fields(table: felt252, columns: Span<felt252>, records_data: Span<RecordData>) {
+pub fn emit_inserts_fields(table: felt252, columns: Span<felt252>, records_data: Span<IdData>) {
     let mut event_data: Array<felt252> = Default::default();
     columns.serialize(ref event_data);
     records_data.serialize(ref event_data);
     emit_event_syscall([table].span(), event_data.span()).unwrap_syscall();
 }
 
-pub fn emit_insert_schema(table: felt252, record: felt252, schema: felt252, data: Span<felt252>) {
+pub fn emit_insert_schema(table: felt252, schema: felt252, record: felt252, data: Span<felt252>) {
     let mut event_data: Array<felt252> = Default::default();
     data.serialize(ref event_data);
     emit_event_syscall([table, record, schema].span(), event_data.span()).unwrap_syscall();
 }
 
-pub fn emit_inserts_schema(table: felt252, schema: felt252, records_data: Span<RecordData>) {
+pub fn emit_inserts_schema(table: felt252, schema: felt252, records_data: Span<IdData>) {
     let mut event_data: Array<felt252> = Default::default();
     records_data.serialize(ref event_data);
     emit_event_syscall([table, schema].span(), event_data.span()).unwrap_syscall();
