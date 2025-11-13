@@ -1,4 +1,7 @@
+# Introspection
+
 ---
+
 snip: $SNIP_ID
 title: Introspection
 description: Introspection of onchain types and data
@@ -8,6 +11,7 @@ status: Draft
 type: Standards Track
 category: SRC
 created: 2025-10-28
+
 ---
 
 <!-- Refer to: <https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-1.md#snip-header-preamble> -->
@@ -75,7 +79,6 @@ struct CreateTable {
     #[key]
     id: felt252,
     name: ByteArray,
-    attributes: Span<Attribute>,
     primary: FieldDef,
 }
 
@@ -83,7 +86,6 @@ struct CreateTableWithColumns {
     #[key]
     id: felt252,
     name: ByteArray,
-    attributes: Span<Attribute>,
     columns: Span<ColumnDef>,
     primary: FieldDef,
 }
@@ -92,7 +94,6 @@ struct CreateTableWithSchema {
     #[key]
     id: felt252,
     name: ByteArray,
-    attributes: Span<Attribute>,
     primary: FieldDef,
     schema: felt252,
 }
@@ -663,20 +664,3 @@ trait Introspect<T> {
     }
 }
 ```
-
-## Security Considerations
-
-As this SNIP primarily defines events and data structures for describing on-chain data, it does not introduce new security risks. However, implementers should ensure that the calls to allow emitting these events are properly authorized to prevent unauthorized modifications to the described data structures.
-
-## History
-
-## Copyright
-
-Copyright and related rights waived via [MIT](../LICENSE).
-
-````
-
-```
-
-```
-````
