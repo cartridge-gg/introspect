@@ -1,6 +1,5 @@
-use introspect_types::{
-    Attribute, ColumnDef, PrimaryDef, PrimaryTypeDef, TypeDef, TypeWithAttributes,
-};
+use introspect_types::{Attribute, ColumnDef, PrimaryDef, PrimaryTypeDef, TypeDef};
+
 
 /// Table management events
 /// - id: felt252 - Unique identifier for the table.
@@ -47,7 +46,7 @@ pub struct CreateTableWithSchema {
 pub struct RenameTable {
     #[key]
     pub id: felt252,
-    pub new_name: ByteArray,
+    pub name: ByteArray,
 }
 
 ///Emitted when a table is dropped.
@@ -91,6 +90,7 @@ pub struct RetypePrimary {
 pub struct AddColumn {
     #[key]
     pub table: felt252,
+    #[key]
     pub id: felt252,
     pub name: ByteArray,
     pub attributes: Span<Attribute>,
@@ -111,6 +111,7 @@ pub struct AddColumns {
 pub struct RenameColumn {
     #[key]
     pub table: felt252,
+    #[key]
     pub column: felt252,
     pub name: ByteArray,
 }
@@ -122,7 +123,7 @@ pub struct RenameColumn {
 pub struct RenameColumns {
     #[key]
     pub table: felt252,
-    pub columns: Span<(felt252, ByteArray)>,
+    pub columns: Span<IdName>,
 }
 
 /// Remove a single record from a table.
@@ -131,6 +132,7 @@ pub struct RenameColumns {
 pub struct RetypeColumn {
     #[key]
     pub table: felt252,
+    #[key]
     pub column: felt252,
     pub attributes: Span<Attribute>,
     pub type_def: TypeDef,
@@ -142,7 +144,7 @@ pub struct RetypeColumn {
 pub struct RetypeColumns {
     #[key]
     pub table: felt252,
-    pub columns: Span<(felt252, TypeWithAttributes)>,
+    pub columns: Span<IdTypeAttributes>,
 }
 
 /// Emitted when a column is undeclared from a table.
@@ -150,6 +152,7 @@ pub struct RetypeColumns {
 pub struct DropColumn {
     #[key]
     pub table: felt252,
+    #[key]
     pub column: felt252,
 }
 
@@ -185,7 +188,7 @@ pub struct InsertRecord {
 pub struct InsertRecords {
     #[key]
     pub table: felt252,
-    pub records_data: Span<(felt252, Span<felt252>)>,
+    pub records_data: Span<RecordData>,
 }
 
 
@@ -219,7 +222,7 @@ pub struct InsertsField {
     pub table: felt252,
     #[key]
     pub column: felt252,
-    pub records_data: Span<(felt252, Span<felt252>)>,
+    pub records_data: Span<RecordData>,
 }
 
 /// Insert multiple fields into multiple records.
@@ -228,7 +231,7 @@ pub struct InsertsFields {
     #[key]
     pub table: felt252,
     pub columns: Span<felt252>,
-    pub records_data: Span<(felt252, Span<felt252>)>,
+    pub records_data: Span<RecordData>,
 }
 
 /// Insert a schema into a record.
@@ -250,12 +253,12 @@ pub struct InsertsSchema {
     pub table: felt252,
     #[key]
     pub schema: felt252,
-    pub records_data: Span<(felt252, Span<felt252>)>,
+    pub records_data: Span<RecordData>,
 }
 
 /// Remove a single record from a table.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct DropRecord {
+pub struct DeleteRecord {
     #[key]
     pub table: felt252,
     #[key]
@@ -264,7 +267,7 @@ pub struct DropRecord {
 
 /// Remove multiple records from a table.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct DropRecords {
+pub struct DeleteRecords {
     #[key]
     pub table: felt252,
     pub records: Span<felt252>,
@@ -273,7 +276,7 @@ pub struct DropRecords {
 
 /// Remove a single field from a record.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct DropField {
+pub struct DeleteField {
     #[key]
     pub table: felt252,
     #[key]
@@ -285,7 +288,7 @@ pub struct DropField {
 
 /// Remove multiple fields from a record.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct DropFields {
+pub struct DeleteFields {
     #[key]
     pub table: felt252,
     #[key]
@@ -296,7 +299,7 @@ pub struct DropFields {
 
 /// Remove a single field from multiple records.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct DropsField {
+pub struct DeletesField {
     #[key]
     pub table: felt252,
     #[key]
@@ -306,7 +309,7 @@ pub struct DropsField {
 
 /// Remove multiple fields from multiple records.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct DropsFields {
+pub struct DeletesFields {
     #[key]
     pub table: felt252,
     pub records: Span<felt252>,
@@ -316,7 +319,7 @@ pub struct DropsFields {
 
 /// Remove a schema from a record.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct DropSchema {
+pub struct DeleteSchema {
     #[key]
     pub table: felt252,
     #[key]
@@ -327,7 +330,7 @@ pub struct DropSchema {
 
 /// Remove multiple fields from multiple records.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct DropsSchema {
+pub struct DeletesSchema {
     #[key]
     pub table: felt252,
     #[key]
@@ -335,3 +338,24 @@ pub struct DropsSchema {
     pub records: Span<felt252>,
 }
 
+
+#[derive(Drop, Serde)]
+pub struct IdName {
+    pub id: felt252,
+    pub name: ByteArray,
+}
+
+
+#[derive(Drop, Serde)]
+pub struct IdTypeAttributes {
+    pub id: felt252,
+    pub attributes: Span<Attribute>,
+    pub type_def: TypeDef,
+}
+
+
+#[derive(Drop, Serde)]
+pub struct RecordData {
+    pub record: felt252,
+    pub data: Span<felt252>,
+}

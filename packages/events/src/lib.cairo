@@ -3,5 +3,11 @@ pub mod database {
     pub mod events;
 }
 pub mod multipart;
-pub mod types;
-pub mod variable;
+pub mod types {
+    pub mod emitters;
+    pub mod events;
+}
+pub mod variable {
+    pub mod emitters;
+    pub mod events;
+}

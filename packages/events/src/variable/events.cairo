@@ -1,14 +1,5 @@
 use introspect_types::TypeDef;
 
-#[derive(Drop, Serde, starknet::Event)]
-pub enum VariableEvents {
-    DeclareVariable: DeclareVariable,
-    RegisterVariable: RegisterVariable,
-    SetVariable: SetVariable,
-    DeleteVariable: DeleteVariable,
-}
-
-
 // Emitted when a variable is declared.
 /// Fields:
 /// - `id`: Unique identifier of the variable (e.g., hash of the name or a custom ID).
@@ -45,6 +36,14 @@ pub struct SetVariable {
     #[key]
     pub id: felt252,
     pub data: Span<felt252>,
+}
+
+
+#[derive(Drop, Serde, starknet::Event)]
+pub struct RenameVariable {
+    #[key]
+    pub id: felt252,
+    pub name: ByteArray,
 }
 
 #[derive(Drop, Serde, starknet::Event)]

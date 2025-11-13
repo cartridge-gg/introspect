@@ -1,11 +1,6 @@
 use introspect_types::{ColumnDef, TypeDef};
 use starknet::ClassHash;
 
-pub enum TypeEvents {
-    DeclareSchema: DeclareSchema,
-    DeclareType: DeclareType,
-}
-
 /// Declares a reusable schema layout.
 ///
 /// Fields:
@@ -38,6 +33,5 @@ pub struct DeclareTypeFromClass {
 pub struct DeclareSchemaFromClass {
     #[key]
     pub id: felt252,
-    pub version: felt252,
     pub class_hash: ClassHash,
 }
