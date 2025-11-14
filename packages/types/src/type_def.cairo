@@ -132,26 +132,26 @@ mod selectors {
     pub const I64: felt252 = 'i64';
     pub const I128: felt252 = 'i128';
     pub const Bytes31: felt252 = 'bytes31';
-    pub const ShortString: felt252 = 'short_string';
-    pub const ClassHash: felt252 = 'class_hash';
-    pub const ContractAddress: felt252 = 'contract_address';
-    pub const EthAddress: felt252 = 'eth_address';
-    pub const StorageAddress: felt252 = 'storage_address';
-    pub const StorageBaseAddress: felt252 = 'storage_base_address';
-    pub const ByteArray: felt252 = 'byte_array';
-    pub const Tuple: felt252 = 'tuple';
-    pub const Array: felt252 = 'array';
-    pub const FixedArray: felt252 = 'fixed_array';
-    pub const Felt252Dict: felt252 = 'felt252_dict';
+    pub const ShortString: felt252 = 'ShortString';
+    pub const ClassHash: felt252 = 'ClassHash';
+    pub const ContractAddress: felt252 = 'ContractAddress';
+    pub const EthAddress: felt252 = 'EthAddress';
+    pub const StorageAddress: felt252 = 'StorageAddress';
+    pub const StorageBaseAddress: felt252 = 'StorageBaseAddress';
+    pub const ByteArray: felt252 = 'ByteArray';
+    pub const Tuple: felt252 = 'Tuple';
+    pub const Array: felt252 = 'Array';
+    pub const FixedArray: felt252 = 'FixedArray';
+    pub const Felt252Dict: felt252 = 'Felt252Dict';
     pub const Struct: felt252 = 'struct';
     pub const Enum: felt252 = 'enum';
     pub const Ref: felt252 = 'ref';
     pub const RecursiveSelf: felt252 = 'recursive_self';
     pub const Recursive: felt252 = 'recursive_type';
     pub const Custom: felt252 = 'custom';
-    pub const Option: felt252 = 'option';
-    pub const Result: felt252 = 'result';
-    pub const Nullable: felt252 = 'nullable';
+    pub const Option: felt252 = 'Option';
+    pub const Result: felt252 = 'Result';
+    pub const Nullable: felt252 = 'Nullable';
 }
 
 #[generate_trait]

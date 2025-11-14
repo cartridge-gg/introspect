@@ -436,41 +436,42 @@ struct DeleteVariable {
 The following data structures are used to describe the types and schemas of cairo structures.
 
 `TypeDef`: An enum to represent what the value should be decoded as. The values are:
-
-- `None` A None type such as a `()` or an empty enum.
-- `Felt252` A `felt252` field element (The base type of starknet).
-- `Bytes31` 31 bytes packed into a felt252.
-- `Bool` A boolean value (true or false).
-- `U8` An unsigned 8-bit integer.
-- `U16` An unsigned 16-bit integer.
-- `U32` An unsigned 32-bit integer.
-- `U64` An unsigned 64-bit integer.
-- `U128` An unsigned 128-bit integer.
-- `U256` An unsigned 256-bit integer.
-- `U512` An unsigned 512-bit integer.
-- `I8` A signed 8-bit integer.
-- `I16` A signed 16-bit integer.
-- `I32` A signed 32-bit integer.
-- `I64` A signed 64-bit integer.
-- `I128` A signed 128-bit integer.
-- `ClassHash` A class hash (The hash of a contract class).
-- `ContractAddress` A contract address (The address of a deployed contract).
-- `EthAddress` An Ethereum address.
-- `StorageAddress` A storage address (The address of a storage location).
-- `StorageBaseAddress` A storage base address (The base address of a storage location).
-- `ByteArray` A byte array (An array of bytes31 with a pending word).
-- `ShortString` A short string (A string of limited length).
-- `Tuple` A tuple (A fixed-size collection of values).
-- `Array` An array (A dynamically-sized collection of values).
-- `FixedArray` A fixed-size array (An array with a known size at compile time).
-- `Felt252Dict` A dictionary (A mapping from felt252 keys to values).
-- `Struct` A struct (A custom data structure with named fields).
-- `Enum` An enum (A custom data structure with named and typed variants).
-- `Option` An option type (A type that can be either Some or None).
-- `Result` A result type (A type that can be either Ok or Err).
-- `Nullable` A nullable type (A type that can be null).
-- `Ref` A reference type (A type that refers to another value).
-- `Custom` A custom type (A user-defined data structure and decoding).
+| Variant | Description | Selector|
+|----------|-------------|-----------|
+|`None`| None type e.g. `()` or an empty enum.| 0
+|`Felt252`| Base [field element](https://docs.starknet.io/build/corelib/core-felt252) in cairo | 'felt252'
+|`Bytes31`| 31 bytes packed into a felt252.| 'bytes31'
+|`Bool`| A boolean value (true or false).| 'bool'
+|`U8`| An unsigned 8-bit integer.| 'u8'
+|`U16`| An unsigned 16-bit integer.| 'u16'
+|`U32`| An unsigned 32-bit integer.| 'u32'
+|`U64`| An unsigned 64-bit integer.| 'u64'
+|`U128`| An unsigned 128-bit integer.| 'u128'
+|`U256`| An unsigned 256-bit integer.| 'u256'
+|`U512`| An unsigned 512-bit integer.| 'u512'
+|`I8`| A signed 8-bit integer.| 'i8'
+|`I16`| A signed 16-bit integer.| 'i16'
+|`I32`| A signed 32-bit integer.| 'i32'
+|`I64`| A signed 64-bit integer.| 'i64'
+|`I128`| A signed 128-bit integer.| 'i128'
+|`ClassHash`| An identifier for a contract class.| 'ClassHash'
+|`ContractAddress`| An address of a contract on StarkNet.| 'ContractAddress'
+|`EthAddress`| An Ethereum address.| 'EthAddress'
+|`StorageAddress`| An address of a storage location of a contract.| 'StorageAddress'
+|`StorageBaseAddress`| An address of a storage base location of a contract.| 'StorageBaseAddress'
+|`ByteArray`| A byte array (An array of bytes31 with a pending word).| 'ByteArray'
+|`ShortString`| A string of up to 31 bytes and length | 'ShortString'
+|`Tuple`| A tuple | 'Tuple'
+|`Array`| Variable sized array | 'Array'
+|`FixedArray`| Compile-time sized array| 'FixedArray'
+|`Felt252Dict`| A dictionary (A mapping from felt252 keys to values).| 'Felt252Dict'
+|`Struct`| Custom struct| 'struct'
+|`Enum`| Rust style enum | 'enum'
+|`Option`| Option type - Either `Some` with a value or `None`| 'Option'
+|`Result`| Result type - Either `Ok` or `Err` each with there own type| 'Result'
+|`Nullable`| Nullable type - Either a value or `Null`| 'Nullable'
+|`Ref`| A reference type (A type that refers to another value).| 'Ref'
+|`Custom`| A custom type (A user-defined data structure and decoding).| 'Custom'
 
 ```rust
 enum TypeDef {
@@ -648,7 +649,17 @@ struct FieldDef {
 
 ### Traits
 
+Although to use this spec directly you can just emit the events with the correct data structures, to make it easier to work with there are some traits provided to generate TypeDefs and serialize data. These are implemented for all core cairo and starknet types and there are macros provided to generate them for custom structs and enums.
+
+### Introspect Trait
+
 The Introspect trait is used to describe types so they can be reconstructed by another system.
+
+Methods:
+
+- `type_def() -> TypeDef`: Returns the type definition of the implementing type.
+- `child_defs() -> Array<(felt252, TypeDef)>`: Returns any types and their ids that are referenced (including recursively) by this type.
+- `hash() -> felt252`: Returns a unique hash of the type definition.
 
 ```rust
 trait Introspect<T> {
@@ -664,6 +675,29 @@ trait Introspect<T> {
 }
 ```
 
+### ISerde Trait
+
+The ISerde trait is used to serialize data to a span of felt252 values which can then be decoded using the corresponding `TypeDef` by another system. It `iserialize` mirrors `serialize` from the Serde trait but is implemented separately to allow for optimizations specific to either ISerde or Serde without causing conflicts.
+
+```rust
+pub trait ISerde<T> {
+    fn iserialize(self: @T, ref output: Array<felt252>);
+    fn iserialize_inline(
+        self: @T,
+    ) -> Span<
+        felt252,
+    > {
+        let mut data: Array<felt252> = Default::default();
+        Self::iserialize(self, ref data);
+        data.span()
+    }
+}
+```
+
+## Implementation
+
+This SNIP provides a spec for encoding types, corresponding data and events to describe what to do with that data. It is expected that most of these will be hidden from most developers behind higher level frameworks and libraries both on the contract, indexer and client side. Its not expected that all these tool will use all the events but each library/framework should clearly document which events they use and how they interpret them. Optimization can be made by limiting certain features e.g. not allowing upgrades of database to allow for more efficient storage and querying.
+
 ## Security Considerations
 
 As this SNIP primarily defines events and data structures for describing on-chain data, it does not introduce new security risks. However, implementers should ensure that the calls to allow emitting these events are properly authorized to prevent unauthorized modifications to the described data structures.
@@ -673,10 +707,3 @@ As this SNIP primarily defines events and data structures for describing on-chai
 ## Copyright
 
 Copyright and related rights waived via [MIT](../LICENSE).
-
-````
-
-```
-
-```
-````
