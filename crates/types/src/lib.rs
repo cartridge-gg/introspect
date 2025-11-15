@@ -11,8 +11,8 @@ pub use parser::ToValue;
 pub use schema::{ColumnDef, ColumnInfo, Field};
 pub use type_def::{EnumDef, FixedArrayDef, MemberDef, ResultDef, StructDef, TypeDef, VariantDef};
 pub use utils::{
-    FeltIterator, deserialize_byte_array_string, pop_primitive, pop_short_utf8, pop_u256, pop_u512,
-    read_serialized_felt_array,
+    FeltIterator, deserialize_byte_array, deserialize_byte_array_string, pop_primitive,
+    pop_short_utf8, pop_u256, pop_u512, read_serialized_felt_array,
 };
 pub use value::{Custom, EncodedBytes, Enum, Member, Nullable, Struct, Value};
 // use cainome_cairo_serde::{ByteArray, Bytes31};

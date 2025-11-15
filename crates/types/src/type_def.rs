@@ -2,6 +2,11 @@ use crate::Attribute;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub enum ByteArrayDeserialization {
+    Serde,
+    ISerde,
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
 pub enum TypeDef {
@@ -29,8 +34,8 @@ pub enum TypeDef {
     EthAddress,
     StorageAddress,
     StorageBaseAddress,
-    ByteArray,
-    Utf8Array,
+    ByteArray(ByteArrayDeserialization),
+    Utf8Array(ByteArrayDeserialization),
     ByteArrayE(Felt),
     Tuple(Vec<TypeDef>),
     Array(Box<TypeDef>),
@@ -182,8 +187,8 @@ impl TypeName for TypeDef {
             TypeDef::EthAddress => "EthAddress".to_string(),
             TypeDef::StorageAddress => "StorageAddress".to_string(),
             TypeDef::StorageBaseAddress => "StorageBaseAddress".to_string(),
-            TypeDef::ByteArray => "ByteArray".to_string(),
-            TypeDef::Utf8Array => "Utf8Array".to_string(),
+            TypeDef::ByteArray(_) => "ByteArray".to_string(),
+            TypeDef::Utf8Array(_) => "Utf8Array".to_string(),
             TypeDef::ByteArrayE(encoding) => format!("ByteArrayE: {}", encoding),
             TypeDef::Tuple(inner) => format!(
                 "({})",

@@ -1,6 +1,6 @@
 use starknet_types_core::felt::Felt;
 
-use crate::type_def::selectors;
+use crate::type_def::{ByteArrayDeserialization, selectors};
 use crate::{
     Attribute, EnumDef, FeltIterator, FixedArrayDef, MemberDef, ResultDef, StructDef, TypeDef,
     VariantDef, deserialize_byte_array_string, pop_primitive, read_serialized_felt_array,
@@ -69,8 +69,8 @@ impl CairoDeserialize for TypeDef {
             selectors::EthAddress => Some(TypeDef::EthAddress),
             selectors::StorageAddress => Some(TypeDef::StorageAddress),
             selectors::StorageBaseAddress => Some(TypeDef::StorageBaseAddress),
-            selectors::ByteArray => Some(TypeDef::ByteArray),
-            selectors::Utf8Array => Some(TypeDef::Utf8Array),
+            selectors::ByteArray => Some(TypeDef::ByteArray(ByteArrayDeserialization::ISerde)),
+            selectors::Utf8Array => Some(TypeDef::Utf8Array(ByteArrayDeserialization::ISerde)),
             selectors::ByteArrayE => Some(TypeDef::ByteArrayE(data.next()?)),
             selectors::Tuple => Vec::<TypeDef>::c_deserialize(data).map(TypeDef::Tuple),
             selectors::Array => TypeDef::c_deserialize_boxed(data).map(TypeDef::Array),

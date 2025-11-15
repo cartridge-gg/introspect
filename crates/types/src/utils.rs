@@ -63,7 +63,7 @@ pub fn pop_u512(data: &mut FeltIterator) -> Option<U512> {
     }
 }
 
-pub fn deserialize_byte_array_string(data: &mut FeltIterator) -> Option<String> {
+pub fn deserialize_byte_array(data: &mut FeltIterator) -> Option<Vec<u8>> {
     let len = data.next()?.try_into().ok()?;
 
     let mut bytes: Vec<Bytes31> = Vec::with_capacity(len);
@@ -79,6 +79,10 @@ pub fn deserialize_byte_array_string(data: &mut FeltIterator) -> Option<String> 
             pending_word,
             pending_word_len,
         }
-        .to_string_lossy(),
+        .to_bytes(),
     )
+}
+
+pub fn deserialize_byte_array_string(data: &mut FeltIterator) -> Option<String> {
+    deserialize_byte_array(data).map(|bytes| String::from_utf8_lossy(&bytes).to_string())
 }
