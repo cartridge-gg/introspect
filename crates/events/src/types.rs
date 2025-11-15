@@ -1,9 +1,8 @@
-use introspect_types::ColumnDef;
-use introspect_value::{FeltIterator, ToValue};
+use introspect_types::{ColumnDef, FeltIterator, ToValue};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 
-use crate::value::UpdateRecordFields;
+use crate::events::UpdateRecordFields;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct TableSchema {

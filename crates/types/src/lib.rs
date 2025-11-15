@@ -1,387 +1,223 @@
-use cainome_cairo_serde::{ByteArray, Bytes31};
-use introspect_value::{Custom, Enum, FeltIterator, Field, Struct, ToValue, Value};
-use num_traits::Zero;
-use primitive_types::U256;
-use serde::{Deserialize, Serialize};
-use starknet_types_core::felt::Felt;
-use std::collections::HashMap;
-#[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
-pub enum TypeDef {
-    #[default]
-    None,
-    Felt252,
-    Bool,
-    U8,
-    U16,
-    U32,
-    U64,
-    U128,
-    U256,
-    I8,
-    I16,
-    I32,
-    I64,
-    I128,
-    USize,
-    ShortString,
-    ClassHash,
-    ContractAddress,
-    EthAddress,
-    ByteArray,
-    Tuple(Vec<TypeDef>),
-    Array(Box<TypeDef>),
-    FixedArray(FixedArrayDef),
-    Felt252Dict(Box<TypeDef>),
-    Struct(StructDef),
-    Enum(EnumDef),
-    Ref(String),
-    Schema(Vec<ColumnDef>),
-    Custom(String),
-    Option(Box<TypeDef>),
-    Result(ResultDef),
-    Nullable(Box<TypeDef>),
-    Encoding(String),
-    DynamicEncoding,
-}
+pub mod attribute;
+pub mod deserialize;
+pub mod parser;
+pub mod schema;
+pub mod type_def;
+pub mod utils;
+pub mod value;
+pub use attribute::Attribute;
+pub use deserialize::CairoDeserialize;
+pub use parser::ToValue;
+pub use schema::{ColumnDef, ColumnInfo, Field};
+pub use type_def::{EnumDef, FixedArrayDef, MemberDef, ResultDef, StructDef, TypeDef, VariantDef};
+pub use utils::{
+    FeltIterator, deserialize_byte_array_string, pop_primitive, pop_short_utf8, pop_u256, pop_u512,
+    read_serialized_felt_array,
+};
+pub use value::{Custom, EncodedBytes, Enum, Member, Nullable, Struct, Value};
+// use cainome_cairo_serde::{ByteArray, Bytes31};
+// use introspect_value::{Custom, Enum, FeltIterator, Field, Struct, ToValue, Value};
+// use num_traits::Zero;
+// use primitive_types::U256;
+// use serde::{Deserialize, Serialize};
+// use starknet_types_core::felt::Felt;
+// use std::collections::HashMap;
 
-pub trait TypeName {
-    fn type_name(&self) -> String;
-}
+// #[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
+// pub enum TypeDef {
+//     #[default]
+//     None,
+//     Felt252,
+//     Bytes31,
+//     Bool,
+//     U8,
+//     U16,
+//     U32,
+//     U64,
+//     U128,
+//     U256,
+//     U521,
+//     I8,
+//     I16,
+//     I32,
+//     I64,
+//     I128,
+//     ClassHash,
+//     ContractAddress,
+//     EthAddress,
+//     StorageAddress,
+//     StorageBaseAddress,
+//     ByteArray,
+//     ShortString,
+//     Tuple(Vec<TypeDef>),
+//     Array(Box<TypeDef>),
+//     FixedArray(Box<FixedArrayDef>),
+//     Felt252Dict(Box<TypeDef>),
+//     Struct(StructDef),
+//     Enum(EnumDef),
+//     Option(Box<TypeDef>),
+//     Result(ResultDef),
+//     Nullable(Box<TypeDef>),
+//     Ref(Felt),
+//     Custom(Felt),
+// }
 
-impl TypeName for TypeDef {
-    fn type_name(&self) -> String {
-        match self {
-            TypeDef::None => "None".to_string(),
-            TypeDef::Felt252 => "Felt252".to_string(),
-            TypeDef::Bool => "bool".to_string(),
-            TypeDef::U8 => "u8".to_string(),
-            TypeDef::U16 => "u16".to_string(),
-            TypeDef::U32 => "u32".to_string(),
-            TypeDef::U64 => "u64".to_string(),
-            TypeDef::U128 => "u128".to_string(),
-            TypeDef::U256 => "u256".to_string(),
-            TypeDef::I8 => "i8".to_string(),
-            TypeDef::I16 => "i16".to_string(),
-            TypeDef::I32 => "i32".to_string(),
-            TypeDef::I64 => "i64".to_string(),
-            TypeDef::I128 => "i128".to_string(),
-            TypeDef::USize => "usize".to_string(),
-            TypeDef::ShortString => "ShortString".to_string(),
-            TypeDef::ClassHash => "ClassHash".to_string(),
-            TypeDef::ContractAddress => "ContractAddress".to_string(),
-            TypeDef::EthAddress => "EthAddress".to_string(),
-            TypeDef::ByteArray => "ByteArray".to_string(),
-            TypeDef::Tuple(inner) => format!(
-                "({})",
-                inner
-                    .iter()
-                    .map(|e| e.type_name())
-                    .collect::<Vec<String>>()
-                    .join(", ")
-            ),
-            TypeDef::Array(inner) => format!("Vec<{}>", inner.type_name()),
-            TypeDef::FixedArray(inner) => {
-                format!("[{}; {}]", inner.type_def.type_name(), inner.size)
-            }
-            TypeDef::Felt252Dict(inner) => format!("Felt252Dict<{}>", inner.type_name()),
-            TypeDef::Struct(s) => s.name.clone(),
-            TypeDef::Enum(e) => e.name.clone(),
-            TypeDef::Ref(name) => name.clone(),
-            TypeDef::Schema(_) => "Schema".to_string(),
-            TypeDef::Custom(name) => name.clone(),
-            TypeDef::Option(inner) => format!("Option<{}>", inner.type_name()),
-            TypeDef::Result(inner) => format!(
-                "Result<{}, {}>",
-                inner.ok.type_name(),
-                inner.err.type_name()
-            ),
-            TypeDef::Nullable(inner) => format!("Nullable<{}>", inner.type_name()),
-            TypeDef::Encoding(name) => format!("Encoding<{}>", name),
-            TypeDef::DynamicEncoding => "DynamicEncoding".to_string(),
-        }
-    }
-}
+// pub trait TypeName {
+//     fn type_name(&self) -> String;
+// }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct ColumnDef {
-    pub selector: Felt,
-    pub name: String,
-    pub attributes: Vec<String>,
-    pub type_def: TypeDef,
-}
+// impl TypeName for TypeDef {
+//     fn type_name(&self) -> String {
+//         match self {
+//             TypeDef::None => "None".to_string(),
+//             TypeDef::Felt252 => "Felt252".to_string(),
+//             TypeDef::Bytes31 => "bytes31".to_string(),
+//             TypeDef::Bool => "bool".to_string(),
+//             TypeDef::U8 => "u8".to_string(),
+//             TypeDef::U16 => "u16".to_string(),
+//             TypeDef::U32 => "u32".to_string(),
+//             TypeDef::U64 => "u64".to_string(),
+//             TypeDef::U128 => "u128".to_string(),
+//             TypeDef::U256 => "u256".to_string(),
+//             TypeDef::U521 => "u521".to_string(),
+//             TypeDef::I8 => "i8".to_string(),
+//             TypeDef::I16 => "i16".to_string(),
+//             TypeDef::I32 => "i32".to_string(),
+//             TypeDef::I64 => "i64".to_string(),
+//             TypeDef::I128 => "i128".to_string(),
+//             TypeDef::ShortString => "ShortString".to_string(),
+//             TypeDef::ClassHash => "ClassHash".to_string(),
+//             TypeDef::ContractAddress => "ContractAddress".to_string(),
+//             TypeDef::EthAddress => "EthAddress".to_string(),
+//             TypeDef::StorageAddress => "StorageAddress".to_string(),
+//             TypeDef::StorageBaseAddress => "StorageBaseAddress".to_string(),
+//             TypeDef::ByteArray => "ByteArray".to_string(),
+//             TypeDef::Tuple(inner) => format!(
+//                 "({})",
+//                 inner
+//                     .iter()
+//                     .map(|e| e.type_name())
+//                     .collect::<Vec<String>>()
+//                     .join(", ")
+//             ),
+//             TypeDef::Array(inner) => format!("Vec<{}>", inner.type_name()),
+//             TypeDef::FixedArray(inner) => {
+//                 format!("[{}; {}]", inner.type_def.type_name(), inner.size)
+//             }
+//             TypeDef::Felt252Dict(inner) => format!("Felt252Dict<{}>", inner.type_name()),
+//             TypeDef::Struct(s) => s.name.clone(),
+//             TypeDef::Enum(e) => e.name.clone(),
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct FieldInfo {
-    pub selector: Felt,
-    pub name: String,
-    pub attributes: Vec<String>,
-}
+//             TypeDef::Option(inner) => format!("Option<{}>", inner.type_name()),
+//             TypeDef::Result(inner) => format!(
+//                 "Result<{}, {}>",
+//                 inner.ok.type_name(),
+//                 inner.err.type_name()
+//             ),
+//             TypeDef::Nullable(inner) => format!("Nullable<{}>", inner.type_name()),
+//             TypeDef::Ref(name) => name.to_hex_string(),
+//             TypeDef::Custom(name) => name.to_hex_string(),
+//         }
+//     }
+// }
+// #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+// pub struct Attribute {
+//     pub id: Felt,
+//     pub data: Vec<Felt>,
+// }
 
-impl From<&ColumnDef> for FieldInfo {
-    fn from(field_def: &ColumnDef) -> Self {
-        FieldInfo {
-            selector: field_def.selector.clone(),
-            name: field_def.name.clone(),
-            attributes: field_def.attributes.clone(),
-        }
-    }
-}
+// #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+// pub struct ColumnDef {
+//     pub id: Felt,
+//     pub name: String,
+//     pub attributes: Vec<Attribute>,
+//     pub type_def: TypeDef,
+// }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct VariantDef {
-    pub name: String,
-    pub attributes: Vec<String>,
-    pub type_def: TypeDef,
-}
+// #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+// pub struct FieldInfo {
+//     pub id: Felt,
+//     pub name: String,
+//     pub attributes: Vec<Attribute>,
+// }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct StructDef {
-    pub name: String,
-    pub attributes: Vec<String>,
-    pub fields: Vec<FieldDef>,
-}
+// impl From<&ColumnDef> for FieldInfo {
+//     fn from(field_def: &ColumnDef) -> Self {
+//         FieldInfo {
+//             id: field_def.id.clone(),
+//             name: field_def.name.clone(),
+//             attributes: field_def.attributes.clone(),
+//         }
+//     }
+// }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct EnumDef {
-    pub name: String,
-    pub attributes: Vec<String>,
-    pub variants: HashMap<Felt, VariantDef>,
-    pub order: Vec<Felt>,
-}
+// #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+// pub struct VariantDef {
+//     pub name: String,
+//     pub attributes: Vec<Attribute>,
+//     pub type_def: TypeDef,
+// }
 
-impl PartialEq for EnumDef {
-    fn eq(&self, other: &Self) -> bool {
-        let is_eq = self.name == other.name && self.attributes == other.attributes;
-        if !is_eq {
-            return false;
-        }
+// #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+// pub struct StructDef {
+//     pub name: String,
+//     pub attributes: Vec<Attribute>,
+//     pub fields: Vec<FieldDef>,
+// }
 
-        self.variants
-            .iter()
-            .all(|(k, v)| other.variants.get(k).map(|ov| v == ov).unwrap_or(false))
-    }
-}
+// #[derive(Clone, Debug, Serialize, Deserialize)]
+// pub struct EnumDef {
+//     pub name: String,
+//     pub attributes: Vec<Attribute>,
+//     pub variants: HashMap<Felt, VariantDef>,
+//     pub order: Vec<Felt>,
+// }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct FixedArrayDef {
-    pub type_def: Box<TypeDef>,
-    pub size: u32,
-}
+// impl PartialEq for EnumDef {
+//     fn eq(&self, other: &Self) -> bool {
+//         let is_eq = self.name == other.name && self.attributes == other.attributes;
+//         if !is_eq {
+//             return false;
+//         }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct FieldDef {
-    pub name: String,
-    pub attributes: Vec<String>,
-    pub type_def: TypeDef,
-}
+//         self.variants
+//             .iter()
+//             .all(|(k, v)| other.variants.get(k).map(|ov| v == ov).unwrap_or(false))
+//     }
+// }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct ResultDef {
-    pub ok: Box<TypeDef>,
-    pub err: Box<TypeDef>,
-}
+// #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+// pub struct FixedArrayDef {
+//     pub type_def: TypeDef,
+//     pub size: u32,
+// }
 
-pub fn pop_primitive<T: TryFrom<Felt>>(data: &mut FeltIterator) -> Option<T> {
-    data.next()?.try_into().ok()
-}
+// #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+// pub struct FieldDef {
+//     pub name: String,
+//     pub attributes: Vec<Attribute>,
+//     pub type_def: TypeDef,
+// }
 
-pub fn pop_short_string(data: &mut FeltIterator) -> Option<String> {
-    felt_to_utf8_string(data.next()?)
-}
+// #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+// pub struct ResultDef {
+//     pub ok: TypeDef,
+//     pub err: TypeDef,
+// }
 
-pub fn read_serialized_felt_array(data: &mut FeltIterator) -> Option<Vec<Felt>> {
-    let len = pop_primitive(data)?;
-    (0..len)
-        .into_iter()
-        .map(|_| data.next())
-        .collect::<Option<Vec<Felt>>>()
-}
+// #[derive(Clone, Debug, Serialize, Deserialize)]
+// pub struct TypeDefVec(pub Vec<TypeDef>);
 
-pub fn felt_to_utf8_string(felt: Felt) -> Option<String> {
-    let bytes = felt.to_bytes_be();
-    let first = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len());
-    String::from_utf8(bytes[first..32].to_vec()).ok()
-}
+// impl std::ops::Deref for TypeDefVec {
+//     type Target = Vec<TypeDef>;
 
-pub fn byte_array_felts_to_string(data: &mut FeltIterator) -> Option<String> {
-    let len = data.next()?.try_into().ok()?;
+//     fn deref(&self) -> &Self::Target {
+//         &self.0
+//     }
+// }
 
-    let mut bytes: Vec<Bytes31> = Vec::with_capacity(len);
-    for _ in 0..len {
-        bytes.push(Bytes31::new(data.next()?).ok()?);
-    }
-    let pending_word = data.next()?;
-    let pending_word_len = data.next()?.try_into().ok()?;
-
-    Some(
-        ByteArray {
-            data: bytes,
-            pending_word,
-            pending_word_len,
-        }
-        .to_string_lossy(),
-    )
-}
-
-fn parse_tuple_to_value(type_defs: &Vec<TypeDef>, data: &mut FeltIterator) -> Option<Vec<Value>> {
-    type_defs
-        .iter()
-        .map(|type_def| type_def.to_value(data))
-        .collect::<Option<Vec<Value>>>()
-}
-
-fn to_custom_value(name: &str, data: &mut FeltIterator) -> Option<Custom> {
-    Some(Custom {
-        name: name.to_string(),
-        values: read_serialized_felt_array(data)?,
-    })
-}
-
-fn to_option_value(type_def: &TypeDef, data: &mut FeltIterator) -> Option<Option<Value>> {
-    let is_some = data.next()?.is_zero();
-    match is_some {
-        true => type_def.to_value(data).map(Some),
-        false => Some(None),
-    }
-}
-
-impl ToValue for FieldDef {
-    type Value = Field;
-    fn to_value(&self, data: &mut FeltIterator) -> Option<Field> {
-        Some(Field {
-            name: self.name.clone(),
-            attributes: self.attributes.clone(),
-            value: self.type_def.to_value(data)?,
-        })
-    }
-}
-
-impl ToValue for StructDef {
-    type Value = Struct;
-    fn to_value(&self, data: &mut FeltIterator) -> Option<Struct> {
-        Some(Struct {
-            name: self.name.clone(),
-            attributes: self.attributes.clone(),
-            fields: self
-                .fields
-                .iter()
-                .map(|child| child.to_value(data))
-                .collect::<Option<Vec<Field>>>()?,
-        })
-    }
-}
-
-impl ToValue for FixedArrayDef {
-    type Value = Vec<Value>;
-    fn to_value(&self, data: &mut FeltIterator) -> Option<Vec<Value>> {
-        self.type_def.to_value_multiple(data, self.size as usize)
-    }
-}
-
-impl ToValue for EnumDef {
-    type Value = Enum;
-    fn to_value(&self, data: &mut FeltIterator) -> Option<Enum> {
-        let selector = pop_primitive::<Felt>(data)?;
-        let field = self.variants.get(&selector)?;
-
-        Some(Enum {
-            name: self.name.clone(),
-            attributes: self.attributes.clone(),
-            variant: field.name.clone(),
-            variant_attributes: field.attributes.clone(),
-            value: field.type_def.to_value(data)?,
-        })
-    }
-
-    fn to_value_multiple(&self, data: &mut FeltIterator, count: usize) -> Option<Vec<Self::Value>> {
-        (0..count)
-            .into_iter()
-            .map(|_| self.to_value(data))
-            .collect()
-    }
-}
-
-fn pop_u256(data: &mut FeltIterator) -> Option<U256> {
-    match [
-        pop_primitive::<Felt>(data)?.to_be_digits(),
-        pop_primitive::<Felt>(data)?.to_be_digits(),
-    ] {
-        [[0, 0, l2, l1], [0, 0, h2, h1]] => Some(U256([h2, h1, l2, l1])),
-        _ => None,
-    }
-}
-
-impl ToValue for TypeDef {
-    type Value = Value;
-    fn to_value(&self, data: &mut FeltIterator) -> Option<Value> {
-        match self {
-            TypeDef::None => Some(Value::None),
-            TypeDef::Felt252 => pop_primitive(data).map(Value::Felt252),
-            TypeDef::Bool => data.next().map(|v| Value::Bool(!v.is_zero())),
-            TypeDef::U8 => pop_primitive(data).map(Value::U8),
-            TypeDef::U16 => pop_primitive(data).map(Value::U16),
-            TypeDef::U32 => pop_primitive(data).map(Value::U32),
-            TypeDef::U64 => pop_primitive(data).map(Value::U64),
-            TypeDef::U128 => pop_primitive(data).map(Value::U128),
-            TypeDef::U256 => pop_u256(data).map(Value::U256),
-            TypeDef::I8 => pop_primitive(data).map(Value::I8),
-            TypeDef::I16 => pop_primitive(data).map(Value::I16),
-            TypeDef::I32 => pop_primitive(data).map(Value::I32),
-            TypeDef::I64 => pop_primitive(data).map(Value::I64),
-            TypeDef::I128 => pop_primitive(data).map(Value::I128),
-            TypeDef::USize => pop_primitive(data).map(Value::USize),
-            TypeDef::ShortString => felt_to_utf8_string(data.next()?).map(Value::ShortString),
-            TypeDef::ClassHash => pop_primitive(data).map(Value::ClassHash),
-            TypeDef::ContractAddress => data.next().map(Value::ContractAddress),
-            TypeDef::EthAddress => data.next().map(Value::EthAddress),
-            TypeDef::ByteArray => byte_array_felts_to_string(data).map(Value::ByteArray),
-            TypeDef::Tuple(type_defs) => parse_tuple_to_value(type_defs, data).map(Value::Tuple),
-            TypeDef::Array(type_def) => {
-                let size = pop_primitive(data)?;
-                type_def.to_value_multiple(data, size).map(Value::Array)
-            }
-            TypeDef::FixedArray(fa) => fa.to_value(data).map(Value::FixedArray),
-            TypeDef::Felt252Dict(_ty) => None,
-            TypeDef::Struct(s) => s.to_value(data).map(Value::Struct),
-            TypeDef::Enum(e) => e.to_value(data).map(Box::new).map(Value::Enum),
-            TypeDef::Ref(_) => None,
-            TypeDef::Schema(_fields) => None,
-            TypeDef::Custom(name) => to_custom_value(name, data).map(Value::Custom),
-            TypeDef::Option(type_def) => to_option_value(type_def, data)
-                .map(Box::new)
-                .map(Value::Option),
-            TypeDef::Result(_r) => None,
-            TypeDef::Nullable(_ty) => None,
-            TypeDef::Encoding(_) => None,
-            TypeDef::DynamicEncoding => None,
-        }
-    }
-}
-
-impl ToValue for ColumnDef {
-    type Value = Field;
-    fn to_value(&self, data: &mut FeltIterator) -> Option<Field> {
-        Some(Field {
-            name: self.name.clone(),
-            attributes: self.attributes.clone(),
-            value: self.type_def.to_value(data)?,
-        })
-    }
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TypeDefVec(pub Vec<TypeDef>);
-
-impl std::ops::Deref for TypeDefVec {
-    type Target = Vec<TypeDef>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl std::ops::DerefMut for TypeDefVec {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
+// impl std::ops::DerefMut for TypeDefVec {
+//     fn deref_mut(&mut self) -> &mut Self::Target {
+//         &mut self.0
+//     }
+// }

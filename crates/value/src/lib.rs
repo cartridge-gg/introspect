@@ -63,7 +63,7 @@ pub struct Enum {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Field {
     pub name: String,
-    pub attributes: Vec<String>,
+    pub attributes: Vec<Attribute>,
     pub value: Value,
 }
 

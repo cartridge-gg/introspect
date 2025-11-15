@@ -12,5 +12,6 @@ starknet-types-core.workspace = true
 convert_case.workspace = true
 serde_json.workspace = true
 primitive-types.workspace = true
+introspect-types.workspace = true
 
 [dev-dependencies]

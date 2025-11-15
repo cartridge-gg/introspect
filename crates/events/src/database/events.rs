@@ -1,0 +1,236 @@
+use introspect_types::schema::{PrimaryDef, PrimaryTypeDef};
+use introspect_types::{Attribute, ColumnDef, TypeDef};
+use serde::{Deserialize, Serialize};
+use starknet_types_core::felt::Felt;
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateTable {
+    pub id: Felt,
+    pub name: String,
+    pub attributes: Vec<Attribute>,
+    pub primary: PrimaryDef,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateTableWithColumns {
+    pub id: Felt,
+    pub name: String,
+    pub attributes: Vec<Attribute>,
+    pub primary: PrimaryDef,
+    pub columns: Vec<ColumnDef>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RenameTable {
+    pub id: Felt,
+    pub name: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DropTable {
+    pub id: Felt,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RenamePrimary {
+    pub table: Felt,
+    pub name: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RetypePrimary {
+    pub table: Felt,
+    pub attributes: Vec<Attribute>,
+    pub type_def: PrimaryTypeDef,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AddColumn {
+    pub table: Felt,
+    pub id: Felt,
+    pub name: String,
+    pub attributes: Vec<Attribute>,
+    pub type_def: TypeDef,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AddColumns {
+    pub table: Felt,
+    pub columns: Vec<ColumnDef>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RenameColumn {
+    pub table: Felt,
+    pub id: Felt,
+    pub name: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RenameColumns {
+    pub table: Felt,
+    pub columns: Vec<IdName>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RetypeColumn {
+    pub table: Felt,
+    pub id: Felt,
+    pub attributes: Vec<Attribute>,
+    pub type_def: TypeDef,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct RetypeColumns {
+    pub table: Felt,
+    pub columns: Vec<IdTypeAttributes>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DropColumn {
+    pub table: Felt,
+    pub id: Felt,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DropColumns {
+    pub table: Felt,
+    pub ids: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InsertRecord {
+    pub table: Felt,
+    pub record: Felt,
+    pub data: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InsertRecords {
+    pub table: Felt,
+    pub records_data: Vec<IdData>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InsertField {
+    pub table: Felt,
+    pub column: Felt,
+    pub record: Felt,
+    pub data: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InsertFields {
+    pub table: Felt,
+    pub record: Felt,
+    pub columns: Vec<Felt>,
+    pub data: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InsertsField {
+    pub table: Felt,
+    pub column: Felt,
+    pub records_data: Vec<IdData>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InsertsFields {
+    pub table: Felt,
+    pub columns: Vec<Felt>,
+    pub records_data: Vec<IdData>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InsertColumnGroup {
+    pub table: Felt,
+    pub record: Felt,
+    pub group: Felt,
+    pub data: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InsertsColumnGroup {
+    pub table: Felt,
+    pub group: Felt,
+    pub records_data: Vec<IdData>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DeleteRecord {
+    pub table: Felt,
+    pub record: Felt,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DeleteRecords {
+    pub table: Felt,
+    pub records: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DeleteField {
+    pub table: Felt,
+    pub record: Felt,
+    pub column: Felt,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DeleteFields {
+    pub table: Felt,
+    pub record: Felt,
+    pub columns: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DeletesField {
+    pub table: Felt,
+    pub column: Felt,
+    pub records: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DeletesFields {
+    pub table: Felt,
+    pub records: Vec<Felt>,
+    pub columns: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DeleteSchema {
+    pub table: Felt,
+    pub record: Felt,
+    pub schema: Felt,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DeletesSchema {
+    pub table: Felt,
+    pub schema: Felt,
+    pub records: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct IdName {
+    pub id: Felt,
+    pub name: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct IdTypeAttributes {
+    pub id: Felt,
+    pub attributes: Vec<Attribute>,
+    pub type_def: TypeDef,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateColumnGroup {
+    pub id: Felt,
+    pub columns: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct IdData {
+    pub id: Felt,
+    pub data: Vec<Felt>,
+}

@@ -7,10 +7,12 @@ version.workspace = true
 
 [dependencies]
 cainome-cairo-serde.workspace = true
-introspect-value.workspace = true
+convert_case.workspace = true
 num-traits.workspace = true
+primitive-types.workspace = true
+serde_json.workspace = true
 serde.workspace = true
 starknet-types-core.workspace = true
-primitive-types.workspace = true
+lambdaworks-math.workspace = true
 
 [dev-dependencies]

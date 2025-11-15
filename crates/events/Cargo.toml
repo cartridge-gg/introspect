@@ -9,7 +9,7 @@ version.workspace = true
 cainome-cairo-serde.workspace = true
 serde.workspace = true
 starknet-types-core.workspace = true
+starknet.workspace = true
 introspect-types.workspace = true
-introspect-value.workspace = true
 
 [dev-dependencies]
