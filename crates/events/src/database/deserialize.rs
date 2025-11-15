@@ -9,7 +9,7 @@ use super::{
 use crate::event::EventTrait;
 use introspect_types::schema::{PrimaryDef, PrimaryTypeDef};
 use introspect_types::{
-    Attribute, CairoDeserialize, ColumnDef, TypeDef, deserialize_byte_array_string,
+    Attribute, CairoDeserialize, ColumnDef, FeltIterator, TypeDef, deserialize_byte_array_string,
 };
 use starknet_types_core::felt::Felt;
 
@@ -360,7 +360,7 @@ impl EventTrait for CreateColumnGroup {
 }
 
 impl CairoDeserialize for IdData {
-    fn c_deserialize(data: &mut impl Iterator<Item = Felt>) -> Option<Self> {
+    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
         let id = data.next()?;
         let data = Vec::<Felt>::c_deserialize(data)?;
         Some(IdData { id, data })
@@ -368,7 +368,7 @@ impl CairoDeserialize for IdData {
 }
 
 impl CairoDeserialize for IdName {
-    fn c_deserialize(data: &mut impl Iterator<Item = Felt>) -> Option<Self> {
+    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
         let id = data.next()?;
         let name = deserialize_byte_array_string(data)?;
         Some(IdName { id, name })
@@ -376,7 +376,7 @@ impl CairoDeserialize for IdName {
 }
 
 impl CairoDeserialize for IdTypeAttributes {
-    fn c_deserialize(data: &mut impl Iterator<Item = Felt>) -> Option<Self> {
+    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
         let id = data.next()?;
         let attributes = Vec::<Attribute>::c_deserialize(data)?;
         let type_def = TypeDef::c_deserialize(data)?;
