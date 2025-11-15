@@ -1,6 +1,7 @@
 use starknet::storage_access::StorageBaseAddress;
 use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
 use crate::Attribute;
+use crate::type_def::{SelectorTrait, selectors};
 
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct PrimaryDef {
@@ -9,11 +10,13 @@ pub struct PrimaryDef {
     pub type_def: PrimaryTypeDef,
 }
 
-#[derive(Drop, Serde, PartialEq, Default, Debug)]
+#[derive(Drop, PartialEq, Default, Debug)]
 pub enum PrimaryTypeDef {
     #[default]
     Felt252,
+    ShortUtf8,
     Bytes31,
+    Bytes31E: felt252,
     Bool,
     U8,
     U16,
@@ -30,6 +33,89 @@ pub enum PrimaryTypeDef {
     EthAddress,
     StorageAddress,
     StorageBaseAddress,
+}
+
+
+impl PrimaryTypeDefSelector of SelectorTrait<PrimaryTypeDef> {
+    const fn selector(self: @PrimaryTypeDef) -> felt252 {
+        match self {
+            PrimaryTypeDef::Felt252 => selectors::Felt252,
+            PrimaryTypeDef::ShortUtf8 => selectors::ShortUtf8,
+            PrimaryTypeDef::Bytes31 => selectors::Bytes31,
+            PrimaryTypeDef::Bytes31E(_) => selectors::Bytes31E,
+            PrimaryTypeDef::Bool => selectors::Bool,
+            PrimaryTypeDef::U8 => selectors::U8,
+            PrimaryTypeDef::U16 => selectors::U16,
+            PrimaryTypeDef::U32 => selectors::U32,
+            PrimaryTypeDef::U64 => selectors::U64,
+            PrimaryTypeDef::U128 => selectors::U128,
+            PrimaryTypeDef::I8 => selectors::I8,
+            PrimaryTypeDef::I16 => selectors::I16,
+            PrimaryTypeDef::I32 => selectors::I32,
+            PrimaryTypeDef::I64 => selectors::I64,
+            PrimaryTypeDef::I128 => selectors::I128,
+            PrimaryTypeDef::ClassHash => selectors::ClassHash,
+            PrimaryTypeDef::ContractAddress => selectors::ContractAddress,
+            PrimaryTypeDef::EthAddress => selectors::EthAddress,
+            PrimaryTypeDef::StorageAddress => selectors::StorageAddress,
+            PrimaryTypeDef::StorageBaseAddress => selectors::StorageBaseAddress,
+        }
+    }
+}
+
+
+impl PrimaryTypeDefSerde of Serde<PrimaryTypeDef> {
+    fn serialize(self: @PrimaryTypeDef, ref output: Array<felt252>) {
+        output.append(self.selector());
+        if let PrimaryTypeDef::Bytes31E(encoding) = self {
+            output.append(*encoding);
+        }
+    }
+    fn deserialize(ref serialized: Span<felt252>) -> Option<PrimaryTypeDef> {
+        let tag = *serialized.pop_front()?;
+
+        if tag == selectors::Felt252 {
+            Option::Some(PrimaryTypeDef::Felt252)
+        } else if tag == selectors::Bytes31 {
+            Option::Some(PrimaryTypeDef::Bytes31)
+        } else if tag == selectors::Bytes31E {
+            Option::Some(PrimaryTypeDef::Bytes31E(*serialized.pop_front()?))
+        } else if tag == selectors::Bool {
+            Option::Some(PrimaryTypeDef::Bool)
+        } else if tag == selectors::U8 {
+            Option::Some(PrimaryTypeDef::U8)
+        } else if tag == selectors::U16 {
+            Option::Some(PrimaryTypeDef::U16)
+        } else if tag == selectors::U32 {
+            Option::Some(PrimaryTypeDef::U32)
+        } else if tag == selectors::U64 {
+            Option::Some(PrimaryTypeDef::U64)
+        } else if tag == selectors::U128 {
+            Option::Some(PrimaryTypeDef::U128)
+        } else if tag == selectors::I8 {
+            Option::Some(PrimaryTypeDef::I8)
+        } else if tag == selectors::I16 {
+            Option::Some(PrimaryTypeDef::I16)
+        } else if tag == selectors::I32 {
+            Option::Some(PrimaryTypeDef::I32)
+        } else if tag == selectors::I64 {
+            Option::Some(PrimaryTypeDef::I64)
+        } else if tag == selectors::I128 {
+            Option::Some(PrimaryTypeDef::I128)
+        } else if tag == selectors::ClassHash {
+            Option::Some(PrimaryTypeDef::ClassHash)
+        } else if tag == selectors::ContractAddress {
+            Option::Some(PrimaryTypeDef::ContractAddress)
+        } else if tag == selectors::EthAddress {
+            Option::Some(PrimaryTypeDef::EthAddress)
+        } else if tag == selectors::StorageAddress {
+            Option::Some(PrimaryTypeDef::StorageAddress)
+        } else if tag == selectors::StorageBaseAddress {
+            Option::Some(PrimaryTypeDef::StorageBaseAddress)
+        } else {
+            Option::None
+        }
+    }
 }
 
 

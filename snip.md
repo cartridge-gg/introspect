@@ -677,7 +677,19 @@ trait Introspect<T> {
 
 ### ISerde Trait
 
-The ISerde trait is used to serialize data to a span of felt252 values which can then be decoded using the corresponding `TypeDef` by another system. It `iserialize` mirrors `serialize` from the Serde trait but is implemented separately to allow for optimizations specific to either ISerde or Serde without causing conflicts.
+The ISerde trait is used to serialize data to a span of felt252 values which can then be decoded using the corresponding `TypeDef` by another system. Its`iserialize` mirrors `serialize` from the Serde trait for the most part but is implemented separately to allow for optimizations specific to either ISerde or Serde without causing conflicts. The only diffrence is the parsing of ByteArrays.
+
+#### ISerde ByteArray Serialization
+
+To reduce event size ByteArrays are serialized like so:
+
+- No length prefix
+- The 0 bit in the 31st byte is used to indicate if it is the last felt252 in the ByteArray; 0 = more to follow, 1 = is last.
+- The 1 bit in the 31st byte is use to show if the felt is a partial word (less than 31 bytes). 0 = full 31 bytes, 1 = 30 bytes or less. If the felt is a partial word the 30th byte contains the length of the valid bytes in that felt.
+
+This means a ByteArray with 31 Bytes or less will only take up a single felt252 with no felts used for total felts or pending word size.
+
+As all data emitted with ISerde is expected to be decoded using the corresponding TypeDef by another system and wont be represented in the ABI, this shouldn't cause any issues with compatibility.
 
 ```rust
 pub trait ISerde<T> {

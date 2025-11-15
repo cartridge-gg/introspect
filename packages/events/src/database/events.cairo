@@ -112,7 +112,7 @@ pub struct RenameColumn {
     #[key]
     pub table: felt252,
     #[key]
-    pub column: felt252,
+    pub id: felt252,
     pub name: ByteArray,
 }
 
@@ -133,7 +133,7 @@ pub struct RetypeColumn {
     #[key]
     pub table: felt252,
     #[key]
-    pub column: felt252,
+    pub id: felt252,
     pub attributes: Span<Attribute>,
     pub type_def: TypeDef,
 }
@@ -356,6 +356,7 @@ pub struct IdTypeAttributes {
 
 #[derive(Drop, Serde, starknet::Event)]
 pub struct CreateColumnGroup {
+    #[key]
     pub id: felt252,
     pub columns: Span<felt252>,
 }

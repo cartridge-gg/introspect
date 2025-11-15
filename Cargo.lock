@@ -1461,8 +1461,8 @@ version = "0.1.2"
 dependencies = [
  "cainome-cairo-serde",
  "introspect-types",
- "introspect-value",
  "serde",
+ "starknet",
  "starknet-types-core",
 ]
 
@@ -1471,19 +1471,9 @@ name = "introspect-types"
 version = "0.1.2"
 dependencies = [
  "cainome-cairo-serde",
- "introspect-value",
- "num-traits",
- "primitive-types 0.14.0",
- "serde",
- "starknet-types-core",
-]
-
-[[package]]
-name = "introspect-value"
-version = "0.1.2"
-dependencies = [
- "cainome-cairo-serde",
  "convert_case",
+ "lambdaworks-math 0.13.0",
+ "num-traits",
  "primitive-types 0.14.0",
  "serde",
  "serde_json",
@@ -1621,7 +1611,7 @@ version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fce8f59622ed408c318c9b5eca17f1a1154159e3738b5c4d5a22a0dd3700c906"
 dependencies = [
- "lambdaworks-math",
+ "lambdaworks-math 0.12.0",
  "rand 0.8.5",
  "rand_chacha 0.3.1",
  "serde",
@@ -1637,6 +1627,21 @@ checksum = "405d65a26831650ba348a503a2881ed7a0483ef3ec17f66e0fc8e2f9c97fc7ca"
 dependencies = [
  "getrandom 0.2.16",
  "rand 0.8.5",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "lambdaworks-math"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "018a95aa873eb49896a858dee0d925c33f3978d073c64b08dd4f2c9b35a017c6"
+dependencies = [
+ "getrandom 0.2.16",
+ "num-bigint",
+ "num-traits",
+ "rand 0.8.5",
+ "rayon",
  "serde",
  "serde_json",
 ]
@@ -2930,7 +2935,7 @@ dependencies = [
  "blake2",
  "digest",
  "lambdaworks-crypto",
- "lambdaworks-math",
+ "lambdaworks-math 0.12.0",
  "lazy_static",
  "num-bigint",
  "num-integer",

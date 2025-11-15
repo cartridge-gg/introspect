@@ -1,11 +1,13 @@
-use crate::Introspect;
+use crate::{Attribute, Introspect};
 
 #[derive(Drop, PartialEq, Default, Debug)]
 pub enum TypeDef {
     #[default]
     None,
     Felt252,
+    ShortUtf8,
     Bytes31,
+    Bytes31E: felt252,
     Bool,
     U8,
     U16,
@@ -25,6 +27,8 @@ pub enum TypeDef {
     StorageAddress,
     StorageBaseAddress,
     ByteArray,
+    Utf8Array,
+    ByteArrayE: felt252,
     ShortString,
     Tuple: Span<TypeDef>,
     Array: Box<TypeDef>,
@@ -45,25 +49,6 @@ pub struct TypeWithAttributes {
     pub attributes: Span<Attribute>,
 }
 
-#[generate_trait]
-impl TypeDefImpl of TypeDefTrait {
-    fn allowed_as_primary(self: @TypeDef) -> bool {
-        match self {
-            TypeDef::Felt252 | TypeDef::Bytes31 | TypeDef::Bool | TypeDef::U8 | TypeDef::U16 |
-            TypeDef::U32 | TypeDef::U64 | TypeDef::U128 | TypeDef::ClassHash |
-            TypeDef::ContractAddress | TypeDef::EthAddress => true,
-            _ => false,
-        }
-    }
-}
-
-
-#[derive(Drop, Serde, PartialEq, Debug)]
-pub struct Attribute {
-    pub id: felt252,
-    pub data: Span<felt252>,
-}
-
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct StructDef {
     pub name: ByteArray,
@@ -78,12 +63,6 @@ pub struct MemberDef {
     pub type_def: TypeDef,
 }
 
-#[generate_trait]
-pub impl MemberDefImpl of MemberDefTrait {
-    fn new<T, +Introspect<T>>(name: ByteArray, attributes: Span<Attribute>) -> MemberDef {
-        MemberDef { name, type_def: Introspect::<T>::type_def(), attributes }
-    }
-}
 
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct EnumDef {
@@ -107,17 +86,25 @@ pub struct FixedArrayDef {
     pub size: u32,
 }
 
-
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct ResultDef {
     pub ok: TypeDef,
     pub err: TypeDef,
 }
 
+#[generate_trait]
+pub impl MemberDefImpl of MemberDefTrait {
+    fn new<T, +Introspect<T>>(name: ByteArray, attributes: Span<Attribute>) -> MemberDef {
+        MemberDef { name, type_def: Introspect::<T>::type_def(), attributes }
+    }
+}
 
-mod selectors {
+pub mod selectors {
     pub const None: felt252 = 0;
     pub const Felt252: felt252 = 'felt252';
+    pub const ShortUtf8: felt252 = 'ShortUtf8';
+    pub const Bytes31: felt252 = 'bytes31';
+    pub const Bytes31E: felt252 = 'bytes31e';
     pub const Bool: felt252 = 'bool';
     pub const U8: felt252 = 'u8';
     pub const U16: felt252 = 'u16';
@@ -131,7 +118,6 @@ mod selectors {
     pub const I32: felt252 = 'i32';
     pub const I64: felt252 = 'i64';
     pub const I128: felt252 = 'i128';
-    pub const Bytes31: felt252 = 'bytes31';
     pub const ShortString: felt252 = 'ShortString';
     pub const ClassHash: felt252 = 'ClassHash';
     pub const ContractAddress: felt252 = 'ContractAddress';
@@ -139,6 +125,8 @@ mod selectors {
     pub const StorageAddress: felt252 = 'StorageAddress';
     pub const StorageBaseAddress: felt252 = 'StorageBaseAddress';
     pub const ByteArray: felt252 = 'ByteArray';
+    pub const Utf8Array: felt252 = 'Utf8Array';
+    pub const ByteArrayE: felt252 = 'ByteArrayE';
     pub const Tuple: felt252 = 'Tuple';
     pub const Array: felt252 = 'Array';
     pub const FixedArray: felt252 = 'FixedArray';
@@ -154,13 +142,18 @@ mod selectors {
     pub const Nullable: felt252 = 'Nullable';
 }
 
-#[generate_trait]
-impl TyImpl of TyTrait {
+pub trait SelectorTrait<T> {
+    const fn selector(self: @T) -> felt252;
+}
+
+impl TypeDefSelector of SelectorTrait<TypeDef> {
     const fn selector(self: @TypeDef) -> felt252 {
         match self {
             TypeDef::None => selectors::None,
             TypeDef::Felt252 => selectors::Felt252,
+            TypeDef::ShortUtf8 => selectors::ShortUtf8,
             TypeDef::Bytes31 => selectors::Bytes31,
+            TypeDef::Bytes31E(_) => selectors::Bytes31E,
             TypeDef::Bool => selectors::Bool,
             TypeDef::U8 => selectors::U8,
             TypeDef::U16 => selectors::U16,
@@ -181,6 +174,8 @@ impl TyImpl of TyTrait {
             TypeDef::StorageAddress => selectors::StorageAddress,
             TypeDef::StorageBaseAddress => selectors::StorageBaseAddress,
             TypeDef::ByteArray => selectors::ByteArray,
+            TypeDef::Utf8Array => selectors::Utf8Array,
+            TypeDef::ByteArrayE(_) => selectors::ByteArrayE,
             TypeDef::Tuple(_) => selectors::Tuple,
             TypeDef::Array(_) => selectors::Array,
             TypeDef::FixedArray(_) => selectors::FixedArray,
@@ -200,15 +195,15 @@ impl TyImpl of TyTrait {
 impl TySerde of Serde<TypeDef> {
     fn serialize(self: @TypeDef, ref output: Array<felt252>) {
         match self {
-            TypeDef::None | TypeDef::Felt252 | TypeDef::Bytes31 | TypeDef::Bool | TypeDef::U8 |
-            TypeDef::U16 | TypeDef::U32 | TypeDef::U64 | TypeDef::U128 | TypeDef::U256 |
-            TypeDef::U512 | TypeDef::I8 | TypeDef::I16 | TypeDef::I32 | TypeDef::I64 |
-            TypeDef::I128 | TypeDef::ShortString | TypeDef::ClassHash | TypeDef::ContractAddress |
-            TypeDef::EthAddress | TypeDef::StorageAddress |
+            TypeDef::None | TypeDef::Felt252 | TypeDef::ShortUtf8 | TypeDef::Bytes31 |
+            TypeDef::Bool | TypeDef::U8 | TypeDef::U16 | TypeDef::U32 | TypeDef::U64 |
+            TypeDef::U128 | TypeDef::U256 | TypeDef::U512 | TypeDef::I8 | TypeDef::I16 |
+            TypeDef::I32 | TypeDef::I64 | TypeDef::I128 | TypeDef::ShortString |
+            TypeDef::ClassHash | TypeDef::ContractAddress | TypeDef::EthAddress |
+            TypeDef::StorageAddress | TypeDef::ByteArray | TypeDef::Utf8Array |
             TypeDef::StorageBaseAddress => { output.append(self.selector()); },
-            TypeDef::ByteArray => { output.append(self.selector()); },
-            TypeDef::Ref(t) |
-            TypeDef::Custom(t) => {
+            TypeDef::Ref(t) | TypeDef::Custom(t) | TypeDef::Bytes31E(t) |
+            TypeDef::ByteArrayE(t) => {
                 output.append(self.selector());
                 output.append(*t);
             },
@@ -247,6 +242,12 @@ impl TySerde of Serde<TypeDef> {
             Option::Some(TypeDef::None)
         } else if tag == selectors::Felt252 {
             Option::Some(TypeDef::Felt252)
+        } else if tag == selectors::ShortUtf8 {
+            Option::Some(TypeDef::ShortUtf8)
+        } else if tag == selectors::Bytes31 {
+            Option::Some(TypeDef::Bytes31)
+        } else if tag == selectors::Bytes31E {
+            Option::Some(TypeDef::Bytes31E(*serialized.pop_front()?))
         } else if tag == selectors::Bool {
             Option::Some(TypeDef::Bool)
         } else if tag == selectors::U8 {
@@ -261,6 +262,8 @@ impl TySerde of Serde<TypeDef> {
             Option::Some(TypeDef::U128)
         } else if tag == selectors::U256 {
             Option::Some(TypeDef::U256)
+        } else if tag == selectors::U512 {
+            Option::Some(TypeDef::U512)
         } else if tag == selectors::I8 {
             Option::Some(TypeDef::I8)
         } else if tag == selectors::I16 {
@@ -279,8 +282,14 @@ impl TySerde of Serde<TypeDef> {
             Option::Some(TypeDef::ContractAddress)
         } else if tag == selectors::EthAddress {
             Option::Some(TypeDef::EthAddress)
+        } else if tag == selectors::StorageAddress {
+            Option::Some(TypeDef::StorageAddress)
+        } else if tag == selectors::StorageBaseAddress {
+            Option::Some(TypeDef::StorageBaseAddress)
         } else if tag == selectors::ByteArray {
             Option::Some(TypeDef::ByteArray)
+        } else if tag == selectors::ByteArrayE {
+            Option::Some(TypeDef::ByteArrayE(*serialized.pop_front()?))
         } else if tag == selectors::Tuple {
             Option::Some(TypeDef::Tuple(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Array {

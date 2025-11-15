@@ -1,6 +1,12 @@
 use core::integer::u512;
 use core::metaprogramming::TypeEqual;
+use core::num::traits::{Pow, Zero};
 use starknet::{ClassHash, ContractAddress};
+
+const B31_1: felt252 = 0x0100000000000000000000000000000000000000000000000000000000000000;
+const B31_2: felt252 = 0x0200000000000000000000000000000000000000000000000000000000000000;
+const B31_3: felt252 = 0x0300000000000000000000000000000000000000000000000000000000000000;
+const SHIFT_30B: felt252 = 256_u256.pow(30).try_into().unwrap();
 
 pub trait ISerde<T> {
     fn iserialize(self: @T, ref output: Array<felt252>);
@@ -88,9 +94,31 @@ pub impl OptionTISerde<T, impl S: ISerde<T>> of ISerde<Option<T>> {
     }
 }
 
+/// Minimum felt bytes encoding:
+/// 0 bit in the 31st byte indicates if its a full 31 bytes (0 = full, 1 = partial)
+/// 1 bit in the 31st byte indicates if there are more felts to come (0 = more, 1 = last):
+/// In a partial byte, the size is stored in the 30th byte (0-30)
+
 pub impl ByteArrayISerde of ISerde<ByteArray> {
     fn iserialize(self: @ByteArray, ref output: Array<felt252>) {
-        self.serialize(ref output)
+        let mut data: Array<felt252> = Default::default();
+        self.serialize(ref data);
+        let full_felts: u32 = data.pop_front().unwrap().try_into().unwrap();
+        let mut data_span = data.span();
+        let [size, word] = data_span.multi_pop_back::<2>().unwrap().unbox();
+        if full_felts.is_non_zero() {
+            for _ in 0..(full_felts - 1) {
+                output.append(data.pop_front().unwrap());
+            }
+            if size.is_non_zero() {
+                output.append(data.pop_front().unwrap());
+                output.append(word + B31_3 + (SHIFT_30B * size));
+            } else {
+                output.append(data.pop_front().unwrap() + B31_1);
+            }
+        } else {
+            output.append(word + B31_3 + (SHIFT_30B * size));
+        };
     }
 }
 
