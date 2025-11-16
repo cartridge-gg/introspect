@@ -1,11 +1,12 @@
+use crate::type_def::{ByteArrayEDef, selectors};
+use crate::{
+    ArrayDef, Attribute, ByteArrayDeserialization, ColumnDef, CustomDef, EnumDef, Felt252DictDef,
+    FeltIterator, FixedArrayDef, MemberDef, NullableDef, OptionDef, PrimaryDef, PrimaryTypeDef,
+    RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef, deserialize_byte_array_string,
+    pop_primitive,
+};
 use starknet_types_core::felt::Felt;
 
-use crate::type_def::{ByteArrayDeserialization, selectors};
-use crate::{
-    Attribute, ColumnDef, EnumDef, FeltIterator, FixedArrayDef, MemberDef, PrimaryDef,
-    PrimaryTypeDef, ResultDef, StructDef, TypeDef, VariantDef, deserialize_byte_array_string,
-    pop_primitive, read_serialized_felt_array,
-};
 pub trait CairoDeserialize
 where
     Self: Sized,
@@ -19,7 +20,7 @@ where
 impl CairoDeserialize for Attribute {
     fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
         let id = data.next()?;
-        let data = read_serialized_felt_array(data)?;
+        let data = Vec::<Felt>::c_deserialize(data)?;
         Some(Attribute { id, data })
     }
 }
@@ -29,8 +30,7 @@ where
     T: CairoDeserialize,
 {
     fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
-        let len = pop_primitive::<usize>(data)?;
-        (0..len)
+        (0..pop_primitive::<usize>(data)?)
             .into_iter()
             .map(|_| T::c_deserialize(data))
             .collect()
@@ -72,20 +72,25 @@ impl CairoDeserialize for TypeDef {
             selectors::StorageBaseAddress => Some(TypeDef::StorageBaseAddress),
             selectors::ByteArray => Some(TypeDef::ByteArray(ByteArrayDeserialization::ISerde)),
             selectors::Utf8Array => Some(TypeDef::Utf8Array(ByteArrayDeserialization::ISerde)),
-            selectors::ByteArrayE => Some(TypeDef::ByteArrayE(data.next()?)),
-            selectors::Tuple => Vec::<TypeDef>::c_deserialize(data).map(TypeDef::Tuple),
-            selectors::Array => TypeDef::c_deserialize_boxed(data).map(TypeDef::Array),
+            selectors::ByteArrayE => Some(TypeDef::ByteArrayE(ByteArrayEDef {
+                mode: ByteArrayDeserialization::ISerde,
+                encoding: data.next()?,
+            })),
+            selectors::Tuple => TupleDef::c_deserialize(data).map(TypeDef::Tuple),
+            selectors::Array => ArrayDef::c_deserialize_boxed(data).map(TypeDef::Array),
             selectors::FixedArray => {
                 FixedArrayDef::c_deserialize_boxed(data).map(TypeDef::FixedArray)
             }
-            selectors::Felt252Dict => TypeDef::c_deserialize_boxed(data).map(TypeDef::Felt252Dict),
+            selectors::Felt252Dict => {
+                Felt252DictDef::c_deserialize_boxed(data).map(TypeDef::Felt252Dict)
+            }
             selectors::Struct => StructDef::c_deserialize(data).map(TypeDef::Struct),
             selectors::Enum => EnumDef::c_deserialize(data).map(TypeDef::Enum),
-            selectors::Option => TypeDef::c_deserialize_boxed(data).map(TypeDef::Option),
+            selectors::Option => OptionDef::c_deserialize_boxed(data).map(TypeDef::Option),
             selectors::Result => ResultDef::c_deserialize_boxed(data).map(TypeDef::Result),
-            selectors::Nullable => TypeDef::c_deserialize_boxed(data).map(TypeDef::Nullable),
-            selectors::Ref => Some(TypeDef::Ref(data.next()?)),
-            selectors::Custom => Some(TypeDef::Custom(data.next()?)),
+            selectors::Nullable => NullableDef::c_deserialize_boxed(data).map(TypeDef::Nullable),
+            selectors::Ref => RefDef::c_deserialize(data).map(TypeDef::Ref),
+            selectors::Custom => CustomDef::c_deserialize(data).map(TypeDef::Custom),
             _ => None,
         }
     }
@@ -143,6 +148,46 @@ impl CairoDeserialize for (Felt, VariantDef) {
     }
 }
 
+impl CairoDeserialize for TupleDef {
+    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+        Some(TupleDef {
+            elements: Vec::<TypeDef>::c_deserialize(data)?,
+        })
+    }
+}
+
+impl CairoDeserialize for ArrayDef {
+    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+        Some(ArrayDef {
+            type_def: TypeDef::c_deserialize(data)?,
+        })
+    }
+}
+
+impl CairoDeserialize for Felt252DictDef {
+    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+        Some(Felt252DictDef {
+            type_def: TypeDef::c_deserialize(data)?,
+        })
+    }
+}
+
+impl CairoDeserialize for OptionDef {
+    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+        Some(OptionDef {
+            type_def: TypeDef::c_deserialize(data)?,
+        })
+    }
+}
+
+impl CairoDeserialize for NullableDef {
+    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+        Some(NullableDef {
+            type_def: TypeDef::c_deserialize(data)?,
+        })
+    }
+}
+
 impl CairoDeserialize for FixedArrayDef {
     fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
         let type_def = TypeDef::c_deserialize(data)?;
@@ -156,6 +201,22 @@ impl CairoDeserialize for ResultDef {
         let ok = TypeDef::c_deserialize(data)?;
         let err = TypeDef::c_deserialize(data)?;
         Some(ResultDef { ok, err })
+    }
+}
+
+impl CairoDeserialize for RefDef {
+    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+        Some(RefDef {
+            id: pop_primitive::<Felt>(data)?,
+        })
+    }
+}
+
+impl CairoDeserialize for CustomDef {
+    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+        Some(CustomDef {
+            id: pop_primitive::<Felt>(data)?,
+        })
     }
 }
 

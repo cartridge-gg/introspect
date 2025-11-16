@@ -4,7 +4,7 @@ use starknet_types_core::felt::Felt;
 
 pub type FeltIterator = dyn Iterator<Item = Felt>;
 
-pub fn felt_to_string(value: &Felt) -> String {
+pub fn felt_to_hex_string(value: &Felt) -> String {
     format!("0x{:016x}", value)
 }
 
@@ -43,13 +43,21 @@ pub fn read_serialized_felt_array(data: &mut FeltIterator) -> Option<Vec<Felt>> 
 }
 
 pub fn felt_to_utf8_string(felt: Felt) -> Option<String> {
-    let bytes = felt.to_bytes_be();
+    let bytes = felt_to_bytes31(felt)?;
     let first = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len());
-    String::from_utf8(bytes[first..32].to_vec()).ok()
+    String::from_utf8(bytes[first..].to_vec()).ok()
+}
+
+pub fn felt_to_bytes31(felt: Felt) -> Option<[u8; 31]> {
+    let bytes = felt.to_bytes_be();
+    match bytes[0] {
+        0 => bytes[1..].try_into().ok(),
+        _ => None,
+    }
 }
 
 pub fn pop_bytes31(data: &mut FeltIterator) -> Option<[u8; 31]> {
-    data.next()?.to_bytes_be()[1..32].try_into().ok()
+    felt_to_bytes31(data.next()?)
 }
 
 pub fn pop_short_utf8(data: &mut FeltIterator) -> Option<String> {

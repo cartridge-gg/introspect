@@ -1,82 +1,36 @@
-use crate::type_def::{ByteArrayDeserialization, FixedArrayDef, MemberDef, StructDef, TypeDef};
-use crate::utils::{felt_to_string, pop_bytes31};
+use crate::type_def::{
+    ByteArrayDeserialization, ByteArrayEDef, FixedArrayDef, MemberDef, StructDef, TypeDef,
+};
 use crate::value::{Enum, Nullable, Value};
 use crate::{
-    ColumnDef, Custom, EncodedBytes, EnumDef, FeltIterator, Field, Member, Primary, PrimaryDef,
-    PrimaryTypeDef, PrimaryValue, Struct, deserialize_byte_array, pop_primitive, pop_short_utf8,
-    pop_u256, pop_u512, read_serialized_felt_array,
+    ArrayDef, CairoDeserialize, CairoOption, CairoResult, ColumnDef, Custom, CustomDef,
+    EncodedBytes, EnumDef, FeltIterator, Field, Member, NullableDef, OptionDef, ResultDef, Struct,
+    TupleDef, deserialize_byte_array, pop_bytes31, pop_primitive, pop_short_utf8, pop_u256,
+    pop_u512,
 };
-use convert_case::{Case, Casing};
 use num_traits::Zero;
 use starknet_types_core::felt::Felt;
+
+impl<T> ToValue for Vec<T>
+where
+    T: ToValue,
+{
+    type Value = Vec<T::Value>;
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Vec<T::Value>> {
+        self.iter()
+            .map(|item| item.to_value(data))
+            .collect::<Option<Vec<T::Value>>>()
+    }
+}
 
 pub trait ToValue {
     type Value;
     fn to_value(&self, data: &mut FeltIterator) -> Option<Self::Value>;
-
     fn to_value_multiple(&self, data: &mut FeltIterator, count: usize) -> Option<Vec<Self::Value>> {
         (0..count)
             .into_iter()
             .map(|_| self.to_value(data))
             .collect()
-    }
-}
-
-pub trait ToPrimitiveString {
-    fn to_primitive_string(&self) -> Option<String>;
-}
-
-impl ToPrimitiveString for Enum {
-    fn to_primitive_string(&self) -> Option<String> {
-        let value = self.value.to_primitive_string()?.to_case(Case::Snake);
-        Some(format!("{}-{}", self.variant, value))
-    }
-}
-
-impl ToPrimitiveString for Option<Value> {
-    fn to_primitive_string(&self) -> Option<String> {
-        match self {
-            Some(v) => Some(format!("some-{}", v.to_primitive_string()?)),
-            None => Some("none".to_string()),
-        }
-    }
-}
-
-impl ToPrimitiveString for Nullable {
-    fn to_primitive_string(&self) -> Option<String> {
-        match self {
-            Nullable::Null => Some("null".to_string()),
-            Nullable::NotNull(v) => Some(format!("not_null-{}", v.to_primitive_string()?)),
-        }
-    }
-}
-
-impl ToPrimitiveString for Value {
-    fn to_primitive_string(&self) -> Option<String> {
-        match self {
-            Value::Felt252(value)
-            | Value::ClassHash(value)
-            | Value::ContractAddress(value)
-            | Value::EthAddress(value) => Some(felt_to_string(value)),
-            Value::ShortUtf8(value) | Value::Utf8Array(value) => Some(value.clone()),
-            Value::Bool(value) => Some(value.to_string()),
-            Value::U8(value) => Some(value.to_string()),
-            Value::U16(value) => Some(value.to_string()),
-            Value::U32(value) => Some(value.to_string()),
-            Value::U64(value) => Some(value.to_string()),
-            Value::U128(value) => Some(value.to_string()),
-            Value::U256(value) => Some(value.to_string()),
-            Value::I8(value) => Some(value.to_string()),
-            Value::I16(value) => Some(value.to_string()),
-            Value::I32(value) => Some(value.to_string()),
-            Value::I64(value) => Some(value.to_string()),
-            Value::I128(value) => Some(value.to_string()),
-            Value::ByteArray(s) => Some(String::from_utf8_lossy(s).to_string()),
-            Value::Enum(v) => v.to_primitive_string(),
-            Value::Option(v) => v.to_primitive_string(),
-            Value::Nullable(v) => v.to_primitive_string(),
-            _ => None,
-        }
     }
 }
 
@@ -111,23 +65,16 @@ impl ToValue for TypeDef {
             TypeDef::StorageBaseAddress => pop_primitive(data).map(Value::StorageBaseAddress),
             TypeDef::ByteArray(mode) => read_byte_array(mode.clone(), data).map(Value::ByteArray),
             TypeDef::Utf8Array(mode) => read_utf8_array(mode.clone(), data).map(Value::Utf8Array),
-            TypeDef::ByteArrayE(encoding) => {
-                pop_byte_array_encoded(*encoding, data).map(Value::ByteArrayE)
-            }
-            TypeDef::Tuple(type_defs) => parse_tuple_to_value(type_defs, data).map(Value::Tuple),
-            TypeDef::Array(type_def) => {
-                let size = pop_primitive(data)?;
-                type_def.to_value_multiple(data, size).map(Value::Array)
-            }
+            TypeDef::ByteArrayE(bae) => bae.to_value(data).map(Value::ByteArrayE),
+            TypeDef::Tuple(tuple) => tuple.to_value(data).map(Value::Tuple),
+            TypeDef::Array(a) => a.to_value(data).map(Value::Array),
             TypeDef::FixedArray(fa) => fa.to_value(data).map(Value::FixedArray),
             TypeDef::Felt252Dict(_ty) => None,
             TypeDef::Struct(s) => s.to_value(data).map(Value::Struct),
             TypeDef::Enum(e) => e.to_value(data).map(Box::new).map(Value::Enum),
             TypeDef::Ref(_) => None,
-            TypeDef::Custom(name) => to_custom_value(name.clone(), data).map(Value::Custom),
-            TypeDef::Option(type_def) => to_option_value(type_def, data)
-                .map(Box::new)
-                .map(Value::Option),
+            TypeDef::Custom(custom) => custom.to_value(data).map(Value::Custom),
+            TypeDef::Option(option) => option.to_value(data).map(Box::new).map(Value::Option),
             TypeDef::Result(_r) => None,
             TypeDef::Nullable(_ty) => None,
         }
@@ -160,10 +107,25 @@ impl ToValue for StructDef {
     }
 }
 
+impl ToValue for ArrayDef {
+    type Value = Vec<Value>;
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Vec<Value>> {
+        let count = pop_primitive::<usize>(data)?;
+        self.type_def.to_value_multiple(data, count)
+    }
+}
+
 impl ToValue for FixedArrayDef {
     type Value = Vec<Value>;
     fn to_value(&self, data: &mut FeltIterator) -> Option<Vec<Value>> {
         self.type_def.to_value_multiple(data, self.size as usize)
+    }
+}
+
+impl ToValue for TupleDef {
+    type Value = Vec<Value>;
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Vec<Value>> {
+        self.elements.to_value(data)
     }
 }
 
@@ -183,10 +145,54 @@ impl ToValue for EnumDef {
     }
 }
 
+impl ToValue for OptionDef {
+    type Value = CairoOption<Value>;
+    fn to_value(&self, data: &mut FeltIterator) -> Option<CairoOption<Value>> {
+        let is_some = data.next()?.is_zero();
+        match is_some {
+            true => self.type_def.to_value(data).map(CairoOption::Some),
+            false => Some(CairoOption::None),
+        }
+    }
+}
+
+impl ToValue for ResultDef {
+    type Value = CairoResult<Value, Value>;
+    fn to_value(&self, data: &mut FeltIterator) -> Option<CairoResult<Value, Value>> {
+        let is_ok = data.next()?.is_zero();
+        match is_ok {
+            true => self.ok.to_value(data).map(CairoResult::Ok),
+            false => self.err.to_value(data).map(CairoResult::Err),
+        }
+    }
+}
+
+impl ToValue for NullableDef {
+    type Value = Nullable;
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Nullable> {
+        let is_null = data.next()?.is_zero();
+        match is_null {
+            false => self.type_def.to_value(data).map(Nullable::NotNull),
+            true => Some(Nullable::Null),
+        }
+    }
+}
+
+impl ToValue for CustomDef {
+    type Value = Custom;
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Custom> {
+        Some(Custom {
+            id: self.id.clone(),
+            values: Vec::<Felt>::c_deserialize(data)?,
+        })
+    }
+}
+
 impl ToValue for ColumnDef {
     type Value = Field;
     fn to_value(&self, data: &mut FeltIterator) -> Option<Field> {
         Some(Field {
+            id: self.id.clone(),
             name: self.name.clone(),
             attributes: self.attributes.clone(),
             value: self.type_def.to_value(data)?,
@@ -194,54 +200,19 @@ impl ToValue for ColumnDef {
     }
 }
 
-impl ToValue for PrimaryTypeDef {
-    type Value = PrimaryValue;
-    fn to_value(&self, data: &mut crate::FeltIterator) -> Option<Self::Value> {
-        match self {
-            PrimaryTypeDef::Felt252 => pop_primitive(data).map(PrimaryValue::Felt252),
-            PrimaryTypeDef::ShortUtf8 => pop_short_utf8(data).map(PrimaryValue::ShortUtf8),
-            PrimaryTypeDef::Bytes31 => pop_bytes31(data).map(PrimaryValue::Bytes31),
-            PrimaryTypeDef::Bytes31E(encoding) => {
-                pop_bytes31_encoded(*encoding, data).map(PrimaryValue::Bytes31E)
-            }
-            PrimaryTypeDef::Bool => data.next().map(|v| PrimaryValue::Bool(!v.is_zero())),
-            PrimaryTypeDef::U8 => pop_primitive(data).map(PrimaryValue::U8),
-            PrimaryTypeDef::U16 => pop_primitive(data).map(PrimaryValue::U16),
-            PrimaryTypeDef::U32 => pop_primitive(data).map(PrimaryValue::U32),
-            PrimaryTypeDef::U64 => pop_primitive(data).map(PrimaryValue::U64),
-            PrimaryTypeDef::U128 => pop_primitive(data).map(PrimaryValue::U128),
-            PrimaryTypeDef::I8 => pop_primitive(data).map(PrimaryValue::I8),
-            PrimaryTypeDef::I16 => pop_primitive(data).map(PrimaryValue::I16),
-            PrimaryTypeDef::I32 => pop_primitive(data).map(PrimaryValue::I32),
-            PrimaryTypeDef::I64 => pop_primitive(data).map(PrimaryValue::I64),
-            PrimaryTypeDef::I128 => pop_primitive(data).map(PrimaryValue::I128),
-            PrimaryTypeDef::ClassHash => pop_primitive(data).map(PrimaryValue::ClassHash),
-            PrimaryTypeDef::ContractAddress => data.next().map(PrimaryValue::ContractAddress),
-            PrimaryTypeDef::EthAddress => data.next().map(PrimaryValue::EthAddress),
-            PrimaryTypeDef::StorageAddress => pop_primitive(data).map(PrimaryValue::StorageAddress),
-            PrimaryTypeDef::StorageBaseAddress => {
-                pop_primitive(data).map(PrimaryValue::StorageBaseAddress)
-            }
-        }
-    }
-}
-
-impl ToValue for PrimaryDef {
-    type Value = Primary;
-    fn to_value(&self, data: &mut FeltIterator) -> Option<Primary> {
-        Some(Primary {
-            name: self.name.clone(),
-            attributes: self.attributes.clone(),
-            value: self.type_def.to_value(data)?,
+impl ToValue for ByteArrayEDef {
+    type Value = EncodedBytes;
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Self::Value> {
+        read_byte_array(self.mode, data).map(|bytes| EncodedBytes {
+            encoding: self.encoding,
+            bytes,
         })
     }
 }
 
 pub fn pop_bytes31_encoded(encoding: Felt, data: &mut FeltIterator) -> Option<EncodedBytes> {
-    let bytes = data.next()?.to_bytes_be();
-
     Some(EncodedBytes {
-        bytes: bytes[1..32].try_into().ok()?,
+        bytes: pop_bytes31(data)?.into(),
         encoding,
     })
 }
@@ -277,26 +248,4 @@ pub fn pop_byte_array_encoded(encoding: Felt, data: &mut FeltIterator) -> Option
 pub fn read_utf8_array(mode: ByteArrayDeserialization, data: &mut FeltIterator) -> Option<String> {
     let byte_array = read_byte_array(mode, data)?;
     String::from_utf8_lossy(&byte_array).into_owned().into()
-}
-
-fn parse_tuple_to_value(type_defs: &Vec<TypeDef>, data: &mut FeltIterator) -> Option<Vec<Value>> {
-    type_defs
-        .iter()
-        .map(|type_def| type_def.to_value(data))
-        .collect::<Option<Vec<Value>>>()
-}
-
-fn to_custom_value(name: Felt, data: &mut FeltIterator) -> Option<Custom> {
-    Some(Custom {
-        name: name,
-        values: read_serialized_felt_array(data)?,
-    })
-}
-
-fn to_option_value(type_def: &TypeDef, data: &mut FeltIterator) -> Option<Option<Value>> {
-    let is_some = data.next()?.is_zero();
-    match is_some {
-        true => type_def.to_value(data).map(Some),
-        false => Some(None),
-    }
 }

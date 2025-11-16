@@ -1,5 +1,6 @@
 use core::integer::u512;
 use core::metaprogramming::TypeEqual;
+use core::nullable::{FromNullableResult, match_nullable};
 use core::num::traits::{Pow, Zero};
 use starknet::{ClassHash, ContractAddress};
 
@@ -82,18 +83,6 @@ pub impl FixedArrayTNISerde<
 }
 
 
-pub impl OptionTISerde<T, impl S: ISerde<T>> of ISerde<Option<T>> {
-    fn iserialize(self: @Option<T>, ref output: Array<felt252>) {
-        match self {
-            Option::Some(value) => {
-                output.append(0);
-                S::iserialize(value, ref output);
-            },
-            Option::None => { output.append(1); },
-        }
-    }
-}
-
 /// Minimum felt bytes encoding:
 /// 0 bit in the 31st byte indicates if its a full 31 bytes (0 = full, 1 = partial)
 /// 1 bit in the 31st byte indicates if there are more felts to come (0 = more, 1 = last):
@@ -122,6 +111,18 @@ pub impl ByteArrayISerde of ISerde<ByteArray> {
     }
 }
 
+pub impl OptionTISerde<T, impl S: ISerde<T>> of ISerde<Option<T>> {
+    fn iserialize(self: @Option<T>, ref output: Array<felt252>) {
+        match self {
+            Option::Some(value) => {
+                output.append(0);
+                S::iserialize(value, ref output);
+            },
+            Option::None => { output.append(1); },
+        }
+    }
+}
+
 pub impl ResultISerde<
     Ok, Err, impl SOk: ISerde<Ok>, impl SErr: ISerde<Err>,
 > of ISerde<Result<Ok, Err>> {
@@ -138,6 +139,31 @@ pub impl ResultISerde<
         }
     }
 }
+
+pub impl FromNullableResultTISerde<T, impl S: ISerde<T>> of ISerde<FromNullableResult<T>> {
+    fn iserialize(self: @FromNullableResult<T>, ref output: Array<felt252>) {
+        match self {
+            FromNullableResult::NotNull(value) => {
+                output.append(1);
+                BoxTISerde::<T, S>::iserialize(value, ref output);
+            },
+            FromNullableResult::Null => { output.append(0); },
+        }
+    }
+}
+
+pub impl NullableTISerde<T, impl S: ISerde<T>> of ISerde<Nullable<T>> {
+    fn iserialize(self: @Nullable<T>, ref output: Array<felt252>) {
+        match match_nullable(self.as_snapshot()) {
+            FromNullableResult::NotNull(value) => {
+                output.append(1);
+                S::iserialize(value.deref(), ref output);
+            },
+            FromNullableResult::Null => { output.append(0); },
+        }
+    }
+}
+
 
 pub impl ArrayTISerde<T, impl S: ISerde<T>> of ISerde<Array<T>> {
     fn iserialize(self: @Array<T>, ref output: Array<felt252>) {

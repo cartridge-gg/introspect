@@ -1,4 +1,5 @@
-use crate::{Enum, Struct, Value, felt_to_string};
+use crate::utils::felt_to_hex_string;
+use crate::{Enum, Struct, Value};
 use serde_json::Value::{
     Array as JsonArray, Bool as JsonBool, Null as JsonNull, Number as JsonNumber,
     Object as JsonObject, String as JsonString,
@@ -20,9 +21,9 @@ fn to_json_string<T: ToString>(value: T) -> JsonValue {
 impl Into<Map<String, JsonValue>> for Struct {
     fn into(self) -> Map<String, JsonValue> {
         let mut map = serde_json::Map::new();
-        for field in self.fields {
-            let key = field.name;
-            let value: JsonValue = field.value.into();
+        for member in self.members {
+            let key = member.name;
+            let value: JsonValue = member.value.into();
             map.insert(key, value);
         }
         map
@@ -49,7 +50,7 @@ impl Into<JsonValue> for Value {
             Value::Felt252(v)
             | Value::ClassHash(v)
             | Value::ContractAddress(v)
-            | Value::EthAddress(v) => JsonString(felt_to_string(&v)),
+            | Value::EthAddress(v) => JsonString(felt_to_hex_string(&v)),
             Value::Bool(v) => JsonBool(v),
             Value::U8(v) => to_json_number(v),
             Value::U16(v) => to_json_number(v),
@@ -62,9 +63,8 @@ impl Into<JsonValue> for Value {
             Value::I32(v) => to_json_number(v),
             Value::I64(v) => to_json_string(v),
             Value::I128(v) => to_json_string(v),
-            Value::USize(v) => to_json_number(v),
-            Value::ShortString(v) => to_json_string(v),
-            Value::ByteArray(v) => to_json_string(v),
+            Value::ByteArray(v) => v.into(),
+            Value::Utf8Array(v) => to_json_string(v),
             Value::Struct(v) => JsonObject(v.into()),
             Value::Tuple(values) | Value::Array(values) | Value::FixedArray(values) => {
                 vec_values_to_json_array(values)

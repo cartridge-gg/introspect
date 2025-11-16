@@ -2,7 +2,8 @@ use crate::{Attribute, ascii_str_to_limbs};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum ByteArrayDeserialization {
     Serde,
     ISerde,
@@ -36,18 +37,18 @@ pub enum TypeDef {
     StorageBaseAddress,
     ByteArray(ByteArrayDeserialization),
     Utf8Array(ByteArrayDeserialization),
-    ByteArrayE(Felt),
-    Tuple(Vec<TypeDef>),
-    Array(Box<TypeDef>),
+    ByteArrayE(ByteArrayEDef),
+    Tuple(TupleDef),
+    Array(Box<ArrayDef>),
     FixedArray(Box<FixedArrayDef>),
-    Felt252Dict(Box<TypeDef>),
+    Felt252Dict(Box<Felt252DictDef>),
     Struct(StructDef),
     Enum(EnumDef),
-    Option(Box<TypeDef>),
+    Option(Box<OptionDef>),
     Result(Box<ResultDef>),
-    Nullable(Box<TypeDef>),
-    Ref(Felt),
-    Custom(Felt),
+    Nullable(Box<NullableDef>),
+    Ref(RefDef),
+    Custom(CustomDef),
 }
 
 #[allow(non_upper_case_globals)]
@@ -124,15 +125,55 @@ pub struct VariantDef {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct ArrayDef {
+    pub type_def: TypeDef,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct FixedArrayDef {
     pub type_def: TypeDef,
     pub size: u32,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct TupleDef {
+    pub elements: Vec<TypeDef>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct ByteArrayEDef {
+    pub mode: ByteArrayDeserialization,
+    pub encoding: Felt,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Felt252DictDef {
+    pub type_def: TypeDef,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct RefDef {
+    pub id: Felt,
+}
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct CustomDef {
+    pub id: Felt,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct OptionDef {
+    pub type_def: TypeDef,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct ResultDef {
     pub ok: TypeDef,
     pub err: TypeDef,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct NullableDef {
+    pub type_def: TypeDef,
 }
 
 pub trait TypeName {
@@ -167,32 +208,33 @@ impl TypeName for TypeDef {
             TypeDef::StorageBaseAddress => "StorageBaseAddress".to_string(),
             TypeDef::ByteArray(_) => "ByteArray".to_string(),
             TypeDef::Utf8Array(_) => "Utf8Array".to_string(),
-            TypeDef::ByteArrayE(encoding) => format!("ByteArrayE: {}", encoding),
+            TypeDef::ByteArrayE(inner) => format!("ByteArrayE: {}", inner.encoding),
             TypeDef::Tuple(inner) => format!(
                 "({})",
                 inner
+                    .elements
                     .iter()
                     .map(|e| e.type_name())
                     .collect::<Vec<String>>()
                     .join(", ")
             ),
-            TypeDef::Array(inner) => format!("Vec<{}>", inner.type_name()),
+            TypeDef::Array(inner) => format!("Vec<{}>", inner.type_def.type_name()),
             TypeDef::FixedArray(inner) => {
                 format!("[{}; {}]", inner.type_def.type_name(), inner.size)
             }
-            TypeDef::Felt252Dict(inner) => format!("Felt252Dict<{}>", inner.type_name()),
+            TypeDef::Felt252Dict(inner) => format!("Felt252Dict<{}>", inner.type_def.type_name()),
             TypeDef::Struct(s) => s.name.clone(),
             TypeDef::Enum(e) => e.name.clone(),
 
-            TypeDef::Option(inner) => format!("Option<{}>", inner.type_name()),
+            TypeDef::Option(inner) => format!("Option<{}>", inner.type_def.type_name()),
             TypeDef::Result(inner) => format!(
                 "Result<{}, {}>",
                 inner.ok.type_name(),
                 inner.err.type_name()
             ),
-            TypeDef::Nullable(inner) => format!("Nullable<{}>", inner.type_name()),
-            TypeDef::Ref(name) => name.to_hex_string(),
-            TypeDef::Custom(name) => name.to_hex_string(),
+            TypeDef::Nullable(inner) => format!("Nullable<{}>", inner.type_def.type_name()),
+            TypeDef::Ref(inner) => inner.id.to_hex_string(),
+            TypeDef::Custom(inner) => inner.id.to_hex_string(),
         }
     }
 }
