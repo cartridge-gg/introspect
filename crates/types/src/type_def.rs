@@ -324,6 +324,13 @@ impl ArrayDef {
     }
 }
 
+impl Deref for ArrayDef {
+    type Target = TypeDef;
+    fn deref(&self) -> &Self::Target {
+        &self.type_def
+    }
+}
+
 impl FixedArrayDef {
     pub fn new(type_def: TypeDef, size: u32) -> Self {
         FixedArrayDef { type_def, size }
@@ -382,6 +389,13 @@ impl OptionDef {
     }
 }
 
+impl Deref for OptionDef {
+    type Target = TypeDef;
+    fn deref(&self) -> &Self::Target {
+        &self.type_def
+    }
+}
+
 impl ResultDef {
     pub fn new(ok: TypeDef, err: TypeDef) -> Self {
         ResultDef { ok, err }
@@ -399,6 +413,13 @@ impl NullableDef {
 
     pub fn new_type_def(type_def: TypeDef) -> TypeDef {
         TypeDef::Nullable(Box::new(NullableDef::new(type_def)))
+    }
+}
+
+impl Deref for NullableDef {
+    type Target = TypeDef;
+    fn deref(&self) -> &Self::Target {
+        &self.type_def
     }
 }
 
