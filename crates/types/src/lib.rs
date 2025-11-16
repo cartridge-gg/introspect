@@ -8,7 +8,7 @@ pub mod value;
 pub use attribute::Attribute;
 pub use deserialize::CairoDeserialize;
 pub use parser::ToValue;
-pub use schema::{ColumnDef, ColumnInfo, Field};
+pub use schema::{ColumnDef, ColumnInfo, Field, TableSchema};
 pub use type_def::{
     ByteArrayDeserialization, EnumDef, FixedArrayDef, MemberDef, ResultDef, StructDef, TypeDef,
     VariantDef,

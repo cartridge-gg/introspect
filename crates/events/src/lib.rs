@@ -4,5 +4,3 @@ pub mod database {
     pub use events::*;
 }
 pub mod event;
-pub mod types;
-pub use types::TableSchema;
