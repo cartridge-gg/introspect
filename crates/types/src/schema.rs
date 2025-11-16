@@ -1,7 +1,7 @@
 use crate::utils::felt_to_utf8_string;
 use crate::{
     Attribute, EncodedBytes, FeltIterator, Primary, PrimaryValue, Record, ToValue, TypeDef,
-    felt_to_bytes31,
+    bytes31_to_hex_string, felt_to_bytes31, felt_to_hex_string,
 };
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
@@ -81,6 +81,33 @@ impl From<&ColumnDef> for ColumnInfo {
             id: field_def.id.clone(),
             name: field_def.name.clone(),
             attributes: field_def.attributes.clone(),
+        }
+    }
+}
+
+impl ToString for PrimaryValue {
+    fn to_string(&self) -> String {
+        match self {
+            PrimaryValue::Felt252(value)
+            | PrimaryValue::ClassHash(value)
+            | PrimaryValue::ContractAddress(value)
+            | PrimaryValue::EthAddress(value)
+            | PrimaryValue::StorageAddress(value)
+            | PrimaryValue::StorageBaseAddress(value) => felt_to_hex_string(value),
+            PrimaryValue::Bytes31(value) => bytes31_to_hex_string(value),
+            PrimaryValue::Bytes31E(value) => bytes31_to_hex_string(&value.bytes),
+            PrimaryValue::ShortUtf8(value) => value.clone(),
+            PrimaryValue::Bool(value) => value.to_string(),
+            PrimaryValue::U8(value) => value.to_string(),
+            PrimaryValue::U16(value) => value.to_string(),
+            PrimaryValue::U32(value) => value.to_string(),
+            PrimaryValue::U64(value) => value.to_string(),
+            PrimaryValue::U128(value) => value.to_string(),
+            PrimaryValue::I8(value) => value.to_string(),
+            PrimaryValue::I16(value) => value.to_string(),
+            PrimaryValue::I32(value) => value.to_string(),
+            PrimaryValue::I64(value) => value.to_string(),
+            PrimaryValue::I128(value) => value.to_string(),
         }
     }
 }

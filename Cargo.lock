@@ -1472,6 +1472,7 @@ version = "0.1.2"
 dependencies = [
  "cainome-cairo-serde",
  "convert_case",
+ "hex",
  "lambdaworks-math 0.13.0",
  "num-traits",
  "primitive-types 0.14.0",

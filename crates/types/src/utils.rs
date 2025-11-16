@@ -8,8 +8,13 @@ use starknet_types_core::felt::Felt;
 
 pub type FeltIterator = dyn Iterator<Item = Felt>;
 
+pub fn bytes31_to_hex_string<T: AsRef<[u8]>>(bytes: T) -> String {
+    assert!(bytes.as_ref().len() == 31, "Input must be 31 bytes long");
+    format!("0x{}", hex::encode(bytes))
+}
+
 pub fn felt_to_hex_string(value: &Felt) -> String {
-    format!("0x{:016x}", value)
+    format!("0x{:064x}", value)
 }
 
 pub const fn ascii_str_to_felt(s: &str) -> Felt {

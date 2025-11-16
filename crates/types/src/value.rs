@@ -1,5 +1,4 @@
-use crate::{Attribute, felt_to_hex_string};
-use convert_case::{Case, Casing};
+use crate::Attribute;
 use primitive_types::{U256, U512};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
@@ -145,69 +144,73 @@ pub struct Record {
     pub fields: Vec<Field>,
 }
 
-pub trait ToPrimitiveString {
-    fn to_primitive_string(&self) -> Option<String>;
-}
+// pub trait ToPrimitiveString {
+//     fn to_primitive_string(&self) -> Option<String>;
+// }
 
-impl ToPrimitiveString for Enum {
-    fn to_primitive_string(&self) -> Option<String> {
-        let value = self.value.to_primitive_string()?.to_case(Case::Snake);
-        Some(format!("{}-{}", self.variant, value))
-    }
-}
+// impl ToPrimitiveString for Enum {
+//     fn to_primitive_string(&self) -> Option<String> {
+//         let value = self.value.to_primitive_string()?.to_case(Case::Snake);
+//         Some(format!("{}-{}", self.variant, value))
+//     }
+// }
 
-impl ToPrimitiveString for CairoOption<Value> {
-    fn to_primitive_string(&self) -> Option<String> {
-        match self {
-            CairoOption::Some(v) => Some(format!("some-{}", v.to_primitive_string()?)),
-            CairoOption::None => Some("none".to_string()),
-        }
-    }
-}
+// impl ToPrimitiveString for CairoOption<Value> {
+//     fn to_primitive_string(&self) -> Option<String> {
+//         match self {
+//             CairoOption::Some(v) => Some(format!("some-{}", v.to_primitive_string()?)),
+//             CairoOption::None => Some("none".to_string()),
+//         }
+//     }
+// }
 
-impl ToPrimitiveString for CairoResult<Value, Value> {
-    fn to_primitive_string(&self) -> Option<String> {
-        match self {
-            CairoResult::Ok(v) => Some(format!("ok-{}", v.to_primitive_string()?)),
-            CairoResult::Err(e) => Some(format!("err-{}", e.to_primitive_string()?)),
-        }
-    }
-}
+// impl ToPrimitiveString for CairoResult<Value, Value> {
+//     fn to_primitive_string(&self) -> Option<String> {
+//         match self {
+//             CairoResult::Ok(v) => Some(format!("ok-{}", v.to_primitive_string()?)),
+//             CairoResult::Err(e) => Some(format!("err-{}", e.to_primitive_string()?)),
+//         }
+//     }
+// }
 
-impl ToPrimitiveString for Nullable {
-    fn to_primitive_string(&self) -> Option<String> {
-        match self {
-            Nullable::Null => Some("null".to_string()),
-            Nullable::NotNull(v) => Some(format!("not_null-{}", v.to_primitive_string()?)),
-        }
-    }
-}
+// impl ToPrimitiveString for Nullable {
+//     fn to_primitive_string(&self) -> Option<String> {
+//         match self {
+//             Nullable::Null => Some("null".to_string()),
+//             Nullable::NotNull(v) => Some(format!("not_null-{}", v.to_primitive_string()?)),
+//         }
+//     }
+// }
 
-impl ToPrimitiveString for Value {
-    fn to_primitive_string(&self) -> Option<String> {
-        match self {
-            Value::Felt252(value)
-            | Value::ClassHash(value)
-            | Value::ContractAddress(value)
-            | Value::EthAddress(value) => Some(felt_to_hex_string(value)),
-            Value::ShortUtf8(value) | Value::Utf8Array(value) => Some(value.clone()),
-            Value::Bool(value) => Some(value.to_string()),
-            Value::U8(value) => Some(value.to_string()),
-            Value::U16(value) => Some(value.to_string()),
-            Value::U32(value) => Some(value.to_string()),
-            Value::U64(value) => Some(value.to_string()),
-            Value::U128(value) => Some(value.to_string()),
-            Value::U256(value) => Some(value.to_string()),
-            Value::I8(value) => Some(value.to_string()),
-            Value::I16(value) => Some(value.to_string()),
-            Value::I32(value) => Some(value.to_string()),
-            Value::I64(value) => Some(value.to_string()),
-            Value::I128(value) => Some(value.to_string()),
-            Value::ByteArray(s) => Some(String::from_utf8_lossy(s).to_string()),
-            Value::Enum(v) => v.to_primitive_string(),
-            Value::Option(v) => v.to_primitive_string(),
-            Value::Nullable(v) => v.to_primitive_string(),
-            _ => None,
-        }
-    }
-}
+// impl ToPrimitiveString for Value {
+//     fn to_primitive_string(&self) -> Option<String> {
+//         match self {
+//             Value::Felt252(value)
+//             | Value::ClassHash(value)
+//             | Value::ContractAddress(value)
+//             | Value::EthAddress(value)
+//             | Value::StorageAddress(value)
+//             | Value::StorageBaseAddress(value) => Some(felt_to_hex_string(value)),
+//             Value::ShortUtf8(value) | Value::Utf8Array(value) => Some(value.clone()),
+//             Value::Bytes31(value) => Some(bytes31_to_hex_string(value)),
+//             Value::Bool(value) => Some(value.to_string()),
+//             Value::U8(value) => Some(value.to_string()),
+//             Value::U16(value) => Some(value.to_string()),
+//             Value::U32(value) => Some(value.to_string()),
+//             Value::U64(value) => Some(value.to_string()),
+//             Value::U128(value) => Some(value.to_string()),
+//             Value::U256(value) => Some(value.to_string()),
+//             Value::U512(value) => Some(value.to_string()),
+//             Value::I8(value) => Some(value.to_string()),
+//             Value::I16(value) => Some(value.to_string()),
+//             Value::I32(value) => Some(value.to_string()),
+//             Value::I64(value) => Some(value.to_string()),
+//             Value::I128(value) => Some(value.to_string()),
+//             Value::Enum(v) => v.to_primitive_string(),
+//             Value::Option(v) => v.to_primitive_string(),
+//             Value::Result(v) => v.to_primitive_string(),
+//             Value::Nullable(v) => v.to_primitive_string(),
+//             _ => None,
+//         }
+//     }
+// }

@@ -14,5 +14,6 @@ serde_json.workspace = true
 serde.workspace = true
 starknet-types-core.workspace = true
 lambdaworks-math.workspace = true
+hex.workspace = true
 
 [dev-dependencies]
