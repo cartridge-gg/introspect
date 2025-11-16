@@ -1,5 +1,5 @@
+use introspect_types::ColumnDef;
 use introspect_types::schema::PrimaryTypeDef;
-use introspect_types::{ColumnDef, FeltIterator, ToValue};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 
@@ -9,5 +9,5 @@ pub struct TableSchema {
     pub name: String,
     pub attributes: Vec<String>,
     pub primary: PrimaryTypeDef,
-    pub fields: Vec<ColumnDef>,
+    pub columns: Vec<ColumnDef>,
 }
