@@ -1,6 +1,5 @@
 use crate::{Attribute, ascii_str_to_limbs};
 use serde::{Deserialize, Serialize};
-use serde_json::Value::Null;
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
 

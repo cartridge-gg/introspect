@@ -1,4 +1,8 @@
 use cainome_cairo_serde::{ByteArray, Bytes31};
+use lambdaworks_math::field::fields::fft_friendly::stark_252_prime_field::MontgomeryConfigStark252PrimeField;
+use lambdaworks_math::field::fields::montgomery_backed_prime_fields::MontgomeryBackendPrimeField;
+use lambdaworks_math::unsigned_integer::element::UnsignedInteger;
+use lambdaworks_math::unsigned_integer::montgomery::MontgomeryAlgorithms;
 use primitive_types::{U256, U512};
 use starknet_types_core::felt::Felt;
 
@@ -8,7 +12,14 @@ pub fn felt_to_hex_string(value: &Felt) -> String {
     format!("0x{:016x}", value)
 }
 
+pub const fn ascii_str_to_felt(s: &str) -> Felt {
+    Felt::from_raw(ascii_str_to_limbs(s))
+}
+
 pub const fn ascii_str_to_limbs(s: &str) -> [u64; 4] {
+    pub const FELT_MODULUS: UnsignedInteger<4> = UnsignedInteger::<4>::from_hex_unchecked(
+        "800000000000011000000000000000000000000000000000000000000000001",
+    );
     const fn shift_u64_char(value: &mut u64, c: u64) -> u64 {
         let carry = *value >> 56;
         *value = (*value << 8) + c;
@@ -27,7 +38,14 @@ pub const fn ascii_str_to_limbs(s: &str) -> [u64; 4] {
         n += 1;
     }
     assert!(n < 32, "String too long to convert to Felt");
-    limbs
+
+    MontgomeryAlgorithms::cios(
+        &UnsignedInteger { limbs },
+        &MontgomeryBackendPrimeField::<MontgomeryConfigStark252PrimeField, 4>::R2,
+        &FELT_MODULUS,
+        &MontgomeryBackendPrimeField::<MontgomeryConfigStark252PrimeField, 4>::MU,
+    )
+    .limbs
 }
 
 pub fn pop_primitive<T: TryFrom<Felt>>(data: &mut FeltIterator) -> Option<T> {
