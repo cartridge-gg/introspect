@@ -322,6 +322,17 @@ impl TupleDef {
     pub fn new_type_def(elements: Vec<TypeDef>) -> TypeDef {
         TypeDef::Tuple(TupleDef::new(elements))
     }
+
+    pub fn to_type_def(self) -> TypeDef {
+        if self.elements.is_empty() {
+            TypeDef::None
+        } else if self.elements.len() == 1 {
+            let mut element = self.elements;
+            element.pop().unwrap()
+        } else {
+            TypeDef::Tuple(self)
+        }
+    }
 }
 
 impl Felt252DictDef {

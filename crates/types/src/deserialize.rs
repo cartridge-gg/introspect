@@ -76,7 +76,7 @@ impl CairoDeserialize for TypeDef {
                 mode: ByteArrayDeserialization::ISerde,
                 encoding: data.next()?,
             })),
-            selectors::Tuple => TupleDef::c_deserialize(data).map(TypeDef::Tuple),
+            selectors::Tuple => TupleDef::c_deserialize(data).map(TupleDef::to_type_def),
             selectors::Array => ArrayDef::c_deserialize_boxed(data).map(TypeDef::Array),
             selectors::FixedArray => {
                 FixedArrayDef::c_deserialize_boxed(data).map(TypeDef::FixedArray)
