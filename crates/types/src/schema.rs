@@ -15,7 +15,7 @@ pub struct TableSchema {
     pub id: Felt,
     pub name: String,
     pub attributes: Vec<Attribute>,
-    pub primary: PrimaryTypeDef,
+    pub primary: PrimaryDef,
     pub columns: Vec<ColumnDef>,
 }
 
