@@ -2,6 +2,7 @@ use crate::{Attribute, ascii_str_to_limbs};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
+use std::ops::Deref;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum ByteArrayDeserialization {
@@ -351,6 +352,13 @@ impl TupleDef {
         } else {
             TypeDef::Tuple(self)
         }
+    }
+}
+
+impl Deref for TupleDef {
+    type Target = Vec<TypeDef>;
+    fn deref(&self) -> &Self::Target {
+        &self.elements
     }
 }
 
