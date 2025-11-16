@@ -271,6 +271,16 @@ impl StructDef {
     }
 }
 
+impl MemberDef {
+    pub fn new(name: String, attributes: Vec<Attribute>, type_def: TypeDef) -> Self {
+        MemberDef {
+            name,
+            attributes,
+            type_def,
+        }
+    }
+}
+
 impl EnumDef {
     pub fn new(
         name: String,
@@ -291,6 +301,16 @@ impl EnumDef {
         variants: Vec<(Felt, VariantDef)>,
     ) -> TypeDef {
         TypeDef::Enum(EnumDef::new(name, attributes, variants))
+    }
+}
+
+impl VariantDef {
+    pub fn new(name: String, attributes: Vec<Attribute>, type_def: TypeDef) -> Self {
+        VariantDef {
+            name,
+            attributes,
+            type_def,
+        }
     }
 }
 

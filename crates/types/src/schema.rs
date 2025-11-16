@@ -126,3 +126,14 @@ impl PrimaryDef {
         })
     }
 }
+
+impl ColumnDef {
+    pub fn new(id: Felt, name: String, attributes: Vec<Attribute>, type_def: TypeDef) -> Self {
+        ColumnDef {
+            id,
+            name,
+            attributes,
+            type_def,
+        }
+    }
+}
