@@ -1,5 +1,6 @@
 use crate::{Attribute, ascii_str_to_limbs};
 use serde::{Deserialize, Serialize};
+use serde_json::Value::Null;
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
 
@@ -252,6 +253,24 @@ impl PartialEq for EnumDef {
     }
 }
 
+impl StructDef {
+    pub fn new(name: String, attributes: Vec<Attribute>, members: Vec<MemberDef>) -> Self {
+        StructDef {
+            name,
+            attributes,
+            members,
+        }
+    }
+
+    pub fn new_type_def(
+        name: String,
+        attributes: Vec<Attribute>,
+        members: Vec<MemberDef>,
+    ) -> TypeDef {
+        TypeDef::Struct(StructDef::new(name, attributes, members))
+    }
+}
+
 impl EnumDef {
     pub fn new(
         name: String,
@@ -264,5 +283,103 @@ impl EnumDef {
             order: variants.iter().map(|(k, _)| k.clone()).collect(),
             variants: variants.into_iter().collect(),
         }
+    }
+
+    pub fn new_type_def(
+        name: String,
+        attributes: Vec<Attribute>,
+        variants: Vec<(Felt, VariantDef)>,
+    ) -> TypeDef {
+        TypeDef::Enum(EnumDef::new(name, attributes, variants))
+    }
+}
+
+impl ArrayDef {
+    pub fn new(type_def: TypeDef) -> Self {
+        ArrayDef { type_def }
+    }
+
+    pub fn new_type_def(type_def: TypeDef) -> TypeDef {
+        TypeDef::Array(Box::new(ArrayDef::new(type_def)))
+    }
+}
+
+impl FixedArrayDef {
+    pub fn new(type_def: TypeDef, size: u32) -> Self {
+        FixedArrayDef { type_def, size }
+    }
+
+    pub fn new_type_def(type_def: TypeDef, size: u32) -> TypeDef {
+        TypeDef::FixedArray(Box::new(FixedArrayDef::new(type_def, size)))
+    }
+}
+
+impl TupleDef {
+    pub fn new(elements: Vec<TypeDef>) -> Self {
+        TupleDef { elements }
+    }
+
+    pub fn new_type_def(elements: Vec<TypeDef>) -> TypeDef {
+        TypeDef::Tuple(TupleDef::new(elements))
+    }
+}
+
+impl Felt252DictDef {
+    pub fn new(type_def: TypeDef) -> Self {
+        Felt252DictDef { type_def }
+    }
+
+    pub fn new_type_def(type_def: TypeDef) -> TypeDef {
+        TypeDef::Felt252Dict(Box::new(Felt252DictDef::new(type_def)))
+    }
+}
+
+impl OptionDef {
+    pub fn new(type_def: TypeDef) -> Self {
+        OptionDef { type_def }
+    }
+
+    pub fn new_type_def(type_def: TypeDef) -> TypeDef {
+        TypeDef::Option(Box::new(OptionDef::new(type_def)))
+    }
+}
+
+impl ResultDef {
+    pub fn new(ok: TypeDef, err: TypeDef) -> Self {
+        ResultDef { ok, err }
+    }
+
+    pub fn new_type_def(ok: TypeDef, err: TypeDef) -> TypeDef {
+        TypeDef::Result(Box::new(ResultDef::new(ok, err)))
+    }
+}
+
+impl NullableDef {
+    pub fn new(type_def: TypeDef) -> Self {
+        NullableDef { type_def }
+    }
+
+    pub fn new_type_def(type_def: TypeDef) -> TypeDef {
+        TypeDef::Nullable(Box::new(NullableDef::new(type_def)))
+    }
+}
+
+impl CustomDef {
+    pub fn new(id: Felt) -> Self {
+        CustomDef { id }
+    }
+
+    pub fn new_type_def(id: Felt) -> TypeDef {
+        TypeDef::Custom(CustomDef::new(id))
+    }
+}
+
+impl RefDef {
+    pub fn new(id: Felt) -> Self {
+        RefDef { id }
+    }
+
+    pub fn new_type_def(id: Felt) -> TypeDef {
+        TypeDef::Ref(RefDef::new(id))
     }
 }
