@@ -1,4 +1,4 @@
-use crate::Attribute;
+use crate::{Attribute, ascii_str_to_limbs};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
@@ -48,28 +48,6 @@ pub enum TypeDef {
     Nullable(Box<TypeDef>),
     Ref(Felt),
     Custom(Felt),
-}
-
-const fn ascii_str_to_limbs(s: &str) -> [u64; 4] {
-    const fn shift_u64_char(value: &mut u64, c: u64) -> u64 {
-        let carry = *value >> 56;
-        *value = (*value << 8) + c;
-        carry
-    }
-    let mut limbs = [0; 4];
-    let bytes = s.as_bytes();
-    let len = bytes.len();
-    let mut n = 0;
-    while n < len {
-        assert!(bytes[n] <= 0x7F, "Non-ASCII character in string");
-        let carry = shift_u64_char(&mut limbs[3], bytes[n] as u64);
-        let carry = shift_u64_char(&mut limbs[2], carry);
-        let carry = shift_u64_char(&mut limbs[1], carry);
-        shift_u64_char(&mut limbs[0], carry);
-        n += 1;
-    }
-    assert!(n < 32, "String too long to convert to Felt");
-    limbs
 }
 
 #[allow(non_upper_case_globals)]
