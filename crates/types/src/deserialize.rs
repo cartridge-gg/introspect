@@ -2,8 +2,9 @@ use starknet_types_core::felt::Felt;
 
 use crate::type_def::{ByteArrayDeserialization, selectors};
 use crate::{
-    Attribute, EnumDef, FeltIterator, FixedArrayDef, MemberDef, ResultDef, StructDef, TypeDef,
-    VariantDef, deserialize_byte_array_string, pop_primitive, read_serialized_felt_array,
+    Attribute, ColumnDef, EnumDef, FeltIterator, FixedArrayDef, MemberDef, PrimaryDef,
+    PrimaryTypeDef, ResultDef, StructDef, TypeDef, VariantDef, deserialize_byte_array_string,
+    pop_primitive, read_serialized_felt_array,
 };
 pub trait CairoDeserialize
 where
@@ -155,5 +156,62 @@ impl CairoDeserialize for ResultDef {
         let ok = TypeDef::c_deserialize(data)?;
         let err = TypeDef::c_deserialize(data)?;
         Some(ResultDef { ok, err })
+    }
+}
+
+impl CairoDeserialize for ColumnDef {
+    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+        let id = pop_primitive(data)?;
+        let name = deserialize_byte_array_string(data)?;
+        let attributes: Vec<Attribute> = Vec::<Attribute>::c_deserialize(data)?;
+        let type_def: TypeDef = TypeDef::c_deserialize(data)?;
+        Some(ColumnDef {
+            id,
+            name,
+            attributes,
+            type_def,
+        })
+    }
+}
+
+impl CairoDeserialize for PrimaryDef {
+    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+        let name = deserialize_byte_array_string(data)?;
+        let attributes: Vec<Attribute> = Vec::<Attribute>::c_deserialize(data)?;
+        let type_def: PrimaryTypeDef = PrimaryTypeDef::c_deserialize(data)?;
+        Some(PrimaryDef {
+            name,
+            attributes,
+            type_def,
+        })
+    }
+}
+
+impl CairoDeserialize for PrimaryTypeDef {
+    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+        let selector = data.next()?.to_raw();
+        match selector {
+            selectors::Felt252 => Some(PrimaryTypeDef::Felt252),
+            selectors::ShortUtf8 => Some(PrimaryTypeDef::ShortUtf8),
+            selectors::Bytes31 => Some(PrimaryTypeDef::Bytes31),
+            selectors::Bytes31E => Some(PrimaryTypeDef::Bytes31E(data.next()?)),
+            selectors::Bool => Some(PrimaryTypeDef::Bool),
+            selectors::U8 => Some(PrimaryTypeDef::U8),
+            selectors::U16 => Some(PrimaryTypeDef::U16),
+            selectors::U32 => Some(PrimaryTypeDef::U32),
+            selectors::U64 => Some(PrimaryTypeDef::U64),
+            selectors::U128 => Some(PrimaryTypeDef::U128),
+            selectors::I8 => Some(PrimaryTypeDef::I8),
+            selectors::I16 => Some(PrimaryTypeDef::I16),
+            selectors::I32 => Some(PrimaryTypeDef::I32),
+            selectors::I64 => Some(PrimaryTypeDef::I64),
+            selectors::I128 => Some(PrimaryTypeDef::I128),
+            selectors::ClassHash => Some(PrimaryTypeDef::ClassHash),
+            selectors::ContractAddress => Some(PrimaryTypeDef::ContractAddress),
+            selectors::EthAddress => Some(PrimaryTypeDef::EthAddress),
+            selectors::StorageAddress => Some(PrimaryTypeDef::StorageAddress),
+            selectors::StorageBaseAddress => Some(PrimaryTypeDef::StorageBaseAddress),
+            _ => None,
+        }
     }
 }

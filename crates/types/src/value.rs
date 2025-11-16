@@ -1,4 +1,4 @@
-use crate::Attribute;
+use crate::{Attribute, PrimaryDef};
 use primitive_types::{U256, U512};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
@@ -45,6 +45,30 @@ pub enum Value {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub enum PrimaryValue {
+    Felt252(Felt),
+    ShortUtf8(String),
+    Bytes31([u8; 31]),
+    Bytes31E(EncodedBytes),
+    Bool(bool),
+    U8(u8),
+    U16(u16),
+    U32(u32),
+    U64(u64),
+    U128(u128),
+    I8(i8),
+    I16(i16),
+    I32(i32),
+    I64(i64),
+    I128(i128),
+    ClassHash(Felt),
+    ContractAddress(Felt),
+    EthAddress(Felt),
+    StorageAddress(Felt),
+    StorageBaseAddress(Felt),
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Struct {
     pub name: String,
     pub attributes: Vec<Attribute>,
@@ -83,4 +107,26 @@ pub struct Custom {
 pub struct EncodedBytes {
     pub encoding: Felt,
     pub bytes: Vec<u8>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Field {
+    pub name: String,
+    pub attributes: Vec<Attribute>,
+    pub value: Value,
+}
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Primary {
+    pub name: String,
+    pub attributes: Vec<Attribute>,
+    pub value: PrimaryValue,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Record {
+    pub table_id: Felt,
+    pub table_name: String,
+    pub attributes: Vec<Attribute>,
+    pub primary: PrimaryDef,
+    pub fields: Vec<Field>,
 }

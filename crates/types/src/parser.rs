@@ -2,9 +2,9 @@ use crate::type_def::{ByteArrayDeserialization, FixedArrayDef, MemberDef, Struct
 use crate::utils::{felt_to_string, pop_bytes31};
 use crate::value::{Enum, Nullable, Value};
 use crate::{
-    ColumnDef, Custom, EncodedBytes, EnumDef, FeltIterator, Field, Member, Struct,
-    deserialize_byte_array, pop_primitive, pop_short_utf8, pop_u256, pop_u512,
-    read_serialized_felt_array,
+    ColumnDef, Custom, EncodedBytes, EnumDef, FeltIterator, Field, Member, Primary, PrimaryDef,
+    PrimaryTypeDef, PrimaryValue, Struct, deserialize_byte_array, pop_primitive, pop_short_utf8,
+    pop_u256, pop_u512, read_serialized_felt_array,
 };
 use convert_case::{Case, Casing};
 use num_traits::Zero;
@@ -181,19 +181,55 @@ impl ToValue for EnumDef {
             value: field.type_def.to_value(data)?,
         })
     }
-
-    fn to_value_multiple(&self, data: &mut FeltIterator, count: usize) -> Option<Vec<Self::Value>> {
-        (0..count)
-            .into_iter()
-            .map(|_| self.to_value(data))
-            .collect()
-    }
 }
 
 impl ToValue for ColumnDef {
     type Value = Field;
     fn to_value(&self, data: &mut FeltIterator) -> Option<Field> {
         Some(Field {
+            name: self.name.clone(),
+            attributes: self.attributes.clone(),
+            value: self.type_def.to_value(data)?,
+        })
+    }
+}
+
+impl ToValue for PrimaryTypeDef {
+    type Value = PrimaryValue;
+    fn to_value(&self, data: &mut crate::FeltIterator) -> Option<Self::Value> {
+        match self {
+            PrimaryTypeDef::Felt252 => pop_primitive(data).map(PrimaryValue::Felt252),
+            PrimaryTypeDef::ShortUtf8 => pop_short_utf8(data).map(PrimaryValue::ShortUtf8),
+            PrimaryTypeDef::Bytes31 => pop_bytes31(data).map(PrimaryValue::Bytes31),
+            PrimaryTypeDef::Bytes31E(encoding) => {
+                pop_bytes31_encoded(*encoding, data).map(PrimaryValue::Bytes31E)
+            }
+            PrimaryTypeDef::Bool => data.next().map(|v| PrimaryValue::Bool(!v.is_zero())),
+            PrimaryTypeDef::U8 => pop_primitive(data).map(PrimaryValue::U8),
+            PrimaryTypeDef::U16 => pop_primitive(data).map(PrimaryValue::U16),
+            PrimaryTypeDef::U32 => pop_primitive(data).map(PrimaryValue::U32),
+            PrimaryTypeDef::U64 => pop_primitive(data).map(PrimaryValue::U64),
+            PrimaryTypeDef::U128 => pop_primitive(data).map(PrimaryValue::U128),
+            PrimaryTypeDef::I8 => pop_primitive(data).map(PrimaryValue::I8),
+            PrimaryTypeDef::I16 => pop_primitive(data).map(PrimaryValue::I16),
+            PrimaryTypeDef::I32 => pop_primitive(data).map(PrimaryValue::I32),
+            PrimaryTypeDef::I64 => pop_primitive(data).map(PrimaryValue::I64),
+            PrimaryTypeDef::I128 => pop_primitive(data).map(PrimaryValue::I128),
+            PrimaryTypeDef::ClassHash => pop_primitive(data).map(PrimaryValue::ClassHash),
+            PrimaryTypeDef::ContractAddress => data.next().map(PrimaryValue::ContractAddress),
+            PrimaryTypeDef::EthAddress => data.next().map(PrimaryValue::EthAddress),
+            PrimaryTypeDef::StorageAddress => pop_primitive(data).map(PrimaryValue::StorageAddress),
+            PrimaryTypeDef::StorageBaseAddress => {
+                pop_primitive(data).map(PrimaryValue::StorageBaseAddress)
+            }
+        }
+    }
+}
+
+impl ToValue for PrimaryDef {
+    type Value = Primary;
+    fn to_value(&self, data: &mut FeltIterator) -> Option<Primary> {
+        Some(Primary {
             name: self.name.clone(),
             attributes: self.attributes.clone(),
             value: self.type_def.to_value(data)?,
