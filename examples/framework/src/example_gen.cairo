@@ -75,6 +75,7 @@ pub impl FooTable of ITable<Foo> {
     }
 }
 
+// #[derive(Table)]
 #[derive(Drop)]
 pub struct Foo2 {
     #[key]

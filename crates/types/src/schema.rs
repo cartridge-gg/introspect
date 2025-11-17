@@ -145,7 +145,7 @@ impl PrimaryTypeDef {
 }
 
 impl PrimaryDef {
-    fn to_primary(&self, felt: Felt) -> Option<Primary> {
+    pub fn to_primary(&self, felt: Felt) -> Option<Primary> {
         Some(Primary {
             name: self.name.clone(),
             attributes: self.attributes.clone(),
