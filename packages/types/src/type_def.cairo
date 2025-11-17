@@ -27,7 +27,7 @@ pub enum TypeDef {
     StorageAddress,
     StorageBaseAddress,
     ByteArray,
-    Utf8Array,
+    Utf8String,
     ByteArrayE: felt252,
     ShortString,
     Tuple: Span<TypeDef>,
@@ -125,7 +125,7 @@ pub mod selectors {
     pub const StorageAddress: felt252 = 'StorageAddress';
     pub const StorageBaseAddress: felt252 = 'StorageBaseAddress';
     pub const ByteArray: felt252 = 'ByteArray';
-    pub const Utf8Array: felt252 = 'Utf8Array';
+    pub const Utf8String: felt252 = 'Utf8String';
     pub const ByteArrayE: felt252 = 'ByteArrayE';
     pub const Tuple: felt252 = 'Tuple';
     pub const Array: felt252 = 'Array';
@@ -174,7 +174,7 @@ impl TypeDefSelector of SelectorTrait<TypeDef> {
             TypeDef::StorageAddress => selectors::StorageAddress,
             TypeDef::StorageBaseAddress => selectors::StorageBaseAddress,
             TypeDef::ByteArray => selectors::ByteArray,
-            TypeDef::Utf8Array => selectors::Utf8Array,
+            TypeDef::Utf8String => selectors::Utf8String,
             TypeDef::ByteArrayE(_) => selectors::ByteArrayE,
             TypeDef::Tuple(_) => selectors::Tuple,
             TypeDef::Array(_) => selectors::Array,
@@ -200,7 +200,7 @@ impl TySerde of Serde<TypeDef> {
             TypeDef::U128 | TypeDef::U256 | TypeDef::U512 | TypeDef::I8 | TypeDef::I16 |
             TypeDef::I32 | TypeDef::I64 | TypeDef::I128 | TypeDef::ShortString |
             TypeDef::ClassHash | TypeDef::ContractAddress | TypeDef::EthAddress |
-            TypeDef::StorageAddress | TypeDef::ByteArray | TypeDef::Utf8Array |
+            TypeDef::StorageAddress | TypeDef::ByteArray | TypeDef::Utf8String |
             TypeDef::StorageBaseAddress => { output.append(self.selector()); },
             TypeDef::Ref(t) | TypeDef::Custom(t) | TypeDef::Bytes31E(t) |
             TypeDef::ByteArrayE(t) => {

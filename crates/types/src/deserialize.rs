@@ -71,7 +71,7 @@ impl CairoDeserialize for TypeDef {
             selectors::StorageAddress => Some(TypeDef::StorageAddress),
             selectors::StorageBaseAddress => Some(TypeDef::StorageBaseAddress),
             selectors::ByteArray => Some(TypeDef::ByteArray(ByteArrayDeserialization::ISerde)),
-            selectors::Utf8Array => Some(TypeDef::Utf8Array(ByteArrayDeserialization::ISerde)),
+            selectors::Utf8String => Some(TypeDef::Utf8String(ByteArrayDeserialization::ISerde)),
             selectors::ByteArrayE => Some(TypeDef::ByteArrayE(ByteArrayEDef {
                 mode: ByteArrayDeserialization::ISerde,
                 encoding: data.next()?,

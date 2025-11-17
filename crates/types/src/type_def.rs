@@ -37,7 +37,7 @@ pub enum TypeDef {
     StorageAddress,
     StorageBaseAddress,
     ByteArray(ByteArrayDeserialization),
-    Utf8Array(ByteArrayDeserialization),
+    Utf8String(ByteArrayDeserialization),
     ByteArrayE(ByteArrayEDef),
     Tuple(TupleDef),
     Array(Box<ArrayDef>),
@@ -81,7 +81,7 @@ pub mod selectors {
     pub const StorageAddress: [u64; 4] = ascii_str_to_limbs("StorageAddress");
     pub const StorageBaseAddress: [u64; 4] = ascii_str_to_limbs("StorageBaseAddress");
     pub const ByteArray: [u64; 4] = ascii_str_to_limbs("ByteArray");
-    pub const Utf8Array: [u64; 4] = ascii_str_to_limbs("Utf8Array");
+    pub const Utf8String: [u64; 4] = ascii_str_to_limbs("Utf8String");
     pub const ByteArrayE: [u64; 4] = ascii_str_to_limbs("ByteArrayE");
     pub const Tuple: [u64; 4] = ascii_str_to_limbs("Tuple");
     pub const Array: [u64; 4] = ascii_str_to_limbs("Array");
@@ -208,7 +208,7 @@ impl TypeName for TypeDef {
             TypeDef::StorageAddress => "StorageAddress".to_string(),
             TypeDef::StorageBaseAddress => "StorageBaseAddress".to_string(),
             TypeDef::ByteArray(_) => "ByteArray".to_string(),
-            TypeDef::Utf8Array(_) => "Utf8Array".to_string(),
+            TypeDef::Utf8String(_) => "Utf8String".to_string(),
             TypeDef::ByteArrayE(inner) => format!("ByteArrayE: {}", inner.encoding),
             TypeDef::Tuple(inner) => format!(
                 "({})",

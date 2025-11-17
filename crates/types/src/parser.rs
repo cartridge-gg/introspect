@@ -64,7 +64,7 @@ impl ToValue for TypeDef {
             TypeDef::StorageAddress => pop_primitive(data).map(Value::StorageAddress),
             TypeDef::StorageBaseAddress => pop_primitive(data).map(Value::StorageBaseAddress),
             TypeDef::ByteArray(mode) => read_byte_array(mode.clone(), data).map(Value::ByteArray),
-            TypeDef::Utf8Array(mode) => read_utf8_array(mode.clone(), data).map(Value::Utf8Array),
+            TypeDef::Utf8String(mode) => read_utf8_array(mode.clone(), data).map(Value::Utf8String),
             TypeDef::ByteArrayE(bae) => bae.to_value(data).map(Value::ByteArrayE),
             TypeDef::Tuple(tuple) => tuple.to_value(data).map(Value::Tuple),
             TypeDef::Array(a) => a.to_value(data).map(Value::Array),

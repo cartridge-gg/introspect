@@ -64,7 +64,7 @@ impl Into<JsonValue> for Value {
             Value::I64(v) => to_json_string(v),
             Value::I128(v) => to_json_string(v),
             Value::ByteArray(v) => v.into(),
-            Value::Utf8Array(v) => to_json_string(v),
+            Value::Utf8String(v) => to_json_string(v),
             Value::Struct(v) => JsonObject(v.into()),
             Value::Tuple(values) | Value::Array(values) | Value::FixedArray(values) => {
                 vec_values_to_json_array(values)

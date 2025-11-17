@@ -18,7 +18,7 @@ This SNIP proposes a standardized collection of events and data structures to de
 
 ## Motivation
 
-One of the challenges with building on starknet is making chain data easily accessible and queryable to client side applications. Most apps will have to make there own systems to fetch, decode and make avaliable the data stored on chain. This leads to a lot of duplicated effort, high barrier to entry for new developers in both time and skill.
+One of the challenges with building on starknet is making chain data easily accessible and queryable to client side applications. Most apps will have to make there own systems to fetch, decode and make available the data stored on chain. This leads to a lot of duplicated effort, high barrier to entry for new developers in both time and skill.
 
 Some standards such as ERC20 and ERC721 have helped with this by providing a common interface for certain data structures, but there is no general purpose standard for describing arbitrary data structures stored on chain.
 
@@ -28,18 +28,9 @@ The standard consists of two main parts the events and data structures used to d
 
 ### TypeEvents
 
-- `DeclareSchema`: Declare a new schema with a given name and structure.
 - `DeclareType`: Declare a new type with a given name and structure.
 
 ```rust
-struct DeclareSchema {
-  /// A unique identifier for the schema.
-  #[key]
-  id: felt252,
-  /// A list of column definitions that make up the schema.
-  columns: Span<ColumnDef>,
-}
-
 struct DeclareType {
     /// A unique identifier for the type.
     #[key]
@@ -60,7 +51,7 @@ These consist of events for table, column and record manipulation.
 
 - `CreateTable`: Create a new table with a given name.
 - `CreateTableWithColumns`: Create or update a table with a given name and columns.
-- `CreateTableWithSchema`: Create or update a table with a given name and schema.
+- `CreateTableFromClassHash`: Create or update a table from a class hash.
 - `RenameTable`: Rename an existing table.
 - `DropTable`: Drop an existing table.
 
@@ -88,13 +79,11 @@ struct CreateTableWithColumns {
     primary: FieldDef,
 }
 
-struct CreateTableWithSchema {
+struct CreateTableFromClassHash {
     #[key]
     id: felt252,
     name: ByteArray,
-    attributes: Span<Attribute>,
-    primary: FieldDef,
-    schema: felt252,
+    class_hash: felt252,
 }
 
 struct RenameTable {
@@ -226,16 +215,20 @@ struct DropColumns {
 - `InsertFields`: Insert or update multiple fields in a record.
 - `InsertsField`: Insert or update a field in multiple records.
 - `InsertsFields`: Insert or update multiple fields in multiple records.
-- `InsertSchema`: Insert or update a record in a table using a schema.
-- `InsertsSchema`: Insert or update multiple records in a table using a schema.
+- `InsertFieldGroup`: Insert or update a group of fields in a record.
+- `InsertFieldGroups`: Insert or update multiple groups of fields in a record.
+- `InsertsFieldGroup`: Insert or update a group of fields in multiple records.
+- `InsertFieldGroups`: Insert or update multiple groups of fields in multiple records.
 - `DeleteRecord`: Drop an existing record from a table.
 - `DeleteRecords`: Drop multiple existing records from a table.
 - `DeleteField`: Drop an existing field from a record.
 - `DeleteFields`: Drop multiple existing fields from a record.
 - `DeletesField`: Drop an existing field from multiple records.
 - `DeletesFields`: Drop multiple existing fields from multiple records.
-- `DeleteSchema`: Drop an existing record from a schema.
-- `DeletesSchema`: Drop multiple existing records from a schema.
+- `DeleteFieldGroup`: Drop a group of fields from a record.
+- `DeleteFieldGroups`: Drop multiple groups of fields from a record.
+- `DeletesFieldGroup`: Drop a group of fields from multiple records.
+- `DeletesFieldGroups`: Drop multiple groups of fields from multiple records.
 
 ```rust
 /// Database values common fields
@@ -245,7 +238,8 @@ struct DropColumns {
 /// - column/columns - Column ID.
 /// - data - Serialised data being set.
 /// - records_data - Pairs of Record IDs and their serialised data being set.
-/// - schema - Schema ID.
+/// - group/groups - Field group ID.
+///
 
 
 struct InsertRecord {
@@ -259,7 +253,7 @@ struct InsertRecord {
 struct InsertRecords {
     #[key]
     table: felt252,
-    records_data: Span<(felt252, Span<felt252>)>,
+    records_data: Span<IdData>,
 }
 
 struct InsertField {
@@ -283,40 +277,60 @@ struct InsertFields {
 }
 
 
-struct InsertRecordsField {
+struct InsertsField {
     #[key]
     table: felt252,
     #[key]
     column: felt252,
-    records_data: Span<(felt252, Span<felt252>)>,
+    records_data: Span<IdData>,
 }
 
 
-struct InsertRecordsFields {
+struct InsertsFields {
     #[key]
     table: felt252,
     columns: Span<felt252>,
-    records_data: Span<(felt252, Span<felt252>)>,
+    records_data: Span<IdData>,
 }
 
-struct InsertSchema {
+#[derive(Drop, Serde, starknet::Event)]
+pub struct InsertFieldGroup {
     #[key]
     table: felt252,
     #[key]
     record: felt252,
     #[key]
-    schema: felt252,
+    group: felt252,
     data: Span<felt252>,
 }
 
-struct InsertRecordsSchema {
+
+struct InsertFieldGroups {
     #[key]
     table: felt252,
     #[key]
-    schema: felt252,
-    records_data: Span<(felt252, Span<felt252>)>,
+    record: felt252,
+    groups: Span<felt252>,
+    data: Span<felt252>,
 }
 
+struct InsertsFieldGroup {
+    #[key]
+    table: felt252,
+    #[key]
+    group: felt252,
+    records_data: Span<IdData>,
+}
+
+
+struct InsertsFieldGroups {
+    #[key]
+    table: felt252,
+    #[key]
+    record: felt252,
+    groups: Span<felt252>,
+    records_data: Span<IdData>,
+}
 
 
 struct DeleteRecord {
@@ -367,22 +381,35 @@ struct DeletesFields {
     columns: Span<felt252>,
 }
 
-struct DeleteSchema {
+struct DeleteFieldGroup {
     #[key]
     table: felt252,
     #[key]
     record: felt252,
     #[key]
-    schema: felt252,
+    group: felt252,
 }
-
-
-struct DeletesSchema {
+struct DeleteFieldGroups {
     #[key]
     table: felt252,
     #[key]
-    schema: felt252,
+    record: felt252,
+    groups: Span<felt252>,
+}
+
+struct DeletesFieldGroup {
+    #[key]
+    table: felt252,
+    #[key]
+    group: felt252,
     records: Span<felt252>,
+}
+
+struct DeletesFieldGroups {
+    #[key]
+    table: felt252,
+    records: Span<felt252>,
+    groups: Span<felt252>,
 }
 ```
 
@@ -441,6 +468,8 @@ The following data structures are used to describe the types and schemas of cair
 |`None`| None type e.g. `()` or an empty enum.| 0
 |`Felt252`| Base [field element](https://docs.starknet.io/build/corelib/core-felt252) in cairo | 'felt252'
 |`Bytes31`| 31 bytes packed into a felt252.| 'bytes31'
+|`Bytes31E`| 31 bytes packed into a felt252 with encoding.| 'bytes31e'
+|`ShortUtf8`| A 31 byte UTF-8 string.| 'shortutf8'
 |`Bool`| A boolean value (true or false).| 'bool'
 |`U8`| An unsigned 8-bit integer.| 'u8'
 |`U16`| An unsigned 16-bit integer.| 'u16'
@@ -459,7 +488,10 @@ The following data structures are used to describe the types and schemas of cair
 |`EthAddress`| An Ethereum address.| 'EthAddress'
 |`StorageAddress`| An address of a storage location of a contract.| 'StorageAddress'
 |`StorageBaseAddress`| An address of a storage base location of a contract.| 'StorageBaseAddress'
+|`Utf8String`| A UTF-8 string.| 'Utf8String'
 |`ByteArray`| A byte array (An array of bytes31 with a pending word).| 'ByteArray'
+|`ByteArrayE`| A byte array with encoding (An array of bytes31 with a pending word).| 'ByteArrayE'
+
 |`ShortString`| A string of up to 31 bytes and length | 'ShortString'
 |`Tuple`| A tuple | 'Tuple'
 |`Array`| Variable sized array | 'Array'
@@ -479,6 +511,8 @@ enum TypeDef {
     None,
     Felt252,
     Bytes31,
+    Bytes31E: felt252,
+    ShortUtf8,
     Bool,
     U8,
     U16,
@@ -497,7 +531,9 @@ enum TypeDef {
     EthAddress,
     StorageAddress,
     StorageBaseAddress,
+    Utf8String,
     ByteArray,
+    ByteArrayE: felt252,
     ShortString,
     Tuple: Span<TypeDef>,
     Array: Box<TypeDef>,

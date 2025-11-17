@@ -30,7 +30,7 @@ pub enum Value {
     StorageAddress(Felt),
     StorageBaseAddress(Felt),
     ByteArray(Vec<u8>),
-    Utf8Array(String),
+    Utf8String(String),
     ByteArrayE(EncodedBytes),
     Tuple(Vec<Value>),
     Array(Vec<Value>),
