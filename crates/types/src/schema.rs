@@ -1,7 +1,7 @@
 use crate::utils::felt_to_utf8_string;
 use crate::{
-    Attribute, EncodedBytes, FeltIterator, Primary, PrimaryValue, Record, ToValue, TypeDef,
-    bytes31_to_hex_string, felt_to_bytes31, felt_to_hex_string,
+    Attribute, EncodedBytes, FeltIterator, Primary, PrimaryValue, Record, RecordValues, ToValue,
+    TypeDef, felt_to_bytes31,
 };
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
@@ -26,6 +26,43 @@ impl TableSchema {
             fields: self.columns.to_value(data)?,
         })
     }
+
+    pub fn to_record_values(&self, primary: Felt, data: &mut FeltIterator) -> Option<RecordValues> {
+        Some(RecordValues {
+            primary: self.primary.type_def.to_primary_value(primary)?,
+            fields: self
+                .columns
+                .iter()
+                .map(|col| col.type_def.to_value(data))
+                .collect::<Option<Vec<_>>>()?,
+        })
+    }
+
+    pub fn to_schema_info(&self) -> SchemaInfo {
+        SchemaInfo {
+            table_id: self.id.clone(),
+            table_name: self.name.clone(),
+            attributes: self.attributes.clone(),
+            primary: PrimaryInfo {
+                name: self.primary.name.clone(),
+                attributes: self.primary.attributes.clone(),
+            },
+            columns: self
+                .columns
+                .iter()
+                .map(ColumnInfo::from)
+                .collect::<Vec<_>>(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct SchemaInfo {
+    pub table_id: Felt,
+    pub table_name: String,
+    pub attributes: Vec<Attribute>,
+    pub primary: PrimaryInfo,
+    pub columns: Vec<ColumnInfo>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -48,6 +85,12 @@ pub struct PrimaryDef {
     pub name: String,
     pub attributes: Vec<Attribute>,
     pub type_def: PrimaryTypeDef,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct PrimaryInfo {
+    pub name: String,
+    pub attributes: Vec<Attribute>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
@@ -85,35 +128,8 @@ impl From<&ColumnDef> for ColumnInfo {
     }
 }
 
-impl ToString for PrimaryValue {
-    fn to_string(&self) -> String {
-        match self {
-            PrimaryValue::Felt252(value)
-            | PrimaryValue::ClassHash(value)
-            | PrimaryValue::ContractAddress(value)
-            | PrimaryValue::EthAddress(value)
-            | PrimaryValue::StorageAddress(value)
-            | PrimaryValue::StorageBaseAddress(value) => felt_to_hex_string(value),
-            PrimaryValue::Bytes31(value) => bytes31_to_hex_string(value),
-            PrimaryValue::Bytes31E(value) => bytes31_to_hex_string(&value.bytes),
-            PrimaryValue::ShortUtf8(value) => value.clone(),
-            PrimaryValue::Bool(value) => value.to_string(),
-            PrimaryValue::U8(value) => value.to_string(),
-            PrimaryValue::U16(value) => value.to_string(),
-            PrimaryValue::U32(value) => value.to_string(),
-            PrimaryValue::U64(value) => value.to_string(),
-            PrimaryValue::U128(value) => value.to_string(),
-            PrimaryValue::I8(value) => value.to_string(),
-            PrimaryValue::I16(value) => value.to_string(),
-            PrimaryValue::I32(value) => value.to_string(),
-            PrimaryValue::I64(value) => value.to_string(),
-            PrimaryValue::I128(value) => value.to_string(),
-        }
-    }
-}
-
 impl PrimaryTypeDef {
-    fn to_value(&self, felt: Felt) -> Option<PrimaryValue> {
+    fn to_primary_value(&self, felt: Felt) -> Option<PrimaryValue> {
         match self {
             PrimaryTypeDef::Felt252 => Some(PrimaryValue::Felt252(felt)),
             PrimaryTypeDef::ShortUtf8 => felt_to_utf8_string(felt).map(PrimaryValue::ShortUtf8),
@@ -149,7 +165,7 @@ impl PrimaryDef {
         Some(Primary {
             name: self.name.clone(),
             attributes: self.attributes.clone(),
-            value: self.type_def.to_value(felt)?,
+            value: self.type_def.to_primary_value(felt)?,
         })
     }
 }

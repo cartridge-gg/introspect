@@ -22,5 +22,5 @@ pub use utils::{
 };
 pub use value::{
     CairoOption, CairoResult, Custom, EncodedBytes, Enum, Field, Member, Nullable, Primary,
-    PrimaryValue, Record, Struct, Value,
+    PrimaryValue, Record, RecordValues, Struct, Value,
 };

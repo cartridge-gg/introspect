@@ -1,4 +1,4 @@
-use crate::Attribute;
+use crate::{Attribute, bytes31_to_hex_string, felt_to_hex_string};
 use primitive_types::{U256, U512};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
@@ -135,6 +135,33 @@ pub struct Primary {
     pub value: PrimaryValue,
 }
 
+impl ToString for PrimaryValue {
+    fn to_string(&self) -> String {
+        match self {
+            PrimaryValue::Felt252(value)
+            | PrimaryValue::ClassHash(value)
+            | PrimaryValue::ContractAddress(value)
+            | PrimaryValue::EthAddress(value)
+            | PrimaryValue::StorageAddress(value)
+            | PrimaryValue::StorageBaseAddress(value) => felt_to_hex_string(value),
+            PrimaryValue::Bytes31(value) => bytes31_to_hex_string(value),
+            PrimaryValue::Bytes31E(value) => bytes31_to_hex_string(&value.bytes),
+            PrimaryValue::ShortUtf8(value) => value.clone(),
+            PrimaryValue::Bool(value) => value.to_string(),
+            PrimaryValue::U8(value) => value.to_string(),
+            PrimaryValue::U16(value) => value.to_string(),
+            PrimaryValue::U32(value) => value.to_string(),
+            PrimaryValue::U64(value) => value.to_string(),
+            PrimaryValue::U128(value) => value.to_string(),
+            PrimaryValue::I8(value) => value.to_string(),
+            PrimaryValue::I16(value) => value.to_string(),
+            PrimaryValue::I32(value) => value.to_string(),
+            PrimaryValue::I64(value) => value.to_string(),
+            PrimaryValue::I128(value) => value.to_string(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Record {
     pub table_id: Felt,
@@ -144,73 +171,8 @@ pub struct Record {
     pub fields: Vec<Field>,
 }
 
-// pub trait ToPrimitiveString {
-//     fn to_primitive_string(&self) -> Option<String>;
-// }
-
-// impl ToPrimitiveString for Enum {
-//     fn to_primitive_string(&self) -> Option<String> {
-//         let value = self.value.to_primitive_string()?.to_case(Case::Snake);
-//         Some(format!("{}-{}", self.variant, value))
-//     }
-// }
-
-// impl ToPrimitiveString for CairoOption<Value> {
-//     fn to_primitive_string(&self) -> Option<String> {
-//         match self {
-//             CairoOption::Some(v) => Some(format!("some-{}", v.to_primitive_string()?)),
-//             CairoOption::None => Some("none".to_string()),
-//         }
-//     }
-// }
-
-// impl ToPrimitiveString for CairoResult<Value, Value> {
-//     fn to_primitive_string(&self) -> Option<String> {
-//         match self {
-//             CairoResult::Ok(v) => Some(format!("ok-{}", v.to_primitive_string()?)),
-//             CairoResult::Err(e) => Some(format!("err-{}", e.to_primitive_string()?)),
-//         }
-//     }
-// }
-
-// impl ToPrimitiveString for Nullable {
-//     fn to_primitive_string(&self) -> Option<String> {
-//         match self {
-//             Nullable::Null => Some("null".to_string()),
-//             Nullable::NotNull(v) => Some(format!("not_null-{}", v.to_primitive_string()?)),
-//         }
-//     }
-// }
-
-// impl ToPrimitiveString for Value {
-//     fn to_primitive_string(&self) -> Option<String> {
-//         match self {
-//             Value::Felt252(value)
-//             | Value::ClassHash(value)
-//             | Value::ContractAddress(value)
-//             | Value::EthAddress(value)
-//             | Value::StorageAddress(value)
-//             | Value::StorageBaseAddress(value) => Some(felt_to_hex_string(value)),
-//             Value::ShortUtf8(value) | Value::Utf8Array(value) => Some(value.clone()),
-//             Value::Bytes31(value) => Some(bytes31_to_hex_string(value)),
-//             Value::Bool(value) => Some(value.to_string()),
-//             Value::U8(value) => Some(value.to_string()),
-//             Value::U16(value) => Some(value.to_string()),
-//             Value::U32(value) => Some(value.to_string()),
-//             Value::U64(value) => Some(value.to_string()),
-//             Value::U128(value) => Some(value.to_string()),
-//             Value::U256(value) => Some(value.to_string()),
-//             Value::U512(value) => Some(value.to_string()),
-//             Value::I8(value) => Some(value.to_string()),
-//             Value::I16(value) => Some(value.to_string()),
-//             Value::I32(value) => Some(value.to_string()),
-//             Value::I64(value) => Some(value.to_string()),
-//             Value::I128(value) => Some(value.to_string()),
-//             Value::Enum(v) => v.to_primitive_string(),
-//             Value::Option(v) => v.to_primitive_string(),
-//             Value::Result(v) => v.to_primitive_string(),
-//             Value::Nullable(v) => v.to_primitive_string(),
-//             _ => None,
-//         }
-//     }
-// }
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct RecordValues {
+    pub primary: PrimaryValue,
+    pub fields: Vec<Value>,
+}

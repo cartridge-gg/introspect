@@ -1,11 +1,74 @@
 use introspect_types::{Attribute, ColumnDef, IdData, PrimaryDef, PrimaryTypeDef, TypeDef};
 
+pub mod selectors {
+    pub const CreateFieldGroup: felt252 = selector!("CreateFieldGroup");
+    pub const CreateTable: felt252 = selector!("CreateTable");
+    pub const CreateTableWithColumns: felt252 = selector!("CreateTableWithColumns");
+    pub const CreateTableFromClassHash: felt252 = selector!("CreateTableFromClassHash");
+    pub const RenameTable: felt252 = selector!("RenameTable");
+    pub const DropTable: felt252 = selector!("DropTable");
+    pub const RenamePrimary: felt252 = selector!("RenamePrimary");
+    pub const RetypePrimary: felt252 = selector!("RetypePrimary");
+    pub const AddColumn: felt252 = selector!("AddColumn");
+    pub const AddColumns: felt252 = selector!("AddColumns");
+    pub const RenameColumn: felt252 = selector!("RenameColumn");
+    pub const RenameColumns: felt252 = selector!("RenameColumns");
+    pub const RetypeColumn: felt252 = selector!("RetypeColumn");
+    pub const RetypeColumns: felt252 = selector!("RetypeColumns");
+    pub const DropColumn: felt252 = selector!("DropColumn");
+    pub const DropColumns: felt252 = selector!("DropColumns");
+    pub const InsertRecord: felt252 = selector!("InsertRecord");
+    pub const InsertRecords: felt252 = selector!("InsertRecords");
+    pub const InsertField: felt252 = selector!("InsertField");
+    pub const InsertFields: felt252 = selector!("InsertFields");
+    pub const InsertsField: felt252 = selector!("InsertsField");
+    pub const InsertsFields: felt252 = selector!("InsertsFields");
+    pub const InsertFieldGroup: felt252 = selector!("InsertFieldGroup");
+    pub const InsertFieldGroups: felt252 = selector!("InsertFieldGroups");
+    pub const InsertsFieldGroup: felt252 = selector!("InsertsFieldGroup");
+    pub const InsertsFieldGroups: felt252 = selector!("InsertsFieldGroups");
+    pub const DeleteRecord: felt252 = selector!("DeleteRecord");
+    pub const DeleteRecords: felt252 = selector!("DeleteRecords");
+    pub const DeleteField: felt252 = selector!("DeleteField");
+    pub const DeleteFields: felt252 = selector!("DeleteFields");
+    pub const DeletesField: felt252 = selector!("DeletesField");
+    pub const DeletesFields: felt252 = selector!("DeletesFields");
+    pub const DeleteSchema: felt252 = selector!("DeleteSchema");
+    pub const DeletesSchema: felt252 = selector!("DeletesSchema");
+}
+
+#[derive(Drop, Serde)]
+pub struct IdName {
+    pub id: felt252,
+    pub name: ByteArray,
+}
+
+
+#[derive(Drop, Serde)]
+pub struct IdTypeAttributes {
+    pub id: felt252,
+    pub attributes: Span<Attribute>,
+    pub type_def: TypeDef,
+}
+
+
+/// Emitted when a new field group (schema) is created.
+/// - id: felt252 - Unique identifier for the field group.
+/// - columns: Span<felt252> - List of column IDs included in the field group
+#[derive(Drop, Serde, starknet::Event)]
+pub struct CreateFieldGroup {
+    #[key]
+    pub id: felt252,
+    pub columns: Span<felt252>,
+}
+
 
 /// Table management events
 /// - id: felt252 - Unique identifier for the table.
 /// - name: ByteArray - Name of the table.
+/// - attributes: Span<Attribute> - Attributes of the table.
 /// - columns: Span<ColumnDef> - Definitions of the columns in the table.
-/// - schema: felt252 - Identifier of the schema used by the table.
+/// - class_hash: ClassHash - Class hash to derive schema from.
 
 /// Emitted when a new table is created.
 #[derive(Drop, Serde, starknet::Event)]
@@ -28,18 +91,13 @@ pub struct CreateTableWithColumns {
     pub columns: Span<ColumnDef>,
 }
 
-
-/// Declares a table using a pre-defined schema.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct CreateTableWithSchema {
+pub struct CreateTableFromClassHash {
     #[key]
     pub id: felt252,
     pub name: ByteArray,
-    pub attributes: Span<Attribute>,
-    pub primary: PrimaryDef,
-    pub schema: felt252,
+    pub class_hash: felt252,
 }
-
 
 ///Emitted when a table is renamed.
 #[derive(Drop, Serde, starknet::Event)]
@@ -162,7 +220,7 @@ pub struct DropColumn {
 pub struct DropColumns {
     #[key]
     pub table: felt252,
-    pub columns: Span<felt252>,
+    pub ids: Span<felt252>,
 }
 
 
@@ -172,7 +230,7 @@ pub struct DropColumns {
 /// - column/columns - Column ID.
 /// - data - Serialised data being set.
 /// - records_data - Pairs of Record IDs and their serialised data being set.
-/// - schema - Schema ID.
+/// - group - Field group (schema) ID.
 
 #[derive(Drop, Serde, starknet::Event)]
 pub struct InsertRecord {
@@ -236,7 +294,7 @@ pub struct InsertsFields {
 
 /// Insert a schema into a record.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct InsertColumnGroup {
+pub struct InsertFieldGroup {
     #[key]
     pub table: felt252,
     #[key]
@@ -246,13 +304,37 @@ pub struct InsertColumnGroup {
     pub data: Span<felt252>,
 }
 
+
+/// Insert multiple schemas into a record.
+#[derive(Drop, Serde, starknet::Event)]
+pub struct InsertFieldGroups {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub record: felt252,
+    pub groups: Span<felt252>,
+    pub data: Span<felt252>,
+}
+
 /// Insert multiple records into a table using a schema.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct InsertsColumnGroup {
+pub struct InsertsFieldGroup {
     #[key]
     pub table: felt252,
     #[key]
     pub group: felt252,
+    pub records_data: Span<IdData>,
+}
+
+
+/// Insert multiple schemas into a record.
+#[derive(Drop, Serde, starknet::Event)]
+pub struct InsertsFieldGroups {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub record: felt252,
+    pub groups: Span<felt252>,
     pub records_data: Span<IdData>,
 }
 
@@ -319,44 +401,39 @@ pub struct DeletesFields {
 
 /// Remove a schema from a record.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct DeleteSchema {
+pub struct DeleteFieldGroup {
     #[key]
     pub table: felt252,
     #[key]
     pub record: felt252,
     #[key]
-    pub schema: felt252,
+    pub group: felt252,
+}
+/// Remove multiple fields from a record.
+#[derive(Drop, Serde, starknet::Event)]
+pub struct DeleteFieldGroups {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub record: felt252,
+    pub groups: Span<felt252>,
 }
 
 /// Remove multiple fields from multiple records.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct DeletesSchema {
+pub struct DeletesFieldGroup {
     #[key]
     pub table: felt252,
     #[key]
-    pub schema: felt252,
+    pub group: felt252,
     pub records: Span<felt252>,
 }
 
-
-#[derive(Drop, Serde)]
-pub struct IdName {
-    pub id: felt252,
-    pub name: ByteArray,
-}
-
-
-#[derive(Drop, Serde)]
-pub struct IdTypeAttributes {
-    pub id: felt252,
-    pub attributes: Span<Attribute>,
-    pub type_def: TypeDef,
-}
-
-
+/// Remove multiple fields from multiple records.
 #[derive(Drop, Serde, starknet::Event)]
-pub struct CreateColumnGroup {
+pub struct DeletesFieldGroups {
     #[key]
-    pub id: felt252,
-    pub columns: Span<felt252>,
+    pub table: felt252,
+    pub records: Span<felt252>,
+    pub groups: Span<felt252>,
 }

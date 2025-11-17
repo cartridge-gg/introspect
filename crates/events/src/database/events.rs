@@ -4,6 +4,12 @@ use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateColumnGroup {
+    pub id: Felt,
+    pub columns: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CreateTable {
     pub id: Felt,
     pub name: String,
@@ -18,6 +24,13 @@ pub struct CreateTableWithColumns {
     pub attributes: Vec<Attribute>,
     pub primary: PrimaryDef,
     pub columns: Vec<ColumnDef>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateTableFromClassHash {
+    pub id: Felt,
+    pub name: String,
+    pub class_hash: Felt,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -142,7 +155,7 @@ pub struct InsertsFields {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct InsertColumnGroup {
+pub struct InsertFieldGroup {
     pub table: Felt,
     pub record: Felt,
     pub group: Felt,
@@ -150,9 +163,25 @@ pub struct InsertColumnGroup {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct InsertsColumnGroup {
+pub struct InsertFieldGroups {
+    pub table: Felt,
+    pub record: Felt,
+    pub groups: Vec<Felt>,
+    pub data: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InsertsFieldGroup {
     pub table: Felt,
     pub group: Felt,
+    pub records_data: Vec<IdData>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct InsertsFieldGroups {
+    pub table: Felt,
+    pub record: Felt,
+    pub groups: Vec<Felt>,
     pub records_data: Vec<IdData>,
 }
 
@@ -197,17 +226,31 @@ pub struct DeletesFields {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct DeleteSchema {
+pub struct DeleteFieldGroup {
     pub table: Felt,
     pub record: Felt,
-    pub schema: Felt,
+    pub group: Felt,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct DeletesSchema {
+pub struct DeleteFieldGroups {
     pub table: Felt,
-    pub schema: Felt,
+    pub record: Felt,
+    pub groups: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DeletesFieldGroup {
+    pub table: Felt,
+    pub group: Felt,
     pub records: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DeletesFieldGroups {
+    pub table: Felt,
+    pub records: Vec<Felt>,
+    pub groups: Vec<Felt>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -221,12 +264,6 @@ pub struct IdTypeAttributes {
     pub id: Felt,
     pub attributes: Vec<Attribute>,
     pub type_def: TypeDef,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CreateColumnGroup {
-    pub id: Felt,
-    pub columns: Vec<Felt>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
