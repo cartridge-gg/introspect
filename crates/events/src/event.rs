@@ -6,7 +6,7 @@ where
     Self: Sized,
 {
     const SELECTOR: Felt;
-    fn deserialize_event(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self>;
+    fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self>;
 
     fn verify(self, keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         match (keys.next(), data.next()) {

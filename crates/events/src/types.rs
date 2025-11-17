@@ -1,4 +1,4 @@
-use introspect_types::{CairoDeserialize, TypeDef};
+use introspect_types::{CairoDeserialize, FeltIterator, TypeDef};
 use serde::{Deserialize, Serialize};
 use starknet::macros::selector;
 use starknet_types_core::felt::Felt;
@@ -14,13 +14,10 @@ pub struct DeclareType {
 impl EventTrait for DeclareType {
     const SELECTOR: Felt = selector!("DeclareType");
 
-    fn deserialize_event(keys: Vec<Felt>, data: Vec<Felt>) -> Option<Self> {
-        let mut keys_iter = keys.into_iter();
-        let mut data_iter = data.into_iter();
+    fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
+        let id = keys.next()?;
+        let type_def = TypeDef::c_deserialize(data)?;
 
-        let id = keys_iter.next()?;
-        let type_def = TypeDef::c_deserialize(&mut data_iter)?;
-
-        DeclareType { id, type_def }.verify(&mut keys_iter, &mut data_iter)
+        DeclareType { id, type_def }.verify(keys, data)
     }
 }
