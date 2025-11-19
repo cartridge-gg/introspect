@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::utils::felt_to_utf8_string;
 use crate::{
     Attribute, EncodedBytes, FeltIterator, Primary, PrimaryValue, Record, RecordValues, ToValue,
@@ -119,11 +121,22 @@ pub enum PrimaryTypeDef {
 }
 
 impl From<&ColumnDef> for ColumnInfo {
-    fn from(field_def: &ColumnDef) -> Self {
+    fn from(column_def: &ColumnDef) -> Self {
         ColumnInfo {
-            id: field_def.id.clone(),
-            name: field_def.name.clone(),
-            attributes: field_def.attributes.clone(),
+            id: column_def.id.clone(),
+            name: column_def.name.clone(),
+            attributes: column_def.attributes.clone(),
+        }
+    }
+}
+
+impl<T: AsRef<ColumnDef>> From<T> for ColumnInfo {
+    fn from(column_def: T) -> Self {
+        let column_def = column_def.as_ref();
+        ColumnInfo {
+            id: column_def.id.clone(),
+            name: column_def.name.clone(),
+            attributes: column_def.attributes.clone(),
         }
     }
 }
