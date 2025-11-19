@@ -235,6 +235,24 @@ impl ItemDefTrait for NullableDef {
     }
 }
 
+impl ItemDefTrait for ByteArrayEDef {
+    fn wrap_to_type_def(self) -> TypeDef {
+        TypeDef::ByteArrayE(self)
+    }
+}
+
+impl ItemDefTrait for RefDef {
+    fn wrap_to_type_def(self) -> TypeDef {
+        TypeDef::Ref(self)
+    }
+}
+
+impl ItemDefTrait for CustomDef {
+    fn wrap_to_type_def(self) -> TypeDef {
+        TypeDef::Custom(self)
+    }
+}
+
 pub trait TypeName {
     fn type_name(&self) -> String;
 }

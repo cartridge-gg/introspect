@@ -1,6 +1,7 @@
 use crate::type_def::SingletonTypeDefTrait;
 use crate::{
-    EnumDef, FixedArrayDef, ItemDefTrait, MemberDef, StructDef, TupleDef, TypeDef, VariantDef,
+    EnumDef, FixedArrayDef, ItemDefTrait, MemberDef, ResultDef, StructDef, TupleDef, TypeDef,
+    VariantDef,
 };
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
@@ -56,6 +57,9 @@ impl<T: GetRefTypeDef> DerefDefTrait<TypeDef> for T {
             TypeDef::Felt252Dict(def) => self.deref_item(*def),
             TypeDef::Struct(def) => self.deref_item(def),
             TypeDef::Enum(def) => self.deref_item(def),
+            TypeDef::Option(def) => self.deref_item(*def),
+            TypeDef::Nullable(def) => self.deref_item(*def),
+            TypeDef::Result(def) => self.deref_item(*def),
             _ => Some(type_def),
         }
     }
@@ -120,6 +124,15 @@ impl<T: GetRefTypeDef> DerefDefTrait<FixedArrayDef> for T {
         Some(FixedArrayDef {
             type_def: self.deref_def(def.type_def)?,
             size: def.size,
+        })
+    }
+}
+
+impl<T: GetRefTypeDef> DerefDefTrait<ResultDef> for T {
+    fn deref_def(&self, def: ResultDef) -> Option<ResultDef> {
+        Some(ResultDef {
+            ok: self.deref_def(def.ok)?,
+            err: self.deref_def(def.err)?,
         })
     }
 }

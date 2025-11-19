@@ -1,9 +1,9 @@
 use crate::type_def::{ByteArrayEDef, selectors};
 use crate::{
     ArrayDef, Attribute, ByteArrayDeserialization, ColumnDef, CustomDef, EnumDef, Felt252DictDef,
-    FeltIterator, FixedArrayDef, MemberDef, NullableDef, OptionDef, PrimaryDef, PrimaryTypeDef,
-    RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef, deserialize_byte_array_string,
-    pop_primitive,
+    FeltIterator, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef, OptionDef, PrimaryDef,
+    PrimaryTypeDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
+    deserialize_byte_array_string, pop_primitive,
 };
 use starknet_types_core::felt::Felt;
 
@@ -14,6 +14,16 @@ where
     fn c_deserialize(data: &mut FeltIterator) -> Option<Self>;
     fn c_deserialize_boxed(data: &mut FeltIterator) -> Option<Box<Self>> {
         Self::c_deserialize(data).map(Box::new)
+    }
+}
+
+trait CairoDeserializeItem {
+    fn c_deserialize_item(data: &mut FeltIterator) -> Option<TypeDef>;
+}
+
+impl<Item: ItemDefTrait + CairoDeserialize> CairoDeserializeItem for Item {
+    fn c_deserialize_item(data: &mut FeltIterator) -> Option<TypeDef> {
+        Item::c_deserialize(data).map(Item::wrap_to_type_def)
     }
 }
 
@@ -72,25 +82,18 @@ impl CairoDeserialize for TypeDef {
             selectors::StorageBaseAddress => Some(TypeDef::StorageBaseAddress),
             selectors::ByteArray => Some(TypeDef::ByteArray(ByteArrayDeserialization::ISerde)),
             selectors::Utf8String => Some(TypeDef::Utf8String(ByteArrayDeserialization::ISerde)),
-            selectors::ByteArrayE => Some(TypeDef::ByteArrayE(ByteArrayEDef {
-                mode: ByteArrayDeserialization::ISerde,
-                encoding: data.next()?,
-            })),
-            selectors::Tuple => TupleDef::c_deserialize(data).map(TupleDef::to_type_def),
-            selectors::Array => ArrayDef::c_deserialize_boxed(data).map(TypeDef::Array),
-            selectors::FixedArray => {
-                FixedArrayDef::c_deserialize_boxed(data).map(TypeDef::FixedArray)
-            }
-            selectors::Felt252Dict => {
-                Felt252DictDef::c_deserialize_boxed(data).map(TypeDef::Felt252Dict)
-            }
-            selectors::Struct => StructDef::c_deserialize(data).map(TypeDef::Struct),
-            selectors::Enum => EnumDef::c_deserialize(data).map(TypeDef::Enum),
-            selectors::Option => OptionDef::c_deserialize_boxed(data).map(TypeDef::Option),
-            selectors::Result => ResultDef::c_deserialize_boxed(data).map(TypeDef::Result),
-            selectors::Nullable => NullableDef::c_deserialize_boxed(data).map(TypeDef::Nullable),
-            selectors::Ref => RefDef::c_deserialize(data).map(TypeDef::Ref),
-            selectors::Custom => CustomDef::c_deserialize(data).map(TypeDef::Custom),
+            selectors::ByteArrayE => ByteArrayEDef::c_deserialize_item(data),
+            selectors::Tuple => TupleDef::c_deserialize_item(data),
+            selectors::Array => ArrayDef::c_deserialize_item(data),
+            selectors::FixedArray => FixedArrayDef::c_deserialize_item(data),
+            selectors::Felt252Dict => Felt252DictDef::c_deserialize_item(data),
+            selectors::Struct => StructDef::c_deserialize_item(data),
+            selectors::Enum => EnumDef::c_deserialize_item(data),
+            selectors::Option => OptionDef::c_deserialize_item(data),
+            selectors::Result => ResultDef::c_deserialize_item(data),
+            selectors::Nullable => NullableDef::c_deserialize_item(data),
+            selectors::Ref => RefDef::c_deserialize_item(data),
+            selectors::Custom => CustomDef::c_deserialize_item(data),
             _ => None,
         }
     }
@@ -128,6 +131,15 @@ impl CairoDeserialize for EnumDef {
         let attributes = Vec::<Attribute>::c_deserialize(data)?;
         let variants = Vec::<(Felt, VariantDef)>::c_deserialize(data)?;
         Some(EnumDef::new(name, attributes, variants))
+    }
+}
+
+impl CairoDeserialize for ByteArrayEDef {
+    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+        Some(ByteArrayEDef {
+            mode: ByteArrayDeserialization::ISerde,
+            encoding: data.next()?,
+        })
     }
 }
 
