@@ -1,4 +1,4 @@
-use crate::type_def::SingletonTypeDefTrait;
+use crate::type_def::SimpleDefTrait;
 use crate::{
     EnumDef, FixedArrayDef, ItemDefTrait, MemberDef, ResultDef, StructDef, TupleDef, TypeDef,
     VariantDef,
@@ -71,7 +71,7 @@ impl<T: GetRefTypeDef> DerefDefTrait<TupleDef> for T {
     }
 }
 
-impl<T: GetRefTypeDef, TD: SingletonTypeDefTrait> DerefDefTrait<TD> for T {
+impl<T: GetRefTypeDef, TD: SimpleDefTrait> DerefDefTrait<TD> for T {
     fn deref_def(&self, def: TD) -> Option<TD> {
         self.deref_def(def.inner_type_def())
             .map(TD::from_inner_type_def)

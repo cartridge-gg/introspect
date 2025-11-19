@@ -23,10 +23,6 @@ where
     }
 }
 
-trait ItemToValue {
-    fn item_to_value(&self, data: &mut FeltIterator) -> Option<Value>;
-}
-
 pub trait ToValue {
     type Value;
     fn to_value(&self, data: &mut FeltIterator) -> Option<Self::Value>;
