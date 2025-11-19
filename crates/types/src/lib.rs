@@ -2,6 +2,7 @@ pub mod attribute;
 pub mod deserialize;
 pub mod json;
 pub mod parser;
+pub mod reference;
 pub mod schema;
 pub mod type_def;
 pub mod utils;
@@ -9,11 +10,12 @@ pub mod value;
 pub use attribute::Attribute;
 pub use deserialize::CairoDeserialize;
 pub use parser::ToValue;
+pub use reference::{DerefDefTrait, GetRefTypeDef};
 pub use schema::{ColumnDef, ColumnInfo, PrimaryDef, PrimaryTypeDef, TableSchema};
 pub use type_def::{
     ArrayDef, ByteArrayDeserialization, ByteArrayEDef, CustomDef, EnumDef, Felt252DictDef,
-    FixedArrayDef, MemberDef, NullableDef, OptionDef, RefDef, ResultDef, StructDef, TupleDef,
-    TypeDef, VariantDef,
+    FixedArrayDef, ItemDefTrait, MemberDef, NullableDef, OptionDef, RefDef, ResultDef, StructDef,
+    TupleDef, TypeDef, VariantDef,
 };
 pub use utils::{
     FeltIterator, ascii_str_to_felt, ascii_str_to_limbs, bytes31_to_hex_string,

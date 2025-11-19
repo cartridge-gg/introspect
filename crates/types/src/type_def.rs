@@ -10,6 +10,10 @@ pub enum ByteArrayDeserialization {
     ISerde,
 }
 
+pub trait ItemDefTrait {
+    fn wrap_to_type_def(self) -> TypeDef;
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
 pub enum TypeDef {
     #[default]
@@ -177,6 +181,60 @@ pub struct NullableDef {
     pub type_def: TypeDef,
 }
 
+impl ItemDefTrait for TupleDef {
+    fn wrap_to_type_def(self) -> TypeDef {
+        TypeDef::Tuple(self)
+    }
+}
+
+impl ItemDefTrait for ArrayDef {
+    fn wrap_to_type_def(self) -> TypeDef {
+        TypeDef::Array(Box::new(self))
+    }
+}
+
+impl ItemDefTrait for FixedArrayDef {
+    fn wrap_to_type_def(self) -> TypeDef {
+        TypeDef::FixedArray(Box::new(self))
+    }
+}
+
+impl ItemDefTrait for StructDef {
+    fn wrap_to_type_def(self) -> TypeDef {
+        TypeDef::Struct(self)
+    }
+}
+
+impl ItemDefTrait for EnumDef {
+    fn wrap_to_type_def(self) -> TypeDef {
+        TypeDef::Enum(self)
+    }
+}
+
+impl ItemDefTrait for Felt252DictDef {
+    fn wrap_to_type_def(self) -> TypeDef {
+        TypeDef::Felt252Dict(Box::new(self))
+    }
+}
+
+impl ItemDefTrait for OptionDef {
+    fn wrap_to_type_def(self) -> TypeDef {
+        TypeDef::Option(Box::new(self))
+    }
+}
+
+impl ItemDefTrait for ResultDef {
+    fn wrap_to_type_def(self) -> TypeDef {
+        TypeDef::Result(Box::new(self))
+    }
+}
+
+impl ItemDefTrait for NullableDef {
+    fn wrap_to_type_def(self) -> TypeDef {
+        TypeDef::Nullable(Box::new(self))
+    }
+}
+
 pub trait TypeName {
     fn type_name(&self) -> String;
 }
@@ -253,6 +311,66 @@ impl PartialEq for EnumDef {
     }
 }
 
+pub trait SingletonTypeDefTrait
+where
+    Self: Sized,
+{
+    fn inner_type_def(self) -> TypeDef;
+    fn from_inner_type_def(type_def: TypeDef) -> Self;
+    fn to_wrapped_type_def(self) -> TypeDef;
+    fn wrap_inner_type_def(type_def: TypeDef) -> TypeDef {
+        Self::to_wrapped_type_def(Self::from_inner_type_def(type_def))
+    }
+}
+
+impl SingletonTypeDefTrait for ArrayDef {
+    fn inner_type_def(self) -> TypeDef {
+        self.type_def
+    }
+    fn from_inner_type_def(type_def: TypeDef) -> Self {
+        ArrayDef { type_def }
+    }
+    fn to_wrapped_type_def(self) -> TypeDef {
+        TypeDef::Array(Box::new(self))
+    }
+}
+
+impl SingletonTypeDefTrait for OptionDef {
+    fn inner_type_def(self) -> TypeDef {
+        self.type_def
+    }
+    fn from_inner_type_def(type_def: TypeDef) -> Self {
+        OptionDef { type_def }
+    }
+    fn to_wrapped_type_def(self) -> TypeDef {
+        TypeDef::Option(Box::new(self))
+    }
+}
+
+impl SingletonTypeDefTrait for NullableDef {
+    fn inner_type_def(self) -> TypeDef {
+        self.type_def
+    }
+    fn from_inner_type_def(type_def: TypeDef) -> Self {
+        NullableDef { type_def }
+    }
+    fn to_wrapped_type_def(self) -> TypeDef {
+        TypeDef::Nullable(Box::new(self))
+    }
+}
+
+impl SingletonTypeDefTrait for Felt252DictDef {
+    fn inner_type_def(self) -> TypeDef {
+        self.type_def
+    }
+    fn from_inner_type_def(type_def: TypeDef) -> Self {
+        Felt252DictDef { type_def }
+    }
+    fn to_wrapped_type_def(self) -> TypeDef {
+        TypeDef::Felt252Dict(Box::new(self))
+    }
+}
+
 impl StructDef {
     pub fn new(name: String, attributes: Vec<Attribute>, members: Vec<MemberDef>) -> Self {
         StructDef {
@@ -314,16 +432,6 @@ impl VariantDef {
     }
 }
 
-impl ArrayDef {
-    pub fn new(type_def: TypeDef) -> Self {
-        ArrayDef { type_def }
-    }
-
-    pub fn new_type_def(type_def: TypeDef) -> TypeDef {
-        TypeDef::Array(Box::new(ArrayDef::new(type_def)))
-    }
-}
-
 impl Deref for ArrayDef {
     type Target = TypeDef;
     fn deref(&self) -> &Self::Target {
@@ -379,16 +487,6 @@ impl Felt252DictDef {
     }
 }
 
-impl OptionDef {
-    pub fn new(type_def: TypeDef) -> Self {
-        OptionDef { type_def }
-    }
-
-    pub fn new_type_def(type_def: TypeDef) -> TypeDef {
-        TypeDef::Option(Box::new(OptionDef::new(type_def)))
-    }
-}
-
 impl Deref for OptionDef {
     type Target = TypeDef;
     fn deref(&self) -> &Self::Target {
@@ -403,16 +501,6 @@ impl ResultDef {
 
     pub fn new_type_def(ok: TypeDef, err: TypeDef) -> TypeDef {
         TypeDef::Result(Box::new(ResultDef::new(ok, err)))
-    }
-}
-
-impl NullableDef {
-    pub fn new(type_def: TypeDef) -> Self {
-        NullableDef { type_def }
-    }
-
-    pub fn new_type_def(type_def: TypeDef) -> TypeDef {
-        TypeDef::Nullable(Box::new(NullableDef::new(type_def)))
     }
 }
 
