@@ -10,6 +10,7 @@ use crate::{
 };
 use num_traits::Zero;
 use starknet_types_core::felt::Felt;
+use std::sync::Arc;
 
 impl<T> ToValue for Vec<T>
 where
@@ -20,6 +21,13 @@ where
         self.iter()
             .map(|item| item.to_value(data))
             .collect::<Option<Vec<T::Value>>>()
+    }
+}
+
+impl<T: ToValue> ToValue for Arc<T> {
+    type Value = T::Value;
+    fn to_value(&self, data: &mut FeltIterator) -> Option<T::Value> {
+        self.as_ref().to_value(data)
     }
 }
 

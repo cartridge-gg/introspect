@@ -1,7 +1,7 @@
 use crate::type_def::SimpleDefTrait;
 use crate::{
-    EnumDef, FixedArrayDef, ItemDefTrait, MemberDef, ResultDef, StructDef, TupleDef, TypeDef,
-    VariantDef,
+    ColumnDef, EnumDef, FixedArrayDef, ItemDefTrait, MemberDef, ResultDef, StructDef, TableSchema,
+    TupleDef, TypeDef, VariantDef,
 };
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
@@ -133,6 +133,29 @@ impl<T: GetRefTypeDef> DerefDefTrait<ResultDef> for T {
         Some(ResultDef {
             ok: self.deref_def(def.ok)?,
             err: self.deref_def(def.err)?,
+        })
+    }
+}
+
+impl<T: GetRefTypeDef> DerefDefTrait<ColumnDef> for T {
+    fn deref_def(&self, def: ColumnDef) -> Option<ColumnDef> {
+        Some(ColumnDef {
+            id: def.id,
+            name: def.name,
+            attributes: def.attributes,
+            type_def: self.deref_def(def.type_def)?,
+        })
+    }
+}
+
+impl<T: GetRefTypeDef> DerefDefTrait<TableSchema> for T {
+    fn deref_def(&self, def: TableSchema) -> Option<TableSchema> {
+        Some(TableSchema {
+            id: def.id,
+            name: def.name,
+            attributes: def.attributes,
+            primary: def.primary,
+            columns: self.deref_def(def.columns)?,
         })
     }
 }
