@@ -19,6 +19,21 @@ pub struct TableSchema {
 }
 
 impl TableSchema {
+    pub fn new(
+        id: Felt,
+        name: String,
+        attributes: Vec<Attribute>,
+        primary: PrimaryDef,
+        columns: Vec<ColumnDef>,
+    ) -> Self {
+        TableSchema {
+            id,
+            name,
+            attributes,
+            primary,
+            columns,
+        }
+    }
     pub fn to_record(&self, primary: Felt, data: &mut FeltIterator) -> Option<Record> {
         Some(Record {
             table_id: self.id.clone(),
