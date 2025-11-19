@@ -168,6 +168,10 @@ impl PrimaryDef {
             value: self.type_def.to_primary_value(felt)?,
         })
     }
+
+    pub fn to_primary_value(&self, felt: Felt) -> Option<PrimaryValue> {
+        self.type_def.to_primary_value(felt)
+    }
 }
 
 impl ColumnDef {
