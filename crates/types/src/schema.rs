@@ -129,7 +129,7 @@ impl From<&ColumnDef> for ColumnInfo {
 }
 
 impl PrimaryTypeDef {
-    fn to_primary_value(&self, felt: Felt) -> Option<PrimaryValue> {
+    pub fn to_primary_value(&self, felt: Felt) -> Option<PrimaryValue> {
         match self {
             PrimaryTypeDef::Felt252 => Some(PrimaryValue::Felt252(felt)),
             PrimaryTypeDef::ShortUtf8 => felt_to_utf8_string(felt).map(PrimaryValue::ShortUtf8),
