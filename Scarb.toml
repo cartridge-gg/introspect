@@ -22,9 +22,8 @@ starknet = "2.13.1"
 introspect_types = { path = "packages/types" }
 introspect_events = { path = "packages/events" }
 introspect_macros = { path = "packages/macros" }
+snforge_std = "0.52.0"
 
-[workspace.dev-dependencies]
-cairo_test = "2.13.1"
 
 [workspace.tool.fmt]
 sort-module-level-items = true
@@ -47,7 +46,7 @@ introspect_events.workspace = true
 introspect_macros.workspace = true
 
 [dev-dependencies]
-cairo_test = "2.13.1"
+snforge_std.workspace = true
 
 [lib]
 
