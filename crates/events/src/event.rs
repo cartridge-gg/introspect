@@ -5,7 +5,8 @@ pub trait EventTrait
 where
     Self: Sized,
 {
-    const SELECTOR: Felt;
+    const SELECTOR_RAW: [u64; 4];
+    const SELECTOR: Felt = Felt::from_raw(Self::SELECTOR_RAW);
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self>;
 
     fn verify(self, keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {

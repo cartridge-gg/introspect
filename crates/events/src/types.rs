@@ -1,6 +1,5 @@
-use introspect_types::{CairoDeserialize, FeltIterator, TypeDef};
+use introspect_types::{CairoDeserialize, FeltIterator, TypeDef, ascii_str_to_limbs};
 use serde::{Deserialize, Serialize};
-use starknet::macros::selector;
 use starknet_types_core::felt::Felt;
 
 use crate::event::EventTrait;
@@ -12,7 +11,7 @@ pub struct DeclareType {
 }
 
 impl EventTrait for DeclareType {
-    const SELECTOR: Felt = selector!("DeclareType");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeclareType");
 
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         let id = keys.next()?;

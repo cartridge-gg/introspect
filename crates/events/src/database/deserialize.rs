@@ -10,13 +10,13 @@ use super::{
 use crate::event::EventTrait;
 use introspect_types::schema::{PrimaryDef, PrimaryTypeDef};
 use introspect_types::{
-    Attribute, CairoDeserialize, ColumnDef, FeltIterator, TypeDef, deserialize_byte_array_string,
+    Attribute, CairoDeserialize, ColumnDef, FeltIterator, TypeDef, ascii_str_to_limbs,
+    deserialize_byte_array_string,
 };
-use starknet::macros::selector;
 use starknet_types_core::felt::Felt;
 
 impl EventTrait for CreateColumnGroup {
-    const SELECTOR: Felt = selector!("CreateColumnGroup");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateColumnGroup");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         CreateColumnGroup {
             id: keys.next()?,
@@ -27,7 +27,7 @@ impl EventTrait for CreateColumnGroup {
 }
 
 impl EventTrait for CreateTable {
-    const SELECTOR: Felt = selector!("CreateTable");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateTable");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         CreateTable {
             id: keys.next()?,
@@ -40,7 +40,7 @@ impl EventTrait for CreateTable {
 }
 
 impl EventTrait for CreateTableWithColumns {
-    const SELECTOR: Felt = selector!("CreateTableWithColumns");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateTableWithColumns");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         CreateTableWithColumns {
             id: keys.next()?,
@@ -54,7 +54,7 @@ impl EventTrait for CreateTableWithColumns {
 }
 
 impl EventTrait for CreateTableFromClassHash {
-    const SELECTOR: Felt = selector!("CreateTableFromClassHash");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateTableFromClassHash");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         CreateTableFromClassHash {
             id: keys.next()?,
@@ -66,7 +66,7 @@ impl EventTrait for CreateTableFromClassHash {
 }
 
 impl EventTrait for RenameTable {
-    const SELECTOR: Felt = selector!("RenameTable");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RenameTable");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         RenameTable {
             id: keys.next()?,
@@ -77,14 +77,14 @@ impl EventTrait for RenameTable {
 }
 
 impl EventTrait for DropTable {
-    const SELECTOR: Felt = selector!("DropTable");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DropTable");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         let id = keys.next()?;
         DropTable { id }.verify(keys, data)
     }
 }
 impl EventTrait for RenamePrimary {
-    const SELECTOR: Felt = selector!("RenamePrimary");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RenamePrimary");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         RenamePrimary {
             table: keys.next()?,
@@ -94,7 +94,7 @@ impl EventTrait for RenamePrimary {
     }
 }
 impl EventTrait for RetypePrimary {
-    const SELECTOR: Felt = selector!("RetypePrimary");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RetypePrimary");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         RetypePrimary {
             table: keys.next()?,
@@ -105,7 +105,7 @@ impl EventTrait for RetypePrimary {
     }
 }
 impl EventTrait for AddColumn {
-    const SELECTOR: Felt = selector!("AddColumn");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("AddColumn");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         AddColumn {
             table: keys.next()?,
@@ -118,7 +118,7 @@ impl EventTrait for AddColumn {
     }
 }
 impl EventTrait for AddColumns {
-    const SELECTOR: Felt = selector!("AddColumns");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("AddColumns");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         AddColumns {
             table: keys.next()?,
@@ -128,7 +128,7 @@ impl EventTrait for AddColumns {
     }
 }
 impl EventTrait for RenameColumn {
-    const SELECTOR: Felt = selector!("RenameColumn");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RenameColumn");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         RenameColumn {
             table: keys.next()?,
@@ -139,7 +139,7 @@ impl EventTrait for RenameColumn {
     }
 }
 impl EventTrait for RenameColumns {
-    const SELECTOR: Felt = selector!("RenameColumns");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RenameColumns");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         RenameColumns {
             table: keys.next()?,
@@ -149,7 +149,7 @@ impl EventTrait for RenameColumns {
     }
 }
 impl EventTrait for RetypeColumn {
-    const SELECTOR: Felt = selector!("RetypeColumn");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RetypeColumn");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         RetypeColumn {
             table: keys.next()?,
@@ -161,7 +161,7 @@ impl EventTrait for RetypeColumn {
     }
 }
 impl EventTrait for RetypeColumns {
-    const SELECTOR: Felt = selector!("RetypeColumns");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RetypeColumns");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         RetypeColumns {
             table: keys.next()?,
@@ -171,7 +171,7 @@ impl EventTrait for RetypeColumns {
     }
 }
 impl EventTrait for DropColumn {
-    const SELECTOR: Felt = selector!("DropColumn");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DropColumn");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DropColumn {
             table: keys.next()?,
@@ -181,7 +181,7 @@ impl EventTrait for DropColumn {
     }
 }
 impl EventTrait for DropColumns {
-    const SELECTOR: Felt = selector!("DropColumns");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DropColumns");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DropColumns {
             table: keys.next()?,
@@ -191,7 +191,7 @@ impl EventTrait for DropColumns {
     }
 }
 impl EventTrait for InsertRecord {
-    const SELECTOR: Felt = selector!("InsertRecord");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertRecord");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         InsertRecord {
             table: keys.next()?,
@@ -202,7 +202,7 @@ impl EventTrait for InsertRecord {
     }
 }
 impl EventTrait for InsertRecords {
-    const SELECTOR: Felt = selector!("InsertRecords");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertRecords");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         InsertRecords {
             table: keys.next()?,
@@ -212,7 +212,7 @@ impl EventTrait for InsertRecords {
     }
 }
 impl EventTrait for InsertField {
-    const SELECTOR: Felt = selector!("InsertField");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertField");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         InsertField {
             table: keys.next()?,
@@ -224,7 +224,7 @@ impl EventTrait for InsertField {
     }
 }
 impl EventTrait for InsertFields {
-    const SELECTOR: Felt = selector!("InsertFields");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertFields");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         InsertFields {
             table: keys.next()?,
@@ -236,7 +236,7 @@ impl EventTrait for InsertFields {
     }
 }
 impl EventTrait for InsertsField {
-    const SELECTOR: Felt = selector!("InsertsField");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertsField");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         InsertsField {
             table: keys.next()?,
@@ -247,7 +247,7 @@ impl EventTrait for InsertsField {
     }
 }
 impl EventTrait for InsertsFields {
-    const SELECTOR: Felt = selector!("InsertsFields");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertsFields");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         InsertsFields {
             table: keys.next()?,
@@ -258,7 +258,7 @@ impl EventTrait for InsertsFields {
     }
 }
 impl EventTrait for InsertFieldGroup {
-    const SELECTOR: Felt = selector!("InsertFieldGroup");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertFieldGroup");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         InsertFieldGroup {
             table: keys.next()?,
@@ -271,7 +271,7 @@ impl EventTrait for InsertFieldGroup {
 }
 
 impl EventTrait for InsertFieldGroups {
-    const SELECTOR: Felt = selector!("InsertFieldGroups");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertFieldGroups");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         InsertFieldGroups {
             table: keys.next()?,
@@ -284,7 +284,7 @@ impl EventTrait for InsertFieldGroups {
 }
 
 impl EventTrait for InsertsFieldGroup {
-    const SELECTOR: Felt = selector!("InsertsFieldGroup");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertsFieldGroup");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         InsertsFieldGroup {
             table: keys.next()?,
@@ -296,7 +296,7 @@ impl EventTrait for InsertsFieldGroup {
 }
 
 impl EventTrait for InsertsFieldGroups {
-    const SELECTOR: Felt = selector!("InsertsFieldGroups");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertsFieldGroups");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         InsertsFieldGroups {
             table: keys.next()?,
@@ -309,7 +309,7 @@ impl EventTrait for InsertsFieldGroups {
 }
 
 impl EventTrait for DeleteRecord {
-    const SELECTOR: Felt = selector!("DeleteRecord");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeleteRecord");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DeleteRecord {
             table: keys.next()?,
@@ -319,7 +319,7 @@ impl EventTrait for DeleteRecord {
     }
 }
 impl EventTrait for DeleteRecords {
-    const SELECTOR: Felt = selector!("DeleteRecords");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeleteRecords");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DeleteRecords {
             table: keys.next()?,
@@ -329,7 +329,7 @@ impl EventTrait for DeleteRecords {
     }
 }
 impl EventTrait for DeleteField {
-    const SELECTOR: Felt = selector!("DeleteField");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeleteField");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DeleteField {
             table: keys.next()?,
@@ -340,7 +340,7 @@ impl EventTrait for DeleteField {
     }
 }
 impl EventTrait for DeleteFields {
-    const SELECTOR: Felt = selector!("DeleteFields");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeleteFields");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DeleteFields {
             table: keys.next()?,
@@ -351,7 +351,7 @@ impl EventTrait for DeleteFields {
     }
 }
 impl EventTrait for DeletesField {
-    const SELECTOR: Felt = selector!("DeletesField");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeletesField");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DeletesField {
             table: keys.next()?,
@@ -362,7 +362,7 @@ impl EventTrait for DeletesField {
     }
 }
 impl EventTrait for DeletesFields {
-    const SELECTOR: Felt = selector!("DeletesFields");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeletesFields");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DeletesFields {
             table: keys.next()?,
@@ -374,7 +374,7 @@ impl EventTrait for DeletesFields {
 }
 
 impl EventTrait for DeleteFieldGroup {
-    const SELECTOR: Felt = selector!("DeleteFieldGroup");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeleteFieldGroup");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DeleteFieldGroup {
             table: keys.next()?,
@@ -386,7 +386,7 @@ impl EventTrait for DeleteFieldGroup {
 }
 
 impl EventTrait for DeleteFieldGroups {
-    const SELECTOR: Felt = selector!("DeleteFieldGroups");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeleteFieldGroups");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DeleteFieldGroups {
             table: keys.next()?,
@@ -398,7 +398,7 @@ impl EventTrait for DeleteFieldGroups {
 }
 
 impl EventTrait for DeletesFieldGroup {
-    const SELECTOR: Felt = selector!("DeletesFieldGroup");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeletesFieldGroup");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DeletesFieldGroup {
             table: keys.next()?,
@@ -410,7 +410,7 @@ impl EventTrait for DeletesFieldGroup {
 }
 
 impl EventTrait for DeletesFieldGroups {
-    const SELECTOR: Felt = selector!("DeletesFieldGroups");
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeletesFieldGroups");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DeletesFieldGroups {
             table: keys.next()?,

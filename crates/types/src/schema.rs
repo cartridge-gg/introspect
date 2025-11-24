@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use crate::utils::felt_to_utf8_string;
 use crate::{
     Attribute, EncodedBytes, FeltIterator, Primary, PrimaryValue, Record, RecordValues, ToValue,
