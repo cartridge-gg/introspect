@@ -5,18 +5,17 @@ use introspect::events::database::emitters::{
     emit_inserts_fields,
 };
 use introspect::events::emit_declare_type;
-use introspect::{Attribute, ColumnDef, IdData, IdDataTrait, PrimaryDef, TypeDef};
+use introspect::{Attribute, IdData, IdDataTrait, PrimaryDef, Schema};
 
 
-pub trait ITable<R, +IdDataTrait<R>, +Drop<R>> {
+
+pub trait ITable<R, +Schema<R>, +IdDataTrait<R>, +Drop<R>> {
     const SELECTOR: felt252;
     fn name() -> ByteArray;
-    fn attributes() -> Span<Attribute>;
     fn primary() -> PrimaryDef;
-    fn columns() -> Span<ColumnDef>;
-    fn child_defs() -> Array<(felt252, TypeDef)>;
+    fn attributes() -> Span<Attribute>;
     fn register_table() {
-        for (hash, child_def) in Self::child_defs() {
+        for (hash, child_def) in Schema::<R>::child_defs() {
             emit_declare_type(hash, child_def);
         }
         emit_create_table_with_columns(
@@ -24,7 +23,7 @@ pub trait ITable<R, +IdDataTrait<R>, +Drop<R>> {
             name: Self::name(),
             attributes: Self::attributes(),
             primary: Self::primary(),
-            columns: Self::columns(),
+            columns: Schema::<R>::columns(),
         );
     }
     fn insert_record(

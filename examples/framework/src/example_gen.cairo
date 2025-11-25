@@ -15,6 +15,23 @@ pub struct Foo {
     pub something: ByteArray,
 }
 
+#[derive(Drop, Schema)]
+pub struct Bar {
+    pub name: ByteArray,
+    pub something: ByteArray,
+}
+
+// #[derive(Table)]
+#[derive(Drop)]
+pub struct Foo2 {
+    #[key]
+    pub key1: felt252,
+    #[key]
+    pub key2: ByteArray,
+    pub name: ByteArray,
+    pub something: ByteArray,
+}
+
 impl FooSchema of Schema<Foo> {
     fn columns() -> Span<ColumnDef> {
         [
@@ -67,24 +84,8 @@ pub impl FooTable of ITable<Foo> {
     fn primary() -> PrimaryDef {
         FooSchemaWithPrimary::primary_def()
     }
-    fn columns() -> Span<ColumnDef> {
-        Schema::<Foo>::columns()
-    }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        Schema::<Foo>::child_defs()
-    }
 }
 
-// #[derive(Table)]
-#[derive(Drop)]
-pub struct Foo2 {
-    #[key]
-    pub key1: felt252,
-    #[key]
-    pub key2: ByteArray,
-    pub name: ByteArray,
-    pub something: ByteArray,
-}
 
 impl Foo2Schema of Schema<Foo2> {
     fn columns() -> Span<ColumnDef> {
@@ -155,19 +156,8 @@ pub impl Foo2Table of ITable<Foo2> {
     fn primary() -> PrimaryDef {
         Foo2SchemaWithPrimary::primary_def()
     }
-    fn columns() -> Span<ColumnDef> {
-        Schema::<Foo2>::columns()
-    }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        Schema::<Foo2>::child_defs()
-    }
 }
 
-#[derive(Drop, Schema)]
-pub struct Bar {
-    pub name: ByteArray,
-    pub something: ByteArray,
-}
 
 pub impl BarTable of ITable<(felt252, @Bar)> {
     const SELECTOR: felt252 = selector!("Bar");
@@ -179,12 +169,6 @@ pub impl BarTable of ITable<(felt252, @Bar)> {
     }
     fn primary() -> PrimaryDef {
         PrimaryDef { name: "id", attributes: [].span(), type_def: PrimaryTypeDef::Felt252 }
-    }
-    fn columns() -> Span<ColumnDef> {
-        Schema::<Bar>::columns()
-    }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        Schema::<Bar>::child_defs()
     }
 }
 
