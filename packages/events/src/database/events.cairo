@@ -305,7 +305,7 @@ pub struct InsertFieldGroup {
 }
 
 
-/// Insert multiple schemas into a record.
+/// Insert multiple groups of columns into a record.
 #[derive(Drop, Serde, starknet::Event)]
 pub struct InsertFieldGroups {
     #[key]

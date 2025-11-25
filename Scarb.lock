@@ -8,6 +8,7 @@ dependencies = [
  "introspect_events",
  "introspect_macros",
  "introspect_types",
+ "snforge_std",
 ]
 
 [[package]]
@@ -32,6 +33,24 @@ version = "0.1.0"
 [[package]]
 name = "introspect_types"
 version = "0.1.2"
+dependencies = [
+ "snforge_std",
+]
+
+[[package]]
+name = "snforge_scarb_plugin"
+version = "0.52.0"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:c33027f8ac078e4bbfc0bd1b7e7849ffe2e6bdd6c24649d0b5ede145095b4743"
+
+[[package]]
+name = "snforge_std"
+version = "0.52.0"
+source = "registry+https://scarbs.xyz/"
+checksum = "sha256:db8d395191bb2b526c44cee65b10a4044dc59e23a1c1d8009a73c7035760ed6b"
+dependencies = [
+ "snforge_scarb_plugin",
+]
 
 [[package]]
 name = "test"

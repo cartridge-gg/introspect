@@ -11,13 +11,10 @@ experimental-features = ["associated_item_constraints", "negative_impls"]
 starknet.workspace = true
 
 [dev-dependencies]
-cairo_test = "2.13.1"
+snforge_std.workspace = true
 
 [tool]
 fmt.workspace = true
 scarb.workspace = true
-
-[cairo]
-sierra-replace-ids = true
 
 [lib]

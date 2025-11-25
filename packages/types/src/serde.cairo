@@ -3,11 +3,15 @@ use core::metaprogramming::TypeEqual;
 use core::nullable::{FromNullableResult, match_nullable};
 use core::num::traits::{Pow, Zero};
 use starknet::{ClassHash, ContractAddress};
+use crate::Attribute;
 
-const B31_1: felt252 = 0x0100000000000000000000000000000000000000000000000000000000000000;
-const B31_2: felt252 = 0x0200000000000000000000000000000000000000000000000000000000000000;
-const B31_3: felt252 = 0x0300000000000000000000000000000000000000000000000000000000000000;
-const SHIFT_30B: felt252 = 256_u256.pow(30).try_into().unwrap();
+const SHIFT_31B: felt252 = 256_u256.pow(31).try_into().unwrap();
+///                         b76543210
+pub const B31_1: felt252 = 0b00000001 * SHIFT_31B;
+pub const B31_2: felt252 = 0b00000010 * SHIFT_31B;
+pub const B31_3: felt252 = 0b00000011 * SHIFT_31B;
+pub const B31_4: felt252 = 0b00000100 * SHIFT_31B;
+pub const SHIFT_30B: felt252 = 256_u256.pow(30).try_into().unwrap();
 
 pub trait ISerde<T> {
     fn iserialize(self: @T, ref output: Array<felt252>);
@@ -83,31 +87,49 @@ pub impl FixedArrayTNISerde<
 }
 
 
-/// Minimum felt bytes encoding:
-/// 0 bit in the 31st byte indicates if its a full 31 bytes (0 = full, 1 = partial)
-/// 1 bit in the 31st byte indicates if there are more felts to come (0 = more, 1 = last):
-/// In a partial byte, the size is stored in the 30th byte (0-30)
+pub impl AttributeISerde of ISerde<Attribute> {
+    fn iserialize(self: @Attribute, ref output: Array<felt252>) {
+        match self.data {
+            Option::Some(data) => {
+                output.append(self.name.iserialize_and_last(ref output) + B31_4);
+                data.iserialize(ref output);
+            },
+            Option::None => { self.name.iserialize(ref output); },
+        }
+    }
+}
 
-pub impl ByteArrayISerde of ISerde<ByteArray> {
-    fn iserialize(self: @ByteArray, ref output: Array<felt252>) {
+
+#[generate_trait]
+pub impl ByteArrayISerdeImpl of ISerdeByteArray {
+    fn iserialize_and_last(self: @ByteArray, ref output: Array<felt252>) -> felt252 {
         let mut data: Array<felt252> = Default::default();
         self.serialize(ref data);
         let full_felts: u32 = data.pop_front().unwrap().try_into().unwrap();
         let mut data_span = data.span();
-        let [size, word] = data_span.multi_pop_back::<2>().unwrap().unbox();
+        let [word, size] = data_span.multi_pop_back::<2>().unwrap().unbox();
         if full_felts.is_non_zero() {
             for _ in 0..(full_felts - 1) {
                 output.append(data.pop_front().unwrap());
             }
-            if size.is_non_zero() {
-                output.append(data.pop_front().unwrap());
-                output.append(word + B31_3 + (SHIFT_30B * size));
-            } else {
-                output.append(data.pop_front().unwrap() + B31_1);
+            if size.is_zero() {
+                return data.pop_front().unwrap() + B31_1;
             }
-        } else {
-            output.append(word + B31_3 + (SHIFT_30B * size));
-        };
+            output.append(data.pop_front().unwrap());
+        }
+        word + B31_3 + (SHIFT_30B * size)
+    }
+}
+
+
+/// Minimum felt bytes encoding:
+/// 0 bit in the 31st byte indicates if its a full 31 bytes (0 = full, 1 = partial)
+/// 1 bit in the 31st byte indicates if there are more felts to come (0 = more, 1 = last):
+/// In a partial byte, the size is stored in the 30th byte (0-30)
+pub impl ByteArrayISerde of ISerde<ByteArray> {
+    fn iserialize(self: @ByteArray, ref output: Array<felt252>) {
+        let last_felt = self.iserialize_and_last(ref output);
+        output.append(last_felt);
     }
 }
 
