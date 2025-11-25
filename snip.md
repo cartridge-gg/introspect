@@ -22,13 +22,30 @@ One of the challenges with building on starknet is making chain data easily acce
 
 Some standards such as ERC20 and ERC721 have helped with this by providing a common interface for certain data structures, but there is no general purpose standard for describing arbitrary data structures stored on chain.
 
-Currently the only source of typedata for contracts is the ABI, which only describes function inputs and outputs and events declared by the contract. This is not verified and when deploying could be set to anything.
+Currently the only source of type data for contracts is the ABI, which only describes function inputs and outputs and events declared by the contract. This is not verified and when deploying could be set to anything.
 
 This SNIP splits the solution into two parts: type declarations and data serialisation. Both these also need standardised event.
+
+This SNIP does not cover higher level frameworks only the type and event spec.
 
 ## Specification
 
 The standard consists of two main parts the events and data structures used to describe the data.
+
+### Key words
+
+- Modifying Tables
+  - `Create` Used to make tables
+  - `Add` Used to add columns to tables
+  - `Drop` Used to remove tables and columns
+  - `Rename`/`Retype` Used to change the name or type of tables columns and primaries
+- Modifying Records
+  - `Insert` Used to add or update records and fields
+  - `Delete` Used to remove records and fields
+
+### Primary Keys
+
+To simplify the spec primary keys are always a single column that can be represented by single felt.
 
 ### TypeEvents
 
@@ -555,6 +572,36 @@ enum TypeDef {
 
 > [!IMPORTANT] > `Box<T>` are used to wrap types that also contain TypeDefs as the compiler can't take recursive types.
 
+For primary keys the `PrimaryTypeDef` which contains a subset of `TypeDef` that can be used as primary keys.
+
+```rust
+enum PrimaryTypeDef {
+    #[default]
+    Felt252,
+    ShortUtf8,
+    Bytes31,
+    Bytes31E: felt252,
+    Bool,
+    U8,
+    U16,
+    U32,
+    U64,
+    U128,
+    I8,
+    I16,
+    I32,
+    I64,
+    I128,
+    ClassHash,
+    ContractAddress,
+    EthAddress,
+    StorageAddress,
+    StorageBaseAddress,
+}
+```
+
+These are the types that can be used as primary keys as they can be represented by a single felt252 value.
+
 #### Attributes
 
 An attribute is a key-value pair that can be attached to various type definitions to provide additional metadata or information about the type such as encoding.
@@ -759,3 +806,7 @@ As this SNIP primarily defines events and data structures for describing on-chai
 ## Copyright
 
 Copyright and related rights waived via [MIT](../LICENSE).
+
+```
+
+```
