@@ -22,6 +22,10 @@ One of the challenges with building on starknet is making chain data easily acce
 
 Some standards such as ERC20 and ERC721 have helped with this by providing a common interface for certain data structures, but there is no general purpose standard for describing arbitrary data structures stored on chain.
 
+Currently the only source of typedata for contracts is the ABI, which only describes function inputs and outputs and events declared by the contract. This is not verified and when deploying could be set to anything.
+
+This SNIP splits the solution into two parts: type declarations and data serialisation. Both these also need standardised event.
+
 ## Specification
 
 The standard consists of two main parts the events and data structures used to describe the data.
