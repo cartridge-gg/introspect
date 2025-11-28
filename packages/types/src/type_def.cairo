@@ -1,4 +1,4 @@
-use crate::{Attribute, Introspect};
+use crate::{Attribute, ISerde, Introspect};
 
 #[derive(Drop, PartialEq, Default, Debug)]
 pub enum TypeDef {
@@ -319,6 +319,132 @@ impl TySerde of Serde<TypeDef> {
 }
 
 
+impl TyISerde of ISerde<TypeDef> {
+    fn iserialize(self: @TypeDef, ref output: Array<felt252>) {
+        match self {
+            TypeDef::None | TypeDef::Felt252 | TypeDef::ShortUtf8 | TypeDef::Bytes31 |
+            TypeDef::Bool | TypeDef::U8 | TypeDef::U16 | TypeDef::U32 | TypeDef::U64 |
+            TypeDef::U128 | TypeDef::U256 | TypeDef::U512 | TypeDef::I8 | TypeDef::I16 |
+            TypeDef::I32 | TypeDef::I64 | TypeDef::I128 | TypeDef::ShortString |
+            TypeDef::ClassHash | TypeDef::ContractAddress | TypeDef::EthAddress |
+            TypeDef::StorageAddress | TypeDef::ByteArray | TypeDef::Utf8String |
+            TypeDef::StorageBaseAddress => { output.append(self.selector()); },
+            TypeDef::Ref(t) | TypeDef::Custom(t) | TypeDef::Bytes31E(t) |
+            TypeDef::ByteArrayE(t) => {
+                output.append(self.selector());
+                output.append(*t);
+            },
+            TypeDef::Nullable(t) | TypeDef::Array(t) | TypeDef::Option(t) |
+            TypeDef::Felt252Dict(t) => {
+                output.append(self.selector());
+                ISerde::iserialize(t, ref output);
+            },
+            TypeDef::Tuple(t) => {
+                output.append(selectors::Tuple);
+                ISerde::iserialize(t, ref output);
+            },
+            TypeDef::FixedArray(t) => {
+                output.append(selectors::FixedArray);
+                ISerde::iserialize(t, ref output);
+            },
+            TypeDef::Struct(t) => {
+                output.append(selectors::Struct);
+                ISerde::iserialize(t, ref output);
+            },
+            TypeDef::Enum(t) => {
+                output.append(selectors::Enum);
+                ISerde::iserialize(t, ref output);
+            },
+            TypeDef::Result(t) => {
+                output.append(selectors::Result);
+                ISerde::iserialize(t, ref output);
+            },
+        }
+    }
+
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<TypeDef> {
+        let tag = *serialized.pop_front()?;
+
+        if tag == 0 {
+            Option::Some(TypeDef::None)
+        } else if tag == selectors::Felt252 {
+            Option::Some(TypeDef::Felt252)
+        } else if tag == selectors::ShortUtf8 {
+            Option::Some(TypeDef::ShortUtf8)
+        } else if tag == selectors::Bytes31 {
+            Option::Some(TypeDef::Bytes31)
+        } else if tag == selectors::Bytes31E {
+            Option::Some(TypeDef::Bytes31E(*serialized.pop_front()?))
+        } else if tag == selectors::Bool {
+            Option::Some(TypeDef::Bool)
+        } else if tag == selectors::U8 {
+            Option::Some(TypeDef::U8)
+        } else if tag == selectors::U16 {
+            Option::Some(TypeDef::U16)
+        } else if tag == selectors::U32 {
+            Option::Some(TypeDef::U32)
+        } else if tag == selectors::U64 {
+            Option::Some(TypeDef::U64)
+        } else if tag == selectors::U128 {
+            Option::Some(TypeDef::U128)
+        } else if tag == selectors::U256 {
+            Option::Some(TypeDef::U256)
+        } else if tag == selectors::U512 {
+            Option::Some(TypeDef::U512)
+        } else if tag == selectors::I8 {
+            Option::Some(TypeDef::I8)
+        } else if tag == selectors::I16 {
+            Option::Some(TypeDef::I16)
+        } else if tag == selectors::I32 {
+            Option::Some(TypeDef::I32)
+        } else if tag == selectors::I64 {
+            Option::Some(TypeDef::I64)
+        } else if tag == selectors::I128 {
+            Option::Some(TypeDef::I128)
+        } else if tag == selectors::ShortString {
+            Option::Some(TypeDef::ShortString)
+        } else if tag == selectors::ClassHash {
+            Option::Some(TypeDef::ClassHash)
+        } else if tag == selectors::ContractAddress {
+            Option::Some(TypeDef::ContractAddress)
+        } else if tag == selectors::EthAddress {
+            Option::Some(TypeDef::EthAddress)
+        } else if tag == selectors::StorageAddress {
+            Option::Some(TypeDef::StorageAddress)
+        } else if tag == selectors::StorageBaseAddress {
+            Option::Some(TypeDef::StorageBaseAddress)
+        } else if tag == selectors::ByteArray {
+            Option::Some(TypeDef::ByteArray)
+        } else if tag == selectors::ByteArrayE {
+            Option::Some(TypeDef::ByteArrayE(*serialized.pop_front()?))
+        } else if tag == selectors::Tuple {
+            Option::Some(TypeDef::Tuple(ISerde::ideserialize(ref serialized)?))
+        } else if tag == selectors::Array {
+            Option::Some(TypeDef::Array(ISerde::ideserialize(ref serialized)?))
+        } else if tag == selectors::FixedArray {
+            Option::Some(TypeDef::FixedArray(ISerde::ideserialize(ref serialized)?))
+        } else if tag == selectors::Felt252Dict {
+            Option::Some(TypeDef::Felt252Dict(ISerde::ideserialize(ref serialized)?))
+        } else if tag == selectors::Struct {
+            Option::Some(TypeDef::Struct(ISerde::ideserialize(ref serialized)?))
+        } else if tag == selectors::Enum {
+            Option::Some(TypeDef::Enum(ISerde::ideserialize(ref serialized)?))
+        } else if tag == selectors::Ref {
+            Option::Some(TypeDef::Ref(*serialized.pop_front()?))
+        } else if tag == selectors::Custom {
+            Option::Some(TypeDef::Custom(*serialized.pop_front()?))
+        } else if tag == selectors::Option {
+            Option::Some(TypeDef::Option(ISerde::ideserialize(ref serialized)?))
+        } else if tag == selectors::Result {
+            Option::Some(TypeDef::Result(ISerde::ideserialize(ref serialized)?))
+        } else if tag == selectors::Nullable {
+            Option::Some(TypeDef::Nullable(ISerde::ideserialize(ref serialized)?))
+        } else {
+            Option::None
+        }
+    }
+}
+
 impl BoxTySerdeImpl<T, +Serde<T>> of Serde<Box<T>> {
     fn serialize(self: @Box<T>, ref output: Array<felt252>) {
         Serde::<T>::serialize(self.as_snapshot().unbox(), ref output);
@@ -337,5 +463,110 @@ impl ClassHashPartialEq<T, +PartialEq<T>> of PartialEq<Box<T>> {
     #[inline]
     fn eq(lhs: @Box<T>, rhs: @Box<T>) -> bool {
         PartialEq::<T>::eq(lhs.as_snapshot().unbox(), rhs.as_snapshot().unbox())
+    }
+}
+
+
+impl TypeWithAttributesISerde of ISerde<TypeWithAttributes> {
+    fn iserialize(self: @TypeWithAttributes, ref output: Array<felt252>) {
+        self.type_def.iserialize(ref output);
+        self.attributes.iserialize(ref output);
+    }
+
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<TypeWithAttributes> {
+        let type_def = ISerde::ideserialize(ref serialized)?;
+        let attributes = ISerde::ideserialize(ref serialized)?;
+        Some(TypeWithAttributes { type_def, attributes })
+    }
+}
+
+
+impl StructDefISerde of ISerde<StructDef> {
+    fn iserialize(self: @StructDef, ref output: Array<felt252>) {
+        self.name.iserialize(ref output);
+        self.attributes.iserialize(ref output);
+        self.members.iserialize(ref output);
+    }
+
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<StructDef> {
+        let name = ISerde::ideserialize(ref serialized)?;
+        let attributes = ISerde::ideserialize(ref serialized)?;
+        let members = ISerde::ideserialize(ref serialized)?;
+        Some(StructDef { name, attributes, members })
+    }
+}
+
+impl MemberDefISerde of ISerde<MemberDef> {
+    fn iserialize(self: @MemberDef, ref output: Array<felt252>) {
+        self.name.iserialize(ref output);
+        self.type_def.iserialize(ref output);
+        self.attributes.iserialize(ref output);
+    }
+
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<MemberDef> {
+        let name = ISerde::ideserialize(ref serialized)?;
+        let type_def = ISerde::ideserialize(ref serialized)?;
+        let attributes = ISerde::ideserialize(ref serialized)?;
+        Some(MemberDef { name, type_def, attributes })
+    }
+}
+
+
+impl EnumDefISerde of ISerde<EnumDef> {
+    fn iserialize(self: @EnumDef, ref output: Array<felt252>) {
+        self.name.iserialize(ref output);
+        self.attributes.iserialize(ref output);
+        self.variants.iserialize(ref output);
+    }
+
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<EnumDef> {
+        let name = ISerde::ideserialize(ref serialized)?;
+        let attributes = ISerde::ideserialize(ref serialized)?;
+        let variants = ISerde::ideserialize(ref serialized)?;
+        Some(EnumDef { name, attributes, variants })
+    }
+}
+
+impl VariantDefISerde of ISerde<VariantDef> {
+    fn iserialize(self: @VariantDef, ref output: Array<felt252>) {
+        output.append(*self.selector);
+        self.name.iserialize(ref output);
+        self.type_def.iserialize(ref output);
+        self.attributes.iserialize(ref output);
+    }
+
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<VariantDef> {
+        let selector = *serialized.pop_front()?;
+        let name = ISerde::ideserialize(ref serialized)?;
+        let type_def = ISerde::ideserialize(ref serialized)?;
+        let attributes = ISerde::ideserialize(ref serialized)?;
+        Some(VariantDef { selector, name, type_def, attributes })
+    }
+}
+
+
+impl FixedArrayDefISerde of ISerde<FixedArrayDef> {
+    fn iserialize(self: @FixedArrayDef, ref output: Array<felt252>) {
+        self.type_def.iserialize(ref output);
+        output.append((*self.size).into());
+    }
+
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<FixedArrayDef> {
+        let type_def = ISerde::ideserialize(ref serialized)?;
+        let size: u32 = (*serialized.pop_front()?).try_into()?;
+        Some(FixedArrayDef { type_def, size })
+    }
+}
+
+impl ResultDefISerde of ISerde<ResultDef> {
+    fn iserialize(self: @ResultDef, ref output: Array<felt252>) {
+        self.ok.iserialize(ref output);
+        self.err.iserialize(ref output);
+    }
+
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<ResultDef> {
+        let ok = ISerde::ideserialize(ref serialized)?;
+        let err = ISerde::ideserialize(ref serialized)?;
+        Some(ResultDef { ok, err })
     }
 }

@@ -1,26 +1,39 @@
-use introspect_types::serde::{B31_1, B31_3, B31_4, SHIFT_30B};
+use introspect_types::attribute::B31_4;
+use introspect_types::serde::{B31_2, B31_3, SHIFT_30B};
 use introspect_types::{Attribute, ISerde};
 
+
+fn test_iserde_byte_array(byte_array: ByteArray, expected: Span<felt252>) {
+    let mut serialized = byte_array.iserialize_inline();
+    assert(serialized == expected, 'Array does not match');
+    assert(ISerde::ideserialize_unwrap(ref serialized) == byte_array, 'Deserialized doesnt match');
+}
+
+fn test_iserde_attribute(attribute: Attribute, expected: Span<felt252>) {
+    let mut serialized = attribute.iserialize_inline();
+    assert(serialized == expected, 'Array does not match');
+    assert(ISerde::ideserialize_unwrap(ref serialized) == attribute, 'Deserialized doesnt match');
+}
 
 #[test]
 fn test_empty_byte_array() {
     const EXPECTED: [felt252; 1] = [B31_3];
     let byte_array: ByteArray = "";
-    assert(byte_array.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_byte_array(byte_array, EXPECTED.span());
 }
 
 #[test]
 fn test_partial_byte_array() {
     const EXPECTED: [felt252; 1] = ['Remember the Cant' + (17 * SHIFT_30B) + B31_3];
     let byte_array: ByteArray = "Remember the Cant";
-    assert(byte_array.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_byte_array(byte_array, EXPECTED.span());
 }
 
 #[test]
 fn test_31_bytes_array() {
-    const EXPECTED: [felt252; 1] = ['what is this? a center for ants' + B31_1];
+    const EXPECTED: [felt252; 1] = ['what is this? a center for ants' + B31_2];
     let byte_array: ByteArray = "what is this? a center for ants";
-    assert(byte_array.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_byte_array(byte_array, EXPECTED.span());
 }
 
 #[test]
@@ -29,7 +42,7 @@ fn test_longer_than_31_bytes() {
         'ubiquitous, mendacious, polyglo', 'ttal' + B31_3 + 4 * SHIFT_30B,
     ];
     let byte_array: ByteArray = "ubiquitous, mendacious, polyglottal";
-    assert(byte_array.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_byte_array(byte_array, EXPECTED.span());
 }
 
 #[test]
@@ -39,16 +52,16 @@ fn test_61_bytes_array() {
         'ange the course of the future.' + B31_3 + (30 * SHIFT_30B),
     ];
     let byte_array: ByteArray = "Even the smallest person can change the course of the future.";
-    assert(byte_array.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_byte_array(byte_array, EXPECTED.span());
 }
 
 #[test]
 fn test_62_bytes_array() {
     const EXPECTED: [felt252; 2] = [
-        'Even the smallest person can ch', 'ange the course of the future..' + B31_1,
+        'Even the smallest person can ch', 'ange the course of the future..' + B31_2,
     ];
     let byte_array: ByteArray = "Even the smallest person can change the course of the future..";
-    assert(byte_array.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_byte_array(byte_array, EXPECTED.span());
 }
 
 
@@ -60,28 +73,28 @@ fn test_lots_bytes_array() {
     ];
     let byte_array: ByteArray =
         "One ring to rule them all, One ring to find them, One ring to bring them all and in the darkness bind them.";
-    assert(byte_array.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_byte_array(byte_array, EXPECTED.span());
 }
 
 #[test]
 fn test_attribute_short_key_only() {
     const EXPECTED: [felt252; 1] = ['key' + 3 * SHIFT_30B + B31_3];
     let attribute = Attribute { name: "key", data: None };
-    assert(attribute.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_attribute(attribute, EXPECTED.span());
 }
 
 #[test]
 fn test_attribute_31_bytes_key_only() {
-    const EXPECTED: [felt252; 1] = ['attribute_name_31_bytes_longggg' + B31_1];
+    const EXPECTED: [felt252; 1] = ['attribute_name_31_bytes_longggg' + B31_2];
     let attribute = Attribute { name: "attribute_name_31_bytes_longggg", data: None };
-    assert(attribute.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_attribute(attribute, EXPECTED.span());
 }
 
 #[test]
 fn test_attribute_32_bytes_key_only() {
     const EXPECTED: [felt252; 2] = ['attribute_name_32_bytes_longggg', 'g' + B31_3 + SHIFT_30B];
     let attribute = Attribute { name: "attribute_name_32_bytes_longgggg", data: None };
-    assert(attribute.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_attribute(attribute, EXPECTED.span());
 }
 
 #[test]
@@ -90,16 +103,16 @@ fn test_short_key_with_short_data() {
         'key' + 3 * SHIFT_30B + B31_3 + B31_4, 'data' + 4 * SHIFT_30B + B31_3,
     ];
     let attribute = Attribute { name: "key", data: Some("data") };
-    assert(attribute.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_attribute(attribute, EXPECTED.span());
 }
 
 #[test]
 fn test_attribute_31_bytes_key_with_data() {
     const EXPECTED: [felt252; 2] = [
-        'attribute_name_31_bytes_longggg' + B31_1 + B31_4, 'data' + 4 * SHIFT_30B + B31_3,
+        'attribute_name_31_bytes_longggg' + B31_2 + B31_4, 'data' + 4 * SHIFT_30B + B31_3,
     ];
     let attribute = Attribute { name: "attribute_name_31_bytes_longggg", data: Some("data") };
-    assert(attribute.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_attribute(attribute, EXPECTED.span());
 }
 
 #[test]
@@ -109,42 +122,41 @@ fn test_attribute_32_bytes_key_with_data() {
         'data' + 4 * SHIFT_30B + B31_3,
     ];
     let attribute = Attribute { name: "attribute_name_32_bytes_longgggg", data: Some("data") };
-    assert(attribute.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_attribute(attribute, EXPECTED.span());
 }
 
 #[test]
 fn test_short_key_with_short_31_bytes_data() {
     const EXPECTED: [felt252; 2] = [
-        'key' + 3 * SHIFT_30B + B31_3 + B31_4, 'data that is 31 bytes longggggg' + B31_1,
+        'key' + 3 * SHIFT_30B + B31_3 + B31_4, 'data that is 31 bytes longggggg' + B31_2,
     ];
     let attribute = Attribute { name: "key", data: Some("data that is 31 bytes longggggg") };
-    assert(attribute.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_attribute(attribute, EXPECTED.span());
 }
 
 #[test]
 fn test_attribute_31_bytes_key_with_31_bytes_data() {
     const EXPECTED: [felt252; 2] = [
-        'attribute_name_31_bytes_longggg' + B31_1 + B31_4,
-        'data that is 31 bytes longggggg' + B31_1,
+        'attribute_name_31_bytes_longggg' + B31_2 + B31_4,
+        'data that is 31 bytes longggggg' + B31_2,
     ];
     let attribute = Attribute {
         name: "attribute_name_31_bytes_longggg", data: Some("data that is 31 bytes longggggg"),
     };
-    assert(attribute.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_attribute(attribute, EXPECTED.span());
 }
 
 #[test]
 fn test_attribute_32_bytes_key_with_31_bytes_data() {
     const EXPECTED: [felt252; 3] = [
         'attribute_name_32_bytes_longggg', 'g' + B31_3 + SHIFT_30B + B31_4,
-        'data that is 31 bytes longggggg' + B31_1,
+        'data that is 31 bytes longggggg' + B31_2,
     ];
     let attribute = Attribute {
         name: "attribute_name_32_bytes_longgggg", data: Some("data that is 31 bytes longggggg"),
     };
-    assert(attribute.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_attribute(attribute, EXPECTED.span());
 }
-
 
 #[test]
 fn test_short_key_with_short_long_data() {
@@ -153,19 +165,19 @@ fn test_short_key_with_short_long_data() {
         'es' + 2 * SHIFT_30B + B31_3,
     ];
     let attribute = Attribute { name: "key", data: Some("data that is longer than 31 bytes") };
-    assert(attribute.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_attribute(attribute, EXPECTED.span());
 }
 
 #[test]
 fn test_attribute_31_bytes_key_with_long_data() {
     const EXPECTED: [felt252; 3] = [
-        'attribute_name_31_bytes_longggg' + B31_1 + B31_4, 'data that is longer than 31 byt',
+        'attribute_name_31_bytes_longggg' + B31_2 + B31_4, 'data that is longer than 31 byt',
         'es' + 2 * SHIFT_30B + B31_3,
     ];
     let attribute = Attribute {
         name: "attribute_name_31_bytes_longggg", data: Some("data that is longer than 31 bytes"),
     };
-    assert(attribute.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_attribute(attribute, EXPECTED.span());
 }
 
 #[test]
@@ -177,5 +189,6 @@ fn test_attribute_32_bytes_key_with_long_data() {
     let attribute = Attribute {
         name: "attribute_name_32_bytes_longgggg", data: Some("data that is longer than 31 bytes"),
     };
-    assert(attribute.iserialize_inline() == EXPECTED.span(), ' Array does not match');
+    test_iserde_attribute(attribute, EXPECTED.span());
 }
+

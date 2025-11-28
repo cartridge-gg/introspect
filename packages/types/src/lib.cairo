@@ -1,4 +1,5 @@
 pub mod attribute;
+pub mod collections;
 pub mod id_data;
 pub mod interfaces;
 pub mod introspect;

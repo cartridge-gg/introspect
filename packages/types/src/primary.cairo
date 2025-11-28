@@ -1,7 +1,7 @@
 use starknet::storage_access::StorageBaseAddress;
 use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
-use crate::Attribute;
 use crate::type_def::{SelectorTrait, selectors};
+use crate::{Attribute, ISerde};
 
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct PrimaryDef {
@@ -63,7 +63,6 @@ impl PrimaryTypeDefSelector of SelectorTrait<PrimaryTypeDef> {
     }
 }
 
-
 impl PrimaryTypeDefSerde of Serde<PrimaryTypeDef> {
     fn serialize(self: @PrimaryTypeDef, ref output: Array<felt252>) {
         output.append(self.selector());
@@ -73,7 +72,6 @@ impl PrimaryTypeDefSerde of Serde<PrimaryTypeDef> {
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<PrimaryTypeDef> {
         let tag = *serialized.pop_front()?;
-
         if tag == selectors::Felt252 {
             Option::Some(PrimaryTypeDef::Felt252)
         } else if tag == selectors::Bytes31 {
@@ -160,3 +158,71 @@ impl StorageAddressPrimaryImpl =
 impl StorageBaseAddressPrimaryImpl =
     tmp_impl::IPrimaryImpl<StorageBaseAddress, PrimaryTypeDef::StorageBaseAddress>;
 
+pub impl PrimaryTypeDefISerde of ISerde<PrimaryTypeDef> {
+    fn iserialize(self: @PrimaryTypeDef, ref output: Array<felt252>) {
+        output.append(self.selector());
+        if let PrimaryTypeDef::Bytes31E(encoding) = self {
+            output.append(*encoding);
+        }
+    }
+
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<PrimaryTypeDef> {
+        let tag = *serialized.pop_front()?;
+        if tag == selectors::Felt252 {
+            Option::Some(PrimaryTypeDef::Felt252)
+        } else if tag == selectors::Bytes31 {
+            Option::Some(PrimaryTypeDef::Bytes31)
+        } else if tag == selectors::Bytes31E {
+            Option::Some(PrimaryTypeDef::Bytes31E(*serialized.pop_front()?))
+        } else if tag == selectors::Bool {
+            Option::Some(PrimaryTypeDef::Bool)
+        } else if tag == selectors::U8 {
+            Option::Some(PrimaryTypeDef::U8)
+        } else if tag == selectors::U16 {
+            Option::Some(PrimaryTypeDef::U16)
+        } else if tag == selectors::U32 {
+            Option::Some(PrimaryTypeDef::U32)
+        } else if tag == selectors::U64 {
+            Option::Some(PrimaryTypeDef::U64)
+        } else if tag == selectors::U128 {
+            Option::Some(PrimaryTypeDef::U128)
+        } else if tag == selectors::I8 {
+            Option::Some(PrimaryTypeDef::I8)
+        } else if tag == selectors::I16 {
+            Option::Some(PrimaryTypeDef::I16)
+        } else if tag == selectors::I32 {
+            Option::Some(PrimaryTypeDef::I32)
+        } else if tag == selectors::I64 {
+            Option::Some(PrimaryTypeDef::I64)
+        } else if tag == selectors::I128 {
+            Option::Some(PrimaryTypeDef::I128)
+        } else if tag == selectors::ClassHash {
+            Option::Some(PrimaryTypeDef::ClassHash)
+        } else if tag == selectors::ContractAddress {
+            Option::Some(PrimaryTypeDef::ContractAddress)
+        } else if tag == selectors::EthAddress {
+            Option::Some(PrimaryTypeDef::EthAddress)
+        } else if tag == selectors::StorageAddress {
+            Option::Some(PrimaryTypeDef::StorageAddress)
+        } else if tag == selectors::StorageBaseAddress {
+            Option::Some(PrimaryTypeDef::StorageBaseAddress)
+        } else {
+            Option::None
+        }
+    }
+}
+
+pub impl PrimaryDefISerde of ISerde<PrimaryDef> {
+    fn iserialize(self: @PrimaryDef, ref output: Array<felt252>) {
+        self.name.iserialize(ref output);
+        self.attributes.iserialize(ref output);
+        self.type_def.iserialize(ref output);
+    }
+
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<PrimaryDef> {
+        let name = ISerde::ideserialize(ref serialized)?;
+        let attributes = ISerde::ideserialize(ref serialized)?;
+        let type_def = PrimaryTypeDefISerde::ideserialize(ref serialized)?;
+        Some(PrimaryDef { name, attributes, type_def })
+    }
+}

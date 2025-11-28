@@ -3,15 +3,18 @@ use core::metaprogramming::TypeEqual;
 use core::nullable::{FromNullableResult, match_nullable};
 use core::num::traits::{Pow, Zero};
 use starknet::{ClassHash, ContractAddress};
-use crate::Attribute;
+use crate::collections::{CollectionSnapForward, CollectionSplit};
 
-const SHIFT_31B: felt252 = 256_u256.pow(31).try_into().unwrap();
+pub const SHIFT_31B: felt252 = 256_u256.pow(31).try_into().unwrap();
 ///                         b76543210
 pub const B31_1: felt252 = 0b00000001 * SHIFT_31B;
 pub const B31_2: felt252 = 0b00000010 * SHIFT_31B;
 pub const B31_3: felt252 = 0b00000011 * SHIFT_31B;
-pub const B31_4: felt252 = 0b00000100 * SHIFT_31B;
+pub const B31_1_U256: u256 = (0b00000001 * 256_u256.pow(31));
+pub const B31_2_U256: u256 = (0b00000010 * 256_u256.pow(31));
 pub const SHIFT_30B: felt252 = 256_u256.pow(30).try_into().unwrap();
+pub const SHIFT_30B_U256: u256 = 256_u256.pow(30);
+pub const B30_MASK: u256 = 256_u256.pow(30) - 1;
 
 pub trait ISerde<T> {
     fn iserialize(self: @T, ref output: Array<felt252>);
@@ -24,25 +27,48 @@ pub trait ISerde<T> {
         Self::iserialize(self, ref data);
         data.span()
     }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<T>;
+    fn ideserialize_unwrap(
+        ref serialized: Span<felt252>,
+    ) -> T {
+        Self::ideserialize(ref serialized).expect('Could not deserialize')
+    }
+}
+
+impl FeltIntoBool of Into<felt252, bool> {
+    fn into(self: felt252) -> bool {
+        self != 0
+    }
 }
 
 pub mod into_felt252 {
-    pub impl ISerdeImpl<T, +Copy<T>, +Into<T, felt252>> of super::ISerde<T> {
+    pub impl ISerdeImpl<T, +Copy<T>, +Into<T, felt252>, +TryInto<felt252, T>> of super::ISerde<T> {
         fn iserialize(self: @T, ref output: Array<felt252>) {
             output.append((*self).into());
+        }
+
+        fn ideserialize(ref serialized: Span<felt252>) -> Option<T> {
+            Some((*serialized.pop_front()?).try_into()?)
         }
     }
 }
 
 pub mod empty {
-    pub impl ISerdeImpl<T> of super::ISerde<T> {
+    pub impl ISerdeImpl<T, +Default<T>> of super::ISerde<T> {
         fn iserialize(self: @T, ref output: Array<felt252>) {}
+        fn ideserialize(ref serialized: Span<felt252>) -> Option<T> {
+            Some(Default::default())
+        }
     }
 }
+
 
 pub impl Felt252ISerde of ISerde<felt252> {
     fn iserialize(self: @felt252, ref output: Array<felt252>) {
         output.append(*self);
+    }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<felt252> {
+        Some(*serialized.pop_front()?)
     }
 }
 
@@ -65,6 +91,11 @@ pub impl U256ISerde of ISerde<u256> {
         output.append((*self.low).into());
         output.append((*self.high).into());
     }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<u256> {
+        let low: u128 = (*serialized.pop_front()?).try_into()?;
+        let high: u128 = (*serialized.pop_front()?).try_into()?;
+        Some(u256 { low, high })
+    }
 }
 
 pub impl U512ISerde of ISerde<u512> {
@@ -74,28 +105,12 @@ pub impl U512ISerde of ISerde<u512> {
         output.append((*self.limb2).into());
         output.append((*self.limb3).into());
     }
-}
-
-pub impl FixedArrayTNISerde<
-    T, const SIZE: usize, +ISerde<T>, -TypeEqual<[T; SIZE], [T; 0]>,
-> of ISerde<[T; SIZE]> {
-    fn iserialize(self: @[T; SIZE], ref output: Array<felt252>) {
-        for item in ToSpanTrait::<[T; SIZE], T>::span(self) {
-            item.iserialize(ref output);
-        }
-    }
-}
-
-
-pub impl AttributeISerde of ISerde<Attribute> {
-    fn iserialize(self: @Attribute, ref output: Array<felt252>) {
-        match self.data {
-            Option::Some(data) => {
-                output.append(self.name.iserialize_and_last(ref output) + B31_4);
-                data.iserialize(ref output);
-            },
-            Option::None => { self.name.iserialize(ref output); },
-        }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<u512> {
+        let limb0: u128 = (*serialized.pop_front()?).try_into()?;
+        let limb1: u128 = (*serialized.pop_front()?).try_into()?;
+        let limb2: u128 = (*serialized.pop_front()?).try_into()?;
+        let limb3: u128 = (*serialized.pop_front()?).try_into()?;
+        Some(u512 { limb0, limb1, limb2, limb3 })
     }
 }
 
@@ -113,11 +128,39 @@ pub impl ByteArrayISerdeImpl of ISerdeByteArray {
                 output.append(data.pop_front().unwrap());
             }
             if size.is_zero() {
-                return data.pop_front().unwrap() + B31_1;
+                return data.pop_front().unwrap() + B31_2;
             }
             output.append(data.pop_front().unwrap());
         }
         word + B31_3 + (SHIFT_30B * size)
+    }
+
+    fn ideserialize_and_last(ref serialized: Span<felt252>) -> Option<(Array<felt252>, felt252)> {
+        let mut data: Array<felt252> = Default::default();
+        let value = loop {
+            let value = *serialized.pop_front()?;
+            match value.into() >= B31_2_U256 {
+                true => { break value - B31_2; },
+                false => data.append(value),
+            }
+        };
+        Some((data, value))
+    }
+
+    fn ideserialize_from_parts(mut rest: Array<felt252>, last: felt252) -> Option<ByteArray> {
+        let last_u256 = last.into();
+        let (pending_word, pending_word_len) = if last_u256 >= B31_1_U256 {
+            let len = ((last_u256 - B31_1_U256) / SHIFT_30B_U256).try_into()?;
+            ((last_u256 & B30_MASK).try_into()?, len)
+        } else {
+            rest.append(last);
+            (0_felt252, 0_felt252)
+        };
+
+        let mut data = Default::default();
+        (rest, pending_word, pending_word_len).serialize(ref data);
+        let mut span = data.span();
+        Serde::deserialize(ref span)
     }
 }
 
@@ -128,8 +171,11 @@ pub impl ByteArrayISerdeImpl of ISerdeByteArray {
 /// In a partial byte, the size is stored in the 30th byte (0-30)
 pub impl ByteArrayISerde of ISerde<ByteArray> {
     fn iserialize(self: @ByteArray, ref output: Array<felt252>) {
-        let last_felt = self.iserialize_and_last(ref output);
-        output.append(last_felt);
+        output.append(self.iserialize_and_last(ref output));
+    }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<ByteArray> {
+        let (mut rest, last) = ISerdeByteArray::ideserialize_and_last(ref serialized)?;
+        ISerdeByteArray::ideserialize_from_parts(rest, last)
     }
 }
 
@@ -137,10 +183,18 @@ pub impl OptionTISerde<T, impl S: ISerde<T>> of ISerde<Option<T>> {
     fn iserialize(self: @Option<T>, ref output: Array<felt252>) {
         match self {
             Option::Some(value) => {
-                output.append(0);
+                output.append(1);
                 S::iserialize(value, ref output);
             },
-            Option::None => { output.append(1); },
+            Option::None => { output.append(0); },
+        }
+    }
+
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<Option<T>> {
+        match *serialized.pop_front()? {
+            0 => Some(Option::None),
+            1 => Some(Option::Some(S::ideserialize(ref serialized)?)),
+            _ => None,
         }
     }
 }
@@ -160,6 +214,14 @@ pub impl ResultISerde<
             },
         }
     }
+
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<Result<Ok, Err>> {
+        match *serialized.pop_front()? {
+            0 => Some(Result::Ok(SOk::ideserialize(ref serialized)?)),
+            1 => Some(Result::Err(SErr::ideserialize(ref serialized)?)),
+            _ => None,
+        }
+    }
 }
 
 pub impl FromNullableResultTISerde<T, impl S: ISerde<T>> of ISerde<FromNullableResult<T>> {
@@ -170,6 +232,15 @@ pub impl FromNullableResultTISerde<T, impl S: ISerde<T>> of ISerde<FromNullableR
                 BoxTISerde::<T, S>::iserialize(value, ref output);
             },
             FromNullableResult::Null => { output.append(0); },
+        }
+    }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<FromNullableResult<T>> {
+        match *serialized.pop_front()? {
+            0 => Some(FromNullableResult::Null),
+            1 => Some(
+                FromNullableResult::NotNull(BoxTISerde::<T, S>::ideserialize(ref serialized)?),
+            ),
+            _ => None,
         }
     }
 }
@@ -184,24 +255,42 @@ pub impl NullableTISerde<T, impl S: ISerde<T>> of ISerde<Nullable<T>> {
             FromNullableResult::Null => { output.append(0); },
         }
     }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<Nullable<T>> {
+        match *serialized.pop_front()? {
+            0 => Some(Default::default()),
+            1 => Some(NullableTrait::new(S::ideserialize(ref serialized)?)),
+            _ => None,
+        }
+    }
 }
 
 
-pub impl ArrayTISerde<T, impl S: ISerde<T>> of ISerde<Array<T>> {
+pub impl ArrayTISerde<T, impl S: ISerde<T>, +Drop<T>> of ISerde<Array<T>> {
     fn iserialize(self: @Array<T>, ref output: Array<felt252>) {
         output.append(self.len().into());
         for item in self {
             S::iserialize(item, ref output);
         }
     }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<Array<T>> {
+        let len: usize = (*serialized.pop_front()?).try_into()?;
+        let mut array: Array<T> = Default::default();
+        for _ in 0..len {
+            array.append(S::ideserialize(ref serialized)?);
+        }
+        Some(array)
+    }
 }
 
-pub impl SpanTISerde<T, impl S: ISerde<T>> of ISerde<Span<T>> {
+pub impl SpanTISerde<T, impl S: ISerde<T>, +Drop<T>> of ISerde<Span<T>> {
     fn iserialize(self: @Span<T>, ref output: Array<felt252>) {
         output.append(self.len().into());
         for item in self {
             S::iserialize(item, ref output);
         }
+    }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<Span<T>> {
+        Some(ArrayTISerde::ideserialize(ref serialized)?.span())
     }
 }
 
@@ -210,232 +299,160 @@ pub impl BoxTISerde<T, impl S: ISerde<T>> of ISerde<Box<T>> {
     fn iserialize(self: @Box<T>, ref output: Array<felt252>) {
         S::iserialize(self.as_snapshot().unbox(), ref output);
     }
-}
-
-
-pub impl Tuple1ISerde<T0, impl S: ISerde<T0>> of ISerde<(T0,)> {
-    fn iserialize(self: @(T0,), ref output: Array<felt252>) {
-        let (val) = self;
-        S::iserialize(val, ref output);
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<Box<T>> {
+        Some(BoxTrait::new(S::ideserialize(ref serialized)?))
     }
 }
 
-pub impl Tuple2ISerde<T0, T1, impl S0: ISerde<T0>, impl S1: ISerde<T1>> of ISerde<(T0, T1)> {
-    fn iserialize(self: @(T0, T1), ref output: Array<felt252>) {
+
+pub impl Tuple1ISerde<T, +ISerde<T>, +Drop<T>> of ISerde<(T,)> {
+    fn iserialize(self: @(T,), ref output: Array<felt252>) {
+        let (val0,) = self;
+        ISerde::<T>::iserialize(val0, ref output);
+    }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<(T,)> {
+        Some((ISerde::<T>::ideserialize(ref serialized)?,))
+    }
+}
+
+pub trait ISerializeTuple<T> {
+    fn iserialize_tuple(self: T, ref output: Array<felt252>);
+}
+
+pub trait IDeserializeTuple<T> {
+    fn ideserialize_tuple(ref serialized: Span<felt252>) -> Option<T>;
+}
+
+impl ISerializeTupleBase<T, +ISerde<T>> of ISerializeTuple<@T> {
+    fn iserialize_tuple(self: @T, ref output: Array<felt252>) {
+        ISerde::<T>::iserialize(self, ref output);
+    }
+}
+
+pub impl ISerializeTuple1<T0, impl S0: ISerde<T0>, +Drop<T0>> of ISerializeTuple<(T0,)> {
+    fn iserialize_tuple(self: (T0,), ref output: Array<felt252>) {
+        let (val0,) = self;
+        S0::iserialize(@val0, ref output);
+    }
+}
+
+pub impl ISerializeTuple2<
+    T0, T1, impl S0: ISerde<T0>, impl S1: ISerde<T1>, +Drop<T0>, +Drop<T1>,
+> of ISerializeTuple<(T0, T1)> {
+    fn iserialize_tuple(self: (T0, T1), ref output: Array<felt252>) {
+        let (val0, val1) = self;
+        S0::iserialize(@val0, ref output);
+        S1::iserialize(@val1, ref output);
+    }
+}
+
+pub impl ISerializeTupleSS2<
+    T0, T1, impl S0: ISerde<T0>, impl S1: ISerde<T1>, +Drop<T0>, +Drop<T1>,
+> of ISerializeTuple<(@T0, @T1)> {
+    fn iserialize_tuple(self: (@T0, @T1), ref output: Array<felt252>) {
         let (val0, val1) = self;
         S0::iserialize(val0, ref output);
         S1::iserialize(val1, ref output);
     }
 }
 
-pub impl Tuple3ISerde<
-    T0, T1, T2, impl S0: ISerde<T0>, impl S1: ISerde<T1>, impl S2: ISerde<T2>,
-> of ISerde<(T0, T1, T2)> {
-    fn iserialize(self: @(T0, T1, T2), ref output: Array<felt252>) {
-        let (val0, val1, val2) = self;
-        S0::iserialize(val0, ref output);
-        S1::iserialize(val1, ref output);
-        S2::iserialize(val2, ref output);
-    }
-}
-
-pub impl Tuple4ISerde<
-    T0,
-    T1,
-    T2,
-    T3,
-    impl S0: ISerde<T0>,
-    impl S1: ISerde<T1>,
-    impl S2: ISerde<T2>,
-    impl S3: ISerde<T3>,
-> of ISerde<(T0, T1, T2, T3)> {
-    fn iserialize(self: @(T0, T1, T2, T3), ref output: Array<felt252>) {
-        let (val0, val1, val2, val3) = self;
-        S0::iserialize(val0, ref output);
-        S1::iserialize(val1, ref output);
-        S2::iserialize(val2, ref output);
-        S3::iserialize(val3, ref output);
+pub impl IDeserializeTuple2<
+    T0, T1, impl S0: ISerde<T0>, impl S1: ISerde<T1>, +Drop<T0>, +Drop<T1>,
+> of IDeserializeTuple<(T0, T1)> {
+    fn ideserialize_tuple(ref serialized: Span<felt252>) -> Option<(T0, T1)> {
+        Some((S0::ideserialize(ref serialized)?, S1::ideserialize(ref serialized)?))
     }
 }
 
 
-pub impl Tuple5ISerde<
-    T0,
-    T1,
-    T2,
-    T3,
-    T4,
-    impl S0: ISerde<T0>,
-    impl S1: ISerde<T1>,
-    impl S2: ISerde<T2>,
-    impl S3: ISerde<T3>,
-    impl S4: ISerde<T4>,
-> of ISerde<(T0, T1, T2, T3, T4)> {
-    fn iserialize(self: @(T0, T1, T2, T3, T4), ref output: Array<felt252>) {
-        let (val0, val1, val2, val3, val4) = self;
-        S0::iserialize(val0, ref output);
-        S1::iserialize(val1, ref output);
-        S2::iserialize(val2, ref output);
-        S3::iserialize(val3, ref output);
-        S4::iserialize(val4, ref output);
-    }
-}
-
-pub impl Tuple6ISerde<
-    T0,
-    T1,
-    T2,
-    T3,
-    T4,
-    T5,
-    impl S0: ISerde<T0>,
-    impl S1: ISerde<T1>,
-    impl S2: ISerde<T2>,
-    impl S3: ISerde<T3>,
-    impl S4: ISerde<T4>,
-    impl S5: ISerde<T5>,
-> of ISerde<(T0, T1, T2, T3, T4, T5)> {
-    fn iserialize(self: @(T0, T1, T2, T3, T4, T5), ref output: Array<felt252>) {
-        let (val0, val1, val2, val3, val4, val5) = self;
-        S0::iserialize(val0, ref output);
-        S1::iserialize(val1, ref output);
-        S2::iserialize(val2, ref output);
-        S3::iserialize(val3, ref output);
-        S4::iserialize(val4, ref output);
-        S5::iserialize(val5, ref output);
-    }
-}
-
-pub impl Tuple7ISerde<
-    T0,
-    T1,
-    T2,
-    T3,
-    T4,
-    T5,
-    T6,
-    impl S0: ISerde<T0>,
-    impl S1: ISerde<T1>,
-    impl S2: ISerde<T2>,
-    impl S3: ISerde<T3>,
-    impl S4: ISerde<T4>,
-    impl S5: ISerde<T5>,
-    impl S6: ISerde<T6>,
-> of ISerde<(T0, T1, T2, T3, T4, T5, T6)> {
-    fn iserialize(self: @(T0, T1, T2, T3, T4, T5, T6), ref output: Array<felt252>) {
-        let (val0, val1, val2, val3, val4, val5, val6) = self;
-        S0::iserialize(val0, ref output);
-        S1::iserialize(val1, ref output);
-        S2::iserialize(val2, ref output);
-        S3::iserialize(val3, ref output);
-        S4::iserialize(val4, ref output);
-        S5::iserialize(val5, ref output);
-        S6::iserialize(val6, ref output);
+impl ISerdeTupleNext<
+    T,
+    impl CS: CollectionSplit<T>,
+    +CollectionSnapForward<T>,
+    +ISerializeTuple<CS::Head>,
+    +ISerializeTuple<CS::Rest>,
+    +Drop<CS::Rest>,
+    +Drop<CS::Head>,
+> of ISerializeTuple<T> {
+    fn iserialize_tuple(self: T, ref output: Array<felt252>) {
+        let (head, rest) = CS::split_head(self);
+        ISerializeTuple::<CS::Head>::iserialize_tuple(head, ref output);
+        ISerializeTuple::<CS::Rest>::iserialize_tuple(rest, ref output);
     }
 }
 
 
-pub impl Tuple8ISerde<
-    T0,
-    T1,
-    T2,
-    T3,
-    T4,
-    T5,
-    T6,
-    T7,
-    impl S0: ISerde<T0>,
-    impl S1: ISerde<T1>,
-    impl S2: ISerde<T2>,
-    impl S3: ISerde<T3>,
-    impl S4: ISerde<T4>,
-    impl S5: ISerde<T5>,
-    impl S6: ISerde<T6>,
-    impl S7: ISerde<T7>,
-> of ISerde<(T0, T1, T2, T3, T4, T5, T6, T7)> {
-    fn iserialize(self: @(T0, T1, T2, T3, T4, T5, T6, T7), ref output: Array<felt252>) {
-        let (val0, val1, val2, val3, val4, val5, val6, val7) = self;
-        S0::iserialize(val0, ref output);
-        S1::iserialize(val1, ref output);
-        S2::iserialize(val2, ref output);
-        S3::iserialize(val3, ref output);
-        S4::iserialize(val4, ref output);
-        S5::iserialize(val5, ref output);
-        S6::iserialize(val6, ref output);
-        S7::iserialize(val7, ref output);
+impl IDeserializeTupleNext<
+    T,
+    impl CS: CollectionSplit<T>,
+    +IDeserializeTuple<CS::Rest>,
+    +ISerde<CS::Head>,
+    +Drop<CS::Rest>,
+    +Drop<CS::Head>,
+> of IDeserializeTuple<T> {
+    fn ideserialize_tuple(ref serialized: Span<felt252>) -> Option<T> {
+        let head = ISerde::<CS::Head>::ideserialize(ref serialized)?;
+        let rest = IDeserializeTuple::<CS::Rest>::ideserialize_tuple(ref serialized)?;
+        Some(CS::reconstruct(head, rest))
+    }
+}
+
+pub trait IDeserializeFixedArray<T> {
+    fn ideserialize_fixed_array(ref serialized: Span<felt252>) -> Option<T>;
+}
+
+
+impl IDeserializeFixedArray1<T, +ISerde<T>, +Drop<T>> of IDeserializeFixedArray<[T; 1]> {
+    fn ideserialize_fixed_array(ref serialized: Span<felt252>) -> Option<[T; 1]> {
+        Some([ISerde::<T>::ideserialize(ref serialized)?])
+    }
+}
+
+impl IDeserializeFixedArrayNext<
+    T,
+    impl CS: CollectionSplit<T>,
+    +IDeserializeFixedArray<CS::Rest>,
+    +ISerde<CS::Head>,
+    +Drop<CS::Rest>,
+    +Drop<CS::Head>,
+> of IDeserializeFixedArray<T> {
+    fn ideserialize_fixed_array(ref serialized: Span<felt252>) -> Option<T> {
+        let head = ISerde::<CS::Head>::ideserialize(ref serialized)?;
+        let rest = IDeserializeFixedArray::<CS::Rest>::ideserialize_fixed_array(ref serialized)?;
+        Some(CS::reconstruct(head, rest))
+    }
+}
+
+impl TupleISerde<
+    T,
+    impl SF: CollectionSnapForward<T>,
+    impl S: ISerializeTuple<SF::SnapForward>,
+    impl D: IDeserializeTuple<T>,
+> of ISerde<T> {
+    fn iserialize(self: @T, ref output: Array<felt252>) {
+        S::iserialize_tuple(self.snap_forward(), ref output);
+    }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<T> {
+        D::ideserialize_tuple(ref serialized)
     }
 }
 
 
-pub impl Tuple9ISerde<
-    T0,
-    T1,
-    T2,
-    T3,
-    T4,
-    T5,
-    T6,
-    T7,
-    T8,
-    impl S0: ISerde<T0>,
-    impl S1: ISerde<T1>,
-    impl S2: ISerde<T2>,
-    impl S3: ISerde<T3>,
-    impl S4: ISerde<T4>,
-    impl S5: ISerde<T5>,
-    impl S6: ISerde<T6>,
-    impl S7: ISerde<T7>,
-    impl S8: ISerde<T8>,
-> of ISerde<(T0, T1, T2, T3, T4, T5, T6, T7, T8)> {
-    fn iserialize(self: @(T0, T1, T2, T3, T4, T5, T6, T7, T8), ref output: Array<felt252>) {
-        let (val0, val1, val2, val3, val4, val5, val6, val7, val8) = self;
-        S0::iserialize(val0, ref output);
-        S1::iserialize(val1, ref output);
-        S2::iserialize(val2, ref output);
-        S3::iserialize(val3, ref output);
-        S4::iserialize(val4, ref output);
-        S5::iserialize(val5, ref output);
-        S6::iserialize(val6, ref output);
-        S7::iserialize(val7, ref output);
-        S8::iserialize(val8, ref output);
+pub impl FixedArrayTNISerde<
+    T,
+    const SIZE: usize,
+    impl S: ISerde<T>,
+    +IDeserializeFixedArray<[T; SIZE]>,
+    +Drop<T>,
+    -TypeEqual<[T; SIZE], [T; 0]>,
+> of ISerde<[T; SIZE]> {
+    fn iserialize(self: @[T; SIZE], ref output: Array<felt252>) {
+        for item in self {
+            S::iserialize(item, ref output);
+        }
     }
-}
-
-
-pub impl Tuple10ISerde<
-    T0,
-    T1,
-    T2,
-    T3,
-    T4,
-    T5,
-    T6,
-    T7,
-    T8,
-    T9,
-    impl S0: ISerde<T0>,
-    impl S1: ISerde<T1>,
-    impl S2: ISerde<T2>,
-    impl S3: ISerde<T3>,
-    impl S4: ISerde<T4>,
-    impl S5: ISerde<T5>,
-    impl S6: ISerde<T6>,
-    impl S7: ISerde<T7>,
-    impl S8: ISerde<T8>,
-    impl S9: ISerde<T9>,
-> of ISerde<(T0, T1, T2, T3, T4, T5, T6, T7, T8, T9)> {
-    fn iserialize(self: @(T0, T1, T2, T3, T4, T5, T6, T7, T8, T9), ref output: Array<felt252>) {
-        let (val0, val1, val2, val3, val4, val5, val6, val7, val8, val9) = self;
-        S0::iserialize(val0, ref output);
-        S1::iserialize(val1, ref output);
-        S2::iserialize(val2, ref output);
-        S3::iserialize(val3, ref output);
-        S4::iserialize(val4, ref output);
-        S5::iserialize(val5, ref output);
-        S6::iserialize(val6, ref output);
-        S7::iserialize(val7, ref output);
-        S8::iserialize(val8, ref output);
-        S9::iserialize(val9, ref output);
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<[T; SIZE]> {
+        IDeserializeFixedArray::ideserialize_fixed_array(ref serialized)
     }
 }
 
