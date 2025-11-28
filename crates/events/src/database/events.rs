@@ -112,6 +112,20 @@ pub struct DropColumns {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateIndex {
+    pub table: Felt,
+    pub id: Felt,
+    pub name: Felt,
+    pub columns: Vec<Felt>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct DropIndex {
+    pub table: Felt,
+    pub id: Felt,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct InsertRecord {
     pub table: Felt,
     pub record: Felt,

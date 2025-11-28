@@ -114,6 +114,25 @@ pub struct DropTable {
     pub id: felt252,
 }
 
+#[derive(Drop, Serde, starknet::Event)]
+pub struct CreateIndex {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub id: felt252,
+    pub name: ByteArray,
+    pub columns: Span<felt252>,
+}
+
+
+#[derive(Drop, Serde, starknet::Event)]
+pub struct DropIndex {
+    #[key]
+    pub table: felt252,
+    #[key]
+    pub id: felt252,
+}
+
 /// Primary key management events
 /// - table: felt252 - Unique identifier for the table.
 /// - name: ByteArray - Name of the primary key field.

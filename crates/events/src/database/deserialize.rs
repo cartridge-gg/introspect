@@ -1,8 +1,8 @@
 use super::{
-    AddColumn, AddColumns, CreateColumnGroup, CreateTable, CreateTableFromClassHash,
+    AddColumn, AddColumns, CreateColumnGroup, CreateIndex, CreateTable, CreateTableFromClassHash,
     CreateTableWithColumns, DeleteField, DeleteFieldGroup, DeleteFieldGroups, DeleteFields,
     DeleteRecord, DeleteRecords, DeletesField, DeletesFieldGroup, DeletesFieldGroups,
-    DeletesFields, DropColumn, DropColumns, DropTable, IdData, IdName, IdTypeAttributes,
+    DeletesFields, DropColumn, DropColumns, DropIndex, DropTable, IdData, IdName, IdTypeAttributes,
     InsertField, InsertFieldGroup, InsertFieldGroups, InsertFields, InsertRecord, InsertRecords,
     InsertsField, InsertsFieldGroup, InsertsFieldGroups, InsertsFields, RenameColumn,
     RenameColumns, RenamePrimary, RenameTable, RetypeColumn, RetypeColumns, RetypePrimary,
@@ -83,6 +83,7 @@ impl EventTrait for DropTable {
         DropTable { id }.verify(keys, data)
     }
 }
+
 impl EventTrait for RenamePrimary {
     const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RenamePrimary");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
@@ -93,6 +94,7 @@ impl EventTrait for RenamePrimary {
         .verify(keys, data)
     }
 }
+
 impl EventTrait for RetypePrimary {
     const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RetypePrimary");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
@@ -190,6 +192,31 @@ impl EventTrait for DropColumns {
         .verify(keys, data)
     }
 }
+
+impl EventTrait for CreateIndex {
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateIndex");
+    fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
+        CreateIndex {
+            table: keys.next()?,
+            id: keys.next()?,
+            name: keys.next()?,
+            columns: Vec::<Felt>::c_deserialize(data)?,
+        }
+        .verify(keys, data)
+    }
+}
+
+impl EventTrait for DropIndex {
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DropIndex");
+    fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
+        DropIndex {
+            table: keys.next()?,
+            id: keys.next()?,
+        }
+        .verify(keys, data)
+    }
+}
+
 impl EventTrait for InsertRecord {
     const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertRecord");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
