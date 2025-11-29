@@ -134,8 +134,6 @@ pub mod selectors {
     pub const Struct: felt252 = 'struct';
     pub const Enum: felt252 = 'enum';
     pub const Ref: felt252 = 'ref';
-    pub const RecursiveSelf: felt252 = 'recursive_self';
-    pub const Recursive: felt252 = 'recursive_type';
     pub const Custom: felt252 = 'custom';
     pub const Option: felt252 = 'Option';
     pub const Result: felt252 = 'Result';
@@ -288,6 +286,8 @@ impl TySerde of Serde<TypeDef> {
             Option::Some(TypeDef::StorageBaseAddress)
         } else if tag == selectors::ByteArray {
             Option::Some(TypeDef::ByteArray)
+        } else if tag == selectors::Utf8String {
+            Option::Some(TypeDef::Utf8String)
         } else if tag == selectors::ByteArrayE {
             Option::Some(TypeDef::ByteArrayE(*serialized.pop_front()?))
         } else if tag == selectors::Tuple {
@@ -415,6 +415,8 @@ impl TyISerde of ISerde<TypeDef> {
             Option::Some(TypeDef::StorageBaseAddress)
         } else if tag == selectors::ByteArray {
             Option::Some(TypeDef::ByteArray)
+        } else if tag == selectors::Utf8String {
+            Option::Some(TypeDef::Utf8String)
         } else if tag == selectors::ByteArrayE {
             Option::Some(TypeDef::ByteArrayE(*serialized.pop_front()?))
         } else if tag == selectors::Tuple {

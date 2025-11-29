@@ -44,8 +44,20 @@ pub impl SPrimaryDataTupleRecordImpl<P, S, +PrimaryTrait<P>, +ISerde<S>> of IdDa
     }
 }
 
-#[derive(Drop, Serde)]
+#[derive(Drop, Serde, PartialEq, Debug)]
 pub struct IdData {
     pub id: felt252,
     pub data: Span<felt252>,
+}
+
+
+impl IdDataISerde of ISerde<IdData> {
+    fn iserialize(self: @IdData, ref output: Array<felt252>) {
+        output.append(*self.id);
+        self.data.iserialize(ref output);
+    }
+
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<IdData> {
+        Some(IdData { id: *serialized.pop_front()?, data: ISerde::ideserialize(ref serialized)? })
+    }
 }
