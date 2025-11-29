@@ -5,33 +5,49 @@ use crate::utils::{
 use crate::{
     ArrayDef, Attribute, ByteArrayDeserialization, ColumnDef, CustomDef, EnumDef, Felt252DictDef,
     FeltIterator, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef, OptionDef, PrimaryDef,
-    PrimaryTypeDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
-    deserialize_byte_array_string, pop_primitive,
+    PrimaryTypeDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef, pop_primitive,
 };
 use starknet_types_core::felt::Felt;
 
-pub trait CairoDeserialize
+pub trait ISerde
 where
     Self: Sized,
 {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self>;
-    fn c_deserialize_boxed(data: &mut FeltIterator) -> Option<Box<Self>> {
-        Self::c_deserialize(data).map(Box::new)
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self>;
+    fn ideserialize_boxed(data: &mut FeltIterator) -> Option<Box<Self>> {
+        Self::ideserialize(data).map(Box::new)
     }
 }
 
-trait CairoDeserializeItem {
-    fn c_deserialize_item(data: &mut FeltIterator) -> Option<TypeDef>;
+pub trait ISerdeItem {
+    fn ideserialize_item(data: &mut FeltIterator) -> Option<TypeDef>;
 }
 
-impl<Item: ItemDefTrait + CairoDeserialize> CairoDeserializeItem for Item {
-    fn c_deserialize_item(data: &mut FeltIterator) -> Option<TypeDef> {
-        Item::c_deserialize(data).map(Item::wrap_to_type_def)
+pub trait ISerdeEnd
+where
+    Self: Sized,
+{
+    fn ideserialize_end(data: &mut FeltIterator) -> Option<Vec<Self>>;
+}
+
+impl<Item: ItemDefTrait + ISerde> ISerdeItem for Item {
+    fn ideserialize_item(data: &mut FeltIterator) -> Option<TypeDef> {
+        Item::ideserialize(data).map(Item::wrap_to_type_def)
     }
 }
 
-impl CairoDeserialize for Attribute {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl<T: ISerde> ISerdeEnd for T {
+    fn ideserialize_end(data: &mut FeltIterator) -> Option<Vec<Self>> {
+        let mut items = Vec::new();
+        while let Some(item) = T::ideserialize(data) {
+            items.push(item);
+        }
+        Some(items)
+    }
+}
+
+impl ISerde for Attribute {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         let (name_bytes, info) = ideserialize_byte_array_with_last(data)?;
         let name = String::from_utf8(name_bytes).ok()?;
         let data = if info & 0b10000000 != 0 {
@@ -43,26 +59,26 @@ impl CairoDeserialize for Attribute {
     }
 }
 
-impl<T> CairoDeserialize for Vec<T>
+impl<T> ISerde for Vec<T>
 where
-    T: CairoDeserialize,
+    T: ISerde,
 {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         (0..pop_primitive::<usize>(data)?)
             .into_iter()
-            .map(|_| T::c_deserialize(data))
+            .map(|_| T::ideserialize(data))
             .collect()
     }
 }
 
-impl CairoDeserialize for Felt {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl ISerde for Felt {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         data.next()
     }
 }
 
-impl CairoDeserialize for TypeDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl ISerde for TypeDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         let selector = data.next()?.to_raw();
         match selector {
             selectors::None => Some(TypeDef::None),
@@ -90,28 +106,28 @@ impl CairoDeserialize for TypeDef {
             selectors::StorageBaseAddress => Some(TypeDef::StorageBaseAddress),
             selectors::ByteArray => Some(TypeDef::ByteArray(ByteArrayDeserialization::ISerde)),
             selectors::Utf8String => Some(TypeDef::Utf8String(ByteArrayDeserialization::ISerde)),
-            selectors::ByteArrayE => ByteArrayEDef::c_deserialize_item(data),
-            selectors::Tuple => TupleDef::c_deserialize_item(data),
-            selectors::Array => ArrayDef::c_deserialize_item(data),
-            selectors::FixedArray => FixedArrayDef::c_deserialize_item(data),
-            selectors::Felt252Dict => Felt252DictDef::c_deserialize_item(data),
-            selectors::Struct => StructDef::c_deserialize_item(data),
-            selectors::Enum => EnumDef::c_deserialize_item(data),
-            selectors::Option => OptionDef::c_deserialize_item(data),
-            selectors::Result => ResultDef::c_deserialize_item(data),
-            selectors::Nullable => NullableDef::c_deserialize_item(data),
-            selectors::Ref => RefDef::c_deserialize_item(data),
-            selectors::Custom => CustomDef::c_deserialize_item(data),
+            selectors::ByteArrayE => ByteArrayEDef::ideserialize_item(data),
+            selectors::Tuple => TupleDef::ideserialize_item(data),
+            selectors::Array => ArrayDef::ideserialize_item(data),
+            selectors::FixedArray => FixedArrayDef::ideserialize_item(data),
+            selectors::Felt252Dict => Felt252DictDef::ideserialize_item(data),
+            selectors::Struct => StructDef::ideserialize_item(data),
+            selectors::Enum => EnumDef::ideserialize_item(data),
+            selectors::Option => OptionDef::ideserialize_item(data),
+            selectors::Result => ResultDef::ideserialize_item(data),
+            selectors::Nullable => NullableDef::ideserialize_item(data),
+            selectors::Ref => RefDef::ideserialize_item(data),
+            selectors::Custom => CustomDef::ideserialize_item(data),
             _ => None,
         }
     }
 }
 
-impl CairoDeserialize for StructDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
-        let name = deserialize_byte_array_string(data)?;
-        let attributes = Vec::<Attribute>::c_deserialize(data)?;
-        let members = Vec::<MemberDef>::c_deserialize(data)?;
+impl ISerde for StructDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
+        let name = ideserialize_utf8_string(data)?;
+        let attributes = Vec::<Attribute>::ideserialize(data)?;
+        let members = Vec::<MemberDef>::ideserialize(data)?;
         Some(StructDef {
             name,
             attributes,
@@ -120,11 +136,11 @@ impl CairoDeserialize for StructDef {
     }
 }
 
-impl CairoDeserialize for MemberDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
-        let name = deserialize_byte_array_string(data)?;
-        let attributes = Vec::<Attribute>::c_deserialize(data)?;
-        let type_def = TypeDef::c_deserialize(data)?;
+impl ISerde for MemberDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
+        let name = ideserialize_utf8_string(data)?;
+        let attributes = Vec::<Attribute>::ideserialize(data)?;
+        let type_def = TypeDef::ideserialize(data)?;
         Some(MemberDef {
             name,
             attributes,
@@ -133,17 +149,17 @@ impl CairoDeserialize for MemberDef {
     }
 }
 
-impl CairoDeserialize for EnumDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
-        let name = deserialize_byte_array_string(data)?;
-        let attributes = Vec::<Attribute>::c_deserialize(data)?;
-        let variants = Vec::<(Felt, VariantDef)>::c_deserialize(data)?;
+impl ISerde for EnumDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
+        let name = ideserialize_utf8_string(data)?;
+        let attributes = Vec::<Attribute>::ideserialize(data)?;
+        let variants = Vec::<(Felt, VariantDef)>::ideserialize(data)?;
         Some(EnumDef::new(name, attributes, variants))
     }
 }
 
-impl CairoDeserialize for ByteArrayEDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl ISerde for ByteArrayEDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         Some(ByteArrayEDef {
             mode: ByteArrayDeserialization::ISerde,
             encoding: ideserialize_utf8_string(data)?,
@@ -151,12 +167,12 @@ impl CairoDeserialize for ByteArrayEDef {
     }
 }
 
-impl CairoDeserialize for (Felt, VariantDef) {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl ISerde for (Felt, VariantDef) {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         let selector = data.next()?;
-        let name = deserialize_byte_array_string(data)?;
-        let attributes = Vec::<Attribute>::c_deserialize(data)?;
-        let type_def = TypeDef::c_deserialize(data)?;
+        let name = ideserialize_utf8_string(data)?;
+        let attributes = Vec::<Attribute>::ideserialize(data)?;
+        let type_def = TypeDef::ideserialize(data)?;
         Some((
             selector,
             VariantDef {
@@ -168,84 +184,84 @@ impl CairoDeserialize for (Felt, VariantDef) {
     }
 }
 
-impl CairoDeserialize for TupleDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl ISerde for TupleDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         Some(TupleDef {
-            elements: Vec::<TypeDef>::c_deserialize(data)?,
+            elements: Vec::<TypeDef>::ideserialize(data)?,
         })
     }
 }
 
-impl CairoDeserialize for ArrayDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl ISerde for ArrayDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         Some(ArrayDef {
-            type_def: TypeDef::c_deserialize(data)?,
+            type_def: TypeDef::ideserialize(data)?,
         })
     }
 }
 
-impl CairoDeserialize for Felt252DictDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl ISerde for Felt252DictDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         Some(Felt252DictDef {
-            type_def: TypeDef::c_deserialize(data)?,
+            type_def: TypeDef::ideserialize(data)?,
         })
     }
 }
 
-impl CairoDeserialize for OptionDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl ISerde for OptionDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         Some(OptionDef {
-            type_def: TypeDef::c_deserialize(data)?,
+            type_def: TypeDef::ideserialize(data)?,
         })
     }
 }
 
-impl CairoDeserialize for NullableDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl ISerde for NullableDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         Some(NullableDef {
-            type_def: TypeDef::c_deserialize(data)?,
+            type_def: TypeDef::ideserialize(data)?,
         })
     }
 }
 
-impl CairoDeserialize for FixedArrayDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
-        let type_def = TypeDef::c_deserialize(data)?;
+impl ISerde for FixedArrayDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
+        let type_def = TypeDef::ideserialize(data)?;
         let size = pop_primitive::<u32>(data)?;
         Some(FixedArrayDef { type_def, size })
     }
 }
 
-impl CairoDeserialize for ResultDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
-        let ok = TypeDef::c_deserialize(data)?;
-        let err = TypeDef::c_deserialize(data)?;
+impl ISerde for ResultDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
+        let ok = TypeDef::ideserialize(data)?;
+        let err = TypeDef::ideserialize(data)?;
         Some(ResultDef { ok, err })
     }
 }
 
-impl CairoDeserialize for RefDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl ISerde for RefDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         Some(RefDef {
             id: pop_primitive::<Felt>(data)?,
         })
     }
 }
 
-impl CairoDeserialize for CustomDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl ISerde for CustomDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         Some(CustomDef {
             id: pop_primitive::<Felt>(data)?,
         })
     }
 }
 
-impl CairoDeserialize for ColumnDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl ISerde for ColumnDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         let id = pop_primitive(data)?;
-        let name = deserialize_byte_array_string(data)?;
-        let attributes: Vec<Attribute> = Vec::<Attribute>::c_deserialize(data)?;
-        let type_def: TypeDef = TypeDef::c_deserialize(data)?;
+        let name = ideserialize_utf8_string(data)?;
+        let attributes: Vec<Attribute> = Vec::<Attribute>::ideserialize(data)?;
+        let type_def: TypeDef = TypeDef::ideserialize(data)?;
         Some(ColumnDef {
             id,
             name,
@@ -255,11 +271,11 @@ impl CairoDeserialize for ColumnDef {
     }
 }
 
-impl CairoDeserialize for PrimaryDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl ISerde for PrimaryDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         let name = ideserialize_utf8_string(data)?;
-        let attributes: Vec<Attribute> = Vec::<Attribute>::c_deserialize(data)?;
-        let type_def: PrimaryTypeDef = PrimaryTypeDef::c_deserialize(data)?;
+        let attributes: Vec<Attribute> = Vec::<Attribute>::ideserialize(data)?;
+        let type_def: PrimaryTypeDef = PrimaryTypeDef::ideserialize(data)?;
         Some(PrimaryDef {
             name,
             attributes,
@@ -268,8 +284,8 @@ impl CairoDeserialize for PrimaryDef {
     }
 }
 
-impl CairoDeserialize for PrimaryTypeDef {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
+impl ISerde for PrimaryTypeDef {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         let selector = data.next()?.to_raw();
         match selector {
             selectors::Felt252 => Some(PrimaryTypeDef::Felt252),

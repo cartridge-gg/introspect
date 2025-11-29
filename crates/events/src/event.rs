@@ -15,4 +15,11 @@ where
             _ => None,
         }
     }
+
+    fn verify_keys(self, keys: &mut FeltIterator) -> Option<Self> {
+        match keys.next() {
+            None => Some(self),
+            _ => None,
+        }
+    }
 }

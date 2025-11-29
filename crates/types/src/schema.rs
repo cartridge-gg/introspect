@@ -114,7 +114,7 @@ pub enum PrimaryTypeDef {
     Felt252,
     ShortUtf8,
     Bytes31,
-    Bytes31E(Felt),
+    Bytes31E(String),
     Bool,
     U8,
     U16,
@@ -162,7 +162,7 @@ impl PrimaryTypeDef {
             PrimaryTypeDef::Bytes31 => felt_to_bytes31(felt).map(PrimaryValue::Bytes31),
             PrimaryTypeDef::Bytes31E(encoding) => felt_to_bytes31(felt).map(|bytes| {
                 PrimaryValue::Bytes31E(EncodedBytes {
-                    encoding: *encoding,
+                    encoding: encoding.clone(),
                     bytes: bytes.into(),
                 })
             }),

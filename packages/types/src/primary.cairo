@@ -16,7 +16,7 @@ pub enum PrimaryTypeDef {
     Felt252,
     ShortUtf8,
     Bytes31,
-    Bytes31E: felt252,
+    Bytes31E: ByteArray,
     Bool,
     U8,
     U16,
@@ -67,7 +67,7 @@ impl PrimaryTypeDefSerde of Serde<PrimaryTypeDef> {
     fn serialize(self: @PrimaryTypeDef, ref output: Array<felt252>) {
         output.append(self.selector());
         if let PrimaryTypeDef::Bytes31E(encoding) = self {
-            output.append(*encoding);
+            encoding.serialize(ref output);
         }
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<PrimaryTypeDef> {
@@ -77,7 +77,7 @@ impl PrimaryTypeDefSerde of Serde<PrimaryTypeDef> {
         } else if tag == selectors::Bytes31 {
             Option::Some(PrimaryTypeDef::Bytes31)
         } else if tag == selectors::Bytes31E {
-            Option::Some(PrimaryTypeDef::Bytes31E(*serialized.pop_front()?))
+            Option::Some(PrimaryTypeDef::Bytes31E(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Bool {
             Option::Some(PrimaryTypeDef::Bool)
         } else if tag == selectors::U8 {
@@ -162,7 +162,7 @@ pub impl PrimaryTypeDefISerde of ISerde<PrimaryTypeDef> {
     fn iserialize(self: @PrimaryTypeDef, ref output: Array<felt252>) {
         output.append(self.selector());
         if let PrimaryTypeDef::Bytes31E(encoding) = self {
-            output.append(*encoding);
+            encoding.iserialize(ref output);
         }
     }
 
@@ -173,7 +173,7 @@ pub impl PrimaryTypeDefISerde of ISerde<PrimaryTypeDef> {
         } else if tag == selectors::Bytes31 {
             Option::Some(PrimaryTypeDef::Bytes31)
         } else if tag == selectors::Bytes31E {
-            Option::Some(PrimaryTypeDef::Bytes31E(*serialized.pop_front()?))
+            Option::Some(PrimaryTypeDef::Bytes31E(ISerde::ideserialize(ref serialized)?))
         } else if tag == selectors::Bool {
             Option::Some(PrimaryTypeDef::Bool)
         } else if tag == selectors::U8 {

@@ -1,6 +1,6 @@
 use introspect_types::{Attribute, ColumnDef, ISerde, IdData, PrimaryDef, PrimaryTypeDef, TypeDef};
 use starknet::Event;
-use crate::utils::{DrainSpanTrait, VerifyEventDeserializeTrait};
+use crate::utils::{DrainSpanTrait, ISerdeEnd, VerifyEventDeserializeTrait};
 
 pub mod selectors {
     pub const CreateFieldGroup: felt252 = selector!("CreateFieldGroup");
@@ -514,9 +514,7 @@ impl IdNameISerde of ISerde<IdName> {
     }
 
     fn ideserialize(ref serialized: Span<felt252>) -> Option<IdName> {
-        let id = *serialized.pop_front()?;
-        let name = ISerde::ideserialize(ref serialized)?;
-        Some(IdName { id, name })
+        Some(IdName { id: *serialized.pop_front()?, name: ISerde::ideserialize(ref serialized)? })
     }
 }
 
@@ -528,10 +526,13 @@ impl IdTypeAttributesISerde of ISerde<IdTypeAttributes> {
     }
 
     fn ideserialize(ref serialized: Span<felt252>) -> Option<IdTypeAttributes> {
-        let id = *serialized.pop_front()?;
-        let attributes = ISerde::ideserialize(ref serialized)?;
-        let type_def = ISerde::ideserialize(ref serialized)?;
-        Some(IdTypeAttributes { id, attributes, type_def })
+        Some(
+            IdTypeAttributes {
+                id: *serialized.pop_front()?,
+                attributes: ISerde::ideserialize(ref serialized)?,
+                type_def: ISerde::ideserialize(ref serialized)?,
+            },
+        )
     }
 }
 
@@ -561,11 +562,13 @@ impl CreateTableEvent of Event<CreateTable> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<CreateTable> {
-        let id = *keys.pop_front()?;
-        let name = ISerde::ideserialize(ref data)?;
-        let attributes = ISerde::ideserialize(ref data)?;
-        let primary = ISerde::ideserialize(ref data)?;
-        CreateTable { id, name, attributes, primary }.verify(ref keys, ref data)
+        CreateTable {
+            id: *keys.pop_front()?,
+            name: ISerde::ideserialize(ref data)?,
+            attributes: ISerde::ideserialize(ref data)?,
+            primary: ISerde::ideserialize(ref data)?,
+        }
+            .verify(ref keys, ref data)
     }
 }
 
@@ -577,18 +580,20 @@ impl CreateTableWithColumnsEvent of Event<CreateTableWithColumns> {
         self.name.iserialize(ref data);
         self.attributes.iserialize(ref data);
         self.primary.iserialize(ref data);
-        self.columns.iserialize(ref data);
+        self.columns.iserialize_end(ref data);
     }
 
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<CreateTableWithColumns> {
-        let id = *keys.pop_front()?;
-        let name = ISerde::ideserialize(ref data)?;
-        let attributes = ISerde::ideserialize(ref data)?;
-        let primary = ISerde::ideserialize(ref data)?;
-        let columns = ISerde::ideserialize(ref data)?;
-        CreateTableWithColumns { id, name, attributes, primary, columns }.verify(ref keys, ref data)
+        CreateTableWithColumns {
+            id: *keys.pop_front()?,
+            name: ISerde::ideserialize(ref data)?,
+            attributes: ISerde::ideserialize(ref data)?,
+            primary: ISerde::ideserialize(ref data)?,
+            columns: ISerdeEnd::ideserialize_end(ref data)?,
+        }
+            .verify_keys(ref keys)
     }
 }
 
@@ -605,10 +610,12 @@ impl CreateTableFromClassHashEvent of Event<CreateTableFromClassHash> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<CreateTableFromClassHash> {
-        let id = *keys.pop_front()?;
-        let name = ISerde::ideserialize(ref data)?;
-        let class_hash = *data.pop_front()?;
-        CreateTableFromClassHash { id, name, class_hash }.verify(ref keys, ref data)
+        CreateTableFromClassHash {
+            id: *keys.pop_front()?,
+            name: ISerde::ideserialize(ref data)?,
+            class_hash: *data.pop_front()?,
+        }
+            .verify(ref keys, ref data)
     }
 }
 
@@ -621,9 +628,8 @@ impl RenameTableEvent of Event<RenameTable> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RenameTable> {
-        let id = *keys.pop_front()?;
-        let name = ISerde::ideserialize(ref data)?;
-        RenameTable { id, name }.verify(ref keys, ref data)
+        RenameTable { id: *keys.pop_front()?, name: ISerde::ideserialize(ref data)? }
+            .verify(ref keys, ref data)
     }
 }
 
@@ -633,8 +639,7 @@ impl DropTableEvent of Event<DropTable> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DropTable> {
-        let id = *keys.pop_front()?;
-        DropTable { id }.verify(ref keys, ref data)
+        DropTable { id: *keys.pop_front()? }.verify(ref keys, ref data)
     }
 }
 
@@ -645,15 +650,17 @@ impl CreateIndexEvent of Event<CreateIndex> {
         keys.append(*self.table);
         keys.append(*self.id);
         self.name.iserialize(ref data);
-        self.columns.iserialize(ref data);
+        self.columns.iserialize_end(ref data);
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<CreateIndex> {
-        let table = *keys.pop_front()?;
-        let id = *keys.pop_front()?;
-        let name = ISerde::ideserialize(ref data)?;
-        let columns = ISerde::ideserialize(ref data)?;
-        CreateIndex { table, id, name, columns }.verify(ref keys, ref data)
+        CreateIndex {
+            table: *keys.pop_front()?,
+            id: *keys.pop_front()?,
+            name: ISerde::ideserialize(ref data)?,
+            columns: ISerdeEnd::ideserialize_end(ref data)?,
+        }
+            .verify_keys(ref keys)
     }
 }
 
@@ -664,9 +671,7 @@ impl DropIndexEvent of Event<DropIndex> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DropIndex> {
-        let table = *keys.pop_front()?;
-        let id = *keys.pop_front()?;
-        DropIndex { table, id }.verify(ref keys, ref data)
+        DropIndex { table: *keys.pop_front()?, id: *keys.pop_front()? }.verify(ref keys, ref data)
     }
 }
 
@@ -679,9 +684,8 @@ impl RenamePrimaryEvent of Event<RenamePrimary> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RenamePrimary> {
-        let table = *keys.pop_front()?;
-        let name = ISerde::ideserialize(ref data)?;
-        RenamePrimary { table, name }.verify(ref keys, ref data)
+        RenamePrimary { table: *keys.pop_front()?, name: ISerde::ideserialize(ref data)? }
+            .verify(ref keys, ref data)
     }
 }
 
@@ -695,10 +699,12 @@ impl RetypePrimaryEvent of Event<RetypePrimary> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RetypePrimary> {
-        let table = *keys.pop_front()?;
-        let attributes = ISerde::ideserialize(ref data)?;
-        let type_def = ISerde::ideserialize(ref data)?;
-        RetypePrimary { table, attributes, type_def }.verify(ref keys, ref data)
+        RetypePrimary {
+            table: *keys.pop_front()?,
+            attributes: ISerde::ideserialize(ref data)?,
+            type_def: ISerde::ideserialize(ref data)?,
+        }
+            .verify(ref keys, ref data)
     }
 }
 
@@ -712,29 +718,27 @@ impl AddColumnEvent of Event<AddColumn> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<AddColumn> {
-        let table = *keys.pop_front()?;
-        let id = *keys.pop_front()?;
-        let name = ISerde::ideserialize(ref data)?;
-        let attributes = ISerde::ideserialize(ref data)?;
-        let type_def = ISerde::ideserialize(ref data)?;
-        AddColumn { table, id, name, attributes, type_def }.verify(ref keys, ref data)
+        AddColumn {
+            table: *keys.pop_front()?,
+            id: *keys.pop_front()?,
+            name: ISerde::ideserialize(ref data)?,
+            attributes: ISerde::ideserialize(ref data)?,
+            type_def: ISerde::ideserialize(ref data)?,
+        }
+            .verify(ref keys, ref data)
     }
 }
+
 
 impl AddColumnsEvent of Event<AddColumns> {
     fn append_keys_and_data(self: @AddColumns, ref keys: Array<felt252>, ref data: Array<felt252>) {
         keys.append(*self.table);
-        for column in self.columns {
-            column.iserialize(ref data);
-        }
+        self.columns.iserialize_end(ref data);
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<AddColumns> {
-        let mut columns: Array<ColumnDef> = Default::default();
-        while !data.is_empty() {
-            columns.append(ISerde::ideserialize(ref data)?);
-        }
-        AddColumns { table: *keys.pop_front()?, columns: columns.span() }.verify(ref keys, ref data)
+        AddColumns { table: *keys.pop_front()?, columns: ISerdeEnd::ideserialize_end(ref data)? }
+            .verify_keys(ref keys)
     }
 }
 
@@ -748,10 +752,12 @@ impl RenameColumnEvent of Event<RenameColumn> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RenameColumn> {
-        let table = *keys.pop_front()?;
-        let id = *keys.pop_front()?;
-        let name = ISerde::ideserialize(ref data)?;
-        RenameColumn { table, id, name }.verify(ref keys, ref data)
+        RenameColumn {
+            table: *keys.pop_front()?,
+            id: *keys.pop_front()?,
+            name: ISerde::ideserialize(ref data)?,
+        }
+            .verify(ref keys, ref data)
     }
 }
 
@@ -760,13 +766,12 @@ impl RenameColumnsEvent of Event<RenameColumns> {
         self: @RenameColumns, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         keys.append(*self.table);
-        self.columns.iserialize(ref data);
+        self.columns.iserialize_end(ref data);
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RenameColumns> {
-        let table = *keys.pop_front()?;
-        let columns = ISerde::ideserialize(ref data)?;
-        RenameColumns { table, columns }.verify(ref keys, ref data)
+        RenameColumns { table: *keys.pop_front()?, columns: ISerdeEnd::ideserialize_end(ref data)? }
+            .verify_keys(ref keys)
     }
 }
 
@@ -781,26 +786,28 @@ impl RetypeColumnEvent of Event<RetypeColumn> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RetypeColumn> {
-        let table = *keys.pop_front()?;
-        let id = *keys.pop_front()?;
-        let attributes = ISerde::ideserialize(ref data)?;
-        let type_def = ISerde::ideserialize(ref data)?;
-        RetypeColumn { table, id, attributes, type_def }.verify(ref keys, ref data)
+        RetypeColumn {
+            table: *keys.pop_front()?,
+            id: *keys.pop_front()?,
+            attributes: ISerde::ideserialize(ref data)?,
+            type_def: ISerde::ideserialize(ref data)?,
+        }
+            .verify(ref keys, ref data)
     }
 }
+
 
 impl RetypeColumnsEvent of Event<RetypeColumns> {
     fn append_keys_and_data(
         self: @RetypeColumns, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         keys.append(*self.table);
-        self.columns.iserialize(ref data);
+        self.columns.iserialize_end(ref data);
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RetypeColumns> {
-        let table = *keys.pop_front()?;
-        let columns = ISerde::ideserialize(ref data)?;
-        RetypeColumns { table, columns }.verify(ref keys, ref data)
+        RetypeColumns { table: *keys.pop_front()?, columns: ISerdeEnd::ideserialize_end(ref data)? }
+            .verify_keys(ref keys)
     }
 }
 
@@ -811,9 +818,8 @@ impl DropColumnEvent of Event<DropColumn> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DropColumn> {
-        let table = *keys.pop_front()?;
-        let column = *keys.pop_front()?;
-        DropColumn { table, column }.verify(ref keys, ref data)
+        DropColumn { table: *keys.pop_front()?, column: *keys.pop_front()? }
+            .verify(ref keys, ref data)
     }
 }
 
@@ -851,18 +857,14 @@ impl InsertRecordsEvent of Event<InsertRecords> {
         self: @InsertRecords, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         keys.append(*self.table);
-        for rd in self.records_data {
-            rd.iserialize(ref data);
-        }
+        self.records_data.iserialize_end(ref data);
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertRecords> {
-        let mut records_data: Array<IdData> = Default::default();
-        while !data.is_empty() {
-            records_data.append(ISerde::ideserialize(ref data)?);
+        InsertRecords {
+            table: *keys.pop_front()?, records_data: ISerdeEnd::ideserialize_end(ref data)?,
         }
-        InsertRecords { table: *keys.pop_front()?, records_data: records_data.span() }
-            .verify(ref keys, ref data)
+            .verify_keys(ref keys)
     }
 }
 
@@ -913,21 +915,15 @@ impl InsertsFieldEvent of Event<InsertsField> {
     ) {
         keys.append(*self.table);
         keys.append(*self.column);
-        for rd in self.records_data {
-            rd.iserialize(ref data);
-        }
+        self.records_data.iserialize_end(ref data);
     }
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertsField> {
-        let mut records_data: Array<IdData> = Default::default();
-        while !data.is_empty() {
-            records_data.append(ISerde::ideserialize(ref data)?);
-        }
         InsertsField {
             table: *keys.pop_front()?,
             column: *keys.pop_front()?,
-            records_data: records_data.span(),
+            records_data: ISerdeEnd::ideserialize_end(ref data)?,
         }
-            .verify(ref keys, ref data)
+            .verify_keys(ref keys)
     }
 }
 
@@ -937,19 +933,16 @@ impl InsertsFieldsEvent of Event<InsertsFields> {
     ) {
         keys.append(*self.table);
         self.columns.iserialize(ref data);
-        for rd in self.records_data {
-            rd.iserialize(ref data);
-        }
+        self.records_data.iserialize_end(ref data);
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertsFields> {
-        let mut records_data: Array<IdData> = Default::default();
-        let columns = ISerde::ideserialize(ref data)?;
-        while !data.is_empty() {
-            records_data.append(ISerde::ideserialize(ref data)?);
+        InsertsFields {
+            table: *keys.pop_front()?,
+            columns: ISerde::ideserialize(ref data)?,
+            records_data: ISerdeEnd::ideserialize_end(ref data)?,
         }
-        InsertsFields { table: *keys.pop_front()?, columns, records_data: records_data.span() }
-            .verify(ref keys, ref data)
+            .verify_keys(ref keys)
     }
 }
 
@@ -1002,20 +995,16 @@ impl InsertsFieldGroupEvent of Event<InsertsFieldGroup> {
     ) {
         keys.append(*self.table);
         keys.append(*self.group);
-        for rd in self.records_data {
-            rd.iserialize(ref data);
-        }
+        self.records_data.iserialize_end(ref data);
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertsFieldGroup> {
-        let mut records_data: Array<IdData> = Default::default();
-        while !data.is_empty() {
-            records_data.append(ISerde::ideserialize(ref data)?);
-        }
         InsertsFieldGroup {
-            table: *keys.pop_front()?, group: *keys.pop_front()?, records_data: records_data.span(),
+            table: *keys.pop_front()?,
+            group: *keys.pop_front()?,
+            records_data: ISerdeEnd::ideserialize_end(ref data)?,
         }
-            .verify(ref keys, ref data)
+            .verify_keys(ref keys)
     }
 }
 
@@ -1026,24 +1015,17 @@ impl InsertsFieldGroupsEvent of Event<InsertsFieldGroups> {
         keys.append(*self.table);
         keys.append(*self.record);
         self.groups.iserialize(ref data);
-        for rd in self.records_data {
-            rd.iserialize(ref data);
-        }
+        self.records_data.iserialize_end(ref data);
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertsFieldGroups> {
-        let groups = ISerde::ideserialize(ref data)?;
-        let mut records_data: Array<IdData> = Default::default();
-        while !data.is_empty() {
-            records_data.append(ISerde::ideserialize(ref data)?);
-        }
         InsertsFieldGroups {
             table: *keys.pop_front()?,
             record: *keys.pop_front()?,
-            groups,
-            records_data: records_data.span(),
+            groups: ISerde::ideserialize(ref data)?,
+            records_data: ISerdeEnd::ideserialize_end(ref data)?,
         }
-            .verify(ref keys, ref data)
+            .verify_keys(ref keys)
     }
 }
 
@@ -1137,7 +1119,7 @@ impl DeletesFieldsEvent of Event<DeletesFields> {
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeletesFields> {
         DeletesFields {
             table: *keys.pop_front()?,
-            records: ISerde::ideserialize(ref data)?,
+            records: Serde::deserialize(ref data)?,
             columns: data.drain(),
         }
             .verify(ref keys, ref data)
@@ -1202,15 +1184,13 @@ impl DeletesFieldGroupsEvent of Event<DeletesFieldGroups> {
         self: @DeletesFieldGroups, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         keys.append(*self.table);
-        self.records.iserialize(ref data);
+        self.records.serialize(ref data);
         data.append_span(*self.groups)
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeletesFieldGroups> {
         DeletesFieldGroups {
-            table: *keys.pop_front()?,
-            records: ISerde::ideserialize(ref data)?,
-            groups: data.drain(),
+            table: *keys.pop_front()?, records: Serde::deserialize(ref data)?, groups: data.drain(),
         }
             .verify(ref keys, ref data)
     }

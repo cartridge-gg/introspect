@@ -139,3 +139,28 @@ pub fn deserialize_byte_array(data: &mut FeltIterator) -> Option<Vec<u8>> {
 pub fn deserialize_byte_array_string(data: &mut FeltIterator) -> Option<String> {
     deserialize_byte_array(data).map(|bytes| String::from_utf8_lossy(&bytes).to_string())
 }
+
+pub fn ideserialize_byte_array(data: &mut FeltIterator) -> Option<Vec<u8>> {
+    ideserialize_byte_array_with_last(data).map(|(bytes, _)| bytes)
+}
+
+pub fn ideserialize_byte_array_with_last(data: &mut FeltIterator) -> Option<(Vec<u8>, u8)> {
+    let mut bytes = Vec::new();
+    loop {
+        let felt_bytes = data.next()?.to_bytes_be();
+        let info = felt_bytes[0];
+        bytes.extend_from_slice(match info & 2 {
+            0 => &felt_bytes[1..32],
+            _ => &felt_bytes[(32 - felt_bytes[1] as usize)..32],
+        });
+
+        if info & 1 == 1 {
+            return Some((bytes, info));
+        }
+    }
+}
+
+pub fn ideserialize_utf8_string(data: &mut FeltIterator) -> Option<String> {
+    let byte_array = ideserialize_byte_array(data)?;
+    String::from_utf8_lossy(&byte_array).into_owned().into()
+}

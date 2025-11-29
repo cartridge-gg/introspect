@@ -2,11 +2,29 @@ use crate::{Attribute, ascii_str_to_limbs};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
+use std::ops::Deref;
 
 #[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum ByteArrayDeserialization {
     Serde,
     ISerde,
+}
+
+pub struct Utf8String(pub String);
+pub struct ByteArray(pub Vec<u8>);
+
+impl Deref for Utf8String {
+    type Target = String;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl Deref for ByteArray {
+    type Target = Vec<u8>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
 }
 
 macro_rules! define_type_variants {
@@ -56,7 +74,7 @@ define_type_variants! (
         Felt252 => "felt252",
         ShortUtf8 => "ShortUtf8",
         Bytes31 => "bytes31",
-        Bytes31E(Felt) => "bytes31e",
+        Bytes31E(String) => "bytes31e",
         Bool => "bool",
         U8 => "u8",
         U16 => "u16",
@@ -226,7 +244,7 @@ item_def_constructors!(Felt252DictDef, Felt252Dict);
 item_def_constructors!(StructDef, Struct, [name: String, attributes: Vec<Attribute>, members: Vec<MemberDef>]);
 item_def_constructors!(RefDef, Ref, [id: Felt]);
 item_def_constructors!(CustomDef, Custom, [id: Felt]);
-item_def_constructors!(ByteArrayEDef, ByteArrayE, [mode: ByteArrayDeserialization, encoding: Felt]);
+item_def_constructors!(ByteArrayEDef, ByteArrayE, [mode: ByteArrayDeserialization, encoding: String]);
 item_def_constructors!(FixedArrayDef, FixedArray,  [type_def: TypeDef, size: u32], Box);
 item_def_constructors!(ResultDef, Result,  [ok: TypeDef, err: TypeDef], Box);
 

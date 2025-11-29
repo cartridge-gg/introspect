@@ -1,6 +1,7 @@
 use crate::type_def::{
     ByteArrayDeserialization, ByteArrayEDef, FixedArrayDef, MemberDef, StructDef, TypeDef,
 };
+use crate::utils::ideserialize_byte_array;
 use crate::value::{Enum, Nullable, Value};
 use crate::{
     ArrayDef, CairoDeserialize, CairoOption, CairoResult, ColumnDef, Custom, CustomDef,
@@ -51,7 +52,7 @@ impl ToValue for TypeDef {
             TypeDef::ShortUtf8 => pop_short_utf8(data).map(Value::ShortUtf8),
             TypeDef::Bytes31 => pop_bytes31(data).map(Value::Bytes31),
             TypeDef::Bytes31E(encoding) => {
-                pop_bytes31_encoded(*encoding, data).map(Value::Bytes31E)
+                pop_bytes31_encoded(encoding.clone(), data).map(Value::Bytes31E)
             }
             TypeDef::Bool => data.next().map(|v| Value::Bool(!v.is_zero())),
             TypeDef::U8 => pop_primitive(data).map(Value::U8),
@@ -212,13 +213,13 @@ impl ToValue for ByteArrayEDef {
     type Value = EncodedBytes;
     fn to_value(&self, data: &mut FeltIterator) -> Option<Self::Value> {
         read_byte_array(self.mode, data).map(|bytes| EncodedBytes {
-            encoding: self.encoding,
+            encoding: self.encoding.clone(),
             bytes,
         })
     }
 }
 
-pub fn pop_bytes31_encoded(encoding: Felt, data: &mut FeltIterator) -> Option<EncodedBytes> {
+pub fn pop_bytes31_encoded(encoding: String, data: &mut FeltIterator) -> Option<EncodedBytes> {
     Some(EncodedBytes {
         bytes: pop_bytes31(data)?.into(),
         encoding,
@@ -228,28 +229,12 @@ pub fn pop_bytes31_encoded(encoding: Felt, data: &mut FeltIterator) -> Option<En
 pub fn read_byte_array(mode: ByteArrayDeserialization, data: &mut FeltIterator) -> Option<Vec<u8>> {
     match mode {
         ByteArrayDeserialization::Serde => deserialize_byte_array(data),
-        ByteArrayDeserialization::ISerde => i_deserialize_byte_array(data),
+        ByteArrayDeserialization::ISerde => ideserialize_byte_array(data),
     }
 }
 
-pub fn i_deserialize_byte_array(data: &mut FeltIterator) -> Option<Vec<u8>> {
-    let mut bytes = Vec::new();
-    loop {
-        let felt_bytes = data.next()?.to_bytes_be();
-        let info = felt_bytes[0];
-        bytes.extend_from_slice(match info & 2 {
-            0 => &felt_bytes[1..32],
-            _ => &felt_bytes[(32 - felt_bytes[1] as usize)..32],
-        });
-
-        if info & 1 == 1 {
-            return Some(bytes);
-        }
-    }
-}
-
-pub fn pop_byte_array_encoded(encoding: Felt, data: &mut FeltIterator) -> Option<EncodedBytes> {
-    let bytes = i_deserialize_byte_array(data)?;
+pub fn pop_byte_array_encoded(encoding: String, data: &mut FeltIterator) -> Option<EncodedBytes> {
+    let bytes = ideserialize_byte_array(data)?;
     Some(EncodedBytes { bytes, encoding })
 }
 

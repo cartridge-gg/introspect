@@ -1,10 +1,11 @@
 use introspect_types::schema::{PrimaryDef, PrimaryTypeDef};
-use introspect_types::{Attribute, ColumnDef, TypeDef};
+use introspect_types::utils::ideserialize_utf8_string;
+use introspect_types::{Attribute, ColumnDef, FeltIterator, ISerde, TypeDef};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CreateColumnGroup {
+pub struct CreateFieldGroup {
     pub id: Felt,
     pub columns: Vec<Felt>,
 }
@@ -284,4 +285,31 @@ pub struct IdTypeAttributes {
 pub struct IdData {
     pub id: Felt,
     pub data: Vec<Felt>,
+}
+
+impl ISerde for IdName {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
+        let id = data.next()?;
+        let name = ideserialize_utf8_string(data)?;
+        Some(IdName { id, name })
+    }
+}
+
+impl ISerde for IdTypeAttributes {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
+        Some(IdTypeAttributes {
+            id: data.next()?,
+            attributes: Vec::<Attribute>::ideserialize(data)?,
+            type_def: TypeDef::ideserialize(data)?,
+        })
+    }
+}
+
+impl ISerde for IdData {
+    fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
+        Some(IdData {
+            id: data.next()?,
+            data: Vec::<Felt>::ideserialize(data)?,
+        })
+    }
 }

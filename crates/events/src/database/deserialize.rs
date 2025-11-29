@@ -1,5 +1,5 @@
 use super::{
-    AddColumn, AddColumns, CreateColumnGroup, CreateIndex, CreateTable, CreateTableFromClassHash,
+    AddColumn, AddColumns, CreateFieldGroup, CreateIndex, CreateTable, CreateTableFromClassHash,
     CreateTableWithColumns, DeleteField, DeleteFieldGroup, DeleteFieldGroups, DeleteFields,
     DeleteRecord, DeleteRecords, DeletesField, DeletesFieldGroup, DeletesFieldGroups,
     DeletesFields, DropColumn, DropColumns, DropIndex, DropTable, IdData, IdName, IdTypeAttributes,
@@ -9,20 +9,20 @@ use super::{
 };
 use crate::event::EventTrait;
 use introspect_types::schema::{PrimaryDef, PrimaryTypeDef};
+use introspect_types::utils::ideserialize_utf8_string;
 use introspect_types::{
-    Attribute, CairoDeserialize, ColumnDef, FeltIterator, TypeDef, ascii_str_to_limbs,
-    deserialize_byte_array_string,
+    Attribute, ColumnDef, FeltIterator, ISerde, ISerdeEnd, TypeDef, ascii_str_to_limbs,
 };
 use starknet_types_core::felt::Felt;
 
-impl EventTrait for CreateColumnGroup {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateColumnGroup");
+impl EventTrait for CreateFieldGroup {
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateFieldGroup");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
-        CreateColumnGroup {
+        CreateFieldGroup {
             id: keys.next()?,
-            columns: Vec::<Felt>::c_deserialize(data)?,
+            columns: data.collect(),
         }
-        .verify(keys, data)
+        .verify_keys(keys)
     }
 }
 
@@ -31,9 +31,9 @@ impl EventTrait for CreateTable {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         CreateTable {
             id: keys.next()?,
-            name: deserialize_byte_array_string(data)?,
-            attributes: Vec::<Attribute>::c_deserialize(data)?,
-            primary: PrimaryDef::c_deserialize(data)?,
+            name: ideserialize_utf8_string(data)?,
+            attributes: Vec::<Attribute>::ideserialize(data)?,
+            primary: PrimaryDef::ideserialize(data)?,
         }
         .verify(keys, data)
     }
@@ -44,10 +44,10 @@ impl EventTrait for CreateTableWithColumns {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         CreateTableWithColumns {
             id: keys.next()?,
-            name: deserialize_byte_array_string(data)?,
-            attributes: Vec::<Attribute>::c_deserialize(data)?,
-            primary: PrimaryDef::c_deserialize(data)?,
-            columns: Vec::<ColumnDef>::c_deserialize(data)?,
+            name: ideserialize_utf8_string(data)?,
+            attributes: Vec::<Attribute>::ideserialize(data)?,
+            primary: PrimaryDef::ideserialize(data)?,
+            columns: ColumnDef::ideserialize_end(data)?,
         }
         .verify(keys, data)
     }
@@ -58,7 +58,7 @@ impl EventTrait for CreateTableFromClassHash {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         CreateTableFromClassHash {
             id: keys.next()?,
-            name: deserialize_byte_array_string(data)?,
+            name: ideserialize_utf8_string(data)?,
             class_hash: data.next()?,
         }
         .verify(keys, data)
@@ -70,7 +70,7 @@ impl EventTrait for RenameTable {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         RenameTable {
             id: keys.next()?,
-            name: deserialize_byte_array_string(data)?,
+            name: ideserialize_utf8_string(data)?,
         }
         .verify(keys, data)
     }
@@ -89,7 +89,7 @@ impl EventTrait for RenamePrimary {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         RenamePrimary {
             table: keys.next()?,
-            name: deserialize_byte_array_string(data)?,
+            name: ideserialize_utf8_string(data)?,
         }
         .verify(keys, data)
     }
@@ -100,8 +100,8 @@ impl EventTrait for RetypePrimary {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         RetypePrimary {
             table: keys.next()?,
-            attributes: Vec::<Attribute>::c_deserialize(data)?,
-            type_def: PrimaryTypeDef::c_deserialize(data)?,
+            attributes: Vec::<Attribute>::ideserialize(data)?,
+            type_def: PrimaryTypeDef::ideserialize(data)?,
         }
         .verify(keys, data)
     }
@@ -112,9 +112,9 @@ impl EventTrait for AddColumn {
         AddColumn {
             table: keys.next()?,
             id: keys.next()?,
-            name: deserialize_byte_array_string(data)?,
-            attributes: Vec::<Attribute>::c_deserialize(data)?,
-            type_def: TypeDef::c_deserialize(data)?,
+            name: ideserialize_utf8_string(data)?,
+            attributes: Vec::<Attribute>::ideserialize(data)?,
+            type_def: TypeDef::ideserialize(data)?,
         }
         .verify(keys, data)
     }
@@ -124,7 +124,7 @@ impl EventTrait for AddColumns {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         AddColumns {
             table: keys.next()?,
-            columns: Vec::<ColumnDef>::c_deserialize(data)?,
+            columns: ColumnDef::ideserialize_end(data)?,
         }
         .verify(keys, data)
     }
@@ -135,7 +135,7 @@ impl EventTrait for RenameColumn {
         RenameColumn {
             table: keys.next()?,
             id: keys.next()?,
-            name: deserialize_byte_array_string(data)?,
+            name: ideserialize_utf8_string(data)?,
         }
         .verify(keys, data)
     }
@@ -145,7 +145,7 @@ impl EventTrait for RenameColumns {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         RenameColumns {
             table: keys.next()?,
-            columns: Vec::<IdName>::c_deserialize(data)?,
+            columns: IdName::ideserialize_end(data)?,
         }
         .verify(keys, data)
     }
@@ -156,18 +156,19 @@ impl EventTrait for RetypeColumn {
         RetypeColumn {
             table: keys.next()?,
             id: keys.next()?,
-            attributes: Vec::<Attribute>::c_deserialize(data)?,
-            type_def: TypeDef::c_deserialize(data)?,
+            attributes: Vec::<Attribute>::ideserialize(data)?,
+            type_def: TypeDef::ideserialize(data)?,
         }
         .verify(keys, data)
     }
 }
+
 impl EventTrait for RetypeColumns {
     const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RetypeColumns");
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         RetypeColumns {
             table: keys.next()?,
-            columns: Vec::<IdTypeAttributes>::c_deserialize(data)?,
+            columns: IdTypeAttributes::ideserialize_end(data)?,
         }
         .verify(keys, data)
     }
@@ -187,7 +188,7 @@ impl EventTrait for DropColumns {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DropColumns {
             table: keys.next()?,
-            ids: Vec::<Felt>::c_deserialize(data)?,
+            ids: data.collect(),
         }
         .verify(keys, data)
     }
@@ -200,7 +201,7 @@ impl EventTrait for CreateIndex {
             table: keys.next()?,
             id: keys.next()?,
             name: keys.next()?,
-            columns: Vec::<Felt>::c_deserialize(data)?,
+            columns: data.collect(),
         }
         .verify(keys, data)
     }
@@ -223,7 +224,7 @@ impl EventTrait for InsertRecord {
         InsertRecord {
             table: keys.next()?,
             record: keys.next()?,
-            data: Vec::<Felt>::c_deserialize(data)?,
+            data: data.collect(),
         }
         .verify(keys, data)
     }
@@ -233,7 +234,7 @@ impl EventTrait for InsertRecords {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         InsertRecords {
             table: keys.next()?,
-            records_data: Vec::<IdData>::c_deserialize(data)?,
+            records_data: IdData::ideserialize_end(data)?,
         }
         .verify(keys, data)
     }
@@ -245,7 +246,7 @@ impl EventTrait for InsertField {
             table: keys.next()?,
             column: keys.next()?,
             record: keys.next()?,
-            data: Vec::<Felt>::c_deserialize(data)?,
+            data: data.collect(),
         }
         .verify(keys, data)
     }
@@ -256,8 +257,8 @@ impl EventTrait for InsertFields {
         InsertFields {
             table: keys.next()?,
             record: keys.next()?,
-            columns: Vec::<Felt>::c_deserialize(data)?,
-            data: Vec::<Felt>::c_deserialize(data)?,
+            columns: Vec::<Felt>::ideserialize(data)?,
+            data: data.collect(),
         }
         .verify(keys, data)
     }
@@ -268,7 +269,7 @@ impl EventTrait for InsertsField {
         InsertsField {
             table: keys.next()?,
             column: keys.next()?,
-            records_data: Vec::<IdData>::c_deserialize(data)?,
+            records_data: IdData::ideserialize_end(data)?,
         }
         .verify(keys, data)
     }
@@ -278,8 +279,8 @@ impl EventTrait for InsertsFields {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         InsertsFields {
             table: keys.next()?,
-            columns: Vec::<Felt>::c_deserialize(data)?,
-            records_data: Vec::<IdData>::c_deserialize(data)?,
+            columns: Vec::<Felt>::ideserialize(data)?,
+            records_data: IdData::ideserialize_end(data)?,
         }
         .verify(keys, data)
     }
@@ -291,7 +292,7 @@ impl EventTrait for InsertFieldGroup {
             table: keys.next()?,
             record: keys.next()?,
             group: keys.next()?,
-            data: Vec::<Felt>::c_deserialize(data)?,
+            data: data.collect(),
         }
         .verify(keys, data)
     }
@@ -303,8 +304,8 @@ impl EventTrait for InsertFieldGroups {
         InsertFieldGroups {
             table: keys.next()?,
             record: keys.next()?,
-            groups: Vec::<Felt>::c_deserialize(data)?,
-            data: Vec::<Felt>::c_deserialize(data)?,
+            groups: Vec::<Felt>::ideserialize(data)?,
+            data: data.collect(),
         }
         .verify(keys, data)
     }
@@ -316,7 +317,7 @@ impl EventTrait for InsertsFieldGroup {
         InsertsFieldGroup {
             table: keys.next()?,
             group: keys.next()?,
-            records_data: Vec::<IdData>::c_deserialize(data)?,
+            records_data: IdData::ideserialize_end(data)?,
         }
         .verify(keys, data)
     }
@@ -328,8 +329,8 @@ impl EventTrait for InsertsFieldGroups {
         InsertsFieldGroups {
             table: keys.next()?,
             record: keys.next()?,
-            groups: Vec::<Felt>::c_deserialize(data)?,
-            records_data: Vec::<IdData>::c_deserialize(data)?,
+            groups: Vec::<Felt>::ideserialize(data)?,
+            records_data: IdData::ideserialize_end(data)?,
         }
         .verify(keys, data)
     }
@@ -350,7 +351,7 @@ impl EventTrait for DeleteRecords {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DeleteRecords {
             table: keys.next()?,
-            records: Vec::<Felt>::c_deserialize(data)?,
+            records: data.collect(),
         }
         .verify(keys, data)
     }
@@ -372,7 +373,7 @@ impl EventTrait for DeleteFields {
         DeleteFields {
             table: keys.next()?,
             record: keys.next()?,
-            columns: Vec::<Felt>::c_deserialize(data)?,
+            columns: data.collect(),
         }
         .verify(keys, data)
     }
@@ -383,7 +384,7 @@ impl EventTrait for DeletesField {
         DeletesField {
             table: keys.next()?,
             column: keys.next()?,
-            records: Vec::<Felt>::c_deserialize(data)?,
+            records: data.collect(),
         }
         .verify(keys, data)
     }
@@ -393,8 +394,8 @@ impl EventTrait for DeletesFields {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DeletesFields {
             table: keys.next()?,
-            records: Vec::<Felt>::c_deserialize(data)?,
-            columns: Vec::<Felt>::c_deserialize(data)?,
+            records: Vec::<Felt>::ideserialize(data)?,
+            columns: data.collect(),
         }
         .verify(keys, data)
     }
@@ -418,7 +419,7 @@ impl EventTrait for DeleteFieldGroups {
         DeleteFieldGroups {
             table: keys.next()?,
             record: keys.next()?,
-            groups: Vec::<Felt>::c_deserialize(data)?,
+            groups: data.collect(),
         }
         .verify(keys, data)
     }
@@ -430,7 +431,7 @@ impl EventTrait for DeletesFieldGroup {
         DeletesFieldGroup {
             table: keys.next()?,
             group: keys.next()?,
-            records: Vec::<Felt>::c_deserialize(data)?,
+            records: data.collect(),
         }
         .verify(keys, data)
     }
@@ -441,38 +442,9 @@ impl EventTrait for DeletesFieldGroups {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         DeletesFieldGroups {
             table: keys.next()?,
-            records: Vec::<Felt>::c_deserialize(data)?,
-            groups: Vec::<Felt>::c_deserialize(data)?,
+            records: Vec::<Felt>::ideserialize(data)?,
+            groups: data.collect(),
         }
         .verify(keys, data)
-    }
-}
-
-impl CairoDeserialize for IdData {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
-        let id = data.next()?;
-        let data = Vec::<Felt>::c_deserialize(data)?;
-        Some(IdData { id, data })
-    }
-}
-
-impl CairoDeserialize for IdName {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
-        let id = data.next()?;
-        let name = deserialize_byte_array_string(data)?;
-        Some(IdName { id, name })
-    }
-}
-
-impl CairoDeserialize for IdTypeAttributes {
-    fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
-        let id = data.next()?;
-        let attributes = Vec::<Attribute>::c_deserialize(data)?;
-        let type_def = TypeDef::c_deserialize(data)?;
-        Some(IdTypeAttributes {
-            id,
-            attributes,
-            type_def,
-        })
     }
 }

@@ -117,7 +117,7 @@ pub struct Custom {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct EncodedBytes {
-    pub encoding: Felt,
+    pub encoding: String,
     pub bytes: Vec<u8>,
 }
 
