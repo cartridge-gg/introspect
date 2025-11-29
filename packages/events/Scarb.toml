@@ -11,7 +11,9 @@ starknet.workspace = true
 introspect_types.workspace = true
 
 [dev-dependencies]
-cairo_test = "2.13.1"
+introspect_macros.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
 
 [tool]
 fmt.workspace = true

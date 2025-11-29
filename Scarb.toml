@@ -23,6 +23,7 @@ introspect_types = { path = "packages/types" }
 introspect_events = { path = "packages/events" }
 introspect_macros = { path = "packages/macros" }
 snforge_std = "0.52.0"
+assert_macros = "2.13.1"
 
 
 [workspace.tool.fmt]
