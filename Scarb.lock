@@ -7,6 +7,7 @@ version = "0.1.2"
 dependencies = [
  "introspect_events",
  "introspect_macros",
+ "introspect_tests",
  "introspect_types",
  "snforge_std",
 ]
@@ -33,9 +34,17 @@ name = "introspect_macros"
 version = "0.1.0"
 
 [[package]]
+name = "introspect_tests"
+version = "0.1.2"
+dependencies = [
+ "snforge_std",
+]
+
+[[package]]
 name = "introspect_types"
 version = "0.1.2"
 dependencies = [
+ "introspect_tests",
  "snforge_std",
 ]
 

@@ -6,7 +6,7 @@ use crate::serde::{ISerdeByteArray, SHIFT_31B};
 pub const B31_4: felt252 = 0b00000100 * SHIFT_31B;
 pub const B31_4_U256: u256 = (0b00000100 * 256_u256.pow(31));
 
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct Attribute {
     pub name: ByteArray,
     pub data: Option<ByteArray>,

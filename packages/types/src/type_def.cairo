@@ -7,7 +7,7 @@ pub enum TypeDef {
     Felt252,
     ShortUtf8,
     Bytes31,
-    Bytes31E: felt252,
+    Bytes31E: ByteArray,
     Bool,
     U8,
     U16,
@@ -28,7 +28,7 @@ pub enum TypeDef {
     StorageBaseAddress,
     ByteArray,
     Utf8String,
-    ByteArrayE: felt252,
+    ByteArrayE: ByteArray,
     ShortString,
     Tuple: Span<TypeDef>,
     Array: Box<TypeDef>,
@@ -40,7 +40,7 @@ pub enum TypeDef {
     Result: Box<ResultDef>,
     Nullable: Box<TypeDef>,
     Ref: felt252,
-    Custom: felt252,
+    Custom: ByteArray,
 }
 
 #[derive(Drop, Serde, PartialEq, Debug)]
@@ -200,10 +200,14 @@ impl TySerde of Serde<TypeDef> {
             TypeDef::ClassHash | TypeDef::ContractAddress | TypeDef::EthAddress |
             TypeDef::StorageAddress | TypeDef::ByteArray | TypeDef::Utf8String |
             TypeDef::StorageBaseAddress => { output.append(self.selector()); },
-            TypeDef::Ref(t) | TypeDef::Custom(t) | TypeDef::Bytes31E(t) |
-            TypeDef::ByteArrayE(t) => {
+            TypeDef::Ref(t) => {
                 output.append(self.selector());
                 output.append(*t);
+            },
+            TypeDef::Custom(t) | TypeDef::Bytes31E(t) |
+            TypeDef::ByteArrayE(t) => {
+                output.append(self.selector());
+                t.serialize(ref output)
             },
             TypeDef::Nullable(t) | TypeDef::Array(t) | TypeDef::Option(t) |
             TypeDef::Felt252Dict(t) => {
@@ -245,7 +249,7 @@ impl TySerde of Serde<TypeDef> {
         } else if tag == selectors::Bytes31 {
             Option::Some(TypeDef::Bytes31)
         } else if tag == selectors::Bytes31E {
-            Option::Some(TypeDef::Bytes31E(*serialized.pop_front()?))
+            Option::Some(TypeDef::Bytes31E(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Bool {
             Option::Some(TypeDef::Bool)
         } else if tag == selectors::U8 {
@@ -289,7 +293,7 @@ impl TySerde of Serde<TypeDef> {
         } else if tag == selectors::Utf8String {
             Option::Some(TypeDef::Utf8String)
         } else if tag == selectors::ByteArrayE {
-            Option::Some(TypeDef::ByteArrayE(*serialized.pop_front()?))
+            Option::Some(TypeDef::ByteArrayE(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Tuple {
             Option::Some(TypeDef::Tuple(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Array {
@@ -303,9 +307,9 @@ impl TySerde of Serde<TypeDef> {
         } else if tag == selectors::Enum {
             Option::Some(TypeDef::Enum(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Ref {
-            Option::Some(TypeDef::Ref(*serialized.pop_front()?))
+            Option::Some(TypeDef::Ref(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Custom {
-            Option::Some(TypeDef::Custom(*serialized.pop_front()?))
+            Option::Some(TypeDef::Custom(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Option {
             Option::Some(TypeDef::Option(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::Result {
@@ -329,10 +333,14 @@ impl TyISerde of ISerde<TypeDef> {
             TypeDef::ClassHash | TypeDef::ContractAddress | TypeDef::EthAddress |
             TypeDef::StorageAddress | TypeDef::ByteArray | TypeDef::Utf8String |
             TypeDef::StorageBaseAddress => { output.append(self.selector()); },
-            TypeDef::Ref(t) | TypeDef::Custom(t) | TypeDef::Bytes31E(t) |
-            TypeDef::ByteArrayE(t) => {
+            TypeDef::Ref(t) => {
                 output.append(self.selector());
                 output.append(*t);
+            },
+            TypeDef::Custom(t) | TypeDef::Bytes31E(t) |
+            TypeDef::ByteArrayE(t) => {
+                output.append(self.selector());
+                t.iserialize(ref output)
             },
             TypeDef::Nullable(t) | TypeDef::Array(t) | TypeDef::Option(t) |
             TypeDef::Felt252Dict(t) => {
@@ -374,7 +382,7 @@ impl TyISerde of ISerde<TypeDef> {
         } else if tag == selectors::Bytes31 {
             Option::Some(TypeDef::Bytes31)
         } else if tag == selectors::Bytes31E {
-            Option::Some(TypeDef::Bytes31E(*serialized.pop_front()?))
+            Option::Some(TypeDef::Bytes31E(ISerde::ideserialize(ref serialized)?))
         } else if tag == selectors::Bool {
             Option::Some(TypeDef::Bool)
         } else if tag == selectors::U8 {
@@ -418,7 +426,7 @@ impl TyISerde of ISerde<TypeDef> {
         } else if tag == selectors::Utf8String {
             Option::Some(TypeDef::Utf8String)
         } else if tag == selectors::ByteArrayE {
-            Option::Some(TypeDef::ByteArrayE(*serialized.pop_front()?))
+            Option::Some(TypeDef::ByteArrayE(ISerde::ideserialize(ref serialized)?))
         } else if tag == selectors::Tuple {
             Option::Some(TypeDef::Tuple(ISerde::ideserialize(ref serialized)?))
         } else if tag == selectors::Array {
@@ -432,9 +440,9 @@ impl TyISerde of ISerde<TypeDef> {
         } else if tag == selectors::Enum {
             Option::Some(TypeDef::Enum(ISerde::ideserialize(ref serialized)?))
         } else if tag == selectors::Ref {
-            Option::Some(TypeDef::Ref(*serialized.pop_front()?))
+            Option::Some(TypeDef::Ref(ISerde::ideserialize(ref serialized)?))
         } else if tag == selectors::Custom {
-            Option::Some(TypeDef::Custom(*serialized.pop_front()?))
+            Option::Some(TypeDef::Custom(ISerde::ideserialize(ref serialized)?))
         } else if tag == selectors::Option {
             Option::Some(TypeDef::Option(ISerde::ideserialize(ref serialized)?))
         } else if tag == selectors::Result {

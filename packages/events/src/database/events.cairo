@@ -126,6 +126,7 @@ pub struct CreateTableWithColumns {
     pub columns: Span<ColumnDef>,
 }
 
+/// Emitted when a new table is created from a class hash.
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct CreateTableFromClassHash {
     #[key]
@@ -193,7 +194,7 @@ pub struct RetypePrimary {
 
 /// Column management events
 /// - table: felt252 - Unique identifier for the table.
-/// - column: felt252 - Unique identifier for the column.
+/// - id: felt252 - Unique identifier for the column.
 /// - name: ByteArray - Name of the column.
 /// - attributes: Span<Attribute> - Attributes of the column.
 /// - type_def: TypeDef - Type definition of the column.
@@ -229,7 +230,7 @@ pub struct RenameColumn {
 }
 
 
-// Emitted when a columns is renamed in a table.
+/// Emitted when columns are renamed in a table.
 /// - columns: List of (column ID, new name) pairs.
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct RenameColumns {
@@ -238,7 +239,6 @@ pub struct RenameColumns {
     pub columns: Span<IdName>,
 }
 
-/// Remove a single record from a table.
 /// Emitted when a column is retyped in a table.
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct RetypeColumn {
@@ -265,16 +265,16 @@ pub struct DropColumn {
     #[key]
     pub table: felt252,
     #[key]
-    pub column: felt252,
+    pub id: felt252,
 }
 
 /// Emitted when multiple columns are undeclared from a table.
-/// - columns: List of column IDs being dropped.
+/// - ids: List of column IDs being dropped.
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct DropColumns {
     #[key]
     pub table: felt252,
-    pub columns: Span<felt252>,
+    pub ids: Span<felt252>,
 }
 
 
@@ -295,7 +295,7 @@ pub struct InsertRecord {
     pub data: Span<felt252>,
 }
 
-/// Remove a record from a table using a schema.
+/// Insert multiple records into a table.
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct InsertRecords {
     #[key]
@@ -304,15 +304,15 @@ pub struct InsertRecords {
 }
 
 
-//// Insert a single field into a record.
+/// Insert a single field into a record.
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct InsertField {
     #[key]
     pub table: felt252,
     #[key]
-    pub column: felt252,
-    #[key]
     pub record: felt252,
+    #[key]
+    pub column: felt252,
     pub data: Span<felt252>,
 }
 
@@ -381,13 +381,11 @@ pub struct InsertsFieldGroup {
 }
 
 
-/// Insert multiple schemas into a record.
+/// Insert multiple groups of fields into multiple records.
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct InsertsFieldGroups {
     #[key]
     pub table: felt252,
-    #[key]
-    pub record: felt252,
     pub groups: Span<felt252>,
     pub records_data: Span<IdData>,
 }
@@ -463,7 +461,7 @@ pub struct DeleteFieldGroup {
     #[key]
     pub group: felt252,
 }
-/// Remove multiple fields from a record.
+/// Remove multiple groups from a record.
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct DeleteFieldGroups {
     #[key]
@@ -473,7 +471,7 @@ pub struct DeleteFieldGroups {
     pub groups: Span<felt252>,
 }
 
-/// Remove multiple fields from multiple records.
+/// Remove a group from multiple records.
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct DeletesFieldGroup {
     #[key]
@@ -483,7 +481,7 @@ pub struct DeletesFieldGroup {
     pub records: Span<felt252>,
 }
 
-/// Remove multiple fields from multiple records.
+/// Remove multiple groups from multiple records.
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct DeletesFieldGroups {
     #[key]
@@ -549,7 +547,6 @@ impl CreateFieldGroupEvent of Event<CreateFieldGroup> {
         CreateFieldGroup { id: *keys.pop_front()?, columns: data.drain() }.verify_keys(ref keys)
     }
 }
-
 
 impl CreateTableEvent of Event<CreateTable> {
     fn append_keys_and_data(
@@ -814,12 +811,11 @@ impl RetypeColumnsEvent of Event<RetypeColumns> {
 impl DropColumnEvent of Event<DropColumn> {
     fn append_keys_and_data(self: @DropColumn, ref keys: Array<felt252>, ref data: Array<felt252>) {
         keys.append(*self.table);
-        keys.append(*self.column);
+        keys.append(*self.id);
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DropColumn> {
-        DropColumn { table: *keys.pop_front()?, column: *keys.pop_front()? }
-            .verify(ref keys, ref data)
+        DropColumn { table: *keys.pop_front()?, id: *keys.pop_front()? }.verify(ref keys, ref data)
     }
 }
 
@@ -829,11 +825,11 @@ impl DropColumnsEvent of Event<DropColumns> {
         self: @DropColumns, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         keys.append(*self.table);
-        data.append_span(*self.columns)
+        data.append_span(*self.ids)
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DropColumns> {
-        DropColumns { table: *keys.pop_front()?, columns: data.drain() }.verify_keys(ref keys)
+        DropColumns { table: *keys.pop_front()?, ids: data.drain() }.verify_keys(ref keys)
     }
 }
 
@@ -873,15 +869,15 @@ impl InsertFieldEvent of Event<InsertField> {
         self: @InsertField, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         keys.append(*self.table);
-        keys.append(*self.column);
         keys.append(*self.record);
+        keys.append(*self.column);
         data.append_span(*self.data)
     }
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertField> {
         InsertField {
             table: *keys.pop_front()?,
-            column: *keys.pop_front()?,
             record: *keys.pop_front()?,
+            column: *keys.pop_front()?,
             data: data.drain(),
         }
             .verify_keys(ref keys)
@@ -1013,7 +1009,6 @@ impl InsertsFieldGroupsEvent of Event<InsertsFieldGroups> {
         self: @InsertsFieldGroups, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         keys.append(*self.table);
-        keys.append(*self.record);
         self.groups.iserialize(ref data);
         self.records_data.iserialize_end(ref data);
     }
@@ -1021,7 +1016,6 @@ impl InsertsFieldGroupsEvent of Event<InsertsFieldGroups> {
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertsFieldGroups> {
         InsertsFieldGroups {
             table: *keys.pop_front()?,
-            record: *keys.pop_front()?,
             groups: ISerde::ideserialize(ref data)?,
             records_data: ISerdeEnd::ideserialize_end(ref data)?,
         }

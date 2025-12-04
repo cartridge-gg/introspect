@@ -14,14 +14,17 @@ members = [
     "packages/client",
     "test/test_contract",
     "examples/framework",
+    "packages/tests",
 ]
 
 
 [workspace.dependencies]
 starknet = "2.13.1"
 introspect_types = { path = "packages/types" }
+introspect_types_tests = { path = "packages/types" }
 introspect_events = { path = "packages/events" }
 introspect_macros = { path = "packages/macros" }
+introspect_tests = { path = "packages/tests" }
 snforge_std = "0.52.0"
 assert_macros = "2.13.1"
 
@@ -46,8 +49,10 @@ introspect_types.workspace = true
 introspect_events.workspace = true
 introspect_macros.workspace = true
 
+
 [dev-dependencies]
 snforge_std.workspace = true
+introspect_tests.workspace = true
 
 [lib]
 

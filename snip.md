@@ -26,6 +26,8 @@ Currently the only source of type data for contracts is the ABI, which only desc
 
 This SNIP splits the solution into two parts: type declarations and data serialisation. Both these also need standardised event.
 
+This specification also considers gas optimisation by packing some data types and removing redundant length prefixes.
+
 This SNIP does not cover higher level frameworks only the type and event spec.
 
 ## Specification
@@ -209,8 +211,8 @@ struct RetypeColumn {
 struct RetypeColumns {
     #[key]
     table: felt252,
-    /// columns: Pairs of column ids and their new type definitions with attributes.
-    columns: Span<(felt252, TypeWithAttributes)>,
+    /// columns: column ids to retype with their new attributes and type defs
+    columns: Span<IdTypeAttributes>,
 }
 
 struct DropColumn {
