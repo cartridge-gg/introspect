@@ -72,6 +72,7 @@ These consist of events for table, column and record manipulation.
 
 #### Table Management Events:
 
+- `CreateFieldGroup`: Create a field group (schema) with specified columns.
 - `CreateTable`: Create a new table with a given name.
 - `CreateTableWithColumns`: Create or update a table with a given name and columns.
 - `CreateTableFromClassHash`: Create or update a table from a class hash.
@@ -79,18 +80,29 @@ These consist of events for table, column and record manipulation.
 - `DropTable`: Drop an existing table.
 
 ```rust
-/// id: felt252 - Unique identifier for the table.
-/// name: ByteArray - Name of the table.
-/// primary: FieldDef - Definition of the primary key field.
-/// columns: Span<ColumnDef> - Definitions of the columns in the table.
-/// schema: felt252 - Identifier of the schema used by the table.
+/// Field group management:
+/// - id: felt252 - Unique identifier for the field group.
+/// - columns: Span<felt252> - List of column IDs included in the field group.
+
+struct CreateFieldGroup {
+    #[key]
+    id: felt252,
+    columns: Span<felt252>,
+}
+
+/// Table management:
+/// - id: felt252 - Unique identifier for the table.
+/// - name: ByteArray - Name of the table.
+/// - primary: PrimaryDef - Definition of the primary key field.
+/// - columns: Span<ColumnDef> - Definitions of the columns in the table.
+/// - class_hash: felt252 - Class hash to derive schema from.
 
 struct CreateTable {
     #[key]
     id: felt252,
     name: ByteArray,
     attributes: Span<Attribute>,
-    primary: FieldDef,
+    primary: PrimaryDef,
 }
 
 struct CreateTableWithColumns {
@@ -98,8 +110,8 @@ struct CreateTableWithColumns {
     id: felt252,
     name: ByteArray,
     attributes: Span<Attribute>,
+    primary: PrimaryDef,
     columns: Span<ColumnDef>,
-    primary: FieldDef,
 }
 
 struct CreateTableFromClassHash {
@@ -112,10 +124,38 @@ struct CreateTableFromClassHash {
 struct RenameTable {
     #[key]
     id: felt252,
-    new_name: ByteArray,
+    name: ByteArray,
 }
 
 struct DropTable {
+    #[key]
+    id: felt252,
+}
+```
+
+#### Index Management Events:
+
+- `CreateIndex`: Create a new index on a table.
+- `DropIndex`: Drop an existing index from a table.
+
+```rust
+/// table: felt252 - Unique identifier for the table.
+/// id: felt252 - Unique identifier for the index.
+/// name: ByteArray - Name of the index.
+/// columns: Span<felt252> - Column IDs included in the index.
+
+struct CreateIndex {
+    #[key]
+    table: felt252,
+    #[key]
+    id: felt252,
+    name: ByteArray,
+    columns: Span<felt252>,
+}
+
+struct DropIndex {
+    #[key]
+    table: felt252,
     #[key]
     id: felt252,
 }
@@ -141,15 +181,14 @@ struct RenamePrimary {
 struct RetypePrimary {
     #[key]
     table: felt252,
+    type_def: PrimaryTypeDef,
     attributes: Span<Attribute>,
-    type_def: TypeDef,
 }
 
 ```
 
 #### Column Management Events:
 
--
 - `AddColumn`: Add a new column to a table.
 - `AddColumns`: Add multiple new columns to a table.
 - `RenameColumn`: Rename an existing column in a table.
@@ -161,7 +200,7 @@ struct RetypePrimary {
 
 ```rust
 /// table: felt252 - Unique identifier for the table.
-/// column: felt252 - Unique identifier for the column.
+/// id: felt252 - Unique identifier for the column.
 /// name: ByteArray - Name of the column.
 /// attributes: Span<Attribute> - Attributes of the column.
 /// type_def: TypeDef - Type definition of the column.
@@ -169,7 +208,6 @@ struct RetypePrimary {
 struct AddColumn {
     #[key]
     table: felt252,
-    /// id: Unique identifier for the column.
     #[key]
     id: felt252,
     name: ByteArray,
@@ -188,7 +226,7 @@ struct RenameColumn {
     #[key]
     table: felt252,
     #[key]
-    column: felt252,
+    id: felt252,
     name: ByteArray,
 }
 
@@ -196,14 +234,14 @@ struct RenameColumns {
     #[key]
     table: felt252,
     /// columns: Pairs of column ids and their new names.
-    columns: Span<(felt252, ByteArray)>,
+    columns: Span<IdName>,
 }
 
 struct RetypeColumn {
     #[key]
     table: felt252,
     #[key]
-    column: felt252,
+    id: felt252,
     attributes: Span<Attribute>,
     type_def: TypeDef,
 }
@@ -211,22 +249,28 @@ struct RetypeColumn {
 struct RetypeColumns {
     #[key]
     table: felt252,
-    /// columns: column ids to retype with their new attributes and type defs
+    /// columns: column ids to retype with their new type defs and attributes
     columns: Span<IdTypeAttributes>,
+}
+
+struct IdTypeAttributes {
+    id: felt252,
+    type_def: TypeDef,
+    attributes: Span<Attribute>,
 }
 
 struct DropColumn {
     #[key]
     table: felt252,
     #[key]
-    column: felt252,
+    id: felt252,
 }
 
 struct DropColumns {
     #[key]
     table: felt252,
-    /// columns: column ids to drop
-    columns: Span<felt252>,
+    /// ids: column ids to drop
+    ids: Span<felt252>,
 }
 ```
 
@@ -241,7 +285,7 @@ struct DropColumns {
 - `InsertFieldGroup`: Insert or update a group of fields in a record.
 - `InsertFieldGroups`: Insert or update multiple groups of fields in a record.
 - `InsertsFieldGroup`: Insert or update a group of fields in multiple records.
-- `InsertFieldGroups`: Insert or update multiple groups of fields in multiple records.
+- `InsertsFieldGroups`: Insert or update multiple groups of fields in multiple records.
 - `DeleteRecord`: Drop an existing record from a table.
 - `DeleteRecords`: Drop multiple existing records from a table.
 - `DeleteField`: Drop an existing field from a record.
@@ -262,7 +306,16 @@ struct DropColumns {
 /// - data - Serialised data being set.
 /// - records_data - Pairs of Record IDs and their serialised data being set.
 /// - group/groups - Field group ID.
-///
+
+struct IdData {
+    id: felt252,
+    data: Span<felt252>,
+}
+
+struct IdName {
+    id: felt252,
+    name: ByteArray,
+}
 
 
 struct InsertRecord {
@@ -316,8 +369,7 @@ struct InsertsFields {
     records_data: Span<IdData>,
 }
 
-#[derive(Drop, Serde, starknet::Event)]
-pub struct InsertFieldGroup {
+struct InsertFieldGroup {
     #[key]
     table: felt252,
     #[key]
@@ -349,8 +401,6 @@ struct InsertsFieldGroup {
 struct InsertsFieldGroups {
     #[key]
     table: felt252,
-    #[key]
-    record: felt252,
     groups: Span<felt252>,
     records_data: Span<IdData>,
 }
@@ -384,7 +434,7 @@ struct DeleteFields {
     #[key]
     table: felt252,
     #[key]
-    row: felt252,
+    record: felt252,
     columns: Span<felt252>,
 }
 
@@ -441,8 +491,9 @@ struct DeletesFieldGroups {
 These events are for values that don't fit into the table/record model, such as global variables or configuration settings.
 
 - `RegisterVariable`: Register a new variable with value.
-- `SetVariable`: Set the value of an existing variable.
 - `DeclareVariable`: Register a new variable with a given name and type.
+- `SetVariable`: Set the value of an existing variable.
+- `RenameVariable`: Rename an existing variable.
 - `DeleteVariable`: Delete an existing variable.
 
 ```rust
@@ -457,7 +508,6 @@ struct RegisterVariable {
     id: felt252,
     name: ByteArray,
     type_def: TypeDef,
-    data: Span<felt252>,
 }
 
 struct DeclareVariable {
@@ -465,6 +515,7 @@ struct DeclareVariable {
     id: felt252,
     name: ByteArray,
     type_def: TypeDef,
+    data: Span<felt252>,
 }
 
 struct SetVariable {
@@ -473,6 +524,11 @@ struct SetVariable {
     data: Span<felt252>,
 }
 
+struct RenameVariable {
+    #[key]
+    id: felt252,
+    name: ByteArray,
+}
 
 struct DeleteVariable {
     #[key]
@@ -492,7 +548,7 @@ The following data structures are used to describe the types and schemas of cair
 |`Felt252`| Base [field element](https://docs.starknet.io/build/corelib/core-felt252) in cairo | 'felt252'
 |`Bytes31`| 31 bytes packed into a felt252.| 'bytes31'
 |`Bytes31E`| 31 bytes packed into a felt252 with encoding.| 'bytes31e'
-|`ShortUtf8`| A 31 byte UTF-8 string.| 'shortutf8'
+|`ShortUtf8`| A 31 byte UTF-8 string.| 'ShortUtf8'
 |`Bool`| A boolean value (true or false).| 'bool'
 |`U8`| An unsigned 8-bit integer.| 'u8'
 |`U16`| An unsigned 16-bit integer.| 'u16'
@@ -511,11 +567,9 @@ The following data structures are used to describe the types and schemas of cair
 |`EthAddress`| An Ethereum address.| 'EthAddress'
 |`StorageAddress`| An address of a storage location of a contract.| 'StorageAddress'
 |`StorageBaseAddress`| An address of a storage base location of a contract.| 'StorageBaseAddress'
-|`Utf8String`| A UTF-8 string.| 'Utf8String'
 |`ByteArray`| A byte array (An array of bytes31 with a pending word).| 'ByteArray'
+|`Utf8String`| A UTF-8 string.| 'Utf8String'
 |`ByteArrayE`| A byte array with encoding (An array of bytes31 with a pending word).| 'ByteArrayE'
-
-|`ShortString`| A string of up to 31 bytes and length | 'ShortString'
 |`Tuple`| A tuple | 'Tuple'
 |`Array`| Variable sized array | 'Array'
 |`FixedArray`| Compile-time sized array| 'FixedArray'
@@ -525,17 +579,17 @@ The following data structures are used to describe the types and schemas of cair
 |`Option`| Option type - Either `Some` with a value or `None`| 'Option'
 |`Result`| Result type - Either `Ok` or `Err` each with there own type| 'Result'
 |`Nullable`| Nullable type - Either a value or `Null`| 'Nullable'
-|`Ref`| A reference type (A type that refers to another value).| 'Ref'
-|`Custom`| A custom type (A user-defined data structure and decoding).| 'Custom'
+|`Ref`| A reference type (A type that refers to another value).| 'ref'
+|`Custom`| A custom type (A user-defined data structure and decoding).| 'custom'
 
 ```rust
 enum TypeDef {
     #[default]
     None,
     Felt252,
-    Bytes31,
-    Bytes31E: felt252,
     ShortUtf8,
+    Bytes31,
+    Bytes31E: ByteArray,
     Bool,
     U8,
     U16,
@@ -554,10 +608,9 @@ enum TypeDef {
     EthAddress,
     StorageAddress,
     StorageBaseAddress,
-    Utf8String,
     ByteArray,
-    ByteArrayE: felt252,
-    ShortString,
+    Utf8String,
+    ByteArrayE: ByteArray,
     Tuple: Span<TypeDef>,
     Array: Box<TypeDef>,
     FixedArray: Box<FixedArrayDef>,
@@ -568,7 +621,7 @@ enum TypeDef {
     Result: Box<ResultDef>,
     Nullable: Box<TypeDef>,
     Ref: felt252,
-    Custom: felt252,
+    Custom: ByteArray,
 }
 ```
 
@@ -582,7 +635,7 @@ enum PrimaryTypeDef {
     Felt252,
     ShortUtf8,
     Bytes31,
-    Bytes31E: felt252,
+    Bytes31E: ByteArray,
     Bool,
     U8,
     U16,
@@ -610,13 +663,13 @@ An attribute is a key-value pair that can be attached to various type definition
 
 `Attribute`: Defines an attribute with the fields:
 
-- `id`: The name of the attribute.
-- `data`: A span of data associated with the attribute.
+- `name`: The name/identifier of the attribute as a ByteArray.
+- `data`: Optional data associated with the attribute as a ByteArray.
 
 ```rust
 struct Attribute {
-    id: felt252,
-    data: Span<felt252>,
+    name: ByteArray,
+    data: Option<ByteArray>,
 }
 ```
 
@@ -718,8 +771,8 @@ struct ResultDef {
 `PrimaryDef`: Defines a field in a record with the fields:
 
 - `name`: The name of the field.
-- `attributes`: A span of attributes associated with the field.
 - `type_def`: The type definition of the field.
+- `attributes`: A span of attributes associated with the field.
 
 ```rust
 struct ColumnDef {
@@ -729,10 +782,10 @@ struct ColumnDef {
     type_def: TypeDef,
 }
 
-struct FieldDef {
+struct PrimaryDef {
     name: ByteArray,
     attributes: Span<Attribute>,
-    type_def: TypeDef,
+    type_def: PrimaryTypeDef,
 }
 ```
 
@@ -792,6 +845,7 @@ pub trait ISerde<T> {
         Self::iserialize(self, ref data);
         data.span()
     }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<T>;
 }
 ```
 
