@@ -97,7 +97,7 @@ pub struct RetypeColumn {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct RetypeColumns {
     pub table: Felt,
-    pub columns: Vec<IdTypeAttributes>,
+    pub columns: Vec<IdTypeDef>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -275,7 +275,7 @@ pub struct IdName {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct IdTypeAttributes {
+pub struct IdTypeDef {
     pub id: Felt,
     pub attributes: Vec<Attribute>,
     pub type_def: TypeDef,
@@ -295,9 +295,9 @@ impl ISerde for IdName {
     }
 }
 
-impl ISerde for IdTypeAttributes {
+impl ISerde for IdTypeDef {
     fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
-        Some(IdTypeAttributes {
+        Some(IdTypeDef {
             id: data.next()?,
             attributes: Vec::<Attribute>::ideserialize(data)?,
             type_def: TypeDef::ideserialize(data)?,

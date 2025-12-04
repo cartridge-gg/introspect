@@ -257,7 +257,7 @@ pub struct RetypeColumn {
 pub struct RetypeColumns {
     #[key]
     pub table: felt252,
-    pub columns: Span<IdTypeAttributes>,
+    pub columns: Span<IdTypeDef>,
 }
 
 /// Emitted when a column is undeclared from a table.
@@ -500,10 +500,10 @@ pub struct IdName {
 
 
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
-pub struct IdTypeAttributes {
+pub struct IdTypeDef {
     pub id: felt252,
-    pub type_def: TypeDef,
     pub attributes: Span<Attribute>,
+    pub type_def: TypeDef,
 }
 
 impl IdNameISerde of ISerde<IdName> {
@@ -517,19 +517,19 @@ impl IdNameISerde of ISerde<IdName> {
     }
 }
 
-impl IdTypeAttributesISerde of ISerde<IdTypeAttributes> {
-    fn iserialize(self: @IdTypeAttributes, ref output: Array<felt252>) {
+impl IdTypeAttributesISerde of ISerde<IdTypeDef> {
+    fn iserialize(self: @IdTypeDef, ref output: Array<felt252>) {
         output.append(*self.id);
-        self.type_def.iserialize(ref output);
         self.attributes.iserialize(ref output);
+        self.type_def.iserialize(ref output);
     }
 
-    fn ideserialize(ref serialized: Span<felt252>) -> Option<IdTypeAttributes> {
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<IdTypeDef> {
         Some(
-            IdTypeAttributes {
+            IdTypeDef {
                 id: *serialized.pop_front()?,
-                type_def: ISerde::ideserialize(ref serialized)?,
                 attributes: ISerde::ideserialize(ref serialized)?,
+                type_def: ISerde::ideserialize(ref serialized)?,
             },
         )
     }

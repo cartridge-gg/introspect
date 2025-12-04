@@ -2,10 +2,10 @@ use introspect_events::database::{
     AddColumn, AddColumns, CreateFieldGroup, CreateIndex, CreateTable, CreateTableFromClassHash,
     CreateTableWithColumns, DeleteField, DeleteFieldGroup, DeleteFieldGroups, DeleteFields,
     DeleteRecord, DeleteRecords, DeletesField, DeletesFieldGroup, DeletesFieldGroups, DeletesFields,
-    DropColumn, DropColumns, DropIndex, DropTable, IdName, IdTypeAttributes, InsertField,
-    InsertFieldGroup, InsertFieldGroups, InsertFields, InsertRecord, InsertRecords, InsertsField,
-    InsertsFieldGroup, InsertsFieldGroups, InsertsFields, RenameColumn, RenameColumns,
-    RenamePrimary, RenameTable, RetypeColumn, RetypeColumns, RetypePrimary,
+    DropColumn, DropColumns, DropIndex, DropTable, IdName, IdTypeDef, InsertField, InsertFieldGroup,
+    InsertFieldGroups, InsertFields, InsertRecord, InsertRecords, InsertsField, InsertsFieldGroup,
+    InsertsFieldGroups, InsertsFields, RenameColumn, RenameColumns, RenamePrimary, RenameTable,
+    RetypeColumn, RetypeColumns, RetypePrimary,
 };
 use crate::{ByteArrayExt, random_pascal_string, random_snake_string};
 use super::schema::generate_column_attributes;
@@ -23,9 +23,9 @@ pub impl IdNameFuzzable of Fuzzable<IdName> {
     }
 }
 
-pub impl IdTypeAttributesFuzzy<const MAX_DEPTH: u32> of Fuzzy<IdTypeAttributes> {
-    fn generate() -> IdTypeAttributes {
-        IdTypeAttributes {
+pub impl IdTypeAttributesFuzzy<const MAX_DEPTH: u32> of Fuzzy<IdTypeDef> {
+    fn generate() -> IdTypeDef {
+        IdTypeDef {
             id: Fuzzable::generate(),
             attributes: generate_column_attributes(),
             type_def: TypeDefFuzzable::generate(MAX_DEPTH),

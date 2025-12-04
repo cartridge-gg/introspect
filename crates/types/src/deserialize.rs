@@ -235,7 +235,7 @@ impl CairoDeserialize for RefDef {
 impl CairoDeserialize for CustomDef {
     fn c_deserialize(data: &mut FeltIterator) -> Option<Self> {
         Some(CustomDef {
-            id: pop_primitive::<Felt>(data)?,
+            decoding: pop_primitive::<Felt>(data)?,
         })
     }
 }

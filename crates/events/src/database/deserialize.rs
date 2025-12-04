@@ -2,7 +2,7 @@ use super::{
     AddColumn, AddColumns, CreateFieldGroup, CreateIndex, CreateTable, CreateTableFromClassHash,
     CreateTableWithColumns, DeleteField, DeleteFieldGroup, DeleteFieldGroups, DeleteFields,
     DeleteRecord, DeleteRecords, DeletesField, DeletesFieldGroup, DeletesFieldGroups,
-    DeletesFields, DropColumn, DropColumns, DropIndex, DropTable, IdData, IdName, IdTypeAttributes,
+    DeletesFields, DropColumn, DropColumns, DropIndex, DropTable, IdData, IdName, IdTypeDef,
     InsertField, InsertFieldGroup, InsertFieldGroups, InsertFields, InsertRecord, InsertRecords,
     InsertsField, InsertsFieldGroup, InsertsFieldGroups, InsertsFields, RenameColumn,
     RenameColumns, RenamePrimary, RenameTable, RetypeColumn, RetypeColumns, RetypePrimary,
@@ -168,7 +168,7 @@ impl EventTrait for RetypeColumns {
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         RetypeColumns {
             table: keys.next()?,
-            columns: IdTypeAttributes::ideserialize_end(data)?,
+            columns: IdTypeDef::ideserialize_end(data)?,
         }
         .verify(keys, data)
     }
