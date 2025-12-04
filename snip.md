@@ -49,6 +49,97 @@ The standard consists of two main parts the events and data structures used to d
 
 To simplify the spec primary keys are always a single column that can be represented by single felt.
 
+### ISerde Trait
+
+The ISerde trait is used to serialize data to a span of felt252 values which can then be decoded using the corresponding `TypeDef` by another system. Its`iserialize` mirrors `serialize` from the Serde trait for the most part but is implemented separately to allow for optimizations specific to either ISerde or Serde without causing conflicts.
+
+#### ISerde ByteArray Serialization
+
+To reduce event size ByteArrays are serialized like so:
+
+- No length prefix
+- The 0 bit in the 31st byte is used to indicate if it is the last felt252 in the ByteArray; 0 = more to follow, 1 = is last.
+- The 1 bit in the 31st byte is use to show if the felt is a partial word (less than 31 bytes). 0 = full 31 bytes, 1 = 30 bytes or less. If the felt is a partial word the 30th byte contains the length of the valid bytes in that felt.
+
+This means a ByteArray with 31 Bytes or less will only take up a single felt252 with no felts used for total felts or pending word size.
+
+As all data emitted with ISerde is expected to be decoded using the corresponding TypeDef by another system and wont be represented in the ABI, this shouldn't cause any issues with compatibility.
+
+```rust
+pub trait ISerde<T> {
+    fn iserialize(self: @T, ref output: Array<felt252>);
+    fn iserialize_inline(
+        self: @T,
+    ) -> Span<
+        felt252,
+    > {
+        let mut data: Array<felt252> = Default::default();
+        Self::iserialize(self, ref data);
+        data.span()
+    }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<T>;
+}
+```
+
+#### ISerdeEnd Trait
+
+For the final field in an event, the `ISerdeEnd` trait is used to omit the length prefix entirely, saving an additional felt252.
+
+```rust
+pub trait ISerdeEnd<T> {
+    fn iserialize_end(self: @T, ref output: Array<felt252>);
+    fn ideserialize_end(ref serialized: Span<felt252>) -> Option<T>;
+}
+```
+
+### Event Serialization Optimization
+
+Events use a custom serialization strategy to minimize the number of felts emitted, significantly reducing gas costs. The Event trait provides two methods:
+
+```rust
+trait Event<T> {
+    fn append_keys_and_data(
+        self: @T,
+        ref keys: Array<felt252>,
+        ref data: Array<felt252>
+    );
+    fn deserialize(
+        ref keys: Span<felt252>,
+        ref data: Span<felt252>
+    ) -> Option<T>;
+}
+```
+
+#### Serialization Strategies
+
+Events use three different serialization strategies depending on the field position and type:
+
+**1. Standard ISerde (with length prefix)**
+Used for fields that are not the last field in the event data or not a span:
+
+```rust
+self.name.iserialize(ref data);        // Includes length prefix
+self.columns.iserialize(ref data);      // Includes length prefix
+```
+
+**2. ISerdeEnd (no length prefix)**
+Used for the final field when it's a span of non felt types:
+
+```rust
+self.attributes.iserialize_end(ref data);  // No length prefix - saves 1 felt
+self.columns.iserialize_end(ref data);     // No length prefix - saves 1 felt
+```
+
+**3. Raw append_span (no serialization)**
+Used when the final field is raw data that doesn't need structure:
+
+```rust
+data.append_span(*self.data);    // Direct span append - saves 1 felt
+data.append_span(*self.ids);     // Direct span append - saves 1 felt
+```
+
+The members of an event can also be reordered to place span fields at the end to take advantage of these optimizations wherever possible.
+
 ### TypeEvents
 
 - `DeclareType`: Declare a new type with a given name and structure.
@@ -79,6 +170,14 @@ These consist of events for table, column and record manipulation.
 - `RenameTable`: Rename an existing table.
 - `DropTable`: Drop an existing table.
 
+Common members:
+
+- id: felt252 - Unique identifier for the table.
+- name: ByteArray - Name of the table.
+- primary: PrimaryDef - Definition of the primary key field.
+- columns: Span<ColumnDef> - Definitions of the columns in the table.
+- class_hash: felt252 - Class hash to derive schema from.
+
 ```rust
 /// Field group management:
 /// - id: felt252 - Unique identifier for the field group.
@@ -89,13 +188,13 @@ struct CreateFieldGroup {
     id: felt252,
     columns: Span<felt252>,
 }
+```
 
-/// Table management:
-/// - id: felt252 - Unique identifier for the table.
-/// - name: ByteArray - Name of the table.
-/// - primary: PrimaryDef - Definition of the primary key field.
-/// - columns: Span<ColumnDef> - Definitions of the columns in the table.
-/// - class_hash: felt252 - Class hash to derive schema from.
+Data Serialization order:
+
+- columns - append_span
+
+```rust
 
 struct CreateTable {
     #[key]
@@ -104,7 +203,15 @@ struct CreateTable {
     attributes: Span<Attribute>,
     primary: PrimaryDef,
 }
+```
 
+Data Serialization order:
+
+- name - iserialize
+- primary - iserialize
+- attributes - iserialize_end
+
+```rust
 struct CreateTableWithColumns {
     #[key]
     id: felt252,
@@ -113,20 +220,42 @@ struct CreateTableWithColumns {
     primary: PrimaryDef,
     columns: Span<ColumnDef>,
 }
+```
 
+Data Serialization order:
+
+- name - iserialize
+- attributes - iserialize
+- primary - iserialize
+- columns - iserialize_end
+
+```rust
 struct CreateTableFromClassHash {
     #[key]
     id: felt252,
     name: ByteArray,
     class_hash: felt252,
 }
+```
 
+Data Serialization order:
+
+- name - iserialize
+- class_hash - append
+
+```rust
 struct RenameTable {
     #[key]
     id: felt252,
     name: ByteArray,
 }
+```
 
+Data Serialization order:
+
+- name - iserialize
+
+```rust
 struct DropTable {
     #[key]
     id: felt252,
@@ -138,11 +267,15 @@ struct DropTable {
 - `CreateIndex`: Create a new index on a table.
 - `DropIndex`: Drop an existing index from a table.
 
+Common members:
+
+- table: felt252 - Unique identifier for the table.
+- id: felt252 - Unique identifier for the index.
+- name: ByteArray - Name of the index.
+- columns: Span<felt252> - Column IDs included in the index.
+
 ```rust
-/// table: felt252 - Unique identifier for the table.
-/// id: felt252 - Unique identifier for the index.
-/// name: ByteArray - Name of the index.
-/// columns: Span<felt252> - Column IDs included in the index.
+
 
 struct CreateIndex {
     #[key]
@@ -152,7 +285,14 @@ struct CreateIndex {
     name: ByteArray,
     columns: Span<felt252>,
 }
+```
 
+Data Serialization order:
+
+- name - iserialize
+- columns - iserialize_end
+
+```rust
 struct DropIndex {
     #[key]
     table: felt252,
@@ -166,18 +306,26 @@ struct DropIndex {
 - `RenamePrimary`: Rename the primary key of a table.
 - `RetypePrimary`: Change the type of the primary key of a table.
 
-```rust
-/// table: felt252 - Unique identifier for the table.
-/// name: ByteArray - Name of the primary key.
-/// attributes: Span<Attribute> - Attributes of the column.
-/// type_def: TypeDef - Type definition of the primary key.
+Common members:
 
+- table: felt252 - Unique identifier for the table.
+- name: ByteArray - Name of the primary key.
+- attributes: Span<Attribute> - Attributes of the column.
+- type_def: TypeDef - Type definition of the primary key.
+
+```rust
 struct RenamePrimary {
     #[key]
     table: felt252,
     name: ByteArray,
 }
+```
 
+Data Serialization order:
+
+- name - iserialize
+
+```rust
 struct RetypePrimary {
     #[key]
     table: felt252,
@@ -186,6 +334,11 @@ struct RetypePrimary {
 }
 
 ```
+
+Data Serialization order:
+
+- type_def - iserialize
+- attributes - iserialize_end
 
 #### Column Management Events:
 
@@ -198,13 +351,15 @@ struct RetypePrimary {
 - `DropColumn`: Drop an existing column from a table.
 - `DropColumns`: Drop multiple existing columns from a table.
 
-```rust
-/// table: felt252 - Unique identifier for the table.
-/// id: felt252 - Unique identifier for the column.
-/// name: ByteArray - Name of the column.
-/// attributes: Span<Attribute> - Attributes of the column.
-/// type_def: TypeDef - Type definition of the column.
+Common members:
 
+- table: felt252 - Unique identifier for the table.
+- id: felt252 - Unique identifier for the column.
+- name: ByteArray - Name of the column.
+- attributes: Span<Attribute> - Attributes of the column.
+- type_def: TypeDef - Type definition of the column.
+
+```rust
 struct AddColumn {
     #[key]
     table: felt252,
@@ -214,14 +369,28 @@ struct AddColumn {
     attributes: Span<Attribute>,
     type_def: TypeDef,
 }
+```
 
+Data Serialization order:
+
+- name - iserialize
+- type_def - iserialize
+- attributes - iserialize_end
+
+```rust
 struct AddColumns {
     #[key]
     table: felt252,
     /// columns: Definitions of the columns being added.
     columns: Span<ColumnDef>,
 }
+```
 
+Data Serialization order:
+
+- columns - iserialize_end
+
+```rust
 struct RenameColumn {
     #[key]
     table: felt252,
@@ -229,14 +398,26 @@ struct RenameColumn {
     id: felt252,
     name: ByteArray,
 }
+```
 
+Data Serialization order:
+
+- name - iserialize
+
+```rust
 struct RenameColumns {
     #[key]
     table: felt252,
     /// columns: Pairs of column ids and their new names.
     columns: Span<IdName>,
 }
+```
 
+Data Serialization order:
+
+- columns - iserialize_end
+
+```rust
 struct RetypeColumn {
     #[key]
     table: felt252,
@@ -245,19 +426,33 @@ struct RetypeColumn {
     attributes: Span<Attribute>,
     type_def: TypeDef,
 }
+```
 
+Data Serialization order:
+
+- type_def - iserialize
+- attributes - iserialize_end
+
+```rust
 struct RetypeColumns {
     #[key]
     table: felt252,
     /// columns: column ids to retype with their new type defs and attributes
-    columns: Span<IdTypeAttributes>,
+    columns: Span<IdTypeDef>,
 }
-
-struct IdTypeAttributes {
+struct IdTypeDef {
     id: felt252,
-    type_def: TypeDef,
     attributes: Span<Attribute>,
+    type_def: TypeDef,
 }
+```
+
+Data Serialization order:
+
+- columns - iserialize_end
+
+```rust
+
 
 struct DropColumn {
     #[key]
@@ -265,7 +460,13 @@ struct DropColumn {
     #[key]
     id: felt252,
 }
+```
 
+Data Serialization order:
+
+- (no data fields)
+
+```rust
 struct DropColumns {
     #[key]
     table: felt252,
@@ -273,6 +474,10 @@ struct DropColumns {
     ids: Span<felt252>,
 }
 ```
+
+Data Serialization order:
+
+- ids - append_span
 
 #### Record Manipulation Events:
 
@@ -297,16 +502,16 @@ struct DropColumns {
 - `DeletesFieldGroup`: Drop a group of fields from multiple records.
 - `DeletesFieldGroups`: Drop multiple groups of fields from multiple records.
 
-```rust
-/// Database values common fields
-///
-/// - table - Table ID.
-/// - record/records - Record ID.
-/// - column/columns - Column ID.
-/// - data - Serialised data being set.
-/// - records_data - Pairs of Record IDs and their serialised data being set.
-/// - group/groups - Field group ID.
+Common members:
 
+- table: felt252 - Table ID.
+- record/records: felt252/Span<felt252> - Record IDs.
+- column/columns: felt252/Span<felt252> - Column IDs.
+- group/groups: felt252/Span<felt252> - Field group IDs.
+- data: Span<felt252> - Serialised data being set.
+- records_data: Span<IdData> - Pairs of Record IDs and their serialised data.
+
+```rust
 struct IdData {
     id: felt252,
     data: Span<felt252>,
@@ -317,7 +522,6 @@ struct IdName {
     name: ByteArray,
 }
 
-
 struct InsertRecord {
     #[key]
     table: felt252,
@@ -325,13 +529,25 @@ struct InsertRecord {
     record: felt252,
     data: Span<felt252>,
 }
+```
 
+Data Serialization order:
+
+- data - append_span
+
+```rust
 struct InsertRecords {
     #[key]
     table: felt252,
     records_data: Span<IdData>,
 }
+```
 
+Data Serialization order:
+
+- records_data - iserialize_end
+
+```rust
 struct InsertField {
     #[key]
     table: felt252,
@@ -342,7 +558,13 @@ struct InsertField {
     data: Span<felt252>,
 }
 
+```
 
+Data Serialization order:
+
+- data - append_span
+
+```rust
 struct InsertFields {
     #[key]
     table: felt252,
@@ -352,7 +574,14 @@ struct InsertFields {
     data: Span<felt252>,
 }
 
+```
 
+Data Serialization order:
+
+- columns - iserialize
+- data - append_span
+
+```rust
 struct InsertsField {
     #[key]
     table: felt252,
@@ -361,14 +590,27 @@ struct InsertsField {
     records_data: Span<IdData>,
 }
 
+```
 
+Data Serialization order:
+
+- records_data - iserialize_end
+
+```rust
 struct InsertsFields {
     #[key]
     table: felt252,
     columns: Span<felt252>,
     records_data: Span<IdData>,
 }
+```
 
+Data Serialization order:
+
+- columns - iserialize
+- records_data - iserialize_end
+
+```rust
 struct InsertFieldGroup {
     #[key]
     table: felt252,
@@ -379,7 +621,13 @@ struct InsertFieldGroup {
     data: Span<felt252>,
 }
 
+```
 
+Data Serialization order:
+
+- data - append_span
+
+```rust
 struct InsertFieldGroups {
     #[key]
     table: felt252,
@@ -388,7 +636,14 @@ struct InsertFieldGroups {
     groups: Span<felt252>,
     data: Span<felt252>,
 }
+```
 
+Data Serialization order:
+
+- groups - iserialize
+- data - append_span
+
+```rust
 struct InsertsFieldGroup {
     #[key]
     table: felt252,
@@ -397,14 +652,27 @@ struct InsertsFieldGroup {
     records_data: Span<IdData>,
 }
 
+```
 
+Data Serialization order:
+
+- records_data - iserialize_end
+
+```rust
 struct InsertsFieldGroups {
     #[key]
     table: felt252,
     groups: Span<felt252>,
     records_data: Span<IdData>,
 }
+```
 
+Data Serialization order:
+
+- groups - iserialize
+- records_data - iserialize_end
+
+```rust
 
 struct DeleteRecord {
     #[key]
@@ -412,14 +680,22 @@ struct DeleteRecord {
     #[key]
     record: felt252,
 }
+```
 
+```rust
 
 struct DeleteRecords {
     #[key]
     table: felt252,
     records: Span<felt252>,
 }
+```
 
+Data Serialization order:
+
+- records - append_span
+
+```rust
 struct DeleteField {
     #[key]
     table: felt252,
@@ -428,7 +704,13 @@ struct DeleteField {
     #[key]
     column: felt252,
 }
+```
 
+Data Serialization order:
+
+- (no data fields)
+
+```rust
 
 struct DeleteFields {
     #[key]
@@ -437,7 +719,13 @@ struct DeleteFields {
     record: felt252,
     columns: Span<felt252>,
 }
+```
 
+Data Serialization order:
+
+- columns - append_span
+
+```rust
 struct DeletesField {
     #[key]
     table: felt252,
@@ -446,14 +734,27 @@ struct DeletesField {
     records: Span<felt252>,
 
 }
+```
 
+Data Serialization order:
+
+- records - append_span
+
+```rust
 struct DeletesFields {
     #[key]
     table: felt252,
     records: Span<felt252>,
     columns: Span<felt252>,
 }
+```
 
+Data Serialization order:
+
+- records - iserialize
+- columns - append_span
+
+```rust
 struct DeleteFieldGroup {
     #[key]
     table: felt252,
@@ -462,6 +763,13 @@ struct DeleteFieldGroup {
     #[key]
     group: felt252,
 }
+```
+
+Data Serialization order:
+
+- (no data fields)
+
+```rust
 struct DeleteFieldGroups {
     #[key]
     table: felt252,
@@ -469,7 +777,13 @@ struct DeleteFieldGroups {
     record: felt252,
     groups: Span<felt252>,
 }
+```
 
+Data Serialization order:
+
+- groups - append_span
+
+```rust
 struct DeletesFieldGroup {
     #[key]
     table: felt252,
@@ -477,7 +791,13 @@ struct DeletesFieldGroup {
     group: felt252,
     records: Span<felt252>,
 }
+```
 
+Data Serialization order:
+
+- records - append_span
+
+```rust
 struct DeletesFieldGroups {
     #[key]
     table: felt252,
@@ -485,6 +805,11 @@ struct DeletesFieldGroups {
     groups: Span<felt252>,
 }
 ```
+
+Data Serialization order:
+
+- records - iserialize
+- groups - append_span
 
 ### Variable Events
 
@@ -496,20 +821,28 @@ These events are for values that don't fit into the table/record model, such as 
 - `RenameVariable`: Rename an existing variable.
 - `DeleteVariable`: Delete an existing variable.
 
+Common members:
+
+- id: felt252 - Unique identifier for the variable.
+- name: ByteArray - Name of the variable.
+- type_def: TypeDef - Type definition of the variable.
+- data: Span<felt252> - Serialised data being set.
+
 ```rust
-/// id: felt252 - Unique identifier for the variable.
-/// name: ByteArray - Name of the variable.
-/// type_def: TypeDef - Type definition of the variable.
-/// data: Span<felt252> - Serialised data being set.
-
-
 struct RegisterVariable {
     #[key]
     id: felt252,
     name: ByteArray,
     type_def: TypeDef,
 }
+```
 
+Data Serialization order:
+
+- name - iserialize
+- type_def - iserialize
+
+```rust
 struct DeclareVariable {
     #[key]
     id: felt252,
@@ -517,19 +850,39 @@ struct DeclareVariable {
     type_def: TypeDef,
     data: Span<felt252>,
 }
+```
 
+Data Serialization order:
+
+- name - iserialize
+- type_def - iserialize
+- data - append_span
+
+```rust
 struct SetVariable {
     #[key]
     id: felt252,
     data: Span<felt252>,
 }
+```
 
+Data Serialization order:
+
+- data - append_span
+
+```rust
 struct RenameVariable {
     #[key]
     id: felt252,
     name: ByteArray,
 }
+```
 
+Data Serialization order:
+
+- name - iserialize
+
+```rust
 struct DeleteVariable {
     #[key]
     id: felt252,
@@ -817,38 +1170,6 @@ trait Introspect<T> {
 }
 ```
 
-### ISerde Trait
-
-The ISerde trait is used to serialize data to a span of felt252 values which can then be decoded using the corresponding `TypeDef` by another system. Its`iserialize` mirrors `serialize` from the Serde trait for the most part but is implemented separately to allow for optimizations specific to either ISerde or Serde without causing conflicts. The only diffrence is the parsing of ByteArrays.
-
-#### ISerde ByteArray Serialization
-
-To reduce event size ByteArrays are serialized like so:
-
-- No length prefix
-- The 0 bit in the 31st byte is used to indicate if it is the last felt252 in the ByteArray; 0 = more to follow, 1 = is last.
-- The 1 bit in the 31st byte is use to show if the felt is a partial word (less than 31 bytes). 0 = full 31 bytes, 1 = 30 bytes or less. If the felt is a partial word the 30th byte contains the length of the valid bytes in that felt.
-
-This means a ByteArray with 31 Bytes or less will only take up a single felt252 with no felts used for total felts or pending word size.
-
-As all data emitted with ISerde is expected to be decoded using the corresponding TypeDef by another system and wont be represented in the ABI, this shouldn't cause any issues with compatibility.
-
-```rust
-pub trait ISerde<T> {
-    fn iserialize(self: @T, ref output: Array<felt252>);
-    fn iserialize_inline(
-        self: @T,
-    ) -> Span<
-        felt252,
-    > {
-        let mut data: Array<felt252> = Default::default();
-        Self::iserialize(self, ref data);
-        data.span()
-    }
-    fn ideserialize(ref serialized: Span<felt252>) -> Option<T>;
-}
-```
-
 ## Implementation
 
 This SNIP provides a spec for encoding types, corresponding data and events to describe what to do with that data. It is expected that most of these will be hidden from most developers behind higher level frameworks and libraries both on the contract, indexer and client side. Its not expected that all these tool will use all the events but each library/framework should clearly document which events they use and how they interpret them. Optimization can be made by limiting certain features e.g. not allowing upgrades of database to allow for more efficient storage and querying.
@@ -862,6 +1183,10 @@ As this SNIP primarily defines events and data structures for describing on-chai
 ## Copyright
 
 Copyright and related rights waived via [MIT](../LICENSE).
+
+```
+
+```
 
 ```
 
