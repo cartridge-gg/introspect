@@ -12,7 +12,8 @@ members = [
     "packages/types",
     "packages/macros",
     "packages/client",
-    "test/test_contract",
+    "tests/test_contract",
+    "tests/events",
     "examples/framework",
     "packages/tests",
 ]
@@ -21,12 +22,13 @@ members = [
 [workspace.dependencies]
 starknet = "2.13.1"
 introspect_types = { path = "packages/types" }
-introspect_types_tests = { path = "packages/types" }
 introspect_events = { path = "packages/events" }
 introspect_macros = { path = "packages/macros" }
 introspect_tests = { path = "packages/tests" }
+event_tests = { path = "tests/events" }
 snforge_std = "0.52.0"
 assert_macros = "2.13.1"
+cairo_execute = "2.13.1"
 
 
 [workspace.tool.fmt]
@@ -34,6 +36,8 @@ sort-module-level-items = true
 
 [workspace.tool.scarb]
 allow-prebuilt-plugins = ["snforge_std"]
+
+[workspace.tool.snforge]
 
 [package]
 name = "introspect"
@@ -54,11 +58,13 @@ introspect_macros.workspace = true
 snforge_std.workspace = true
 introspect_tests.workspace = true
 
+
 [lib]
 
 [tool]
 fmt.workspace = true
 scarb.workspace = true
+snforge.workspace = true
 
 [[target.starknet-contract]]
 sierra = true

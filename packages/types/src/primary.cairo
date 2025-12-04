@@ -1,9 +1,11 @@
 use starknet::storage_access::StorageBaseAddress;
 use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
 use crate::type_def::{SelectorTrait, selectors};
+use crate::utils::SpanDefault;
 use crate::{Attribute, ISerde};
 
-#[derive(Drop, Serde, PartialEq, Debug)]
+
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct PrimaryDef {
     pub name: ByteArray,
     pub attributes: Span<Attribute>,
@@ -74,6 +76,8 @@ impl PrimaryTypeDefSerde of Serde<PrimaryTypeDef> {
         let tag = *serialized.pop_front()?;
         if tag == selectors::Felt252 {
             Option::Some(PrimaryTypeDef::Felt252)
+        } else if tag == selectors::ShortUtf8 {
+            Option::Some(PrimaryTypeDef::ShortUtf8)
         } else if tag == selectors::Bytes31 {
             Option::Some(PrimaryTypeDef::Bytes31)
         } else if tag == selectors::Bytes31E {
@@ -170,6 +174,8 @@ pub impl PrimaryTypeDefISerde of ISerde<PrimaryTypeDef> {
         let tag = *serialized.pop_front()?;
         if tag == selectors::Felt252 {
             Option::Some(PrimaryTypeDef::Felt252)
+        } else if tag == selectors::ShortUtf8 {
+            Option::Some(PrimaryTypeDef::ShortUtf8)
         } else if tag == selectors::Bytes31 {
             Option::Some(PrimaryTypeDef::Bytes31)
         } else if tag == selectors::Bytes31E {

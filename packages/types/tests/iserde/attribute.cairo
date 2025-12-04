@@ -1,7 +1,7 @@
+use introspect_tests::fuzzable::attribute::FuzzableAttribute;
 use introspect_types::attribute::B31_4;
 use introspect_types::serde::{B31_2, B31_3, SHIFT_30B};
 use introspect_types::{Attribute, ISerde};
-use crate::fuzzable::attribute::FuzzableAttribute;
 
 fn test_iserde_attribute(attribute: Attribute, expected: Span<felt252>) {
     let mut serialized = attribute.iserialize_inline();

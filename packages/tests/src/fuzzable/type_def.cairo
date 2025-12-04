@@ -1,5 +1,5 @@
 use introspect_tests::{
-    ByteArrayExt, FuzzableExt, FuzzableMaxDepth, FuzzableMaxDepthNode, FuzzableMaxDepthNodeImpl,
+    ByteArrayExt, FuzzableMaxDepth, FuzzableMaxDepthNode, FuzzableMaxDepthNodeImpl, Fuzzy,
     random_pascal_string, random_snake_string,
 };
 use introspect_types::{
@@ -21,7 +21,7 @@ pub impl TypeDefFuzzableToDepth<const MAX_DEPTH: u32> of Fuzzable<TypeDef> {
 
 impl TypeDefFuzzableNode of FuzzableMaxDepthNode<TypeDef> {
     fn leaf() -> TypeDef {
-        match generate_arg(0, 26) {
+        match generate_arg(0, 25) {
             0 => TypeDef::None,
             1 => TypeDef::Felt252,
             2 => TypeDef::ShortUtf8,
@@ -40,22 +40,21 @@ impl TypeDefFuzzableNode of FuzzableMaxDepthNode<TypeDef> {
             15 => TypeDef::I32,
             16 => TypeDef::I64,
             17 => TypeDef::I128,
-            18 => TypeDef::ShortString,
-            19 => TypeDef::ClassHash,
-            20 => TypeDef::ContractAddress,
-            21 => TypeDef::EthAddress,
-            22 => TypeDef::StorageAddress,
-            23 => TypeDef::StorageBaseAddress,
-            24 => TypeDef::ByteArray,
-            25 => TypeDef::Utf8String,
-            26 => TypeDef::ByteArrayE("ascii"),
+            18 => TypeDef::ClassHash,
+            19 => TypeDef::ContractAddress,
+            20 => TypeDef::EthAddress,
+            21 => TypeDef::StorageAddress,
+            22 => TypeDef::StorageBaseAddress,
+            23 => TypeDef::ByteArray,
+            24 => TypeDef::Utf8String,
+            25 => TypeDef::ByteArrayE("ascii"),
             _ => panic!("Unreachable"),
         }
     }
 
 
     fn node(depth_rem: u32) -> TypeDef {
-        match generate_arg(0, 37) {
+        match generate_arg(0, 36) {
             0 => TypeDef::None,
             1 => TypeDef::Felt252,
             2 => TypeDef::ShortUtf8,
@@ -74,26 +73,25 @@ impl TypeDefFuzzableNode of FuzzableMaxDepthNode<TypeDef> {
             15 => TypeDef::I32,
             16 => TypeDef::I64,
             17 => TypeDef::I128,
-            18 => TypeDef::ShortString,
-            19 => TypeDef::ClassHash,
-            20 => TypeDef::ContractAddress,
-            21 => TypeDef::EthAddress,
-            22 => TypeDef::StorageAddress,
-            23 => TypeDef::StorageBaseAddress,
-            24 => TypeDef::ByteArray,
-            25 => TypeDef::Utf8String,
-            26 => TypeDef::ByteArrayE("ascii"),
-            27 => TypeDef::Tuple(TypeDefFuzzable::generate_span_lt(depth_rem, 16)),
-            28 => TypeDef::Array(TypeDefFuzzable::generate_boxed(depth_rem)),
-            29 => TypeDef::FixedArray(FixedArrayFuzzable::generate_boxed(depth_rem)),
-            30 => TypeDef::Felt252Dict(TypeDefFuzzable::generate_boxed(depth_rem)),
-            31 => TypeDef::Struct(StructDefFuzzable::generate(depth_rem)),
-            32 => TypeDef::Enum(EnumDefFuzzable::generate(depth_rem)),
-            33 => TypeDef::Ref(Fuzzable::generate()),
-            34 => TypeDef::Custom("Custom"),
-            35 => TypeDef::Option(TypeDefFuzzable::generate_boxed(depth_rem)),
-            36 => TypeDef::Result(ResultFuzzable::generate_boxed(depth_rem)),
-            37 => TypeDef::Nullable(TypeDefFuzzable::generate_boxed(depth_rem)),
+            18 => TypeDef::ClassHash,
+            19 => TypeDef::ContractAddress,
+            20 => TypeDef::EthAddress,
+            21 => TypeDef::StorageAddress,
+            22 => TypeDef::StorageBaseAddress,
+            23 => TypeDef::ByteArray,
+            24 => TypeDef::Utf8String,
+            25 => TypeDef::ByteArrayE("ascii"),
+            26 => TypeDef::Tuple(TypeDefFuzzable::generate_span_lt(depth_rem, 16)),
+            27 => TypeDef::Array(TypeDefFuzzable::generate_boxed(depth_rem)),
+            28 => TypeDef::FixedArray(FixedArrayFuzzable::generate_boxed(depth_rem)),
+            29 => TypeDef::Felt252Dict(TypeDefFuzzable::generate_boxed(depth_rem)),
+            30 => TypeDef::Struct(StructDefFuzzable::generate(depth_rem)),
+            31 => TypeDef::Enum(EnumDefFuzzable::generate(depth_rem)),
+            32 => TypeDef::Ref(Fuzzable::generate()),
+            33 => TypeDef::Custom("Custom"),
+            34 => TypeDef::Option(TypeDefFuzzable::generate_boxed(depth_rem)),
+            35 => TypeDef::Result(ResultFuzzable::generate_boxed(depth_rem)),
+            36 => TypeDef::Nullable(TypeDefFuzzable::generate_boxed(depth_rem)),
             _ => panic!("Unreachable"),
         }
     }
@@ -119,7 +117,7 @@ impl StructDefFuzzable of FuzzableMaxDepth<StructDef> {
     fn generate(depth_rem: u32) -> StructDef {
         StructDef {
             name: random_pascal_string(31, 4),
-            attributes: FuzzableExt::generate_span_lt(16),
+            attributes: Fuzzy::generate_span_lt(16),
             members: MemberDefFuzzable::generate_span_lt(depth_rem, 10),
         }
     }
@@ -129,7 +127,7 @@ impl MemberDefFuzzable of FuzzableMaxDepth<MemberDef> {
     fn generate(depth_rem: u32) -> MemberDef {
         MemberDef {
             name: random_snake_string(31, 4),
-            attributes: FuzzableExt::generate_span_lt(16),
+            attributes: Fuzzy::generate_span_lt(16),
             type_def: TypeDefFuzzable::generate(depth_rem),
         }
     }
@@ -143,7 +141,7 @@ impl VariantDefFuzzable of FuzzableMaxDepth<VariantDef> {
         VariantDef {
             name,
             selector,
-            attributes: FuzzableExt::generate_span_lt(16),
+            attributes: Fuzzy::generate_span_lt(16),
             type_def: TypeDefFuzzable::generate(depth_rem),
         }
     }
@@ -154,7 +152,7 @@ impl EnumDefFuzzable of FuzzableMaxDepth<EnumDef> {
         let variants_count = generate_arg(1, 10);
         EnumDef {
             name: random_pascal_string(31, 4),
-            attributes: FuzzableExt::generate_span_lt(16),
+            attributes: Fuzzy::generate_span_lt(16),
             variants: VariantDefFuzzable::generate_span(depth_rem, variants_count),
         }
     }

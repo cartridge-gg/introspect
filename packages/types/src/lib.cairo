@@ -17,3 +17,4 @@ pub use type_def::{
     EnumDef, FixedArrayDef, MemberDef, ResultDef, StructDef, TypeDef, TypeWithAttributes,
     VariantDef,
 };
+pub mod utils;

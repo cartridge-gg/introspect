@@ -1,5 +1,5 @@
+use introspect_tests::fuzzable;
 use introspect_types::{ISerde, TypeDef};
-use crate::fuzzable;
 
 impl TypeDefFuzzable = fuzzable::TypeDefFuzzableToDepth<10>;
 

@@ -1,30 +1,33 @@
 use core::fmt::Debug;
-use snforge_std::fuzzable::{Fuzzable, generate_arg};
+pub use snforge_std::fuzzable::{Fuzzable, generate_arg};
 
-pub trait FuzzableExt<T, +Debug<T>> {
-    fn generate_boxed() -> Box<T>;
-    fn generate_array(length: u32) -> Array<T>;
-    fn generate_span(length: u32) -> Span<T>;
-    fn generate_array_lt(max_length: u32) -> Array<T>;
-    fn generate_span_lt(max_length: u32) -> Span<T>;
-}
-
-pub impl FuzzableExtImpl<T, +Fuzzable<T>, +Drop<T>, +Debug<T>> of FuzzableExt<T> {
+pub trait Fuzzy<T, +Debug<T>, +Drop<T>> {
+    fn generate() -> T;
     fn generate_boxed() -> Box<T> {
-        BoxTrait::new(Fuzzable::generate())
+        BoxTrait::new(Self::generate())
     }
-    fn generate_array(length: u32) -> Array<T> {
-        (0..length).into_iter().map(|_a| Fuzzable::generate()).collect::<Array<_>>()
+    fn generate_array(
+        length: u32,
+    ) -> Array<T> {
+        (0..length).into_iter().map(|_a| Self::generate()).collect::<Array<_>>()
     }
     fn generate_span(length: u32) -> Span<T> {
         Self::generate_array(length).span()
     }
-    fn generate_array_lt(max_length: u32) -> Array<T> {
+    fn generate_array_lt(
+        max_length: u32,
+    ) -> Array<T> {
         let length = generate_arg(0, max_length);
         Self::generate_array(length)
     }
     fn generate_span_lt(max_length: u32) -> Span<T> {
         Self::generate_array_lt(max_length).span()
+    }
+}
+
+pub impl FuzzyImpl<T, impl F: Fuzzable<T>, +Drop<T>, +Debug<T>> of Fuzzy<T> {
+    fn generate() -> T {
+        F::generate()
     }
 }
 
@@ -75,3 +78,15 @@ pub impl FuzzableMaxDepthNodeImpl<
         }
     }
 }
+
+pub mod attribute;
+pub mod database;
+pub mod id_data;
+pub mod primary;
+pub mod schema;
+pub mod type_def;
+pub use attribute::FuzzableAttribute;
+pub use id_data::IdDataFuzzable;
+pub use primary::{PrimaryDefFuzzable, PrimaryTypeDefFuzzable};
+pub use schema::FuzzableExtColumnDef;
+pub use type_def::{TypeDefFuzzable, TypeDefFuzzableToDepth};

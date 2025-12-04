@@ -1,5 +1,5 @@
+use crate::utils::SpanDefault;
 use crate::{ISerde, PrimaryTrait, RecordPrimary, Schema};
-
 pub trait IdDataTrait<T> {
     fn id_data(
         self: @T,
@@ -44,7 +44,7 @@ pub impl SPrimaryDataTupleRecordImpl<P, S, +PrimaryTrait<P>, +ISerde<S>> of IdDa
     }
 }
 
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct IdData {
     pub id: felt252,
     pub data: Span<felt252>,

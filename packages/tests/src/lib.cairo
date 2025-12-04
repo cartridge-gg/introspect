@@ -8,4 +8,6 @@ pub use byte_array::{
     random_digit_char_span, random_pascal_string, random_snake_string,
 };
 
-pub use fuzzable::{FuzzableExt, FuzzableMaxDepth, FuzzableMaxDepthNode, FuzzableMaxDepthNodeImpl};
+pub use fuzzable::{FuzzableMaxDepth, FuzzableMaxDepthNode, FuzzableMaxDepthNodeImpl, Fuzzy};
+
+pub mod events;

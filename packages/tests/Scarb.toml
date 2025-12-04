@@ -11,6 +11,8 @@ experimental-features = ["associated_item_constraints", "negative_impls"]
 starknet.workspace = true
 snforge_std.workspace = true
 assert_macros.workspace = true
+introspect_types.workspace = true
+introspect_events.workspace = true
 
 [dev-dependencies]
 

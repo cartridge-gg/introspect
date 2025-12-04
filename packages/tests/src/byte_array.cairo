@@ -3,7 +3,7 @@ use core::keccak::compute_keccak_byte_array;
 use core::metaprogramming::TypeEqual;
 use snforge_std::fuzzable::{Fuzzable, generate_arg};
 use crate::ascii;
-use crate::fuzzable::FuzzableExt;
+use crate::fuzzable::Fuzzy;
 
 
 const SELECTOR_MASK: u256 =
@@ -132,6 +132,6 @@ pub fn random_snake_string(max_length: u32, max_parts: u32) -> ByteArray {
 
 pub fn random_byte_array(max_length: u32) -> ByteArray {
     let mut ba: ByteArray = "";
-    ba.append_bytes(FuzzableExt::<u8>::generate_span_lt(max_length));
+    ba.append_bytes(Fuzzy::<u8>::generate_span_lt(max_length));
     ba
 }

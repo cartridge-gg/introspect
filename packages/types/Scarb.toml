@@ -18,5 +18,6 @@ introspect_tests.workspace = true
 [tool]
 fmt.workspace = true
 scarb.workspace = true
+snforge.workspace = true
 
 [lib]

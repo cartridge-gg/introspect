@@ -28,11 +28,6 @@ pub trait ISerde<T> {
         data.span()
     }
     fn ideserialize(ref serialized: Span<felt252>) -> Option<T>;
-    fn ideserialize_unwrap(
-        ref serialized: Span<felt252>,
-    ) -> T {
-        Self::ideserialize(ref serialized).expect('Could not deserialize')
-    }
 }
 
 impl FeltIntoBool of Into<felt252, bool> {

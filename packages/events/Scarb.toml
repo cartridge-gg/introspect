@@ -14,7 +14,7 @@ introspect_types.workspace = true
 introspect_macros.workspace = true
 snforge_std.workspace = true
 assert_macros.workspace = true
-# introspect_types_tests.workspace = true
+introspect_tests.workspace = true
 
 [tool]
 fmt.workspace = true

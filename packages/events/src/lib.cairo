@@ -1,9 +1,4 @@
-pub mod database {
-    // pub mod emitters;
-    pub mod events;
-    // pub use emitters::*;
-    pub use events::{*, selectors};
-}
+pub mod database;
 // pub mod multipart;
 pub mod types {
     // pub mod emitters;

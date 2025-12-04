@@ -29,7 +29,6 @@ pub enum TypeDef {
     ByteArray,
     Utf8String,
     ByteArrayE: ByteArray,
-    ShortString,
     Tuple: Span<TypeDef>,
     Array: Box<TypeDef>,
     FixedArray: Box<FixedArrayDef>,
@@ -118,7 +117,6 @@ pub mod selectors {
     pub const I32: felt252 = 'i32';
     pub const I64: felt252 = 'i64';
     pub const I128: felt252 = 'i128';
-    pub const ShortString: felt252 = 'ShortString';
     pub const ClassHash: felt252 = 'ClassHash';
     pub const ContractAddress: felt252 = 'ContractAddress';
     pub const EthAddress: felt252 = 'EthAddress';
@@ -165,7 +163,6 @@ impl TypeDefSelector of SelectorTrait<TypeDef> {
             TypeDef::I32 => selectors::I32,
             TypeDef::I64 => selectors::I64,
             TypeDef::I128 => selectors::I128,
-            TypeDef::ShortString => selectors::ShortString,
             TypeDef::ClassHash => selectors::ClassHash,
             TypeDef::ContractAddress => selectors::ContractAddress,
             TypeDef::EthAddress => selectors::EthAddress,
@@ -196,9 +193,9 @@ impl TySerde of Serde<TypeDef> {
             TypeDef::None | TypeDef::Felt252 | TypeDef::ShortUtf8 | TypeDef::Bytes31 |
             TypeDef::Bool | TypeDef::U8 | TypeDef::U16 | TypeDef::U32 | TypeDef::U64 |
             TypeDef::U128 | TypeDef::U256 | TypeDef::U512 | TypeDef::I8 | TypeDef::I16 |
-            TypeDef::I32 | TypeDef::I64 | TypeDef::I128 | TypeDef::ShortString |
-            TypeDef::ClassHash | TypeDef::ContractAddress | TypeDef::EthAddress |
-            TypeDef::StorageAddress | TypeDef::ByteArray | TypeDef::Utf8String |
+            TypeDef::I32 | TypeDef::I64 | TypeDef::I128 | TypeDef::ClassHash |
+            TypeDef::ContractAddress | TypeDef::EthAddress | TypeDef::StorageAddress |
+            TypeDef::ByteArray | TypeDef::Utf8String |
             TypeDef::StorageBaseAddress => { output.append(self.selector()); },
             TypeDef::Ref(t) => {
                 output.append(self.selector());
@@ -276,8 +273,6 @@ impl TySerde of Serde<TypeDef> {
             Option::Some(TypeDef::I64)
         } else if tag == selectors::I128 {
             Option::Some(TypeDef::I128)
-        } else if tag == selectors::ShortString {
-            Option::Some(TypeDef::ShortString)
         } else if tag == selectors::ClassHash {
             Option::Some(TypeDef::ClassHash)
         } else if tag == selectors::ContractAddress {
@@ -329,9 +324,9 @@ impl TyISerde of ISerde<TypeDef> {
             TypeDef::None | TypeDef::Felt252 | TypeDef::ShortUtf8 | TypeDef::Bytes31 |
             TypeDef::Bool | TypeDef::U8 | TypeDef::U16 | TypeDef::U32 | TypeDef::U64 |
             TypeDef::U128 | TypeDef::U256 | TypeDef::U512 | TypeDef::I8 | TypeDef::I16 |
-            TypeDef::I32 | TypeDef::I64 | TypeDef::I128 | TypeDef::ShortString |
-            TypeDef::ClassHash | TypeDef::ContractAddress | TypeDef::EthAddress |
-            TypeDef::StorageAddress | TypeDef::ByteArray | TypeDef::Utf8String |
+            TypeDef::I32 | TypeDef::I64 | TypeDef::I128 | TypeDef::ClassHash |
+            TypeDef::ContractAddress | TypeDef::EthAddress | TypeDef::StorageAddress |
+            TypeDef::ByteArray | TypeDef::Utf8String |
             TypeDef::StorageBaseAddress => { output.append(self.selector()); },
             TypeDef::Ref(t) => {
                 output.append(self.selector());
@@ -409,8 +404,6 @@ impl TyISerde of ISerde<TypeDef> {
             Option::Some(TypeDef::I64)
         } else if tag == selectors::I128 {
             Option::Some(TypeDef::I128)
-        } else if tag == selectors::ShortString {
-            Option::Some(TypeDef::ShortString)
         } else if tag == selectors::ClassHash {
             Option::Some(TypeDef::ClassHash)
         } else if tag == selectors::ContractAddress {
@@ -479,13 +472,13 @@ impl ClassHashPartialEq<T, +PartialEq<T>> of PartialEq<Box<T>> {
 
 impl TypeWithAttributesISerde of ISerde<TypeWithAttributes> {
     fn iserialize(self: @TypeWithAttributes, ref output: Array<felt252>) {
-        self.type_def.iserialize(ref output);
         self.attributes.iserialize(ref output);
+        self.type_def.iserialize(ref output);
     }
 
     fn ideserialize(ref serialized: Span<felt252>) -> Option<TypeWithAttributes> {
-        let type_def = ISerde::ideserialize(ref serialized)?;
         let attributes = ISerde::ideserialize(ref serialized)?;
+        let type_def = ISerde::ideserialize(ref serialized)?;
         Some(TypeWithAttributes { type_def, attributes })
     }
 }
@@ -509,14 +502,14 @@ impl StructDefISerde of ISerde<StructDef> {
 impl MemberDefISerde of ISerde<MemberDef> {
     fn iserialize(self: @MemberDef, ref output: Array<felt252>) {
         self.name.iserialize(ref output);
-        self.type_def.iserialize(ref output);
         self.attributes.iserialize(ref output);
+        self.type_def.iserialize(ref output);
     }
 
     fn ideserialize(ref serialized: Span<felt252>) -> Option<MemberDef> {
         let name = ISerde::ideserialize(ref serialized)?;
-        let type_def = ISerde::ideserialize(ref serialized)?;
         let attributes = ISerde::ideserialize(ref serialized)?;
+        let type_def = ISerde::ideserialize(ref serialized)?;
         Some(MemberDef { name, type_def, attributes })
     }
 }
@@ -541,15 +534,15 @@ impl VariantDefISerde of ISerde<VariantDef> {
     fn iserialize(self: @VariantDef, ref output: Array<felt252>) {
         output.append(*self.selector);
         self.name.iserialize(ref output);
-        self.type_def.iserialize(ref output);
         self.attributes.iserialize(ref output);
+        self.type_def.iserialize(ref output);
     }
 
     fn ideserialize(ref serialized: Span<felt252>) -> Option<VariantDef> {
         let selector = *serialized.pop_front()?;
         let name = ISerde::ideserialize(ref serialized)?;
-        let type_def = ISerde::ideserialize(ref serialized)?;
         let attributes = ISerde::ideserialize(ref serialized)?;
+        let type_def = ISerde::ideserialize(ref serialized)?;
         Some(VariantDef { selector, name, type_def, attributes })
     }
 }

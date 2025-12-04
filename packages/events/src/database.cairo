@@ -1,3 +1,4 @@
+use introspect_types::utils::SpanDefault;
 use introspect_types::{Attribute, ColumnDef, ISerde, IdData, PrimaryDef, PrimaryTypeDef, TypeDef};
 use starknet::Event;
 use crate::utils::{DrainSpanTrait, ISerdeEnd, VerifyEventDeserializeTrait};
@@ -90,7 +91,7 @@ pub enum DatabaseEvents {
 /// Emitted when a new field group (schema) is created.
 /// - id: felt252 - Unique identifier for the field group.
 /// - columns: Span<felt252> - List of column IDs included in the field group
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct CreateFieldGroup {
     #[key]
     pub id: felt252,
@@ -106,7 +107,7 @@ pub struct CreateFieldGroup {
 /// - class_hash: ClassHash - Class hash to derive schema from.
 
 /// Emitted when a new table is created.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct CreateTable {
     #[key]
     pub id: felt252,
@@ -116,7 +117,7 @@ pub struct CreateTable {
 }
 
 /// Emitted when a new table is created with specified columns.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct CreateTableWithColumns {
     #[key]
     pub id: felt252,
@@ -127,7 +128,7 @@ pub struct CreateTableWithColumns {
 }
 
 /// Emitted when a new table is created from a class hash.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct CreateTableFromClassHash {
     #[key]
     pub id: felt252,
@@ -136,7 +137,7 @@ pub struct CreateTableFromClassHash {
 }
 
 ///Emitted when a table is renamed.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RenameTable {
     #[key]
     pub id: felt252,
@@ -144,13 +145,13 @@ pub struct RenameTable {
 }
 
 ///Emitted when a table is dropped.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DropTable {
     #[key]
     pub id: felt252,
 }
 
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct CreateIndex {
     #[key]
     pub table: felt252,
@@ -161,7 +162,7 @@ pub struct CreateIndex {
 }
 
 
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DropIndex {
     #[key]
     pub table: felt252,
@@ -176,7 +177,7 @@ pub struct DropIndex {
 /// - type_def: TypeDef - Type definition of the primary key field.
 
 /// Emitted when the primary key field is renamed.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RenamePrimary {
     #[key]
     pub table: felt252,
@@ -184,12 +185,12 @@ pub struct RenamePrimary {
 }
 
 /// Emitted when the primary key field is retyped.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RetypePrimary {
     #[key]
     pub table: felt252,
-    pub attributes: Span<Attribute>,
     pub type_def: PrimaryTypeDef,
+    pub attributes: Span<Attribute>,
 }
 
 /// Column management events
@@ -199,7 +200,7 @@ pub struct RetypePrimary {
 /// - attributes: Span<Attribute> - Attributes of the column.
 /// - type_def: TypeDef - Type definition of the column.
 
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct AddColumn {
     #[key]
     pub table: felt252,
@@ -212,7 +213,7 @@ pub struct AddColumn {
 
 /// Emitted when multiple new columns are declared for an existing table.
 /// - columns: Definitions of the columns being added.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct AddColumns {
     #[key]
     pub table: felt252,
@@ -220,7 +221,7 @@ pub struct AddColumns {
 }
 
 // Emitted when a column is renamed in a table.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RenameColumn {
     #[key]
     pub table: felt252,
@@ -232,7 +233,7 @@ pub struct RenameColumn {
 
 /// Emitted when columns are renamed in a table.
 /// - columns: List of (column ID, new name) pairs.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RenameColumns {
     #[key]
     pub table: felt252,
@@ -240,7 +241,7 @@ pub struct RenameColumns {
 }
 
 /// Emitted when a column is retyped in a table.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RetypeColumn {
     #[key]
     pub table: felt252,
@@ -252,7 +253,7 @@ pub struct RetypeColumn {
 
 /// Emitted when multiple columns are retyped in a table.
 /// - columns: List of (column ID, new TypeDef) pairs.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RetypeColumns {
     #[key]
     pub table: felt252,
@@ -260,7 +261,7 @@ pub struct RetypeColumns {
 }
 
 /// Emitted when a column is undeclared from a table.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DropColumn {
     #[key]
     pub table: felt252,
@@ -270,7 +271,7 @@ pub struct DropColumn {
 
 /// Emitted when multiple columns are undeclared from a table.
 /// - ids: List of column IDs being dropped.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DropColumns {
     #[key]
     pub table: felt252,
@@ -286,7 +287,7 @@ pub struct DropColumns {
 /// - records_data - Pairs of Record IDs and their serialised data being set.
 /// - group - Field group (schema) ID.
 
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertRecord {
     #[key]
     pub table: felt252,
@@ -296,7 +297,7 @@ pub struct InsertRecord {
 }
 
 /// Insert multiple records into a table.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertRecords {
     #[key]
     pub table: felt252,
@@ -305,7 +306,7 @@ pub struct InsertRecords {
 
 
 /// Insert a single field into a record.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertField {
     #[key]
     pub table: felt252,
@@ -317,7 +318,7 @@ pub struct InsertField {
 }
 
 /// Insert multiple fields into a record.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertFields {
     #[key]
     pub table: felt252,
@@ -328,7 +329,7 @@ pub struct InsertFields {
 }
 
 /// Insert a single field into multiple records.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertsField {
     #[key]
     pub table: felt252,
@@ -338,7 +339,7 @@ pub struct InsertsField {
 }
 
 /// Insert multiple fields into multiple records.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertsFields {
     #[key]
     pub table: felt252,
@@ -347,7 +348,7 @@ pub struct InsertsFields {
 }
 
 /// Insert a schema into a record.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertFieldGroup {
     #[key]
     pub table: felt252,
@@ -360,7 +361,7 @@ pub struct InsertFieldGroup {
 
 
 /// Insert multiple groups of columns into a record.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertFieldGroups {
     #[key]
     pub table: felt252,
@@ -371,7 +372,7 @@ pub struct InsertFieldGroups {
 }
 
 /// Insert multiple records into a table using a schema.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertsFieldGroup {
     #[key]
     pub table: felt252,
@@ -382,7 +383,7 @@ pub struct InsertsFieldGroup {
 
 
 /// Insert multiple groups of fields into multiple records.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertsFieldGroups {
     #[key]
     pub table: felt252,
@@ -391,7 +392,7 @@ pub struct InsertsFieldGroups {
 }
 
 /// Remove a single record from a table.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DeleteRecord {
     #[key]
     pub table: felt252,
@@ -400,7 +401,7 @@ pub struct DeleteRecord {
 }
 
 /// Remove multiple records from a table.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DeleteRecords {
     #[key]
     pub table: felt252,
@@ -409,7 +410,7 @@ pub struct DeleteRecords {
 
 
 /// Remove a single field from a record.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DeleteField {
     #[key]
     pub table: felt252,
@@ -421,7 +422,7 @@ pub struct DeleteField {
 
 
 /// Remove multiple fields from a record.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DeleteFields {
     #[key]
     pub table: felt252,
@@ -432,7 +433,7 @@ pub struct DeleteFields {
 
 
 /// Remove a single field from multiple records.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DeletesField {
     #[key]
     pub table: felt252,
@@ -442,7 +443,7 @@ pub struct DeletesField {
 }
 
 /// Remove multiple fields from multiple records.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DeletesFields {
     #[key]
     pub table: felt252,
@@ -452,7 +453,7 @@ pub struct DeletesFields {
 
 
 /// Remove a schema from a record.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DeleteFieldGroup {
     #[key]
     pub table: felt252,
@@ -462,7 +463,7 @@ pub struct DeleteFieldGroup {
     pub group: felt252,
 }
 /// Remove multiple groups from a record.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DeleteFieldGroups {
     #[key]
     pub table: felt252,
@@ -472,7 +473,7 @@ pub struct DeleteFieldGroups {
 }
 
 /// Remove a group from multiple records.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DeletesFieldGroup {
     #[key]
     pub table: felt252,
@@ -482,7 +483,7 @@ pub struct DeletesFieldGroup {
 }
 
 /// Remove multiple groups from multiple records.
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DeletesFieldGroups {
     #[key]
     pub table: felt252,
@@ -491,18 +492,18 @@ pub struct DeletesFieldGroups {
 }
 
 
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct IdName {
     pub id: felt252,
     pub name: ByteArray,
 }
 
 
-#[derive(Drop, Serde, PartialEq, Debug)]
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct IdTypeAttributes {
     pub id: felt252,
-    pub attributes: Span<Attribute>,
     pub type_def: TypeDef,
+    pub attributes: Span<Attribute>,
 }
 
 impl IdNameISerde of ISerde<IdName> {
@@ -519,16 +520,16 @@ impl IdNameISerde of ISerde<IdName> {
 impl IdTypeAttributesISerde of ISerde<IdTypeAttributes> {
     fn iserialize(self: @IdTypeAttributes, ref output: Array<felt252>) {
         output.append(*self.id);
-        self.attributes.iserialize(ref output);
         self.type_def.iserialize(ref output);
+        self.attributes.iserialize(ref output);
     }
 
     fn ideserialize(ref serialized: Span<felt252>) -> Option<IdTypeAttributes> {
         Some(
             IdTypeAttributes {
                 id: *serialized.pop_front()?,
-                attributes: ISerde::ideserialize(ref serialized)?,
                 type_def: ISerde::ideserialize(ref serialized)?,
+                attributes: ISerde::ideserialize(ref serialized)?,
             },
         )
     }
@@ -554,18 +555,18 @@ impl CreateTableEvent of Event<CreateTable> {
     ) {
         keys.append(*self.id);
         self.name.iserialize(ref data);
-        self.attributes.iserialize(ref data);
         self.primary.iserialize(ref data);
+        self.attributes.iserialize_end(ref data);
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<CreateTable> {
         CreateTable {
             id: *keys.pop_front()?,
             name: ISerde::ideserialize(ref data)?,
-            attributes: ISerde::ideserialize(ref data)?,
             primary: ISerde::ideserialize(ref data)?,
+            attributes: ISerdeEnd::ideserialize_end(ref data)?,
         }
-            .verify(ref keys, ref data)
+            .verify_keys(ref keys)
     }
 }
 
@@ -691,17 +692,17 @@ impl RetypePrimaryEvent of Event<RetypePrimary> {
         self: @RetypePrimary, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         keys.append(*self.table);
-        self.attributes.iserialize(ref data);
         self.type_def.iserialize(ref data);
+        self.attributes.iserialize_end(ref data);
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RetypePrimary> {
         RetypePrimary {
             table: *keys.pop_front()?,
-            attributes: ISerde::ideserialize(ref data)?,
             type_def: ISerde::ideserialize(ref data)?,
+            attributes: ISerdeEnd::ideserialize_end(ref data)?,
         }
-            .verify(ref keys, ref data)
+            .verify_keys(ref keys)
     }
 }
 
@@ -710,8 +711,8 @@ impl AddColumnEvent of Event<AddColumn> {
         keys.append(*self.table);
         keys.append(*self.id);
         self.name.iserialize(ref data);
-        self.attributes.iserialize(ref data);
         self.type_def.iserialize(ref data);
+        self.attributes.iserialize_end(ref data);
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<AddColumn> {
@@ -719,10 +720,10 @@ impl AddColumnEvent of Event<AddColumn> {
             table: *keys.pop_front()?,
             id: *keys.pop_front()?,
             name: ISerde::ideserialize(ref data)?,
-            attributes: ISerde::ideserialize(ref data)?,
             type_def: ISerde::ideserialize(ref data)?,
+            attributes: ISerdeEnd::ideserialize_end(ref data)?,
         }
-            .verify(ref keys, ref data)
+            .verify_keys(ref keys)
     }
 }
 
@@ -778,18 +779,18 @@ impl RetypeColumnEvent of Event<RetypeColumn> {
     ) {
         keys.append(*self.table);
         keys.append(*self.id);
-        self.attributes.iserialize(ref data);
         self.type_def.iserialize(ref data);
+        self.attributes.iserialize_end(ref data);
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RetypeColumn> {
         RetypeColumn {
             table: *keys.pop_front()?,
             id: *keys.pop_front()?,
-            attributes: ISerde::ideserialize(ref data)?,
             type_def: ISerde::ideserialize(ref data)?,
+            attributes: ISerdeEnd::ideserialize_end(ref data)?,
         }
-            .verify(ref keys, ref data)
+            .verify_keys(ref keys)
     }
 }
 
@@ -1178,13 +1179,15 @@ impl DeletesFieldGroupsEvent of Event<DeletesFieldGroups> {
         self: @DeletesFieldGroups, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         keys.append(*self.table);
-        self.records.serialize(ref data);
+        self.records.iserialize(ref data);
         data.append_span(*self.groups)
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeletesFieldGroups> {
         DeletesFieldGroups {
-            table: *keys.pop_front()?, records: Serde::deserialize(ref data)?, groups: data.drain(),
+            table: *keys.pop_front()?,
+            records: ISerde::ideserialize(ref data)?,
+            groups: data.drain(),
         }
             .verify(ref keys, ref data)
     }
