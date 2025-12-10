@@ -451,3 +451,13 @@ pub impl FixedArrayTNISerde<
     }
 }
 
+
+impl SSISerde<T, +ISerde<T>, +Drop<T>> of ISerde<@T> {
+    fn iserialize(self: @@T, ref output: Array<felt252>) {
+        ISerde::<T>::iserialize(*self, ref output);
+    }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<@T> {
+        Some(@ISerde::<T>::ideserialize(ref serialized)?)
+    }
+}
+

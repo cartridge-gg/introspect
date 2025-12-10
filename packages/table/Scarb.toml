@@ -1,5 +1,5 @@
 [package]
-name = "introspect_example_framework"
+name = "introspect_table"
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
@@ -9,19 +9,17 @@ experimental-features = ["associated_item_constraints", "negative_impls"]
 
 [dependencies]
 starknet.workspace = true
-introspect = { path = "../../" }
-introspect_macros.workspace = true
+introspect_types.workspace = true
+introspect_events.workspace = true
 
 [dev-dependencies]
-cairo_test = "2.13.1"
+snforge_std.workspace = true
+assert_macros.workspace = true
+introspect_tests.workspace = true
 
 [tool]
 fmt.workspace = true
 scarb.workspace = true
+snforge.workspace = true
 
 [lib]
-
-
-[[target.starknet-contract]]
-sierra = true
-casm = true

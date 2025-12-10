@@ -4,7 +4,9 @@ use introspect_types::serde::{B31_2, B31_3, SHIFT_30B};
 fn test_iserde_byte_array(byte_array: ByteArray, expected: Span<felt252>) {
     let mut serialized = byte_array.iserialize_inline();
     assert(serialized == expected, 'Array does not match');
-    assert(ISerde::ideserialize_unwrap(ref serialized) == byte_array, 'Deserialized doesnt match');
+    assert(
+        ISerde::ideserialize(ref serialized).unwrap() == byte_array, 'Deserialized doesnt match',
+    );
 }
 
 #[test]
@@ -72,5 +74,7 @@ fn test_long_bytes_array() {
 #[fuzzer]
 fn test_many_byte_arrays(byte_array: ByteArray) {
     let mut serialized = byte_array.iserialize_inline();
-    assert(ISerde::ideserialize_unwrap(ref serialized) == byte_array, 'Deserialized doesnt match');
+    assert(
+        ISerde::ideserialize(ref serialized).unwrap() == byte_array, 'Deserialized doesnt match',
+    );
 }

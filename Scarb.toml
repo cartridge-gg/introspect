@@ -6,18 +6,15 @@ scarb-version = "2.13.1"
 repository = "https://github.com/cartridge-gg/introspect"
 name = "introspect"
 
+
 [workspace]
 members = [
     "packages/events",
     "packages/types",
     "packages/macros",
-    "packages/client",
-    "tests/test_contract",
-    "tests/events",
-    "examples/framework",
     "packages/tests",
+    "packages/table",
 ]
-
 
 [workspace.dependencies]
 starknet = "2.13.1"
@@ -25,11 +22,9 @@ introspect_types = { path = "packages/types" }
 introspect_events = { path = "packages/events" }
 introspect_macros = { path = "packages/macros" }
 introspect_tests = { path = "packages/tests" }
-event_tests = { path = "tests/events" }
-snforge_std = "0.52.0"
+snforge_std = "0.54.0"
 assert_macros = "2.13.1"
 cairo_execute = "2.13.1"
-
 
 [workspace.tool.fmt]
 sort-module-level-items = true
@@ -43,9 +38,6 @@ allow-prebuilt-plugins = ["snforge_std"]
 name = "introspect"
 version.workspace = true
 edition.workspace = true
-cairo-version.workspace = true
-scarb-version.workspace = true
-
 
 [dependencies]
 starknet.workspace = true
@@ -53,19 +45,16 @@ introspect_types.workspace = true
 introspect_events.workspace = true
 introspect_macros.workspace = true
 
-
 [dev-dependencies]
 snforge_std.workspace = true
 introspect_tests.workspace = true
 
-
-[lib]
+[scripts]
+test = "snforge test"
 
 [tool]
 fmt.workspace = true
 scarb.workspace = true
 snforge.workspace = true
 
-[[target.starknet-contract]]
-sierra = true
-casm = true
+[lib]

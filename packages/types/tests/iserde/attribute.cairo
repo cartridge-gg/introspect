@@ -5,8 +5,10 @@ use introspect_types::{Attribute, ISerde};
 
 fn test_iserde_attribute(attribute: Attribute, expected: Span<felt252>) {
     let mut serialized = attribute.iserialize_inline();
-    assert(serialized == expected, 'Array does not match');
-    assert(ISerde::ideserialize_unwrap(ref serialized) == attribute, 'Deserialized doesnt match');
+    assert_eq!(serialized, expected, "Array does not match");
+    assert_eq!(
+        ISerde::ideserialize(ref serialized).unwrap(), attribute, "Deserialized doesnt match",
+    );
 }
 
 
@@ -131,5 +133,7 @@ fn test_attribute_32_bytes_key_with_long_data() {
 #[fuzzer]
 fn test_many_attributes(attribute: Attribute) {
     let mut serialized = attribute.iserialize_inline();
-    assert(ISerde::ideserialize_unwrap(ref serialized) == attribute, 'Deserialized doesnt match');
+    assert_eq!(
+        ISerde::ideserialize(ref serialized).unwrap(), attribute, "Deserialized doesnt match",
+    );
 }

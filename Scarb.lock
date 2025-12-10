@@ -2,14 +2,6 @@
 version = 1
 
 [[package]]
-name = "event_tests"
-version = "0.1.2"
-dependencies = [
- "introspect_events",
- "introspect_tests",
-]
-
-[[package]]
 name = "introspect"
 version = "0.1.2"
 dependencies = [
@@ -31,16 +23,18 @@ dependencies = [
 ]
 
 [[package]]
-name = "introspect_example_framework"
-version = "0.1.2"
-dependencies = [
- "introspect",
- "introspect_macros",
-]
-
-[[package]]
 name = "introspect_macros"
 version = "0.1.0"
+
+[[package]]
+name = "introspect_table"
+version = "0.1.2"
+dependencies = [
+ "introspect_events",
+ "introspect_tests",
+ "introspect_types",
+ "snforge_std",
+]
 
 [[package]]
 name = "introspect_tests"
@@ -61,23 +55,15 @@ dependencies = [
 
 [[package]]
 name = "snforge_scarb_plugin"
-version = "0.52.0"
+version = "0.54.0"
 source = "registry+https://scarbs.xyz/"
-checksum = "sha256:c33027f8ac078e4bbfc0bd1b7e7849ffe2e6bdd6c24649d0b5ede145095b4743"
+checksum = "sha256:78b76cec49430930468c35b91105be521b2e571b88a3407f91f0c00b3f9d3b44"
 
 [[package]]
 name = "snforge_std"
-version = "0.52.0"
+version = "0.54.0"
 source = "registry+https://scarbs.xyz/"
-checksum = "sha256:db8d395191bb2b526c44cee65b10a4044dc59e23a1c1d8009a73c7035760ed6b"
+checksum = "sha256:5eae9444e31efdb72431bda696c2cf4ea98ee1475796ba8a3eb50c7279838d7f"
 dependencies = [
  "snforge_scarb_plugin",
-]
-
-[[package]]
-name = "test"
-version = "0.1.2"
-dependencies = [
- "introspect",
- "introspect_macros",
 ]

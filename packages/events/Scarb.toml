@@ -11,10 +11,10 @@ starknet.workspace = true
 introspect_types.workspace = true
 
 [dev-dependencies]
-introspect_macros.workspace = true
 snforge_std.workspace = true
 assert_macros.workspace = true
 introspect_tests.workspace = true
+introspect_macros.workspace = true
 
 [tool]
 fmt.workspace = true

@@ -2,7 +2,7 @@ use introspect_types::utils::SpanDefault;
 use introspect_types::{Attribute, ColumnDef, ISerde, IdData, PrimaryDef, PrimaryTypeDef, TypeDef};
 use starknet::Event;
 use crate::utils::{DrainSpanTrait, ISerdeEnd, VerifyEventDeserializeTrait};
-
+use super::emit_event_impl;
 pub mod selectors {
     pub const CreateFieldGroup: felt252 = selector!("CreateFieldGroup");
     pub const CreateTable: felt252 = selector!("CreateTable");
@@ -1192,3 +1192,54 @@ impl DeletesFieldGroupsEvent of Event<DeletesFieldGroups> {
             .verify(ref keys, ref data)
     }
 }
+
+
+impl EmitCreateFieldGroup =
+    emit_event_impl::EmitEventImpl<CreateFieldGroup, selectors::CreateFieldGroup>;
+impl EmitCreateTable = emit_event_impl::EmitEventImpl<CreateTable, selectors::CreateTable>;
+impl EmitCreateTableWithColumns =
+    emit_event_impl::EmitEventImpl<CreateTableWithColumns, selectors::CreateTableWithColumns>;
+impl EmitCreateTableFromClassHash =
+    emit_event_impl::EmitEventImpl<CreateTableFromClassHash, selectors::CreateTableFromClassHash>;
+impl EmitRenameTable = emit_event_impl::EmitEventImpl<RenameTable, selectors::RenameTable>;
+impl EmitDropTable = emit_event_impl::EmitEventImpl<DropTable, selectors::DropTable>;
+impl EmitCreateIndex = emit_event_impl::EmitEventImpl<CreateIndex, selectors::CreateIndex>;
+impl EmitDropIndex = emit_event_impl::EmitEventImpl<DropIndex, selectors::DropIndex>;
+impl EmitRenamePrimary = emit_event_impl::EmitEventImpl<RenamePrimary, selectors::RenamePrimary>;
+impl EmitRetypePrimary = emit_event_impl::EmitEventImpl<RetypePrimary, selectors::RetypePrimary>;
+impl EmitAddColumn = emit_event_impl::EmitEventImpl<AddColumn, selectors::AddColumn>;
+impl EmitAddColumns = emit_event_impl::EmitEventImpl<AddColumns, selectors::AddColumns>;
+impl EmitRenameColumn = emit_event_impl::EmitEventImpl<RenameColumn, selectors::RenameColumn>;
+impl EmitRenameColumns = emit_event_impl::EmitEventImpl<RenameColumns, selectors::RenameColumns>;
+impl EmitRetypeColumn = emit_event_impl::EmitEventImpl<RetypeColumn, selectors::RetypeColumn>;
+impl EmitRetypeColumns = emit_event_impl::EmitEventImpl<RetypeColumns, selectors::RetypeColumns>;
+impl EmitDropColumn = emit_event_impl::EmitEventImpl<DropColumn, selectors::DropColumn>;
+impl EmitDropColumns = emit_event_impl::EmitEventImpl<DropColumns, selectors::DropColumns>;
+impl EmitInsertRecord = emit_event_impl::EmitEventImpl<InsertRecord, selectors::InsertRecord>;
+impl EmitInsertRecords = emit_event_impl::EmitEventImpl<InsertRecords, selectors::InsertRecords>;
+impl EmitInsertField = emit_event_impl::EmitEventImpl<InsertField, selectors::InsertField>;
+impl EmitInsertFields = emit_event_impl::EmitEventImpl<InsertFields, selectors::InsertFields>;
+impl EmitInsertsField = emit_event_impl::EmitEventImpl<InsertsField, selectors::InsertsField>;
+impl EmitInsertsFields = emit_event_impl::EmitEventImpl<InsertsFields, selectors::InsertsFields>;
+impl EmitInsertFieldGroup =
+    emit_event_impl::EmitEventImpl<InsertFieldGroup, selectors::InsertFieldGroup>;
+impl EmitInsertFieldGroups =
+    emit_event_impl::EmitEventImpl<InsertFieldGroups, selectors::InsertFieldGroups>;
+impl EmitInsertsFieldGroup =
+    emit_event_impl::EmitEventImpl<InsertsFieldGroup, selectors::InsertsFieldGroup>;
+impl EmitInsertsFieldGroups =
+    emit_event_impl::EmitEventImpl<InsertsFieldGroups, selectors::InsertsFieldGroups>;
+impl EmitDeleteRecord = emit_event_impl::EmitEventImpl<DeleteRecord, selectors::DeleteRecord>;
+impl EmitDeleteRecords = emit_event_impl::EmitEventImpl<DeleteRecords, selectors::DeleteRecords>;
+impl EmitDeleteField = emit_event_impl::EmitEventImpl<DeleteField, selectors::DeleteField>;
+impl EmitDeleteFields = emit_event_impl::EmitEventImpl<DeleteFields, selectors::DeleteFields>;
+impl EmitDeletesField = emit_event_impl::EmitEventImpl<DeletesField, selectors::DeletesField>;
+impl EmitDeletesFields = emit_event_impl::EmitEventImpl<DeletesFields, selectors::DeletesFields>;
+impl EmitDeleteFieldGroup =
+    emit_event_impl::EmitEventImpl<DeleteFieldGroup, selectors::DeleteFieldGroup>;
+impl EmitDeleteFieldGroups =
+    emit_event_impl::EmitEventImpl<DeleteFieldGroups, selectors::DeleteFieldGroups>;
+impl EmitDeletesFieldGroup =
+    emit_event_impl::EmitEventImpl<DeletesFieldGroup, selectors::DeletesFieldGroup>;
+impl EmitDeletesFieldGroups =
+    emit_event_impl::EmitEventImpl<DeletesFieldGroups, selectors::DeletesFieldGroups>;

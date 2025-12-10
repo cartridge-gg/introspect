@@ -16,7 +16,6 @@ introspect_events.workspace = true
 
 [dev-dependencies]
 
-
 [tool]
 fmt.workspace = true
 scarb.workspace = true

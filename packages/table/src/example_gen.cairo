@@ -21,8 +21,8 @@ pub struct Bar {
     pub something: ByteArray,
 }
 
-// #[derive(Table)]
-#[derive(Drop)]
+
+#[derive(Drop, Table)]
 pub struct Foo2 {
     #[key]
     pub key1: felt252,
