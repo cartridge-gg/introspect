@@ -225,7 +225,7 @@ pub trait RecordableEvent<R, impl T: Table> {
 
 pub trait KeyTrait<T, K, const SIZE: usize, const KEYS: [felt252; SIZE]> {}
 
-pub trait MemberTrait<R, M, const ID: felt252> {
+pub trait MemberTrait<impl T: Table, M, const ID: felt252> {
     fn serialize_member(self: @M, ref data: Array<felt252>);
     fn serialize_member_inline(
         self: @M,
@@ -236,6 +236,7 @@ pub trait MemberTrait<R, M, const ID: felt252> {
         Self::serialize_member(self, ref data);
         data.span()
     }
+    fn serialize_to_key_value(self: @M, ref keys: Array<felt252>, ref values: Array<felt252>);
 }
 
 impl MemberSSImpl<
