@@ -1,4 +1,3 @@
-use core::metaprogramming::TypeEqual;
 use introspect_types::PrimaryTrait;
 
 #[derive(Drop)]
@@ -14,6 +13,13 @@ pub struct AKeyedColumnGroup {
     #[key]
     pub key_2: ByteArray,
     pub name: ByteArray,
+}
+
+#[derive(Drop)]
+pub struct AnIdColumnGroup {
+    #[key]
+    pub id: felt252,
+    pub something: u8,
 }
 
 
@@ -46,25 +52,28 @@ impl AColumnGroupColumnGroupImpl of introspect_table::table::ColumnGroupTrait<AC
 }
 
 
-impl AColumnGroupTableDataImpl<
+pub impl AColumnGroupTableDataImpl<
     impl T: introspect_table::table::Table,
-> of introspect_table::table::TableDataTrait<AColumnGroup, T> {
+    impl name_Member: introspect_table::table::MemberTrait<
+        T, ByteArray, AColumnGroup_column_selectors::name,
+    >,
+    impl something_Member: introspect_table::table::MemberTrait<
+        T, u8, AColumnGroup_column_selectors::something,
+    >,
+> of introspect_table::table::TableData<AColumnGroup, T> {
     fn data(self: @AColumnGroup) -> Span<felt252> {
         let mut data: Array<felt252> = Default::default();
-        introspect_types::ISerde::iserialize(self.name, ref data);
-        introspect_types::ISerde::iserialize(self.something, ref data);
+        name_Member::serialize_member(self.name, ref data);
+        something_Member::serialize_member(self.something, ref data);
         data.span()
     }
 }
 
-impl AColumnGroupTableHasColumns<
-    impl T: introspect_table::table::Table,
-    +introspect_table::table::MemberTrait<
-        T::Record, ByteArray, AColumnGroup_column_selectors::name,
-    >,
-    +introspect_table::table::MemberTrait<T::Record, u8, AColumnGroup_column_selectors::something>,
-> of introspect_table::table::TableHasColumnsTrait<AColumnGroup, T>;
-
+// impl AColumnGroupTableHasColumns<
+//     impl T: introspect_table::table::Table,
+//     +introspect_table::table::MemberTrait<T, ByteArray, AColumnGroup_column_selectors::name>,
+//     +introspect_table::table::MemberTrait<T, u8, AColumnGroup_column_selectors::something>,
+// > of introspect_table::table::TableHasColumnsTrait<AColumnGroup, T>;
 
 mod AKeyedColumnGroup_column_selectors {
     pub const key_1: felt252 = selector!("key_1");
@@ -82,31 +91,60 @@ impl AKeyedColumnGroupColumnGroupImpl of introspect_table::table::ColumnGroupTra
     ];
 }
 
-impl AKeyedColumnGroupKeyImpl of introspect_table::table::KeyTrait<
-    AKeyedColumnGroup,
-    (u128, ByteArray),
-    2,
-    { [AKeyedColumnGroup_column_selectors::key_1, AKeyedColumnGroup_column_selectors::key_2] },
-> {}
-
 
 impl AKeyedColumnGroupKeySpanDataSpanImpl<
     impl T: introspect_table::table::Table,
-> of introspect_table::table::KeySpanDataSpanTrait<AKeyedColumnGroup> {
-    fn key_span_data_span(self: @AKeyedColumnGroup) -> Span<felt252> {
-        let mut data: Array<felt252> = Default::default();
-        introspect_types::ISerde::iserialize(self.key_1, ref data);
-        introspect_types::ISerde::iserialize(self.key_2, ref data);
-        data.span()
+    impl key_1_Member: introspect_table::table::MemberTrait<
+        T, u128, AKeyedColumnGroup_column_selectors::key_1,
+    >,
+    impl key_2_Member: introspect_table::table::MemberTrait<
+        T, ByteArray, AKeyedColumnGroup_column_selectors::key_2,
+    >,
+    impl name_Member: introspect_table::table::MemberTrait<
+        T, ByteArray, AKeyedColumnGroup_column_selectors::name,
+    >,
+    +introspect_table::table::TableId<(u128, ByteArray), T>,
+> of introspect_table::table::KeySpanDataSpanTrait<AKeyedColumnGroup, T> {
+    fn serialize_keys(self: @AKeyedColumnGroup, ref keys: Array<felt252>) {
+        key_1_Member::serialize_member(self.key_1, ref keys);
+        key_2_Member::serialize_member(self.key_2, ref keys);
+    }
+    fn serialize_values(self: @AKeyedColumnGroup, ref values: Array<felt252>) {
+        name_Member::serialize_member(self.name, ref values);
     }
 }
 
-impl AKeyedColumnGroupTableHasColumns<
+
+mod AnIdColumnGroup_column_selectors {
+    pub const something: felt252 = selector!("something");
+}
+
+impl AnIdColumnGroupColumnGroupImpl of introspect_table::table::ColumnGroupTrait<
+    AnIdColumnGroup, 1,
+> {
+    const GROUP_ID: felt252 = 14;
+    const COLUMN_IDS: [felt252; 1] = [AnIdColumnGroup_column_selectors::something,];
+}
+
+
+impl AnIdColumnGroupImpl<
     impl T: introspect_table::table::Table,
-    +introspect_table::table::MemberTrait<
-        T::Record, ByteArray, AKeyedColumnGroup_column_selectors::name,
+    impl something_Member: introspect_table::table::MemberTrait<
+        T, u8, AnIdColumnGroup_column_selectors::something,
     >,
-> of introspect_table::table::TableHasColumnsTrait<AKeyedColumnGroup, T>;
+    +introspect_table::table::TableId<felt252, T>,
+> of introspect_table::table::TableIdData<AnIdColumnGroup, T> {
+    fn record_tuple(self: @AnIdColumnGroup) -> (felt252, Span<felt252>) {
+        let mut data: Array<felt252> = Default::default();
+        something_Member::serialize_member(self.something, ref data);
+        (self.id.to_felt252(), data.span())
+    }
+}
+// impl AKeyedColumnGroupTableHasColumns<
+//     impl T: introspect_table::table::Table,
+//     +introspect_table::table::MemberTrait<T, ByteArray,
+//     AKeyedColumnGroup_column_selectors::name>,
+// > of introspect_table::table::TableHasColumnsTrait<AKeyedColumnGroup, T>;
 // impl AKeyedColumnGroupTableIdDataImpl<
 //     impl T: introspect_table::table::Table,
 //     +introspect_table::table::KeySpanToPrimary<T>,

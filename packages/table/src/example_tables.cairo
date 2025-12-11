@@ -1,36 +1,57 @@
-use introspect_types::ISerde;
-use crate::example_groups::AKeyedColumnGroup;
-
 #[derive(Drop)]
-struct Foo {
+pub struct Foo {
     #[key]
-    key_1: u128,
+    pub key_1: u128,
     #[key]
-    key_2: ByteArray,
-    name: ByteArray,
-    something: u8,
+    pub key_2: ByteArray,
+    pub name: ByteArray,
+    pub something: u8,
 }
 
 //// GENERATED CODE BELOW
 
-mod FooColumns {
+pub mod FooColumns {
     pub const key_1: felt252 = selector!("key_1");
     pub const key_2: felt252 = selector!("key_2");
     pub const name: felt252 = selector!("name");
     pub const something: felt252 = selector!("something");
 }
 
-impl FooKeyImpl of introspect_table::table::KeyTrait<
-    Foo, (u128, ByteArray), 2, { [FooColumns::key_1, FooColumns::key_2] },
-> {}
+// impl FooKeyImpl of introspect_table::table::KeyTrait<
+//     Foo, (u128, ByteArray), 2, { [FooColumns::key_1, FooColumns::key_2] },
+// > {}
 
-impl Foo_name_MemberImpl of introspect_table::table::MemberTrait<
-    Foo, ByteArray, FooColumns::name,
-> {}
+impl Foo_key_1_MemberImpl of introspect_table::table::MemberTrait<
+    FooTable, u128, FooColumns::key_1,
+> {
+    fn serialize_member(self: @u128, ref data: Array<felt252>) {
+        introspect_types::ISerde::iserialize(self, ref data);
+    }
+}
 
-impl Foo_something_MemberImpl of introspect_table::table::MemberTrait<
-    Foo, u8, FooColumns::something,
-> {}
+impl Foo_key_2_MemberImpl of introspect_table::table::MemberTrait<
+    FooTable, ByteArray, FooColumns::key_2,
+> {
+    fn serialize_member(self: @ByteArray, ref data: Array<felt252>) {
+        introspect_types::ISerde::iserialize(self, ref data);
+    }
+}
+
+pub impl Foo_name_MemberImpl of introspect_table::table::MemberTrait<
+    FooTable, ByteArray, FooColumns::name,
+> {
+    fn serialize_member(self: @ByteArray, ref data: Array<felt252>) {
+        introspect_types::ISerde::iserialize(self, ref data);
+    }
+}
+
+pub impl Foo_something_MemberImpl of introspect_table::table::MemberTrait<
+    FooTable, u8, FooColumns::something,
+> {
+    fn serialize_member(self: @u8, ref data: Array<felt252>) {
+        introspect_types::ISerde::iserialize(self, ref data);
+    }
+}
 
 
 #[derive(Drop)]
@@ -62,16 +83,15 @@ impl FooTableMeta of introspect_table::table::TableMeta {
 }
 
 
-impl FooTablePrimary of introspect_table::table::TablePrimary<Foo> {
+impl FooTablePrimary of introspect_table::table::TablePrimary {
     type Primary = felt252;
-    type Key = (u128, ByteArray);
     fn primary_def() -> introspect_types::PrimaryDef {
         introspect_table::table::multi_key_primary_def()
     }
 }
 
 
-impl FooTableColumns of introspect_table::table::TableColumns<Foo> {
+impl FooTableColumns of introspect_table::table::TableColumns {
     type Column = FooColumn;
     type Field = FooField;
     fn columns() -> Span<introspect_types::ColumnDef> {
@@ -115,29 +135,6 @@ pub impl FooTable =
 pub impl IFooTable = introspect_table::table::ITableImpl<FooTable>;
 
 
-// pub trait KeysToTuple<K>
-
-impl FooTablePrimaryOrKey of introspect_table::table::TableIdTrait<(@u128, @ByteArray), FooTable> {
-    fn id(self: @(@u128, @ByteArray)) -> felt252 {
-        let (key_1, key_2) = self;
-        let mut data: Array<felt252> = Default::default();
-        introspect_types::ISerde::iserialize(*key_1, ref data);
-        introspect_types::ISerde::iserialize(*key_2, ref data);
-        core::poseidon::poseidon_hash_span(data.span())
-    }
-}
-
-impl FooTableSSPrimaryOrKey of introspect_table::table::TableIdTrait<(u128, ByteArray), FooTable> {
-    fn id(self: @(u128, ByteArray)) -> felt252 {
-        let (key_1, key_2) = self;
-        let mut data: Array<felt252> = Default::default();
-        introspect_types::ISerde::iserialize(key_1, ref data);
-        introspect_types::ISerde::iserialize(key_2, ref data);
-        core::poseidon::poseidon_hash_span(data.span())
-    }
-}
-
-
 impl FooColumnImpl of introspect_table::table::ColumnTrait<FooColumn> {
     fn column_id(self: @FooColumn) -> felt252 {
         match self {
@@ -147,94 +144,37 @@ impl FooColumnImpl of introspect_table::table::ColumnTrait<FooColumn> {
     }
 }
 
-impl FooFieldImpl of introspect_table::table::FieldTrait<FooField> {
-    fn column_id(self: @FooField) -> felt252 {
-        match self {
-            FooField::name(_) => FooColumns::name,
-            FooField::something(_) => FooColumns::something,
-        }
-    }
-
-    fn data(self: @FooField) -> Span<felt252> {
-        match self {
-            FooField::name(value) => value.iserialize_inline(),
-            FooField::something(value) => value.iserialize_inline(),
-        }
+pub impl FooKeySpanTrait of introspect_table::table::TableKeySpanTrait<
+    (u128, ByteArray), FooTable,
+> {
+    fn serialize_keys(self: @(u128, ByteArray), ref keys: Array<felt252>) {
+        let (key_1, key_2) = self;
+        Foo_key_1_MemberImpl::serialize_member(key_1, ref keys);
+        Foo_key_2_MemberImpl::serialize_member(key_2, ref keys);
     }
 }
 
-impl FooKeyedFieldsTrait<
-    K, +introspect_table::table::TableIdTrait<K, FooTable>,
-> of introspect_table::table::RecordsFieldTrait<FooFields<K>, FooTable> {
-    fn column_id(self: @FooFields<K>) -> felt252 {
-        match self {
-            FooFields::name(_) => FooColumns::name,
-            FooFields::something(_) => FooColumns::something,
-        }
+pub impl FooKeySpanDataSpan of introspect_table::table::KeySpanDataSpanTrait<Foo, FooTable> {
+    fn serialize_keys(self: @Foo, ref keys: Array<felt252>) {
+        Foo_key_1_MemberImpl::serialize_member(self.key_1, ref keys);
+        Foo_key_2_MemberImpl::serialize_member(self.key_2, ref keys);
     }
-
-    fn id_datas(self: @FooFields<K>) -> Span<introspect_types::IdData> {
-        match self {
-            FooFields::name(span) => introspect_table::table::fields_to_id_datas(span),
-            FooFields::something(span) => introspect_table::table::fields_to_id_datas(span),
-        }
+    fn serialize_values(self: @Foo, ref values: Array<felt252>) {
+        Foo_name_MemberImpl::serialize_member(self.name, ref values);
+        Foo_something_MemberImpl::serialize_member(self.something, ref values);
     }
 }
 
-impl FooTableIdDataImpl of introspect_table::table::TableIdDataTrait<Foo, FooTable> {
-    fn record_tuple(self: @Foo) -> (felt252, Span<felt252>) {
-        let mut data: Array<felt252> = Default::default();
-        self.key_1.iserialize(ref data);
-        self.key_2.iserialize(ref data);
-        let id = core::poseidon::poseidon_hash_span(data.span());
-        self.name.iserialize(ref data);
-        self.something.iserialize(ref data);
-        (id, data.span())
+
+pub impl FooKeySpanToPrimaryImpl of introspect_table::table::KeySpanToPrimary<FooTable> {
+    fn key_span_to_primary(self: Span<felt252>) -> felt252 {
+        core::poseidon::poseidon_hash_span(self)
     }
 }
-use crate::example_groups::AColumnGroup;
 
-#[test]
-fn test_fn() {
-    let key_1: (u128, ByteArray) = (12, "Key1");
-    let key_2: (u128, ByteArray) = (34, "Key2");
-    let ss_key_1: (@u128, @ByteArray) = (@12, @"Key1");
-    let ss_key_2: (@u128, @ByteArray) = (@34, @"Key2");
-    let foo = Foo { key_1: 12, key_2: "Key1", name: "example", something: 8 };
-    let foo_2 = Foo { key_1: 34, key_2: "Key2", name: "test", something: 16 };
-    let a_group = AColumnGroup { name: "group_name", something: 42 };
-    let a_keyed_group = AKeyedColumnGroup {
-        key_1: 56, key_2: "keyed_group_key", name: "keyed_group_name",
+pub mod _Foo_ {
+    pub use super::{
+        FooKeySpanToPrimaryImpl, FooKeySpanTrait, FooTable, Foo_key_1_MemberImpl,
+        Foo_key_2_MemberImpl, Foo_name_MemberImpl, Foo_something_MemberImpl,
     };
-    let a_byte_array: ByteArray = "example";
-    IFooTable::insert((12, @a_group));
-    IFooTable::insert(@foo);
-    // IFooTable::insert(@a_keyed_group);
-    IFooTable::inserts([(12, @a_group)].span());
-    IFooTable::inserts([(12, @a_group)]);
-    IFooTable::inserts([(@12, a_group)]);
-    IFooTable::inserts([foo, foo_2].span());
-    IFooTable::insert_field::<FooColumns::name>(@key_1, a_byte_array);
-    IFooTable::insert_field::<FooColumns::name>(@key_1, a_byte_array);
-    // IFooTable::insert_field::<FooFields::name>(@key_1, @"example");
-// IFooTable::insert_field(@key_1, FooField::name(@"example"));
-// IFooTable::insert_field(ss_key_1, FooField::name(@"example"));
-// IFooTable::insert_field(12, FooTable::Field::name(@"example"));
-// IFooTable::inserts_field(FooFields::name([(@key_1, @"example"), (@key_2, @"test")].span()));
-// IFooTable::inserts_field(FooFields::name([(ss_key_1, @"example"), (ss_key_2,
-// @"test")].span()));
-// IFooTable::inserts_field(FooFields::name([(12, @"example"), (34, @"test")].span()));
-// IFooTable::insert_fields(
-//     @key_1, [FooTable::Field::name(@"example"), FooTable::Field::something(@8)].span(),
-// );
-// IFooTable::delete_record(@key_1);
-// IFooTable::delete_record(ss_key_1);
-// IFooTable::delete_record(12);
-// IFooTable::delete_field(@key_1, FooColumn::name);
-// IFooTable::delete_fields(@key_1, [FooColumn::name, FooColumn::something]);
-// IFooTable::deletes_field([key_1, key_2].span(), FooColumn::name);
-// IFooTable::deletes_fields([ss_key_1, ss_key_2].span(), [FooColumn::name,
-// FooColumn::something]);
-// IFooTable::insert_field(12_u8, FooTable::Field::name(@"example"));
-// IFooTable::inserts_field(FooFields::name([(12_u8, @"example"), (34_u8, @"test")].span()));
 }
