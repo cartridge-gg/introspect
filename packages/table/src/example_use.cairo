@@ -1,8 +1,9 @@
-use crate::example_groups::{
-    AColumnGroup, AColumnGroupTableDataImpl, AKeyedColumnGroup, AnIdColumnGroup,
-};
+use crate::example_groups::{AColumnGroup, AKeyedColumnGroup, AnIdColumnGroup};
 use crate::example_tables::{Foo, FooColumn, FooColumns, FooTable, IFooTable};
-use crate::table::{RecordIdsImpl, TablePrimaryIdImpl};
+// use crate::table::{
+//     EmitRecordableRecordsImpl, RecordIdDatasImpl, RecordIdsImpl, TableKeyIdImpl,
+//     TablePrimaryIdImpl,
+// };
 
 fn test_fn() {
     let key_1: (u128, ByteArray) = (12, "Key1");
@@ -19,23 +20,23 @@ fn test_fn() {
     let a_id_group = AnIdColumnGroup { id: 78, something: 99 };
     let a_byte_array: ByteArray = "example";
 
-    // RecordsMemberImpl::<
-    //     { FooColumns::name }, [(felt252, ByteArray); 2], felt252, ByteArray, FooTable,
-    // >::record_id_member_datas(@[(12, a_byte_array.clone()), (34, a_byte_array.clone())]);
-
+    IFooTable::insert((@key_1.clone(), a_group));
+    IFooTable::insert(@a_keyed_group);
+    IFooTable::insert(a_keyed_group);
+    IFooTable::insert(@a_id_group);
+    IFooTable::insert(a_id_group);
+    IFooTable::insert(foo.clone());
     IFooTable::insert(@foo);
-    IFooTable::insert((@key_1, @a_group));
-    // IFooTable::insert(a_keyed_group);
-    // IFooTable::insert(@a_id_group);
     // IFooTable::inserts([(12, @a_group)].span());
     // IFooTable::inserts([(12, @a_group)]);
     // IFooTable::inserts([(@12, a_group)]);
-    // IFooTable::inserts([foo, foo_2].span());
-    // IFooTable::inserts(@[@a_id_group, @a_id_group].span());
+    IFooTable::inserts([@foo, @foo_2].span());
+    // IFooTable::inserts([a_id_group, a_id_group].span());
     IFooTable::insert_field::<{ selector!("name") }>(12, @a_byte_array);
     IFooTable::insert_field::<FooColumns::name>(@12, @a_byte_array);
     IFooTable::insert_field::<FooColumns::name>(12, @a_byte_array);
     IFooTable::insert_field::<FooColumns::name>(key_1.clone(), a_byte_array.clone());
+    IFooTable::insert_field::<FooColumns::name>(key_1.clone(), @a_byte_array);
     IFooTable::insert_field::<FooColumns::name>(@key_1, @a_byte_array);
     IFooTable::insert_field::<FooColumns::name>(@key_1, a_byte_array.clone());
     IFooTable::insert_field::<FooColumns::name>(@ss_key_1, a_byte_array.clone());

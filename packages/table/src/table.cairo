@@ -36,13 +36,25 @@ pub trait TableColumns {
     fn child_defs() -> Array<(felt252, TypeDef)>;
 }
 
-pub trait KeySpanToPrimary<T, impl T: Table> {
+
+pub trait KeySpanToPrimary<R, impl T: Table> {
     fn key_span_to_primary(self: Span<felt252>) -> T::Primary;
 }
 
-pub trait KeyToPrimary<T, impl T: Table> {
-    type Key;
-    fn key_to_primary(self: Self::Key) -> T::Primary;
+pub trait KeySpanToId<R, impl T: Table> {
+    fn key_span_to_id(self: Span<felt252>) -> felt252;
+}
+
+impl KeySpanToIdImpl<
+    K,
+    impl T: Table,
+    impl KP: KeySpanToPrimary<T::Record, T>,
+    +PrimaryTrait<T::Primary>,
+    +Drop<T::Primary>,
+> of KeySpanToId<K, T> {
+    fn key_span_to_id(self: Span<felt252>) -> felt252 {
+        KP::key_span_to_primary(self).to_felt252()
+    }
 }
 
 pub trait RecordId<K, impl T: Table> {
@@ -68,6 +80,40 @@ pub trait RecordIdDatas<RS, impl T: Table> {
     fn records_id_data(self: @RS) -> Span<IdData>;
 }
 
+
+pub trait SerialisedKey<R, K, impl T: Table> {
+    fn serialize_key(self: @K, ref data: Array<felt252>);
+}
+
+pub trait RecordKey<R, K, impl T: Table> {
+    type Key;
+    fn record_key(self: @R) -> K;
+}
+pub trait SerialisedRecordKey<R, impl T: Table> {
+    fn serialize_record_key(self: @R, ref data: Array<felt252>);
+}
+
+impl SerialisedRecordKeyImpl<
+    SR,
+    K,
+    impl T: Table,
+    impl RK: RecordKey<T::Record, K, T>,
+    impl SK: SerialisedKey<T::Record, K, T>,
+    impl SS: Snapable<@SR, T::Record>,
+    +Drop<SR>,
+    +Drop<K>,
+> of SerialisedRecordKey<SR, T> {
+    fn serialize_record_key(self: @SR, ref data: Array<felt252>) {
+        let key = RK::record_key(SS::snapshot(self));
+        SK::serialize_key(@key, ref data);
+    }
+}
+
+pub trait RecordValuesSpanTrait<R, impl T: Table> {
+    fn serialize_values(self: @R, ref data: Array<felt252>);
+}
+
+
 pub impl TablePrimaryIdImpl<
     K, impl T: Table, +PrimaryTrait<T::Primary>, impl SS: Snapable<@K, T::Primary>,
 > of RecordId<K, T> {
@@ -84,17 +130,18 @@ pub impl RecordIdsImpl<
     }
 }
 
-impl RecordIdDatasImpl<
+pub impl RecordIdDatasImpl<
     RS,
     R,
     impl T: Table,
     impl TID: RecordIdData<R, T>,
     +IntoIterator<@RS>,
+    // +Snapable<IntoIterator::<@RS>::Iterator::Item, R>,
     +TypeEqual<IntoIterator::<@RS>::Iterator::Item, @R>,
     +Drop<IntoIterator::<@RS>::IntoIter>,
 > of RecordIdDatas<RS, T> {
     fn records_id_data(self: @RS) -> Span<IdData> {
-        self.into_iter().map(|r| TID::record_id_data(r)).collect::<Array<_>>().span()
+        self.into_iter().map(|r| TID::record_id_data(r.snapshot())).collect::<Array<_>>().span()
     }
 }
 
@@ -118,16 +165,6 @@ pub impl IdDataTupleImpl<
         (TID::record_id(key), TV::record_data(value))
     }
 }
-
-pub trait TableKeySpanTrait<R, K, impl T: Table> {
-    fn serialize_keys(self: @K, ref keys: Array<felt252>);
-}
-
-pub trait KeySpanDataSpanTrait<R, impl T: Table> {
-    fn serialize_keys(self: @R, ref keys: Array<felt252>);
-    fn serialize_values(self: @R, ref values: Array<felt252>);
-}
-
 
 pub trait ColumnId<C, impl T: Table> {
     const fn column_id(self: @C) -> felt252;
@@ -155,19 +192,16 @@ impl ColumnIdsImpl<
 
 
 pub impl KeySpanToPrimaryTableIdDataImpl<
-    R,
     impl T: Table,
-    impl S: KeySpanDataSpanTrait<R, T>,
-    impl KT: KeySpanToPrimary<T::Record, T>,
-    -KeyToPrimary<T::Record, T>,
-    +PrimaryTrait<T::Primary>,
-    +Drop<T::Primary>,
-> of RecordIdData<R, T> {
-    fn record_tuple(self: @R) -> (felt252, Span<felt252>) {
+    impl SK: SerialisedRecordKey<T::Record, T>,
+    impl KT: KeySpanToId<T::Record, T>,
+    impl RV: RecordValuesSpanTrait<T::Record, T>,
+> of RecordIdData<T::Record, T> {
+    fn record_tuple(self: @T::Record) -> (felt252, Span<felt252>) {
         let mut data: Array<felt252> = Default::default();
-        S::serialize_keys(self, ref data);
-        let id = KT::key_span_to_primary(data.span()).to_felt252();
-        S::serialize_values(self, ref data);
+        SK::serialize_record_key(self, ref data);
+        let id = KT::key_span_to_id(data.span());
+        RV::serialize_values(self, ref data);
         (id, data.span())
     }
 }
@@ -176,24 +210,20 @@ pub impl KeySpanToPrimaryTableIdDataImpl<
 pub impl TableKeyIdImpl<
     K,
     impl T: Table,
-    +TableKeySpanTrait<T::Record, K, T>,
-    +KeySpanToPrimary<T::Record, T>,
+    impl SK: SerialisedKey<T::Record, K, T>,
+    impl KP: KeySpanToId<T::Record, T>,
     +Drop<K>,
-    -KeyToPrimary<T::Record, T>,
-    +PrimaryTrait<T::Primary>,
-    +Drop<T::Primary>,
 > of RecordId<K, T> {
     fn record_id(self: @K) -> felt252 {
         let mut data: Array<felt252> = Default::default();
-        TableKeySpanTrait::<T::Record, K, T>::serialize_keys(self, ref data);
-        KeySpanToPrimary::<T::Record, T>::key_span_to_primary(data.span()).to_felt252()
+        SK::serialize_key(self, ref data);
+        KP::key_span_to_id(data.span())
     }
 }
 
-trait KeyedMember<KM, impl T: Table> {
-    fn keyed_member_id_data(self: KM) -> IdData;
-}
-
+// trait KeyedMember<KM, impl T: Table> {
+//     fn keyed_member_id_data(self: KM) -> IdData;
+// }
 
 // trait RecordsMember<R, KMS, impl T: Table> {
 //     fn record_id_member_datas(self: @KMS) -> Span<IdData>;
@@ -214,36 +244,80 @@ trait KeyedMember<KM, impl T: Table> {
 //     }
 // }
 
-pub trait ColumnGroupTrait<C, const SIZE: usize> {
+// pub trait ColumnGroupTrait<C, const SIZE: usize> {
+//     const GROUP_ID: felt252;
+//     const COLUMN_IDS: [felt252; SIZE];
+// }
+
+// impl ColumnGroupSSImpl<
+//     C, const SIZE: usize, +ColumnGroupTrait<C, SIZE>,
+// > of ColumnGroupTrait<@C, SIZE> {
+//     const GROUP_ID: felt252 = ColumnGroupTrait::<C>::GROUP_ID;
+//     const COLUMN_IDS: [felt252; SIZE] = ColumnGroupTrait::<C>::COLUMN_IDS;
+// }
+
+// impl ColumnGroupTuple<
+//     K, V, impl T: Table, const SIZE: usize, +ColumnGroupTrait<V, SIZE>, +RecordId<K, T>, -
+// > of ColumnGroupTrait<(K, V), SIZE> {
+//     const GROUP_ID: felt252 = ColumnGroupTrait::<V>::GROUP_ID;
+//     const COLUMN_IDS: [felt252; SIZE] = ColumnGroupTrait::<V>::COLUMN_IDS;
+// }
+
+pub trait FieldOnlyColumnGroup<C, const SIZE: usize, impl T: Table> {
     const GROUP_ID: felt252;
     const COLUMN_IDS: [felt252; SIZE];
+    fn group_data(self: @C) -> Span<felt252>;
 }
 
-impl ColumnGroupSSImpl<
-    C, const SIZE: usize, +ColumnGroupTrait<C, SIZE>,
-> of ColumnGroupTrait<@C, SIZE> {
-    const GROUP_ID: felt252 = ColumnGroupTrait::<C>::GROUP_ID;
-    const COLUMN_IDS: [felt252; SIZE] = ColumnGroupTrait::<C>::COLUMN_IDS;
+
+impl SSFieldOnlyColumnGroupImpl<
+    C, const SIZE: usize, impl T: Table, impl FOCG: FieldOnlyColumnGroup<C, SIZE, T>,
+> of FieldOnlyColumnGroup<@C, SIZE, T> {
+    const GROUP_ID: felt252 = FOCG::GROUP_ID;
+    const COLUMN_IDS: [felt252; SIZE] = FOCG::COLUMN_IDS;
+    fn group_data(self: @@C) -> Span<felt252> {
+        FOCG::group_data(*self)
+    }
 }
 
-// pub trait KeyTrait<T, K, const SIZE: usize, const KEYS: [felt252; SIZE]> {}
+pub trait IdColumnGroup<C, const SIZE: usize, impl T: Table> {
+    const GROUP_ID: felt252;
+    const COLUMN_IDS: [felt252; SIZE];
+    fn group_tuple(self: @C) -> (felt252, Span<felt252>);
+}
+
+impl SSIdColumnGroupImpl<
+    C, const SIZE: usize, impl T: Table, impl ICG: IdColumnGroup<C, SIZE, T>,
+> of IdColumnGroup<@C, SIZE, T> {
+    const GROUP_ID: felt252 = ICG::GROUP_ID;
+    const COLUMN_IDS: [felt252; SIZE] = ICG::COLUMN_IDS;
+    fn group_tuple(self: @@C) -> (felt252, Span<felt252>) {
+        ICG::group_tuple(*self)
+    }
+}
+
+pub impl FieldOnlyTupleColumnGroup<
+    K,
+    CG,
+    const SIZE: usize,
+    impl T: Table,
+    impl RID: RecordId<K, T>,
+    impl FOCG: FieldOnlyColumnGroup<CG, SIZE, T>,
+> of IdColumnGroup<(K, CG), SIZE> {
+    const GROUP_ID: felt252 = FOCG::GROUP_ID;
+    const COLUMN_IDS: [felt252; SIZE] = FOCG::COLUMN_IDS;
+    fn group_tuple(self: @(K, CG)) -> (felt252, Span<felt252>) {
+        let (id, scg): @(K, CG) = self;
+        (RID::record_id(id), FOCG::group_data(scg))
+    }
+}
+
 
 pub trait RecordTrait<R, impl T: Table> {}
 
 impl RecordImpl<impl T: Table> of RecordTrait<T::Record, T> {}
 impl RecordSSImpl<impl T: Table> of RecordTrait<@T::Record, T> {}
 
-
-pub trait RecordableEvent<R, impl T: Table> {
-    fn emit_recordable(self: @R);
-    fn emit_recordables<RS, +Spannable<RS, R>, +Drop<RS>>(records: RS);
-}
-
-
-// pub trait TableMember<impl T: Table, const ID: felt252> {
-//     type Type;
-//     fn serialize_member(self: @Self::Type, ref data: Array<felt252>);
-// }
 
 pub trait MemberTrait<R, impl T: Table, const ID: felt252> {
     type Type;
@@ -259,44 +333,6 @@ pub trait MemberTrait<R, impl T: Table, const ID: felt252> {
     }
 }
 
-pub trait TypedMember<impl T: Table, const ID: felt252, M> {
-    fn serialize_member(self: @M, ref data: Array<felt252>);
-}
-
-
-impl TypedMemberImpl<
-    impl T: Table, const ID: felt252, impl M: MemberTrait<T::Record, T, ID>,
-> of TypedMember<T, ID, M::Type> {
-    fn serialize_member(self: @M::Type, ref data: Array<felt252>) {
-        M::serialize_member(self, ref data);
-    }
-}
-
-// impl MemberTraitImpl<
-//     impl T: Table, const ID: felt252, M, +TypedMember<T, ID, M>, +ISerde<M>,
-// > of MemberTrait<T::Record, T, ID> {
-//     type Type = M;
-//     fn serialize_member(self: @M, ref data: Array<felt252>) {
-//         // TM::serialize_member(self, ref data);
-//         introspect_types::serde::ISerde::iserialize(self, ref data);
-//     }
-// }
-
-// impl TableMemberImpl<
-//     impl T: Table, const ID: felt252, M, impl TM: TableMember<T, ID, M>,
-// > of MemberTrait<T::Record, T, ID> {
-//     fn serialize_member(self: @M, ref data: Array<felt252>) {
-//         TM::serialize_member(self, ref data);
-//     }
-// }
-
-// impl TableMemberSSImpl<
-//     impl T: Table, const ID: felt252, M, impl TM: TableMember<T, ID, M>,
-// > of MemberTrait<T::Record, T, @M, ID> {
-//     fn serialize_member(self: @@M, ref data: Array<felt252>) {
-//         TM::serialize_member(*self, ref data);
-//     }
-// }
 pub mod iserde_table_member {
     use introspect_types::ISerde;
     pub impl Impl<
@@ -309,14 +345,6 @@ pub mod iserde_table_member {
     }
 }
 
-// impl MemberSSImpl<
-//     R, impl T: Table, M, const ID: felt252, impl SM: MemberTrait<R, T, M, ID>,
-
-// > of MemberTrait<R, T, @M, ID> {
-//     fn serialize_member(self: @@M, ref data: Array<felt252>) {
-//         SM::serialize_member(*self, ref data);
-//     }
-// }
 
 impl MemberTableDataImpl<
     const ID: felt252,
@@ -330,36 +358,59 @@ impl MemberTableDataImpl<
     }
 }
 
+pub trait RecordableEvent<R, impl T: Table> {
+    fn emit_recordable(self: @R);
+}
+
+pub trait RecordablesEvent<RS, impl T: Table> {
+    fn emit_recordables(records: RS);
+}
+
+
 pub impl EmitRecordableRecordImpl<
-    R, impl T: Table, impl IDD: RecordIdData<R, T>, +Drop<R>, +RecordTrait<R>,
+    R, impl T: Table, impl RT: RecordTrait<R, T>, impl IDD: RecordIdData<R, T>, +Drop<R>,
 > of RecordableEvent<R, T> {
     fn emit_recordable(self: @R) {
         let id_data = IDD::record_id_data(self);
         InsertRecord { table: T::ID, record: id_data.id, data: id_data.data }.emit_event();
     }
-    fn emit_recordables<RS, +Spannable<RS, R>, +Drop<RS>>(records: RS) {
-        let records_data = RecordIdDatasImpl::<
-            Span<R>, R, T, IDD,
-        >::records_id_data(@records.to_span());
+}
+
+
+pub impl EmitRecordableRecordsImpl<
+    RS,
+    R,
+    impl T: Table,
+    impl IDD: RecordIdData<R, T>,
+    +RecordTrait<R>,
+    +Spannable<RS, R>,
+    +Drop<RS>,
+> of RecordablesEvent<RS, T> {
+    fn emit_recordables(records: RS) {
+        let records_data = RecordIdDatasImpl::records_id_data(@records.to_span());
         InsertRecords { table: T::ID, records_data }.emit_event();
     }
 }
 
-
 pub impl ColumnGroupRecordable<
+    R, const SIZE: usize, impl T: Table, impl CG: IdColumnGroup<R, SIZE, T>, +Drop<R>,
+> of RecordableEvent<R, T> {
+    fn emit_recordable(self: @R) {
+        let (record, data) = CG::group_tuple(self);
+        InsertFieldGroup { table: T::ID, record, group: CG::GROUP_ID, data }.emit_event();
+    }
+}
+
+pub impl ColumnGroupRecordables<
+    RS,
     R,
     const SIZE: usize,
     impl T: Table,
-    impl G: ColumnGroupTrait<R, SIZE>,
-    impl IDD: RecordIdData<R, T>,
-    impl SS: Snapable<@R, R>,
+    impl G: IdColumnGroup<R, SIZE>,
+    +Spannable<RS, R>,
     +Drop<R>,
-> of RecordableEvent<R, T> {
-    fn emit_recordable(self: @R) {
-        let (record, data) = IDD::record_tuple(SS::snapshot(self));
-        InsertFieldGroup { table: T::ID, record, group: G::GROUP_ID, data }.emit_event();
-    }
-    fn emit_recordables<RS, +Spannable<RS, R>, +Drop<RS>>(records: RS) {
+> of RecordablesEvent<R, T> {
+    fn emit_recordables(records: RS) {
         let records_data = RecordIdDatasImpl::<
             Span<R>, R, T, IDD,
         >::records_id_data(@records.to_span());
@@ -367,10 +418,32 @@ pub impl ColumnGroupRecordable<
     }
 }
 
+
+// pub impl ColumnGroupFORecordable<
+//     K,
+//     G,
+//     const SIZE: usize,
+//     impl T: Table,
+//     impl CG: FieldOnlyColumnGroup<G, SIZE, T>,
+//     impl RID: RecordId<K, T>,
+//     +Drop<K>,
+//     +Drop<G>,
+// > of RecordableEvent<(K, G), T> {
+//     fn emit_recordable(self: @(K, G)) {
+//         let (key, group) = self;
+//         InsertFieldGroup {
+//             table: T::ID,
+//             record: RID::record_id(key),
+//             group: CG::GROUP_ID,
+//             data: CG::group_data(group),
+//         }
+//             .emit_event();
+//     }
+// }
+
 // pub impl ColumnGroupRecordableTupleImpl<
 //     KV,
 //     K,
-//     V,
 //     const SIZE: usize,
 //     impl T: Table,
 //     impl G: ColumnGroupTrait<V, SIZE>,
@@ -406,8 +479,8 @@ pub trait ITable {
     type Column;
     const ID: felt252;
     fn register_table();
-    fn insert<R, +RecordableEvent<R, Self::T>, +Snapable<@R, R>, +Drop<R>>(record: R);
-    fn inserts<RS, R, +Spannable<RS, R>, +RecordableEvent<R, Self::T>, +Drop<RS>>(records: RS);
+    fn insert<R, +RecordableEvent<R, Self::T>, +Drop<R>>(record: R);
+    fn inserts<RS, +RecordablesEvent<RS, Self::T>, +Drop<RS>>(records: RS);
     fn insert_field<
         const ID: felt252,
         K,
@@ -426,9 +499,11 @@ pub trait ITable {
         KMS,
         K,
         F,
+        KF,
         +RecordId<K, Self::T>,
         impl M: MemberTrait<Self::T::Record, Self::T, ID>,
-        +Spannable<KMS, (K, F)>,
+        +Spannable<KMS, KF>,
+        +Snapable<@KF, (K, F)>,
         +Snapable<@F, M::Type>,
         +Drop<KMS>,
     >(
@@ -491,10 +566,10 @@ pub impl ITableImpl<impl T: Table, +ColumnId<T::Column>, +Drop<T::Column>> of IT
         }
             .emit_event();
     }
-    fn insert<R, impl RE: RecordableEvent<R, T>, impl SS: Snapable<@R, R>, +Drop<R>>(record: R) {
-        RE::emit_recordable(SS::snapshot(@record));
+    fn insert<R, impl RE: RecordableEvent<R, T>, +Drop<R>>(record: R) {
+        RE::emit_recordable(@record);
     }
-    fn inserts<RS, R, +Spannable<RS, R>, impl RE: RecordableEvent<R, T>, +Drop<RS>>(records: RS) {
+    fn inserts<RS, impl RE: RecordablesEvent<RS, T>, +Drop<RS>>(records: RS) {
         RE::emit_recordables(records);
     }
     fn insert_field<

@@ -1,6 +1,6 @@
 use crate::Snapable;
 
-#[derive(Drop)]
+#[derive(Drop, Clone)]
 pub struct Foo {
     #[key]
     pub key_1: u128,
@@ -126,38 +126,47 @@ impl FooColumnImpl<
 }
 
 
-impl FooKeySpanTrait<
-    KS,
-    K1,
-    K2,
-    +Snapable<@KS, (K1, K2)>,
-    +Snapable<@K1, u128>,
-    +Snapable<@K2, ByteArray>,
-    +Drop<K1>,
-    +Drop<K2>,
-> of introspect_table::table::TableKeySpanTrait<Foo, KS, FooTable> {
-    fn serialize_keys(self: @KS, ref keys: Array<felt252>) {
+impl FooRecordKey of introspect_table::table::RecordKey<Foo, (@u128, @ByteArray), FooTable> {
+    type Key = (u128, ByteArray);
+    fn record_key(self: @Foo) -> (@u128, @ByteArray) {
+        (self.key_1, self.key_2)
+    }
+}
+
+impl FooSerialisedKey<
+    KS, K0, K1, +Snapable<@KS, (K0, K1)>, +Snapable<@K0, u128>, +Snapable<@K1, ByteArray>,
+> of introspect_table::table::SerialisedKey<FooTable::Record, KS, FooTable> {
+    fn serialize_key(self: @KS, ref data: Array<felt252>) {
         let (key_1, key_2) = self.snapshot();
-        Foo_key_1_MemberImpl::serialize_member(key_1.snapshot(), ref keys);
-        Foo_key_2_MemberImpl::serialize_member(key_2.snapshot(), ref keys);
+        Foo_key_1_MemberImpl::serialize_member(key_1.snapshot(), ref data);
+        Foo_key_2_MemberImpl::serialize_member(key_2.snapshot(), ref data);
     }
 }
-
-
-impl FooKeySpanDataSpan of introspect_table::table::KeySpanDataSpanTrait<Foo, FooTable> {
-    fn serialize_keys(self: @Foo, ref keys: Array<felt252>) {
-        Foo_key_1_MemberImpl::serialize_member(self.key_1, ref keys);
-        Foo_key_2_MemberImpl::serialize_member(self.key_2, ref keys);
-    }
-    fn serialize_values(self: @Foo, ref values: Array<felt252>) {
-        Foo_name_MemberImpl::serialize_member(self.name, ref values);
-        Foo_something_MemberImpl::serialize_member(self.something, ref values);
-    }
+fn test_fn() {
+    let key_1: (u128, ByteArray) = (12, "Key1");
+    let mut data: Array<felt252> = Default::default();
+    FooSerialisedKey::serialize_key(@key_1, ref data);
 }
+// impl FooKeySpanTrait<
+//     KS,
+//     K1,
+//     K2,
+//     +Snapable<@KS, (K1, K2)>,
+//     +Snapable<@K1, u128>,
+//     +Snapable<@K2, ByteArray>,
+//     +Drop<K1>,
+//     +Drop<K2>,
+// > of introspect_table::table::TableKeySpanTrait<Foo, KS, FooTable> {
+//     fn serialize_keys(self: @KS, ref keys: Array<felt252>) {
+//         let (key_1, key_2) = self.snapshot();
+//         Foo_key_1_MemberImpl::serialize_member(key_1.snapshot(), ref keys);
+//         Foo_key_2_MemberImpl::serialize_member(key_2.snapshot(), ref keys);
+//     }
+// }
 
-
-fn test_snapable() {
-    let byte_array: ByteArray = "example";
-    let mut keys: Array<felt252> = Default::default();
-    FooKeySpanTrait::serialize_keys(@(12_u128, byte_array), ref keys);
+impl FooKeySpanDataSpan of introspect_table::table::RecordValuesSpanTrait<Foo, FooTable> {
+    fn serialize_values(self: @Foo, ref data: Array<felt252>) {
+        Foo_name_MemberImpl::serialize_member(self.name, ref data);
+        Foo_something_MemberImpl::serialize_member(self.something, ref data);
+    }
 }

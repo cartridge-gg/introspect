@@ -58,6 +58,9 @@ impl SSSpannableSpan<T> of Spannable<@Span<T>, T> {
         *self
     }
 }
+// trait SpanSnappable<T> {
+//     fn span_snap(self: Span<T>) -> @Span<T>;
+// }
 // impl AFixedArrayToSpan<
 //     T, const N: usize, impl TS: ToSpanTrait<[T; N], T>,
 // > of Spannable<@[T; N], T> {
