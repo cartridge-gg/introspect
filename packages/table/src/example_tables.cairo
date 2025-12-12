@@ -102,42 +102,23 @@ pub impl FooTable =
 
 pub impl IFooTable = introspect_table::table::ITableImpl<FooTable>;
 
-impl Foo_key_1_MemberImpl of introspect_table::table::MemberTrait<
-    Foo, FooTable, u128, FooColumns::key_1,
-> {
-    fn serialize_member(self: @u128, ref data: Array<felt252>) {
-        introspect_types::ISerde::iserialize(self, ref data);
-    }
-}
+impl Foo_key_1_MemberImpl =
+    introspect_table::table::iserde_table_member::Impl<FooTable, FooColumns::key_1, u128>;
 
-impl Foo_key_2_MemberImpl of introspect_table::table::MemberTrait<
-    Foo, FooTable, ByteArray, FooColumns::key_2,
-> {
-    fn serialize_member(self: @ByteArray, ref data: Array<felt252>) {
-        introspect_types::ISerde::iserialize(self, ref data);
-    }
-}
+impl Foo_key_2_MemberImpl =
+    introspect_table::table::iserde_table_member::Impl<FooTable, FooColumns::key_2, ByteArray>;
 
-pub impl Foo_name_MemberImpl of introspect_table::table::MemberTrait<
-    Foo, FooTable, ByteArray, FooColumns::name,
-> {
-    fn serialize_member(self: @ByteArray, ref data: Array<felt252>) {
-        introspect_types::ISerde::iserialize(self, ref data);
-    }
-}
+pub impl Foo_name_MemberImpl =
+    introspect_table::table::iserde_table_member::Impl<FooTable, FooColumns::name, ByteArray>;
 
-pub impl Foo_something_MemberImpl of introspect_table::table::MemberTrait<
-    Foo, FooTable, u8, FooColumns::something,
-> {
-    fn serialize_member(self: @u8, ref data: Array<felt252>) {
-        introspect_types::ISerde::iserialize(self, ref data);
-    }
-}
+pub impl Foo_something_MemberImpl =
+    introspect_table::table::iserde_table_member::Impl<FooTable, FooColumns::something, u8>;
 
-
-impl FooColumnImpl of introspect_table::table::ColumnId<FooColumn, FooTable> {
-    fn column_id(self: @FooColumn) -> felt252 {
-        match self {
+impl FooColumnImpl<
+    C, impl SS: Snapable<@C, FooColumn>,
+> of introspect_table::table::ColumnId<C, FooTable> {
+    const fn column_id(self: @C) -> felt252 {
+        match SS::snapshot(self) {
             FooColumn::name => FooColumns::name,
             FooColumn::something => FooColumns::something,
         }
