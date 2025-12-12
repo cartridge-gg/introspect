@@ -55,10 +55,10 @@ impl AColumnGroupColumnGroupImpl of introspect_table::table::ColumnGroupTrait<AC
 pub impl AColumnGroupTableDataImpl<
     impl T: introspect_table::table::Table,
     impl name_Member: introspect_table::table::MemberTrait<
-        T, ByteArray, AColumnGroup_column_selectors::name,
+        T::Record, T, ByteArray, AColumnGroup_column_selectors::name,
     >,
     impl something_Member: introspect_table::table::MemberTrait<
-        T, u8, AColumnGroup_column_selectors::something,
+        T::Record, T, u8, AColumnGroup_column_selectors::something,
     >,
 > of introspect_table::table::TableData<AColumnGroup, T> {
     fn data(self: @AColumnGroup) -> Span<felt252> {
@@ -95,13 +95,13 @@ impl AKeyedColumnGroupColumnGroupImpl of introspect_table::table::ColumnGroupTra
 impl AKeyedColumnGroupKeySpanDataSpanImpl<
     impl T: introspect_table::table::Table,
     impl key_1_Member: introspect_table::table::MemberTrait<
-        T, u128, AKeyedColumnGroup_column_selectors::key_1,
+        T::Record, T, u128, AKeyedColumnGroup_column_selectors::key_1,
     >,
     impl key_2_Member: introspect_table::table::MemberTrait<
-        T, ByteArray, AKeyedColumnGroup_column_selectors::key_2,
+        T::Record, T, ByteArray, AKeyedColumnGroup_column_selectors::key_2,
     >,
     impl name_Member: introspect_table::table::MemberTrait<
-        T, ByteArray, AKeyedColumnGroup_column_selectors::name,
+        T::Record, T, ByteArray, AKeyedColumnGroup_column_selectors::name,
     >,
     +introspect_table::table::TableId<(u128, ByteArray), T>,
 > of introspect_table::table::KeySpanDataSpanTrait<AKeyedColumnGroup, T> {
@@ -130,7 +130,7 @@ impl AnIdColumnGroupColumnGroupImpl of introspect_table::table::ColumnGroupTrait
 impl AnIdColumnGroupImpl<
     impl T: introspect_table::table::Table,
     impl something_Member: introspect_table::table::MemberTrait<
-        T, u8, AnIdColumnGroup_column_selectors::something,
+        T::Record, T, u8, AnIdColumnGroup_column_selectors::something,
     >,
     +introspect_table::table::TableId<felt252, T>,
 > of introspect_table::table::TableIdData<AnIdColumnGroup, T> {
