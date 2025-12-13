@@ -76,10 +76,9 @@ pub trait RecordIdData<R, impl T: Table> {
     }
 }
 
-pub trait RecordIdDatas<RS, impl T: Table> {
-    fn records_id_data(self: @RS) -> Span<IdData>;
+pub trait MultiIdData<RS, R, impl T: Table> {
+    fn multi_id_data(self: RS) -> Span<IdData>;
 }
-
 
 pub trait SerialisedKey<R, K, impl T: Table> {
     fn serialize_key(self: @K, ref data: Array<felt252>);
@@ -131,17 +130,15 @@ pub impl RecordIdsImpl<
 }
 
 pub impl RecordIdDatasImpl<
-    RS,
-    R,
-    impl T: Table,
-    impl TID: RecordIdData<R, T>,
-    +IntoIterator<@RS>,
-    // +Snapable<IntoIterator::<@RS>::Iterator::Item, R>,
-    +TypeEqual<IntoIterator::<@RS>::Iterator::Item, @R>,
-    +Drop<IntoIterator::<@RS>::IntoIter>,
-> of RecordIdDatas<RS, T> {
-    fn records_id_data(self: @RS) -> Span<IdData> {
-        self.into_iter().map(|r| TID::record_id_data(r.snapshot())).collect::<Array<_>>().span()
+    RS, R, impl T: Table, impl TID: RecordIdData<R, T>, +Spannable<RS, R>,
+> of MultiIdData<RS, R, T> {
+    fn multi_id_data(self: RS) -> Span<IdData> {
+        self
+            .to_span()
+            .into_iter()
+            .map(|r| TID::record_id_data(r.snapshot()))
+            .collect::<Array<_>>()
+            .span()
     }
 }
 
@@ -313,11 +310,42 @@ pub impl FieldOnlyTupleColumnGroup<
 }
 
 
+impl MultiIdColumnGroup<
+    GS, G, impl T: Table, const SIZE: usize, impl CG: IdColumnGroup<G, SIZE, T>, +Spannable<GS, G>,
+> of MultiIdData<GS, G, T> {
+    fn multi_id_data(self: GS) -> Span<IdData> {
+        self.to_span().into_iter().map(|g| CG::group_tuple(g).into()).collect::<Array<_>>().span()
+    }
+}
+
 pub trait RecordTrait<R, impl T: Table> {}
 
 impl RecordImpl<impl T: Table> of RecordTrait<T::Record, T> {}
 impl RecordSSImpl<impl T: Table> of RecordTrait<@T::Record, T> {}
 
+
+trait RecordsField<const ID: felt252, KMS, impl T: Table, impl M: MemberTrait<T::Record, T, ID>> {
+    fn records_field_datas(self: KMS) -> Span<IdData>;
+}
+
+impl RecordsFieldImpl<
+    KFS,
+    KF,
+    const ID: felt252,
+    impl T: Table,
+    impl MT: MemberTrait<T::Record, T, ID>,
+    impl IM: RecordField<ID, KF, T>[Member: MT::Type],
+    +Spannable<KFS, KF>,
+> of RecordsField<ID, KFS, T, MT> {
+    fn records_field_datas(self: KFS) -> Span<IdData> {
+        self
+            .to_span()
+            .into_iter()
+            .map(|M| IM::serialize_id_field(M).into())
+            .collect::<Array<_>>()
+            .span()
+    }
+}
 
 pub trait MemberTrait<R, impl T: Table, const ID: felt252> {
     type Type;
@@ -330,6 +358,30 @@ pub trait MemberTrait<R, impl T: Table, const ID: felt252> {
         let mut data: Array<felt252> = Default::default();
         Self::serialize_member(self, ref data);
         data.span()
+    }
+}
+
+pub trait RecordField<const ID: felt252, KF, impl T: Table, impl M: MemberTrait<T::Record, T, ID>> {
+    type Id;
+    type Member;
+    fn serialize_id_field(self: @KF) -> (felt252, Span<felt252>);
+}
+
+impl RecordFieldImpl<
+    const ID: felt252,
+    KF,
+    F,
+    K,
+    impl T: Table,
+    impl M: MemberTrait<T::Record, T, ID>[Type: F],
+    impl RID: RecordId<K, T>,
+    +Snapable<@KF, (K, F)>,
+> of RecordField<ID, KF, T, M> {
+    type Id = K;
+    type Member = F;
+    fn serialize_id_field(self: @KF) -> (felt252, Span<felt252>) {
+        let (key, field) = Snapable::snapshot(self);
+        (RID::record_id(key), M::serialize_member_inline(field))
     }
 }
 
@@ -346,17 +398,17 @@ pub mod iserde_table_member {
 }
 
 
-impl MemberTableDataImpl<
-    const ID: felt252,
-    impl T: Table,
-    M,
-    impl MT: MemberTrait<T::Record, T, ID>,
-    impl S: Snapable<@M, MT::Type>,
-> of RecordData<M, T> {
-    fn record_data(self: @M) -> Span<felt252> {
-        MT::serialize_member_inline(S::snapshot(self))
-    }
-}
+// impl MemberTableDataImpl<
+//     const ID: felt252,
+//     impl T: Table,
+//     M,
+//     impl MT: MemberTrait<T::Record, T, ID>,
+//     impl S: Snapable<@M, MT::Type>,
+// > of RecordData<M, T> {
+//     fn record_data(self: @M) -> Span<felt252> {
+//         MT::serialize_member_inline(S::snapshot(self))
+//     }
+// }
 
 pub trait RecordableEvent<R, impl T: Table> {
     fn emit_recordable(self: @R);
@@ -387,7 +439,7 @@ pub impl EmitRecordableRecordsImpl<
     +Drop<RS>,
 > of RecordablesEvent<RS, T> {
     fn emit_recordables(records: RS) {
-        let records_data = RecordIdDatasImpl::records_id_data(@records.to_span());
+        let records_data = RecordIdDatasImpl::multi_id_data(records);
         InsertRecords { table: T::ID, records_data }.emit_event();
     }
 }
@@ -408,12 +460,10 @@ pub impl ColumnGroupRecordables<
     impl T: Table,
     impl G: IdColumnGroup<R, SIZE>,
     +Spannable<RS, R>,
-    +Drop<R>,
-> of RecordablesEvent<R, T> {
+    +Drop<RS>,
+> of RecordablesEvent<RS, T> {
     fn emit_recordables(records: RS) {
-        let records_data = RecordIdDatasImpl::<
-            Span<R>, R, T, IDD,
-        >::records_id_data(@records.to_span());
+        let records_data = MultiIdColumnGroup::multi_id_data(records);
         InsertsFieldGroup { table: T::ID, group: G::GROUP_ID, records_data }.emit_event();
     }
 }
@@ -619,7 +669,7 @@ pub impl ITableImpl<impl T: Table, +ColumnId<T::Column>, +Drop<T::Column>> of IT
     ) {
         let records_data = RecordIdDatasImpl::<
             Span<KF>, KF, T,
-        >::records_id_data(@id_fields.to_span());
+        >::multi_id_data(@id_fields.to_span());
         InsertsField { table: T::ID, column: ID, records_data }.emit_event();
     }
 

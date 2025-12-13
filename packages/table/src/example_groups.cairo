@@ -1,10 +1,10 @@
-#[derive(Drop)]
+#[derive(Drop, Clone)]
 pub struct AColumnGroup {
     pub name: ByteArray,
     pub something: u8,
 }
 
-#[derive(Drop)]
+#[derive(Drop, Clone)]
 pub struct AKeyedColumnGroup {
     #[key]
     pub key_1: u128,
@@ -13,7 +13,7 @@ pub struct AKeyedColumnGroup {
     pub name: ByteArray,
 }
 
-#[derive(Drop)]
+#[derive(Drop, Clone)]
 pub struct AnIdColumnGroup {
     #[key]
     pub id: felt252,

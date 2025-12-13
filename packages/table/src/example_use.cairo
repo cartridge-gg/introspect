@@ -20,18 +20,18 @@ fn test_fn() {
     let a_id_group = AnIdColumnGroup { id: 78, something: 99 };
     let a_byte_array: ByteArray = "example";
 
-    IFooTable::insert((@key_1.clone(), a_group));
+    IFooTable::insert((@key_1.clone(), a_group.clone()));
     IFooTable::insert(@a_keyed_group);
-    IFooTable::insert(a_keyed_group);
+    IFooTable::insert(a_keyed_group.clone());
     IFooTable::insert(@a_id_group);
-    IFooTable::insert(a_id_group);
+    IFooTable::insert(a_id_group.clone());
     IFooTable::insert(foo.clone());
     IFooTable::insert(@foo);
     // IFooTable::inserts([(12, @a_group)].span());
     // IFooTable::inserts([(12, @a_group)]);
-    // IFooTable::inserts([(@12, a_group)]);
-    IFooTable::inserts([@foo, @foo_2].span());
-    // IFooTable::inserts([a_id_group, a_id_group].span());
+    IFooTable::inserts([(@12, a_group)]);
+    IFooTable::inserts(@[@foo, @foo_2].span());
+    IFooTable::inserts([a_id_group.clone(), a_id_group.clone()].span());
     IFooTable::insert_field::<{ selector!("name") }>(12, @a_byte_array);
     IFooTable::insert_field::<FooColumns::name>(@12, @a_byte_array);
     IFooTable::insert_field::<FooColumns::name>(12, @a_byte_array);
