@@ -11,7 +11,7 @@ pub struct Character {
 
 //// GENERATED CODE BELOW
 
-impl CharacterTableMeta of introspect_table::table::TableMeta {
+impl CharacterTableMeta of introspect_table::TableMeta {
     const ID: felt252 = selector!("Character");
     fn name() -> ByteArray {
         "Character"
@@ -22,7 +22,7 @@ impl CharacterTableMeta of introspect_table::table::TableMeta {
 }
 
 
-impl CharacterTablePrimary of introspect_table::table::TablePrimary {
+impl CharacterTablePrimary of introspect_table::TablePrimary {
     type Primary = u128;
     fn primary_def() -> introspect_types::PrimaryDef {
         introspect_types::PrimaryDef {
@@ -32,7 +32,7 @@ impl CharacterTablePrimary of introspect_table::table::TablePrimary {
 }
 
 
-impl CharacterTableColumns of introspect_table::table::TableColumns {
+impl CharacterTableColumns of introspect_table::TableColumns {
     type Column = CharacterColumn;
     fn columns() -> Span<introspect_types::ColumnDef> {
         [
@@ -78,29 +78,25 @@ pub mod CharacterColumns {
 }
 
 pub impl CharacterTable =
-    introspect_table::table::TableImpl<
+    introspect_table::TableImpl<
         Character, CharacterTableMeta, CharacterTablePrimary, CharacterTableColumns,
     >;
 
-pub impl ICharacterTable = introspect_table::table::ITableImpl<CharacterTable>;
+pub impl ICharacterTable = introspect_table::ITableImpl<CharacterTable>;
 
 pub impl Character_name_MemberImpl =
-    introspect_table::table::iserde_table_member::Impl<
-        CharacterTable, CharacterColumns::name, ByteArray,
-    >;
+    introspect_table::iserde_table_member::Impl<CharacterTable, CharacterColumns::name, ByteArray>;
 
 pub impl Character_something_MemberImpl =
-    introspect_table::table::iserde_table_member::Impl<
-        CharacterTable, CharacterColumns::something, u8,
-    >;
+    introspect_table::iserde_table_member::Impl<CharacterTable, CharacterColumns::something, u8>;
 pub impl Character_player_MemberImpl =
-    introspect_table::table::iserde_table_member::Impl<
+    introspect_table::iserde_table_member::Impl<
         CharacterTable, CharacterColumns::player, ContractAddress,
     >;
 
 impl CharacterColumnImpl<
     C, impl SS: introspect_table::Snapable<@C, CharacterColumn>,
-> of introspect_table::table::ColumnId<C, CharacterTable> {
+> of introspect_table::ColumnId<C, CharacterTable> {
     const fn column_id(self: @C) -> felt252 {
         match SS::snapshot(self) {
             CharacterColumn::name => CharacterColumns::name,
@@ -111,13 +107,13 @@ impl CharacterColumnImpl<
 }
 
 
-impl CharacterRecordId of introspect_table::table::RecordId<Character, CharacterTable> {
+impl CharacterRecordId of introspect_table::RecordId<Character, CharacterTable> {
     fn record_id(self: @Character) -> felt252 {
         introspect_types::PrimaryTrait::to_felt252(self.cid)
     }
 }
 
-impl CharacterRecordValuesSpan of introspect_table::table::RecordValuesSpanTrait<
+impl CharacterRecordValuesSpan of introspect_table::RecordValuesSpanTrait<
     Character, CharacterTable,
 > {
     fn serialize_values(self: @Character, ref data: Array<felt252>) {

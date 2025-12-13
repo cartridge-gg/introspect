@@ -9,7 +9,7 @@ pub struct Player {
 
 //// GENERATED CODE BELOW
 
-impl PlayerTableMeta of introspect_table::table::TableMeta {
+impl PlayerTableMeta of introspect_table::TableMeta {
     const ID: felt252 = selector!("Player");
     fn name() -> ByteArray {
         "Player"
@@ -20,10 +20,10 @@ impl PlayerTableMeta of introspect_table::table::TableMeta {
 }
 
 
-impl PlayerTablePrimary = introspect_table::table::table_primary::Default;
+impl PlayerTablePrimary = introspect_table::table_primary::Default;
 
 
-impl PlayerTableColumns of introspect_table::table::TableColumns {
+impl PlayerTableColumns of introspect_table::TableColumns {
     type Column = PlayerColumn;
     fn columns() -> Span<introspect_types::ColumnDef> {
         [
@@ -69,25 +69,23 @@ pub mod PlayerColumns {
 }
 
 pub impl PlayerTable =
-    introspect_table::table::TableImpl<
-        Player, PlayerTableMeta, PlayerTablePrimary, PlayerTableColumns,
-    >;
+    introspect_table::TableImpl<Player, PlayerTableMeta, PlayerTablePrimary, PlayerTableColumns>;
 
-pub impl IPlayerTable = introspect_table::table::ITableImpl<PlayerTable>;
+pub impl IPlayerTable = introspect_table::ITableImpl<PlayerTable>;
 
 pub impl Player_name_MemberImpl =
-    introspect_table::table::iserde_table_member::Impl<PlayerTable, PlayerColumns::name, ByteArray>;
+    introspect_table::iserde_table_member::Impl<PlayerTable, PlayerColumns::name, ByteArray>;
 
 pub impl Player_something_MemberImpl =
-    introspect_table::table::iserde_table_member::Impl<PlayerTable, PlayerColumns::something, u8>;
+    introspect_table::iserde_table_member::Impl<PlayerTable, PlayerColumns::something, u8>;
 pub impl Player_address_MemberImpl =
-    introspect_table::table::iserde_table_member::Impl<
+    introspect_table::iserde_table_member::Impl<
         PlayerTable, PlayerColumns::address, ContractAddress,
     >;
 
 impl PlayerColumnImpl<
     C, impl SS: introspect_table::Snapable<@C, PlayerColumn>,
-> of introspect_table::table::ColumnId<C, PlayerTable> {
+> of introspect_table::ColumnId<C, PlayerTable> {
     const fn column_id(self: @C) -> felt252 {
         match SS::snapshot(self) {
             PlayerColumn::name => PlayerColumns::name,
@@ -97,13 +95,13 @@ impl PlayerColumnImpl<
     }
 }
 
-impl PlayerRecordId of introspect_table::table::RecordId<felt252, PlayerTable> {
+impl PlayerRecordId of introspect_table::RecordId<felt252, PlayerTable> {
     fn record_id(self: @felt252) -> felt252 {
         *self
     }
 }
 
-impl PlayerRecordValuesSpan of introspect_table::table::RecordValuesSpanTrait<Player, PlayerTable> {
+impl PlayerRecordValuesSpan of introspect_table::RecordValuesSpanTrait<Player, PlayerTable> {
     fn serialize_values(self: @Player, ref data: Array<felt252>) {
         Player_name_MemberImpl::serialize_member(self.name, ref data);
         Player_something_MemberImpl::serialize_member(self.something, ref data);

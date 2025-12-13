@@ -43,16 +43,16 @@ mod AColumnGroup_column_selectors {
 }
 
 pub impl AColumnGroupTableDataImpl<
-    impl T: introspect_table::table::Table,
-    impl name_Member: introspect_table::table::MemberTrait<
+    impl T: introspect_table::Table,
+    impl name_Member: introspect_table::MemberTrait<
         T::Record, T, AColumnGroup_column_selectors::name,
     >,
-    impl something_Member: introspect_table::table::MemberTrait<
+    impl something_Member: introspect_table::MemberTrait<
         T::Record, T, AColumnGroup_column_selectors::something,
     >,
     +core::metaprogramming::TypeEqual<name_Member::Type, ByteArray>,
     +core::metaprogramming::TypeEqual<something_Member::Type, u8>,
-> of introspect_table::table::FieldOnlyColumnGroup<AColumnGroup, 2, T> {
+> of introspect_table::FieldOnlyColumnGroup<AColumnGroup, 2, T> {
     const GROUP_ID: felt252 = 12;
     const COLUMN_IDS: [felt252; 2] = [
         AColumnGroup_column_selectors::name, AColumnGroup_column_selectors::something,
@@ -72,22 +72,22 @@ mod AKeyedColumnGroup_column_selectors {
 }
 
 impl AKeyedColumnGroupKeySpanDataSpanImpl<
-    impl T: introspect_table::table::Table,
-    impl key_1_Member: introspect_table::table::MemberTrait<
+    impl T: introspect_table::Table,
+    impl key_1_Member: introspect_table::MemberTrait<
         T::Record, T, AKeyedColumnGroup_column_selectors::key_1,
     >[Type: u128],
-    impl key_2_Member: introspect_table::table::MemberTrait<
+    impl key_2_Member: introspect_table::MemberTrait<
         T::Record, T, AKeyedColumnGroup_column_selectors::key_2,
     >[Type: ByteArray],
-    impl name_Member: introspect_table::table::MemberTrait<
+    impl name_Member: introspect_table::MemberTrait<
         T::Record, T, AKeyedColumnGroup_column_selectors::name,
     >[Type: ByteArray],
-    +introspect_table::table::RecordId<(u128, ByteArray), T>,
-    impl SK: introspect_table::table::SerialisedKey<T::Record, (@u128, @ByteArray), T>,
-    impl KI: introspect_table::table::KeySpanToId<T::Record, T>,
-    impl RK: introspect_table::table::RecordKey<T::Record, (@u128, @ByteArray), T>,
+    +introspect_table::RecordId<(u128, ByteArray), T>,
+    impl SK: introspect_table::SerialisedKey<T::Record, (@u128, @ByteArray), T>,
+    impl KI: introspect_table::KeySpanToId<T::Record, T>,
+    impl RK: introspect_table::RecordKey<T::Record, (@u128, @ByteArray), T>,
     +core::metaprogramming::TypeEqual<RK::Key, (u128, ByteArray)>,
-> of introspect_table::table::IdColumnGroup<AKeyedColumnGroup, 3, T> {
+> of introspect_table::IdColumnGroup<AKeyedColumnGroup, 3, T> {
     const GROUP_ID: felt252 = 13;
     const COLUMN_IDS: [felt252; 3] = [
         AKeyedColumnGroup_column_selectors::key_1, AKeyedColumnGroup_column_selectors::key_2,
@@ -107,12 +107,12 @@ mod AnIdColumnGroup_column_selectors {
 }
 
 impl AnIdColumnGroupImpl<
-    impl T: introspect_table::table::Table,
-    impl something_Member: introspect_table::table::MemberTrait<
+    impl T: introspect_table::Table,
+    impl something_Member: introspect_table::MemberTrait<
         T::Record, T, AnIdColumnGroup_column_selectors::something,
     >[Type: u8],
     +core::metaprogramming::TypeEqual<T::Primary, felt252>,
-> of introspect_table::table::IdColumnGroup<AnIdColumnGroup, 1, T> {
+> of introspect_table::IdColumnGroup<AnIdColumnGroup, 1, T> {
     const GROUP_ID: felt252 = 14;
     const COLUMN_IDS: [felt252; 1] = [AnIdColumnGroup_column_selectors::something,];
     fn group_tuple(self: @AnIdColumnGroup) -> (felt252, Span<felt252>) {

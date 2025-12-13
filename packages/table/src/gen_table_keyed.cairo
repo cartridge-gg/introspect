@@ -19,7 +19,7 @@ pub struct Foo {
 
 //// GENERATED CODE BELOW
 
-impl FooTableMeta of introspect_table::table::TableMeta {
+impl FooTableMeta of introspect_table::TableMeta {
     const ID: felt252 = selector!("Foo");
     fn name() -> ByteArray {
         "Foo"
@@ -30,9 +30,9 @@ impl FooTableMeta of introspect_table::table::TableMeta {
 }
 
 
-impl FooTablePrimary = introspect_table::table::table_primary::MultiKey;
+impl FooTablePrimary = introspect_table::table_primary::MultiKey;
 
-impl FooTableColumns of introspect_table::table::TableColumns {
+impl FooTableColumns of introspect_table::TableColumns {
     type Column = FooColumn;
     fn columns() -> Span<introspect_types::ColumnDef> {
         [
@@ -68,7 +68,7 @@ impl FooTableColumns of introspect_table::table::TableColumns {
     }
 }
 
-pub impl FooKeySpanToPrimary of introspect_table::table::KeySpanToPrimary<Foo, FooTable> {
+pub impl FooKeySpanToPrimary of introspect_table::KeySpanToPrimary<Foo, FooTable> {
     fn key_span_to_primary(self: Span<felt252>) -> felt252 {
         core::poseidon::poseidon_hash_span(self)
     }
@@ -90,25 +90,25 @@ pub mod FooColumns {
 }
 
 pub impl FooTable =
-    introspect_table::table::TableImpl<Foo, FooTableMeta, FooTablePrimary, FooTableColumns>;
+    introspect_table::TableImpl<Foo, FooTableMeta, FooTablePrimary, FooTableColumns>;
 
-pub impl IFooTable = introspect_table::table::ITableImpl<FooTable>;
+pub impl IFooTable = introspect_table::ITableImpl<FooTable>;
 
 impl Foo_key_1_MemberImpl =
-    introspect_table::table::iserde_table_member::Impl<FooTable, FooColumns::key_1, u128>;
+    introspect_table::iserde_table_member::Impl<FooTable, FooColumns::key_1, u128>;
 
 impl Foo_key_2_MemberImpl =
-    introspect_table::table::iserde_table_member::Impl<FooTable, FooColumns::key_2, ByteArray>;
+    introspect_table::iserde_table_member::Impl<FooTable, FooColumns::key_2, ByteArray>;
 
 pub impl Foo_name_MemberImpl =
-    introspect_table::table::iserde_table_member::Impl<FooTable, FooColumns::name, ByteArray>;
+    introspect_table::iserde_table_member::Impl<FooTable, FooColumns::name, ByteArray>;
 
 pub impl Foo_something_MemberImpl =
-    introspect_table::table::iserde_table_member::Impl<FooTable, FooColumns::something, u8>;
+    introspect_table::iserde_table_member::Impl<FooTable, FooColumns::something, u8>;
 
 impl FooColumnImpl<
     C, impl SS: introspect_table::Snapable<@C, FooColumn>,
-> of introspect_table::table::ColumnId<C, FooTable> {
+> of introspect_table::ColumnId<C, FooTable> {
     const fn column_id(self: @C) -> felt252 {
         match SS::snapshot(self) {
             FooColumn::name => FooColumns::name,
@@ -118,7 +118,7 @@ impl FooColumnImpl<
 }
 
 
-impl FooRecordKey of introspect_table::table::RecordKey<Foo, (@u128, @ByteArray), FooTable> {
+impl FooRecordKey of introspect_table::RecordKey<Foo, (@u128, @ByteArray), FooTable> {
     type Key = (u128, ByteArray);
     fn record_key(self: @Foo) -> (@u128, @ByteArray) {
         (self.key_1, self.key_2)
@@ -132,7 +132,7 @@ impl FooSerialisedKey<
     +introspect_table::Snapable<@KS, (K0, K1)>,
     +introspect_table::Snapable<@K0, u128>,
     +introspect_table::Snapable<@K1, ByteArray>,
-> of introspect_table::table::SerialisedKey<FooTable::Record, KS, FooTable> {
+> of introspect_table::SerialisedKey<FooTable::Record, KS, FooTable> {
     fn serialize_key(self: @KS, ref data: Array<felt252>) {
         let (key_1, key_2) = self.snapshot();
         Foo_key_1_MemberImpl::serialize_member(key_1, ref data);
@@ -140,7 +140,7 @@ impl FooSerialisedKey<
     }
 }
 
-impl FooRecordValuesSpan of introspect_table::table::RecordValuesSpanTrait<Foo, FooTable> {
+impl FooRecordValuesSpan of introspect_table::RecordValuesSpanTrait<Foo, FooTable> {
     fn serialize_values(self: @Foo, ref data: Array<felt252>) {
         Foo_name_MemberImpl::serialize_member(self.name, ref data);
         Foo_something_MemberImpl::serialize_member(self.something, ref data);

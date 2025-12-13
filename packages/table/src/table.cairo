@@ -162,21 +162,6 @@ impl TableIdDataSSImpl<R, impl T: Table, impl TID: RecordIdData<R, T>> of Record
     }
 }
 
-// pub impl IdDataTupleImpl<
-//     KV,
-//     K,
-//     V,
-//     impl T: Table,
-//     impl TID: RecordId<K, T>,
-//     impl TV: RecordData<V, T>,
-//     impl SS: Snapable<@KV, (K, V)>,
-// > of RecordIdData<KV, T> {
-//     fn record_tuple(self: @KV) -> (felt252, Span<felt252>) {
-//         let (key, value) = SS::snapshot(self);
-//         (TID::record_id(key), TV::record_data(value))
-//     }
-// }
-
 pub impl IdDataImpl<
     R, impl T: Table, impl TID: RecordId<R, T>, impl TV: RecordValuesSpanTrait<R, T>,
 > of RecordIdData<R, T> {
