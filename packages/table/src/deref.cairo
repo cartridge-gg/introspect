@@ -27,13 +27,6 @@ pub trait Spannable<C, T> {
 }
 
 
-// impl SPannableSS<T, E, impl SP: Spannable<@T, E>, impl SS:Snapable<@T, T> +Drop<T>> of
-// Spannable<T, E> {
-//     fn to_span(self: T) -> Span<E> {
-//         // SS::to_span(@self)
-//     }
-// }
-
 impl SpannableImpl<C, T, +ToSpanTrait<C, T>, +Drop<C>> of Spannable<C, T> {
     fn to_span(self: C) -> Span<T> {
         self.span()
