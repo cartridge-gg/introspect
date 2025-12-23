@@ -1,4 +1,4 @@
-use crate::attribute::{Attribute, attributes_to_string, parse_attributes};
+use crate::attribute::{Attribute, IAttribute, attributes_to_string, parse_attributes};
 use crate::derive::make_derives_attributes_line;
 use crate::params::parse_params;
 use crate::{IntrospectError, Result, Visibility, split_derives_attribute};
@@ -39,6 +39,10 @@ impl<'db> Member<'db> {
                 .get_text_without_all_comment_trivia(db),
         }
     }
+
+    pub fn iattributes(&self) -> Vec<IAttribute> {
+        vec![]
+    }
 }
 
 impl<'db> Struct<'db> {
@@ -61,6 +65,9 @@ impl<'db> Struct<'db> {
 
     pub fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         Self::new(ItemStruct::from_syntax_node(db, node), db)
+    }
+    pub fn iattributes(&self) -> Vec<IAttribute> {
+        vec![]
     }
 }
 

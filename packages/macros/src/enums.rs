@@ -1,4 +1,4 @@
-use crate::attribute::{Attribute, attributes_to_string, parse_attributes};
+use crate::attribute::{Attribute, IAttribute, attributes_to_string, parse_attributes};
 use crate::derive::make_derives_attributes_line;
 use crate::params::parse_params;
 use crate::utils::string_to_keccak_hex;
@@ -53,6 +53,9 @@ impl<'db> Variant<'db> {
             ty: parse_variant_type(variant, db),
         }
     }
+    pub fn iattributes(&self) -> Vec<IAttribute> {
+        vec![]
+    }
 }
 
 impl<'db> Enum<'db> {
@@ -79,6 +82,10 @@ impl<'db> Enum<'db> {
 
     pub fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
         Self::new(ItemEnum::from_syntax_node(db, node), db)
+    }
+
+    pub fn iattributes(&self) -> Vec<IAttribute> {
+        vec![]
     }
 }
 

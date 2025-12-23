@@ -2,6 +2,7 @@ use crate::gen_groups::{AColumnGroup, AKeyedColumnGroup, AnIdColumnGroup};
 use crate::gen_table_id::{Character, CharacterColumns, CharacterTable, ICharacterTable};
 use crate::gen_table_keyed::{Foo, FooColumns, FooTable, IFooTable};
 use crate::gen_table_no_id::{IPlayerTable, Player, PlayerColumns, PlayerTable};
+
 fn test_foo() {
     let key_1: (u128, ByteArray) = (12, "Key1");
     let key_2: (u128, ByteArray) = (34, "Key2");
@@ -25,7 +26,7 @@ fn test_foo() {
     IFooTable::insert(@a_id_group);
     IFooTable::insert(a_id_group.clone());
     IFooTable::inserts(@[@foo, @foo_2].span());
-    IFooTable::inserts([foo.clone(), foo_2.clone()].span());
+    IFooTable::inserts([foo.clone(), foo_2.clone()]);
     IFooTable::inserts([@(12, @a_group)].span());
     IFooTable::inserts([(12, @a_group)]);
     IFooTable::inserts([(@12, a_group.clone())]);

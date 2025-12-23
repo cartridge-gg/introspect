@@ -1,3 +1,4 @@
+use crate::attribute::{Attribute, IAttribute};
 use crate::items::{ItemTrait, make_attributes_string, merge_defs, nl_non_empty_list};
 use crate::{Member, Struct};
 use indent::indent_by;
@@ -5,13 +6,22 @@ use indent::indent_by;
 const SCHEMA_IMPL_TPL: &str = include_str!("../../templates/schema_impl.cairo");
 const COLUMN_TYPE_DEF_TPL: &str = include_str!("../../templates/column_def.cairo");
 
-pub fn to_column_def<'db>(member: &Member<'_>) -> String {
-    let attributes_str = make_attributes_string(&member.attributes);
+pub fn make_column_def(id: &str, name: &str, type_def: &str, attributes: &[IAttribute]) -> String {
+    let attributes_str = make_attributes_string(attributes);
     COLUMN_TYPE_DEF_TPL
-        .replace("{{id}}", &format!("'{}'", &member.name))
-        .replace("{{name}}", &member.name)
+        .replace("{{id}}", id)
+        .replace("{{name}}", name)
         .replace("{{attributes_str}}", &indent_by(8, attributes_str))
-        .replace("{{type_def}}", &member.ty)
+        .replace("{{type_def}}", type_def)
+}
+
+pub fn to_column_def<'db>(member: &Member<'_>) -> String {
+    make_column_def(
+        &format!("'{}'", &member.name),
+        &member.name,
+        &member.ty,
+        member.iattributes().as_slice(),
+    )
 }
 
 pub trait ToSchemaImpl {

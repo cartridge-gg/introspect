@@ -1,7 +1,12 @@
 [workspace]
 resolver = "2"
 
-members = ["crates/types", "crates/events", "packages/macros"]
+members = [
+    "crates/types",
+    "crates/events",
+    "packages/macros",
+    "packages/table_macro",
+]
 exclude = ["crates/type_library"]
 
 [workspace.package]
@@ -31,6 +36,8 @@ starknet-crypto = "0.8"
 cainome-cairo-serde = "0.4.0"
 introspect-types = { path = "crates/types" }
 introspect-events = { path = "crates/events" }
+introspect_macros = { path = "packages/macros" }
+introspect_table_macros = { path = "packages/table_macro" }
 primitive-types = { version = "0.14.0", features = ["serde"] }
 convert_case = "0.8.0"
 thiserror = "2.0.17"

@@ -1,5 +1,5 @@
 [package]
-name = "introspect_framework_macros"
+name = "introspect_table_macros"
 version = "0.1.0"
 edition = "2021"
 publish = false
@@ -16,3 +16,4 @@ salsa = "0.24.0"
 thiserror.workspace = true
 indent = "0.1.1"
 indoc = "2.0.7"
+introspect_macros.workspace = true

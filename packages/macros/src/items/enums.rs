@@ -9,7 +9,7 @@ const ENUM_TYPE_DEF_TPL: &str = include_str!("../../templates/enum_def.cairo");
 
 impl ToTypeDef for Variant<'_> {
     fn to_type_def(&self) -> String {
-        let attributes_str = make_attributes_string(&self.attributes);
+        let attributes_str = make_attributes_string(&self.iattributes());
         let ty_str = match &self.ty {
             Some(ty) => format!("introspect::Introspect::<{ty}>::type_def()"),
             None => "introspect::TypeDef::None".to_string(),
@@ -25,7 +25,7 @@ impl ToTypeDef for Variant<'_> {
 impl ToTypeDef for Enum<'_> {
     fn to_type_def(&self) -> String {
         let variants_str = stack_type_defs(&self.variants);
-        let attributes_str = make_attributes_string(&self.attributes);
+        let attributes_str = make_attributes_string(&self.iattributes());
         ENUM_TYPE_DEF_TPL
             .replace("{{name}}", &self.name)
             .replace("{{attributes_str}}", indent_by(8, attributes_str).as_str())

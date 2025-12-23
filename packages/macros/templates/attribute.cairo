@@ -1,4 +1,4 @@
 introspect::Attribute{
     id: {{id}},
-    data: [{{data}}].span(),
+    data: "{{data}}",
 }

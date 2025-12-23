@@ -251,7 +251,7 @@ impl ISerde for RefDef {
 impl ISerde for CustomDef {
     fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
         Some(CustomDef {
-            id: pop_primitive::<Felt>(data)?,
+            decoding: pop_primitive::<Felt>(data)?,
         })
     }
 }

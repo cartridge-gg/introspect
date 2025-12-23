@@ -1,4 +1,5 @@
 pub mod attribute;
+pub mod byte_array;
 pub mod derive;
 pub mod enums;
 pub mod error;

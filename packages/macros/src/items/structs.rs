@@ -9,7 +9,7 @@ const MEMBER_TYPE_DEF_TPL: &str = include_str!("../../templates/member_def.cairo
 
 impl ToTypeDef for Member<'_> {
     fn to_type_def(&self) -> String {
-        let attributes_str = make_attributes_string(&self.attributes);
+        let attributes_str = make_attributes_string(&self.iattributes());
         MEMBER_TYPE_DEF_TPL
             .replace("{{name}}", &self.name)
             .replace("{{attributes_str}}", indent_by(8, attributes_str).as_str())
@@ -19,7 +19,7 @@ impl ToTypeDef for Member<'_> {
 
 impl ToTypeDef for Struct<'_> {
     fn to_type_def(&self) -> String {
-        let attributes_str = make_attributes_string(&self.attributes);
+        let attributes_str = make_attributes_string(&self.iattributes());
         let members_str = stack_type_defs(&self.members);
         STRUCT_TYPE_DEF_TPL
             .replace("{{name}}", &self.name)

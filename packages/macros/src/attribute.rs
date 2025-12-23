@@ -5,10 +5,19 @@ use cairo_lang_syntax::node::ast::{
 };
 use salsa::Database;
 
+use crate::byte_array::parse_bytes_to_cairo_byte_array;
+
+const ATTRIBUTE_IMPL_TPL: &str = include_str!("../templates/attribute.cairo");
+
 pub struct Attribute<'db> {
     pub db: &'db dyn Database,
     pub name: String,
     pub args: Option<Vec<AttributeArg<'db>>>,
+}
+
+pub struct IAttribute {
+    pub name: String,
+    pub data: Vec<u8>,
 }
 
 pub fn parse_attributes<'db>(
@@ -71,5 +80,14 @@ pub fn attributes_to_string<'db>(attributes: &[Attribute<'db>], indent: usize) -
             .collect::<Vec<String>>()
             .join(line)
             + line
+    }
+}
+
+impl ToString for IAttribute {
+    fn to_string(&self) -> String {
+        let data = parse_bytes_to_cairo_byte_array(&self.data);
+        ATTRIBUTE_IMPL_TPL
+            .replace("{{id}}", &self.name)
+            .replace("{{data}}", &data)
     }
 }
