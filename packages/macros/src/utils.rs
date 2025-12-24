@@ -64,22 +64,27 @@ pub fn spanify(elements: Vec<String>) -> String {
     }
 }
 
-pub fn get_inner_type(type_name: &str) -> Option<String> {
-    if let Some(start) = type_name.find('<') {
-        if let Some(end) = type_name.rfind('>') {
-            if start < end {
-                return Some(type_name[start + 1..end].to_string());
-            }
-        }
-    }
-    None
+pub fn get_inner_type(type_name: &str) -> String {
+    let start = type_name.find('<').unwrap();
+    type_name[start + 1..type_name.len() - 1].to_string()
 }
 
-pub fn get_fixed_array_inner_type(type_name: &str) -> Option<String> {
+pub fn get_fixed_array_inner_type(type_name: &str) -> &str {
     type_name[1..type_name.len() - 1]
         .rsplitn(2, ';')
-        .next()
+        .last()
+        .unwrap()
+        .trim()
+}
+
+pub fn get_tuple_inner_types(type_name: &str) -> Vec<String> {
+    let inner = &type_name[1..type_name.len() - 1];
+    let types: Vec<String> = inner
+        .split(',')
         .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    types
 }
 
 pub fn is_of_base_types(type_name: &str) -> bool {
@@ -88,9 +93,13 @@ pub fn is_of_base_types(type_name: &str) -> bool {
             .iter()
             .any(|g| type_name.starts_with(g)))
     {
-        is_of_base_types(&get_inner_type(&type_name).unwrap())
+        is_of_base_types(&get_inner_type(&type_name))
     } else if type_name.starts_with("[") && type_name.ends_with("]") {
-        is_of_base_types(&get_fixed_array_inner_type(type_name).unwrap())
+        is_of_base_types(get_fixed_array_inner_type(type_name))
+    } else if type_name.starts_with("(") && type_name.ends_with(")") {
+        get_tuple_inner_types(type_name)
+            .iter()
+            .all(|e| is_of_base_types(e))
     } else {
         is_base_type(type_name)
     }

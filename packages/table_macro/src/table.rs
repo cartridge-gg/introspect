@@ -1,6 +1,7 @@
 use crate::utils::felt_to_hex_string;
 use indent::indent_by;
 use introspect_macros::attribute::{IAttribute, iattributes_to_span};
+use introspect_macros::child_defs::combined_type_child_defs;
 use introspect_macros::column::make_column_def;
 use introspect_macros::items::type_child_defs;
 use introspect_macros::utils::{spanify, string_to_keccak_felt};
@@ -71,17 +72,12 @@ impl Column {
     pub fn generate_column_def(&self) -> String {
         make_column_def(&self.id_hex(), &self.name, &self.c_type, &self.attributes)
     }
-
-    fn child_def(&self) -> String {
-        type_child_defs(&self.c_type)
-    }
 }
 
 pub trait Columns {
     fn generate_column_defs_span(&self) -> String;
-    fn generate_child_defs_span(&self) -> String {
-        spanify(self.iter().map(Column::child_def).collect::<Vec<_>>())
-    }
+    fn types(&self) -> Vec<String>;
+    fn generate_child_defs_span(&self) -> String {}
 }
 
 impl Columns for [Column] {
@@ -91,6 +87,14 @@ impl Columns for [Column] {
                 .map(Column::generate_column_def)
                 .collect::<Vec<_>>(),
         )
+    }
+
+    fn types(&self) -> Vec<String> {
+        self.iter().map(|c| c.c_type.clone()).collect()
+    }
+
+    fn generate_child_defs_span(&self) -> String {
+        combined_type_child_defs(self.types())
     }
 }
 

@@ -1,5 +1,7 @@
 pub mod attribute;
 pub mod byte_array;
+pub mod child_defs;
+pub mod column;
 pub mod derive;
 pub mod enums;
 pub mod error;
@@ -10,7 +12,6 @@ pub mod params;
 pub mod schema;
 pub mod serde;
 pub mod structs;
-pub mod column;
 pub mod utils;
 pub use derive::split_derives_attribute;
 pub use enums::{Enum, Variant};
