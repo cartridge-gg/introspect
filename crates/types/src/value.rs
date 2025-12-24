@@ -111,7 +111,7 @@ pub enum Nullable {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Custom {
-    pub id: Felt,
+    pub encoding: String,
     pub values: Vec<Felt>,
 }
 

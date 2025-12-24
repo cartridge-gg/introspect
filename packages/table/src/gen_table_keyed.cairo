@@ -36,30 +36,14 @@ impl FooTableColumns of introspect_table::TableColumns {
     type Column = FooColumn;
     fn columns() -> Span<introspect_types::ColumnDef> {
         [
-            introspect_types::ColumnDef {
-                id: FooColumns::key_1,
-                name: "key_1",
-                attributes: [].span(),
-                type_def: introspect_types::Introspect::<u128>::type_def(),
-            },
-            introspect_types::ColumnDef {
-                id: FooColumns::key_2,
-                name: "key_2",
-                attributes: [].span(),
-                type_def: introspect_types::Introspect::<ByteArray>::type_def(),
-            },
-            introspect_types::ColumnDef {
-                id: FooColumns::name,
-                name: "name",
-                attributes: [].span(),
-                type_def: introspect_types::Introspect::<ByteArray>::type_def(),
-            },
-            introspect_types::ColumnDef {
-                id: FooColumns::something,
-                name: "something",
-                attributes: [].span(),
-                type_def: introspect_types::Introspect::<u8>::type_def(),
-            },
+            introspect_types::ColumnDefTrait::new::<u128>(FooColumns::key_1, "key_1", [].span()),
+            introspect_types::ColumnDefTrait::new::<
+                ByteArray,
+            >(FooColumns::key_2, "key_2", [].span()),
+            introspect_types::ColumnDefTrait::new::<ByteArray>(FooColumns::name, "name", [].span()),
+            introspect_types::ColumnDefTrait::new::<
+                u8,
+            >(FooColumns::something, "something", [].span()),
         ]
             .span()
     }

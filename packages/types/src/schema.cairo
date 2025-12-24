@@ -1,6 +1,6 @@
 use core::poseidon;
 use poseidon::poseidon_hash_span;
-use crate::{Attribute, ISerde, PrimaryDef, TypeDef};
+use crate::{Attribute, ISerde, Introspect, PrimaryDef, TypeDef};
 
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct ColumnDef {
@@ -57,6 +57,15 @@ pub trait Schema<T> {
 //     data.span()
 // }
 // fn _field_data(self: @T, field: felt252, ref data: Array<felt252>);
+}
+
+#[generate_trait]
+pub impl ColumnDefImpl of ColumnDefTrait {
+    fn new<T, +Introspect<T>>(
+        id: felt252, name: ByteArray, attributes: Span<Attribute>,
+    ) -> ColumnDef {
+        ColumnDef { id, name, attributes, type_def: Introspect::<T>::type_def() }
+    }
 }
 
 

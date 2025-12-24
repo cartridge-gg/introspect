@@ -4,10 +4,9 @@ use crate::type_def::{
 use crate::utils::ideserialize_byte_array;
 use crate::value::{Enum, Nullable, Value};
 use crate::{
-    ArrayDef, CairoDeserialize, CairoOption, CairoResult, ColumnDef, Custom, CustomDef,
-    EncodedBytes, EnumDef, FeltIterator, Field, Member, NullableDef, OptionDef, ResultDef, Struct,
-    TupleDef, deserialize_byte_array, pop_bytes31, pop_primitive, pop_short_utf8, pop_u256,
-    pop_u512,
+    ArrayDef, CairoOption, CairoResult, ColumnDef, Custom, CustomDef, EncodedBytes, EnumDef,
+    FeltIterator, Field, ISerde, Member, NullableDef, OptionDef, ResultDef, Struct, TupleDef,
+    deserialize_byte_array, pop_bytes31, pop_primitive, pop_short_utf8, pop_u256, pop_u512,
 };
 use num_traits::Zero;
 use starknet_types_core::felt::Felt;
@@ -191,8 +190,8 @@ impl ToValue for CustomDef {
     type Value = Custom;
     fn to_value(&self, data: &mut FeltIterator) -> Option<Custom> {
         Some(Custom {
-            id: self.id.clone(),
-            values: Vec::<Felt>::c_deserialize(data)?,
+            encoding: self.encoding.clone(),
+            values: Vec::<Felt>::ideserialize(data)?,
         })
     }
 }

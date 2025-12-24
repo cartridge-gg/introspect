@@ -142,7 +142,7 @@ impl TypeName for TypeDef {
             ),
             TypeDef::Nullable(inner) => format!("Nullable<{}>", inner.type_def.type_name()),
             TypeDef::Ref(inner) => inner.id.to_hex_string(),
-            TypeDef::Custom(inner) => inner.id.to_hex_string(),
+            TypeDef::Custom(inner) => inner.encoding.clone(),
             _ => self.item_name().to_string(),
         }
     }
@@ -243,7 +243,7 @@ item_def_constructors!(NullableDef, Nullable);
 item_def_constructors!(Felt252DictDef, Felt252Dict);
 item_def_constructors!(StructDef, Struct, [name: String, attributes: Vec<Attribute>, members: Vec<MemberDef>]);
 item_def_constructors!(RefDef, Ref, [id: Felt]);
-item_def_constructors!(CustomDef, Custom, [decoding: String]);
+item_def_constructors!(CustomDef, Custom, [encoding: String]);
 item_def_constructors!(ByteArrayEDef, ByteArrayE, [mode: ByteArrayDeserialization, encoding: String]);
 item_def_constructors!(FixedArrayDef, FixedArray,  [type_def: TypeDef, size: u32], Box);
 item_def_constructors!(ResultDef, Result,  [ok: TypeDef, err: TypeDef], Box);

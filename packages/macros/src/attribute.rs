@@ -3,9 +3,11 @@ use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::{
     Attribute as AstAttribute, AttributeList, OptionArgListParenthesized,
 };
+use indent::indent_by;
 use salsa::Database;
 
 use crate::byte_array::parse_bytes_to_cairo_byte_array;
+use crate::utils::spanify;
 
 const ATTRIBUTE_IMPL_TPL: &str = include_str!("../templates/attribute.cairo");
 
@@ -73,13 +75,11 @@ pub fn attributes_to_string<'db>(attributes: &[Attribute<'db>], indent: usize) -
     if attributes.is_empty() {
         "".to_string()
     } else {
-        let line = &("\n".to_string() + "    ".repeat(indent).as_str());
-        attributes
+        indent_by(indent, attributes
             .iter()
             .map(ToString::to_string)
             .collect::<Vec<String>>()
-            .join(line)
-            + line
+            .join("\n"))
     }
 }
 
@@ -90,4 +90,8 @@ impl ToString for IAttribute {
             .replace("{{id}}", &self.name)
             .replace("{{data}}", &data)
     }
+}
+
+pub fn iattributes_to_span(attributes: &[IAttribute]) -> String{
+    spanify(attributes.iter().map(IAttribute::to_string).collect())
 }

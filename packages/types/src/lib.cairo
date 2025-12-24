@@ -11,7 +11,7 @@ pub use attribute::Attribute;
 pub use id_data::{IdData, IdDataTrait};
 pub use introspect::Introspect;
 pub use primary::{PrimaryDef, PrimaryTrait, PrimaryTypeDef};
-pub use schema::{ColumnDef, RecordPrimary, Schema};
+pub use schema::{ColumnDef, ColumnDefTrait, RecordPrimary, Schema};
 pub use serde::ISerde;
 pub use type_def::{
     EnumDef, FixedArrayDef, MemberDef, ResultDef, StructDef, TypeDef, TypeWithAttributes,

@@ -1,5 +1,4 @@
 pub mod attribute;
-pub mod deserialize;
 pub mod iserde;
 pub mod json;
 pub mod parser;
@@ -9,7 +8,6 @@ pub mod type_def;
 pub mod utils;
 pub mod value;
 pub use attribute::Attribute;
-pub use deserialize::CairoDeserialize;
 pub use iserde::{ISerde, ISerdeEnd, ISerdeItem};
 pub use parser::ToValue;
 pub use reference::{DerefDefTrait, GetRefTypeDef};

@@ -1,4 +1,4 @@
-use introspect_types::{CairoDeserialize, FeltIterator, TypeDef, ascii_str_to_limbs};
+use introspect_types::{FeltIterator, ISerde, TypeDef, ascii_str_to_limbs};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 
@@ -15,7 +15,7 @@ impl EventTrait for DeclareType {
 
     fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
         let id = keys.next()?;
-        let type_def = TypeDef::c_deserialize(data)?;
+        let type_def = TypeDef::ideserialize(data)?;
 
         DeclareType { id, type_def }.verify(keys, data)
     }

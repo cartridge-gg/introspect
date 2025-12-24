@@ -5,7 +5,8 @@ use crate::utils::{
 use crate::{
     ArrayDef, Attribute, ByteArrayDeserialization, ColumnDef, CustomDef, EnumDef, Felt252DictDef,
     FeltIterator, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef, OptionDef, PrimaryDef,
-    PrimaryTypeDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef, pop_primitive,
+    PrimaryTypeDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
+    deserialize_byte_array_string, pop_primitive,
 };
 use starknet_types_core::felt::Felt;
 
@@ -186,41 +187,31 @@ impl ISerde for (Felt, VariantDef) {
 
 impl ISerde for TupleDef {
     fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
-        Some(TupleDef {
-            elements: Vec::<TypeDef>::ideserialize(data)?,
-        })
+        Vec::<TypeDef>::ideserialize(data).map(TupleDef::new)
     }
 }
 
 impl ISerde for ArrayDef {
     fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
-        Some(ArrayDef {
-            type_def: TypeDef::ideserialize(data)?,
-        })
+        TypeDef::ideserialize(data).map(ArrayDef::new)
     }
 }
 
 impl ISerde for Felt252DictDef {
     fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
-        Some(Felt252DictDef {
-            type_def: TypeDef::ideserialize(data)?,
-        })
+        TypeDef::ideserialize(data).map(Felt252DictDef::new)
     }
 }
 
 impl ISerde for OptionDef {
     fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
-        Some(OptionDef {
-            type_def: TypeDef::ideserialize(data)?,
-        })
+        TypeDef::ideserialize(data).map(OptionDef::new)
     }
 }
 
 impl ISerde for NullableDef {
     fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
-        Some(NullableDef {
-            type_def: TypeDef::ideserialize(data)?,
-        })
+        TypeDef::ideserialize(data).map(NullableDef::new)
     }
 }
 
@@ -242,17 +233,13 @@ impl ISerde for ResultDef {
 
 impl ISerde for RefDef {
     fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
-        Some(RefDef {
-            id: pop_primitive::<Felt>(data)?,
-        })
+        pop_primitive::<Felt>(data).map(RefDef::new)
     }
 }
 
 impl ISerde for CustomDef {
     fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
-        Some(CustomDef {
-            decoding: pop_primitive::<Felt>(data)?,
-        })
+        deserialize_byte_array_string(data).map(CustomDef::new)
     }
 }
 

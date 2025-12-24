@@ -1,4 +1,4 @@
-use crate::attribute::{Attribute, IAttribute};
+use crate::attribute::{Attribute, IAttribute, iattributes_to_span};
 use crate::items::{ItemTrait, make_attributes_string, merge_defs, nl_non_empty_list};
 use crate::{Member, Struct};
 use indent::indent_by;
@@ -7,7 +7,7 @@ const SCHEMA_IMPL_TPL: &str = include_str!("../../templates/schema_impl.cairo");
 const COLUMN_TYPE_DEF_TPL: &str = include_str!("../../templates/column_def.cairo");
 
 pub fn make_column_def(id: &str, name: &str, type_def: &str, attributes: &[IAttribute]) -> String {
-    let attributes_str = make_attributes_string(attributes);
+    let attributes_str = iattributes_to_span(attributes);
     COLUMN_TYPE_DEF_TPL
         .replace("{{id}}", id)
         .replace("{{name}}", name)
@@ -20,7 +20,7 @@ pub fn to_column_def<'db>(member: &Member<'_>) -> String {
         &format!("'{}'", &member.name),
         &member.name,
         &member.ty,
-        member.iattributes().as_slice(),
+        &member.iattributes(),
     )
 }
 

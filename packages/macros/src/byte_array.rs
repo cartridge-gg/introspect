@@ -1,4 +1,4 @@
-pub fn parse_byte_to_cairo_byte(byte: u8) -> String {
+pub fn parse_byte_to_cairo_byte(byte: &u8) -> String {
     match byte {
         32 => " ".to_string(),
         33 => "!".to_string(),
