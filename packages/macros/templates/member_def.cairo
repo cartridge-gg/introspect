@@ -1,5 +1,1 @@
-introspect::types::MemberDef {
-    name: "{{name}}",
-    attributes: [{{attributes_str}}].span(),
-    type_def: introspect::Introspect::<{{member_type}}>::type_def(),
-}
+introspect::member_def::<{{member_type}}>("{{name}}", [{{attributes_str}}].span())

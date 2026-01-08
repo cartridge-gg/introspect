@@ -1,6 +1,6 @@
 use indent::indent_by;
 
-use crate::items::{ItemTrait, ToTypeDef, merge_defs, pad_nl};
+use crate::items::{IntrospectItemTrait, ToTypeDef};
 
 pub mod attribute;
 pub mod derive;
@@ -15,7 +15,7 @@ pub trait IntrospectImpl {
 
 impl<T> IntrospectImpl for T
 where
-    T: ToTypeDef + ItemTrait,
+    T: ToTypeDef + IntrospectItemTrait,
 {
     fn to_introspect_impl(&mut self) -> String {
         INTROSPECT_IMPL_TPL

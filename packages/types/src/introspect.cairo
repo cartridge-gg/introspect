@@ -18,6 +18,10 @@ pub trait Introspect<T> {
     }
 }
 
+pub fn child_defs<T, +Introspect<T>>() -> Array<(felt252, TypeDef)> {
+    Introspect::<T>::child_defs()
+}
+
 pub fn merge_defs(
     mut schemas_array: Array<Array<(felt252, TypeDef)>>,
 ) -> Array<(felt252, TypeDef)> {

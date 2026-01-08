@@ -1,16 +1,17 @@
 use crate::introspect::IntrospectImpl;
-use crate::items::ItemTrait;
-use crate::{Enum, IntrospectError, Result, Struct};
+use crate::items::IntrospectItemTrait;
+use crate::params::GenericParams;
+use crate::{AsCairo, Enum, IntrospectError, Result, Struct, TryFromAst};
 use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use salsa::Database;
 
-pub enum IntrospectItem<'db> {
-    Struct(Struct<'db>),
-    Enum(Enum<'db>),
+pub enum IntrospectItem {
+    Struct(Struct),
+    Enum(Enum),
 }
 
-impl<'db> IntrospectImpl for IntrospectItem<'db> {
+impl IntrospectImpl for IntrospectItem {
     fn to_introspect_impl(&mut self) -> String {
         match self {
             IntrospectItem::Struct(struct_item) => struct_item.to_introspect_impl(),
@@ -25,11 +26,11 @@ impl<'db> IntrospectImpl for IntrospectItem<'db> {
     }
 }
 
-impl<'db> ToString for IntrospectItem<'db> {
-    fn to_string(&self) -> String {
+impl AsCairo for IntrospectItem {
+    fn as_cairo(&self) -> String {
         match self {
-            IntrospectItem::Struct(struct_item) => struct_item.to_string(),
-            IntrospectItem::Enum(enum_item) => enum_item.to_string(),
+            IntrospectItem::Struct(struct_item) => struct_item.as_cairo(),
+            IntrospectItem::Enum(enum_item) => enum_item.as_cairo(),
         }
     }
 }
@@ -37,15 +38,19 @@ impl<'db> ToString for IntrospectItem<'db> {
 pub fn get_introspection_type<'db>(
     db: &'db dyn Database,
     file: SyntaxNode<'db>,
-) -> Result<IntrospectItem<'db>> {
+) -> Result<IntrospectItem> {
     for child in file.get_children(db)[0].get_children(db) {
         let kind = (&child).kind(db);
         match kind {
             SyntaxKind::ItemStruct => {
-                return Ok(IntrospectItem::Struct(Struct::from_syntax_node(db, *child)));
+                return Ok(IntrospectItem::Struct(Struct::try_from_syntax_node(
+                    db, *child,
+                )?));
             }
             SyntaxKind::ItemEnum => {
-                return Ok(IntrospectItem::Enum(Enum::from_syntax_node(db, *child)));
+                return Ok(IntrospectItem::Enum(Enum::try_from_syntax_node(
+                    db, *child,
+                )?));
             }
             _ => continue,
         }
@@ -53,7 +58,7 @@ pub fn get_introspection_type<'db>(
     Err(IntrospectError::NoItem())
 }
 
-impl<'db> ItemTrait for IntrospectItem<'db> {
+impl IntrospectItemTrait for IntrospectItem {
     fn kind(&self) -> &str {
         match self {
             IntrospectItem::Struct(s) => s.kind(),
@@ -66,7 +71,7 @@ impl<'db> ItemTrait for IntrospectItem<'db> {
             IntrospectItem::Enum(e) => e.name(),
         }
     }
-    fn generic_params(&self) -> &Option<Vec<String>> {
+    fn generic_params(&self) -> &GenericParams {
         match self {
             IntrospectItem::Struct(s) => s.generic_params(),
             IntrospectItem::Enum(e) => e.generic_params(),

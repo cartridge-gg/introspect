@@ -1,127 +1,79 @@
-use crate::attribute::{Attribute, IAttribute, attributes_to_string, parse_attributes};
-use crate::derive::make_derives_attributes_line;
-use crate::params::parse_params;
-use crate::utils::string_to_keccak_hex;
-use crate::{Visibility, split_derives_attribute};
-use cairo_lang_syntax::node::ast::{ItemEnum, OptionTypeClause, Variant as VariantAst};
-use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
+use crate::as_cairo::CollectionsAsCairo;
+use crate::ast::AstToString;
+use crate::attribute::Attribute;
+use crate::derive::Derives;
+use crate::params::GenericParams;
+use crate::{AsCairo, AstInto, FromAst, Result, TryFromAst, Ty, Visibility, vec_from_element_list};
+use cairo_lang_syntax::node::ast::{ItemEnum, Variant as VariantAst};
 use salsa::Database;
 
-pub struct Enum<'db> {
-    pub db: &'db dyn Database,
+pub struct Enum {
     pub visibility: Visibility,
-    pub attributes: Vec<Attribute<'db>>,
-    pub derives: Vec<String>,
+    pub attributes: Vec<Attribute>,
+    pub derives: Derives,
     pub name: String,
-    pub generic_params: Option<Vec<String>>,
-    pub variants: Vec<Variant<'db>>,
+    pub generic_params: GenericParams,
+    pub variants: Vec<Variant>,
 }
 
-pub struct Variant<'db> {
-    pub db: &'db dyn Database,
-    pub selector: String,
-    pub attributes: Vec<Attribute<'db>>,
+pub struct Variant {
+    pub attributes: Vec<Attribute>,
     pub name: String,
-    pub ty: Option<String>,
+    pub ty: Option<Ty>,
 }
 
-fn parse_variant_type<'db>(variant: &VariantAst<'db>, db: &'db dyn Database) -> Option<String> {
-    match variant.type_clause(db) {
-        OptionTypeClause::Empty(_) => None,
-        OptionTypeClause::TypeClause(ty) => {
-            let ty_string = ty
-                .ty(db)
-                .as_syntax_node()
-                .get_text_without_all_comment_trivia(db);
-            if ty_string == "()" {
-                None
-            } else {
-                Some(ty_string)
-            }
-        }
-    }
-}
-
-impl<'db> Variant<'db> {
-    pub fn new(variant: &VariantAst<'db>, db: &'db dyn Database) -> Self {
-        let name = variant.name(db).text(db).to_string(db);
+impl<'db> FromAst<'db, VariantAst<'db>> for Variant {
+    fn from_ast(variant: VariantAst<'db>, db: &'db dyn Database) -> Self {
+        let name = variant.name(db).to_string(db);
         Self {
-            db,
-            selector: string_to_keccak_hex(&name),
             name,
-            attributes: parse_attributes(variant.attributes(db), db),
-            ty: parse_variant_type(variant, db),
+            attributes: variant.attributes(db).ast_into(db),
+            ty: variant.type_clause(db).ast_into(db),
         }
-    }
-    pub fn iattributes(&self) -> Vec<IAttribute> {
-        vec![]
     }
 }
 
-impl<'db> Enum<'db> {
-    pub fn new(item: ItemEnum<'db>, db: &'db dyn Database) -> Self {
-        let (attributes, derives) = split_derives_attribute(item.attributes(db), db).unwrap();
-        Self {
-            db,
+vec_from_element_list!(VariantList, Variant);
+
+impl<'db> TryFromAst<'db, ItemEnum<'db>> for Enum {
+    fn try_from_ast(item: ItemEnum<'db>, db: &'db dyn Database) -> Result<Self> {
+        let all_attributes: Vec<Attribute> = item.attributes(db).ast_into(db);
+        let (attributes, derives) = Derives::split_derives(all_attributes)?;
+        Ok(Self {
             visibility: item.visibility(db).into(),
             attributes,
             derives,
-            name: item.name(db).text(db).to_string(db),
-            generic_params: parse_params(item.generic_params(db), db),
-            variants: item
-                .variants(db)
-                .elements(db)
-                .map(|m| Variant::new(&m, db))
-                .collect(),
-        }
-    }
-
-    pub fn parse_variant_selector(&self, n: usize) -> String {
-        format!("{}", n)
-    }
-
-    pub fn from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Self {
-        Self::new(ItemEnum::from_syntax_node(db, node), db)
-    }
-
-    pub fn iattributes(&self) -> Vec<IAttribute> {
-        vec![]
+            name: item.name(db).to_string(db),
+            generic_params: item.generic_params(db).ast_into(db),
+            variants: item.variants(db).ast_into(db),
+        })
     }
 }
 
-impl<'db> ToString for Variant<'db> {
-    fn to_string(&self) -> String {
+impl<'db> AsCairo for Variant {
+    fn as_cairo(&self) -> String {
         let ty_str = match &self.ty {
-            Some(ty) => format!(": {}", ty),
+            Some(ty) => format!(": {}", ty.as_cairo()),
             None => "".to_string(),
         };
         format!(
             "{attributes}{name}{ty_str},",
-            attributes = attributes_to_string(&self.attributes, 1),
+            attributes = self.attributes.as_cairo_block(),
             name = self.name,
         )
     }
 }
 
-impl<'db> ToString for Enum<'db> {
-    fn to_string(&self) -> String {
-        let params_str = match &self.generic_params {
-            Some(p) => format!("<{}>", p.join(", ")),
-            None => "".to_string(),
-        };
-        let variants_str = self
-            .variants
-            .iter()
-            .map(Variant::to_string)
-            .collect::<Vec<String>>()
-            .join("\n    ");
-
+impl<'db> AsCairo for Enum {
+    fn as_cairo(&self) -> String {
         format!(
-            "{derives}{attributes}{vis}enum {name}{params_str}{{\n    {variants_str}\n}}",
-            derives = make_derives_attributes_line(&self.derives),
-            attributes = attributes_to_string(&self.attributes, 0),
+            "{derives}{attributes}{vis}enum {name}{params}{{{variants}}}",
+            derives = self.derives.as_cairo(),
+            attributes = self.attributes.as_cairo_block(),
+            vis = self.visibility.as_cairo(),
+            params = self.generic_params.as_cairo(),
             name = self.name,
-            vis = self.visibility.to_code_string(),
+            variants = self.variants.as_cairo_block_section()
         )
     }
 }

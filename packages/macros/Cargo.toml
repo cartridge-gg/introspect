@@ -17,3 +17,5 @@ thiserror.workspace = true
 indent.workspace = true
 indoc = "2.0.7"
 starknet-types-core.workspace = true
+introspect-types.workspace = true
+itertools.workspace = true

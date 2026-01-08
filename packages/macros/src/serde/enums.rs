@@ -1,42 +1,29 @@
-use crate::items::ItemTrait;
-use crate::serde::{ISERDE_SERIALIZE_CALL, ToISerdeImpl};
-use crate::{Enum, Variant};
-use indent::indent_by;
-use indoc::formatdoc;
+use crate::items::IntrospectItemTrait;
+use crate::serde::ToISerdeImpl;
+use crate::{IEnum, IVariant};
 
-impl<'db> ToISerdeImpl for Enum<'db> {
+impl ToISerdeImpl for IEnum {
     fn iserde_body(&self) -> String {
         let enum_call = self.full_call();
         let variants = self
             .variants
             .iter()
-            .map(|v| iserde_variant(&enum_call, v))
+            .map(|v| v.iserde_variant(&enum_call))
             .collect::<Vec<_>>()
             .join("\n");
-        let variants = indent_by(4, variants);
-        formatdoc!(
-            "
-        match self {{
-            {variants}
-        }};"
-        )
+        format!("match self {{\n{variants}\n}};")
     }
 }
 
-fn iserde_variant<'db>(enum_name: &str, variant: &Variant<'db>) -> String {
-    match variant.ty {
-        None => formatdoc!(
-            "{enum_name}::{variant_name} => output.append({selector}),",
-            selector = variant.selector,
-            variant_name = variant.name
-        ),
-        Some(_) => formatdoc!(
-            "{enum_name}::{variant_name}(value) => {{
-                output.append({selector});
-                {ISERDE_SERIALIZE_CALL}((value), ref output)
-            }},",
-            selector = variant.selector,
-            variant_name = variant.name
-        ),
+impl IVariant {
+    pub fn iserde_variant(&self, enum_name: &str) -> String {
+        let selector = &self.selector;
+        let variant_name = &self.name;
+        match self.ty {
+            None => format!("{enum_name}::{variant_name} => output.append({selector}),"),
+            Some(_) => format!(
+                "{enum_name}::{variant_name}(value) => introspect::iserialize_keyed_type({selector}, value, ref output),",
+            ),
+        }
     }
 }

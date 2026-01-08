@@ -97,6 +97,9 @@ pub fn parse_byte_to_cairo_byte(byte: &u8) -> String {
     }
 }
 
-pub fn parse_bytes_to_cairo_byte_array(data: &[u8]) -> String {
-    data.into_iter().map(parse_byte_to_cairo_byte).collect()
+pub fn parse_bytes_to_cairo_byte_array<T: AsRef<[u8]>>(data: T) -> String {
+    data.as_ref()
+        .into_iter()
+        .map(parse_byte_to_cairo_byte)
+        .collect()
 }

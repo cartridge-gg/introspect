@@ -36,6 +36,11 @@ impl FeltIntoBool of Into<felt252, bool> {
     }
 }
 
+pub fn iserialize_keyed_type<T, +ISerde<T>>(id: felt252, value: @T, ref output: Array<felt252>){
+    output.append(id);
+    ISerde::<T>::iserialize(value, ref output);
+}
+
 pub mod into_felt252 {
     pub impl ISerdeImpl<T, +Copy<T>, +Into<T, felt252>, +TryInto<felt252, T>> of super::ISerde<T> {
         fn iserialize(self: @T, ref output: Array<felt252>) {

@@ -44,6 +44,7 @@ starknet = "0.17.0"
 starknet-crypto = "0.8"
 starknet-types-core = "0.2.0"
 thiserror = "2.0.17"
+itertools = "0.14.0"
 
 
 introspect_macros = { path = "packages/macros" }

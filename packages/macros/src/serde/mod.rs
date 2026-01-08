@@ -1,7 +1,7 @@
 use indent::indent_by;
 
-use crate::introspect::item::IntrospectItem;
-use crate::items::ItemTrait;
+use crate::IntrospectItem;
+use crate::items::IntrospectItemTrait;
 
 mod derive;
 mod enums;
@@ -12,7 +12,7 @@ const ISERDE_SERIALIZE_CALL: &str = "introspect::ISerde::iserialize";
 
 pub trait ToISerdeImpl
 where
-    Self: ItemTrait,
+    Self: IntrospectItemTrait,
 {
     fn to_iserde_impl(&self) -> String {
         ISERDE_IMPL_TPL
@@ -27,7 +27,7 @@ where
     fn iserde_body(&self) -> String;
 }
 
-impl<'db> ToISerdeImpl for IntrospectItem<'db> {
+impl ToISerdeImpl for IntrospectItem {
     fn iserde_body(&self) -> String {
         match self {
             IntrospectItem::Struct(s) => s.iserde_body(),

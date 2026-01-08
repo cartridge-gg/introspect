@@ -12,6 +12,17 @@ pub struct Attribute {
     pub data: Option<ByteArray>,
 }
 
+pub fn attribute(name: ByteArray, data: Option<ByteArray>) -> Attribute {
+    Attribute { name, data }
+}
+
+pub fn attribute_empty(name: ByteArray) -> Attribute {
+    Attribute { name, data: Option::None }
+}
+
+pub fn attribute_data(name: ByteArray, data: ByteArray) -> Attribute {
+    Attribute { name, data: Some(data) }
+}
 
 pub impl AttributeISerde of ISerde<Attribute> {
     fn iserialize(self: @Attribute, ref output: Array<felt252>) {

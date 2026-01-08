@@ -1483,6 +1483,8 @@ dependencies = [
  "cairo-lang-syntax",
  "indent",
  "indoc",
+ "introspect-types",
+ "itertools",
  "salsa",
  "starknet-types-core",
  "thiserror 2.0.17",

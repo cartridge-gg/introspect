@@ -1,47 +1,90 @@
-use crate::items::{
-    ItemTrait, ToTypeDef, make_attributes_string, stack_type_defs, type_child_defs,
+use std::mem;
+
+use super::{
+    DefaultIExtractor, IExtract, IntrospectItemTrait, ToTypeDef, ToTypeDefs, TypeDefVariant,
 };
-use crate::{Member, Struct};
-use indent::indent_by;
+use crate::type_def::{member_def_tpl, member_default_def_tpl, struct_def_tpl};
+use crate::{
+    AsCairo, AsCairoBytes, CollectionsAsCairo, GenericParams, IAttribute, Member, Result, Struct,
+    Ty,
+};
 
-const STRUCT_TYPE_DEF_TPL: &str = include_str!("../../templates/struct_def.cairo");
-const MEMBER_TYPE_DEF_TPL: &str = include_str!("../../templates/member_def.cairo");
+pub struct IStruct {
+    pub attributes: Vec<IAttribute>,
+    pub name: String,
+    pub generic_params: GenericParams,
+    pub members: Vec<IMember>,
+}
 
-impl ToTypeDef for Member<'_> {
+pub struct IMember {
+    pub name: String,
+    pub attributes: Vec<IAttribute>,
+    pub ty: Ty,
+    pub type_def: TypeDefVariant,
+}
+
+impl ToTypeDef for IMember {
     fn to_type_def(&self) -> String {
-        let attributes_str = make_attributes_string(&self.iattributes());
-        MEMBER_TYPE_DEF_TPL
-            .replace("{{name}}", &self.name)
-            .replace("{{attributes_str}}", indent_by(8, attributes_str).as_str())
-            .replace("{{member_type}}", &self.ty)
+        let name = &self.name.as_cairo_byte_array();
+        let attributes = &self.attributes.as_cairo_span();
+        match &self.type_def {
+            TypeDefVariant::Default => member_default_def_tpl(name, attributes, &self.ty),
+            TypeDefVariant::TypeDef(type_def) => {
+                member_def_tpl(name, attributes, &type_def.as_cairo())
+            }
+            TypeDefVariant::Fn(call) => member_def_tpl(name, attributes, call),
+        }
     }
 }
 
-impl ToTypeDef for Struct<'_> {
+impl ToTypeDef for IStruct {
     fn to_type_def(&self) -> String {
-        let attributes_str = make_attributes_string(&self.iattributes());
-        let members_str = stack_type_defs(&self.members);
-        STRUCT_TYPE_DEF_TPL
-            .replace("{{name}}", &self.name)
-            .replace("{{attributes_str}}", indent_by(8, attributes_str).as_str())
-            .replace("{{members_str}}", indent_by(4, members_str).as_str())
+        struct_def_tpl(
+            &self.name.as_cairo_byte_array(),
+            &self.attributes.as_cairo_span(),
+            &self.members.to_type_defs_span(),
+        )
     }
 }
 
-impl<'db> ItemTrait for Struct<'db> {
+impl IntrospectItemTrait for IStruct {
+    type ModuleType = Struct;
     fn kind(&self) -> &str {
         "Struct"
     }
     fn name(&self) -> &str {
         &self.name
     }
-    fn generic_params(&self) -> &Option<Vec<String>> {
+    fn generic_params(&self) -> &GenericParams {
         &self.generic_params
     }
-    fn child_defs(&self) -> Vec<String> {
-        self.members
-            .iter()
-            .map(|m| type_child_defs(&m.ty))
-            .collect()
+    fn child_types(&self) -> Vec<Ty> {
+        self.members.iter().map(|m| m.ty.clone()).collect()
+    }
+}
+
+impl IExtract<IMember, Member> for DefaultIExtractor {
+    fn iextract(&self, module: &mut Member) -> Result<IMember> {
+        let (attrs, iattrs, mattrs) = self.extract_attributes(mem::take(&mut module.attributes))?;
+        module.attributes = attrs;
+        Ok(IMember {
+            name: module.name.clone(),
+            ty: module.ty.clone(),
+            attributes: iattrs,
+            type_def: self.parse_type_def(&module.ty, &mattrs),
+        })
+    }
+}
+
+impl IExtract<IStruct, Struct> for DefaultIExtractor {
+    fn iextract(&self, module: &mut Struct) -> Result<IStruct> {
+        let (attrs, iattrs, mattrs) = self.extract_attributes(mem::take(&mut module.attributes))?;
+        module.attributes = attrs;
+        Ok(IStruct {
+            attributes: iattrs,
+            name: module.name.clone(),
+            generic_params: module.generic_params.clone(),
+            members: self.iextracts(&mut module.members)?,
+        })
     }
 }

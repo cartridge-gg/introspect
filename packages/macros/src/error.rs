@@ -6,10 +6,16 @@ pub enum IntrospectError {
     UnsupportedItem(String),
     #[error("Could not find item to introspect.")]
     NoItem(),
+    #[error("Could not find struct")]
+    NoStruct(),
     #[error("Derive '{0}' not unnamed variant.")]
     WrongDeriveVariant(String),
     #[error("Derive macro must have arguments.")]
     DeriveMacroMissingArgs,
+    #[error("Invalid format for derives argument.")]
+    InvalidDerivesArgumentFormat,
+    #[error("attribute '{0}' has Invalid format.")]
+    InvalidIntrospectAttributeFormat(String),
 }
 
 pub type Result<T> = std::result::Result<T, IntrospectError>;

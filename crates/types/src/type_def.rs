@@ -203,6 +203,13 @@ macro_rules! item_def_constructors {
             }
         }
 
+        impl Deref for $type {
+            type Target = TypeDef;
+            fn deref(&self) -> &Self::Target {
+                &self.type_def
+            }
+        }
+
         item_def_constructors!(@impl $type, $variant, [type_def: TypeDef], true);
     };
     // For types with simple fields
@@ -275,6 +282,20 @@ pub struct VariantDef {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct TupleDef {
     pub elements: Vec<TypeDef>,
+}
+
+impl Deref for TupleDef {
+    type Target = Vec<TypeDef>;
+    fn deref(&self) -> &Self::Target {
+        &self.elements
+    }
+}
+
+impl Deref for RefDef {
+    type Target = Felt;
+    fn deref(&self) -> &Self::Target {
+        &self.id
+    }
 }
 
 impl MemberDef {
