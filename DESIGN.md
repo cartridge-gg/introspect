@@ -218,7 +218,7 @@ Structure:
 - `O`: Bit not used in byte31 but used in felt252
 - `±`: Bit used in both byte31 and felt252
 
-The reason the `251` bit or 3rd bit in the 31st byte is partially usable is due to the fact a felt252 can have a max value of $2^{251}+17*2^{192}$ which means that for values between $2^{251}$ and its max the `251` bit is `1`. In values above $17*2^{192}$ the `251` has to be `0` to avoid exceeding the max value.
+The reason the `251` bit or bit `3` in the byte `31` is partially usable is due to the fact a felt252 can have a max value of $2^{251}+17*2^{192}$ which means that for values between $2^{251}$ and its max the `251` bit is `1`. In values above $17*2^{192}$ bit `251` has to be `0` to avoid exceeding the max value.
 
 This means there are three bits (`250`, `249`, `248`) are unused in byte31 but usable in felt252.
 These can therefore be use to encode `ByteArray`s in $1+\lfloor B/31 \rfloor$ felts.
@@ -255,7 +255,7 @@ Result: up to 31 bytes encoded in 1 felt vs 3 with Serde.
 
 ## Attribute Encoding
 
-Attributes can be encoded on top of the ByteArray optimization, using $b^{249-248}, B_{30}$ the same and $b^{250}$ to indicate if the attribute has data or is key-only.
+Attributes can be encoded on top of the ByteArray optimization, using $b^{249-248}, B_{30}$ the same and $b^{250}$ of the last felt in the id to indicate if the attribute has data or is key-only.
 
 Use bit `250`:
 
@@ -266,7 +266,7 @@ The struct becomes:
 
 ```rust
 pub struct Attribute {
-    pub id: Utf8String,
+    pub id: ByteArray,
     pub data: Option<ByteArray>,
 }
 ```
