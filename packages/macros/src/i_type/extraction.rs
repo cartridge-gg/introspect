@@ -1,20 +1,62 @@
-use crate::items::TypeDefVariant;
-use crate::{Attribute, IAttribute, Result, Ty};
+use crate::i_type::TypeDefVariant;
+use crate::{Attribute, IAttribute, Result, SyntaxItemTrait, Ty};
+use cairo_lang_macro::TokenStream;
+use salsa::Database;
 
-pub trait IExtract<T, S> {
-    fn iextract(&self, module: &mut S) -> Result<T>;
-    fn iextracts(&self, modules: &mut [S]) -> Result<Vec<T>> {
+pub trait IExtract<T> {
+    type SyntaxType;
+    fn iextract(&self, module: &mut Self::SyntaxType) -> Result<T>;
+    fn iextracts(&self, modules: &mut [Self::SyntaxType]) -> Result<Vec<T>> {
         modules.iter_mut().map(|m| self.iextract(m)).collect()
     }
 }
 
-pub trait IExtractWith<T, S, C> {
-    fn iextract_with(&self, module: &mut S, context: &C) -> Result<T>;
-    fn iextracts_with(&self, modules_with: &mut [(S, C)]) -> Result<Vec<T>> {
+pub trait IExtractWith<T, C> {
+    type SyntaxType;
+    fn iextract_with(&self, module: &mut Self::SyntaxType, context: &C) -> Result<T>;
+    fn iextracts_with(&self, modules_with: &mut [(Self::SyntaxType, C)]) -> Result<Vec<T>> {
         modules_with
             .iter_mut()
             .map(|(m, c)| self.iextract_with(m, c))
             .collect()
+    }
+}
+
+pub trait IExtractFromTokenStream<T> {
+    fn iextract_from_file_node(
+        &self,
+        db: &dyn Database,
+        node: cairo_lang_syntax::node::SyntaxNode,
+    ) -> Result<T>;
+    fn iextract_from_token_stream(&self, token_stream: TokenStream) -> Result<T> {
+        let db = cairo_lang_parser::utils::SimpleParserDatabase::default();
+        let (node, _diagnostics) = db.parse_virtual_with_diagnostics(token_stream.clone());
+        self.iextract_from_file_node(&db, node)
+    }
+}
+
+impl<E, T> IExtractFromTokenStream<T> for E
+where
+    E: IExtract<T>,
+    E::SyntaxType: SyntaxItemTrait,
+{
+    fn iextract_from_file_node(
+        &self,
+        db: &dyn Database,
+        node: cairo_lang_syntax::node::SyntaxNode,
+    ) -> Result<T> {
+        let mut item = E::SyntaxType::from_file_node(db, node)?;
+        self.iextract(&mut item)
+    }
+}
+
+impl<E, T> IExtractWith<T, ()> for E
+where
+    E: IExtract<T>,
+{
+    type SyntaxType = E::SyntaxType;
+    fn iextract_with(&self, module: &mut E::SyntaxType, _context: &()) -> Result<T> {
+        self.iextract(module)
     }
 }
 
@@ -36,7 +78,7 @@ impl DefaultIExtractor {
         DefaultIExtractor {}
     }
 
-    pub fn parse_type_def(&self, ty: &Ty, attributes: &[MacroAttribute]) -> TypeDefVariant {
+    pub fn parse_type_def(&self, _ty: &Ty, _attributes: &[MacroAttribute]) -> TypeDefVariant {
         TypeDefVariant::Default
     }
 

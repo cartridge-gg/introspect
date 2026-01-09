@@ -1,30 +1,26 @@
 pub mod as_cairo;
 pub mod ast;
-pub mod attribute;
 pub mod byte_array;
-pub mod derive;
-pub mod enums;
 pub mod error;
+pub mod i_type;
 pub mod inline;
 pub mod introspect;
-pub mod items;
-pub mod module;
 pub mod params;
 pub mod serde;
-pub mod structs;
+pub mod syntax;
 pub mod table;
 pub mod ty;
 pub mod type_def;
 pub mod utils;
 pub use as_cairo::{AsCairo, AsCairoBytes, AsCairoWith, CollectionsAsCairo};
 pub use ast::{AstInto, AstToString, AstTryInto, FromAst, TryFromAst};
-pub use attribute::Attribute;
-pub use enums::{Enum, Variant};
 pub use error::{IntrospectError, Result};
+pub use i_type::{IEnum, IItem, IMember, IStruct, IVariant};
 pub use introspect_types::Attribute as IAttribute;
-pub use items::{IEnum, IMember, IStruct, IVariant, IntrospectItem};
-pub use module::{ModuleItem, SyntaxModule};
 pub use params::GenericParams;
-pub use structs::{Member, Struct};
+pub use syntax::{
+    Attribute, AttributeArg, AttributeArgClause, AttributeArgNamed, Derives, Enum, Item, Member,
+    Struct, SyntaxItemTrait, Variant,
+};
 pub use ty::Ty;
 pub use utils::{Modifier, Visibility};

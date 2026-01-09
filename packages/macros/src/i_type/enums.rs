@@ -6,8 +6,9 @@ use crate::type_def::{
     enum_def_tpl, variant_def_tpl, variant_default_def_tpl, variant_unit_def_tpl,
 };
 use crate::utils::string_to_keccak_felt;
-use crate::{AsCairo, AsCairoBytes, CollectionsAsCairo, Enum, IAttribute, Ty, Variant};
+use crate::{AsCairo, AsCairoBytes, CollectionsAsCairo, Enum, IAttribute, Result, Ty, Variant};
 use starknet_types_core::felt::Felt;
+use std::mem;
 
 pub struct IEnum {
     pub name: String,
@@ -68,25 +69,38 @@ impl<'db> IntrospectItemTrait for IEnum {
     }
 }
 
-impl IExtract<IVariant, Variant> for DefaultIExtractor {
-    fn iextract(&self, module: &Variant) -> IVariant {
-        IVariant {
-            selector: string_to_keccak_felt(&module.name),
-            name: module.name.clone(),
-            attributes: vec![],
-            ty: module.ty.clone(),
-            type_def: TypeDefVariant::Default,
-        }
+impl IExtract<IVariant> for DefaultIExtractor {
+    type SyntaxType = Variant;
+    fn iextract(&self, variant: &mut Variant) -> Result<IVariant> {
+        let (attrs, iattrs, mattrs) =
+            self.extract_attributes(mem::take(&mut variant.attributes))?;
+        variant.attributes = attrs;
+        let type_def = match &variant.ty {
+            Some(t) => self.parse_type_def(t, &mattrs),
+            None => TypeDefVariant::Default,
+        };
+        Ok(IVariant {
+            selector: string_to_keccak_felt(&variant.name),
+            name: variant.name.clone(),
+            attributes: iattrs,
+            ty: variant.ty.clone(),
+            type_def,
+        })
     }
 }
 
-impl IExtract<IEnum, Enum> for DefaultIExtractor {
-    fn iextract(&self, module: &Enum) -> IEnum {
-        IEnum {
+impl IExtract<IEnum> for DefaultIExtractor {
+    type SyntaxType = Enum;
+    fn iextract(&self, module: &mut Enum) -> Result<IEnum> {
+        let (attrs, iattrs, _mattrs) =
+            self.extract_attributes(mem::take(&mut module.attributes))?;
+        module.attributes = attrs;
+
+        Ok(IEnum {
             name: module.name.clone(),
-            attributes: vec![],
+            attributes: iattrs,
             generic_params: module.generic_params.clone(),
-            variants: self.iparses(&module.variants),
-        }
+            variants: self.iextracts(&mut module.variants)?,
+        })
     }
 }

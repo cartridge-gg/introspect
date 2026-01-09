@@ -3,7 +3,7 @@ use indent::indent_by;
 use introspect_macros::attribute::{IAttribute, iattributes_to_span};
 use introspect_macros::child_defs::combined_type_child_defs;
 use introspect_macros::column::make_column_def;
-use introspect_macros::items::type_child_defs;
+use introspect_macros::introsepct_items::type_child_defs;
 use introspect_macros::utils::{spanify, string_to_keccak_felt};
 use introspect_macros::{Member, Struct};
 use starknet_types_core::felt::Felt;

@@ -574,59 +574,43 @@ impl ResultDefISerde of ISerde<ResultDef> {
 }
 
 
-pub fn member_def(
-    name: ByteArray,
-    attributes: Span<Attribute>,
-    type_def: TypeDef,
-) -> MemberDef {
+pub fn member_def(name: ByteArray, attributes: Span<Attribute>, type_def: TypeDef) -> MemberDef {
     MemberDef { name, type_def, attributes }
 }
 
 pub fn member_default_def<T, +Introspect<T>>(
-    name: ByteArray,
-    attributes: Span<Attribute>,
+    name: ByteArray, attributes: Span<Attribute>,
 ) -> MemberDef {
     MemberDef { name, type_def: Introspect::<T>::type_def(), attributes }
 }
 
 pub fn struct_def(
-    name: ByteArray,
-    attributes: Span<Attribute>,
-    members: Span<MemberDef>,
+    name: ByteArray, attributes: Span<Attribute>, members: Span<MemberDef>,
 ) -> StructDef {
     StructDef { name, attributes, members }
 }
 
 
 pub fn variant_def(
-    selector: felt252,
-    name: ByteArray,
-    attributes: Span<Attribute>,
-    type_def: TypeDef,
+    selector: felt252, name: ByteArray, attributes: Span<Attribute>, type_def: TypeDef,
 ) -> VariantDef {
     VariantDef { selector, name, attributes, type_def }
 }
 
 pub fn variant_default_def<T, +Introspect<T>>(
-    selector: felt252,
-    name: ByteArray,
-    attributes: Span<Attribute>,
+    selector: felt252, name: ByteArray, attributes: Span<Attribute>,
 ) -> VariantDef {
     VariantDef { selector, name, attributes, type_def: Introspect::<T>::type_def() }
 }
 
 pub fn variant_unit_def(
-    selector: felt252,
-    name: ByteArray,
-    attributes: Span<Attribute>,
+    selector: felt252, name: ByteArray, attributes: Span<Attribute>,
 ) -> VariantDef {
     VariantDef { selector, name, attributes, type_def: TypeDef::None }
 }
 
 pub fn enum_def(
-    name: ByteArray,
-    attributes: Span<Attribute>,
-    variants: Span<VariantDef>,
+    name: ByteArray, attributes: Span<Attribute>, variants: Span<VariantDef>,
 ) -> EnumDef {
     EnumDef { name, attributes, variants }
 }
@@ -637,4 +621,8 @@ pub fn fixed_array_def(type_def: TypeDef, size: u32) -> FixedArrayDef {
 
 pub fn result_def(ok: TypeDef, err: TypeDef) -> ResultDef {
     ResultDef { ok, err }
+}
+
+pub fn boxed_type_def(type_def: TypeDef) -> Box<TypeDef> {
+    BoxTrait::new(type_def)
 }

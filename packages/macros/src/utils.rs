@@ -64,9 +64,9 @@ impl<'db> From<AstModifier<'db>> for Modifier {
         }
     }
 }
-
+#[allow(non_snake_case)]
 #[derive_macro]
-pub fn print_all(token_stream: TokenStream) -> ProcMacroResult {
+pub fn PrintAll(token_stream: TokenStream) -> ProcMacroResult {
     let db = SimpleParserDatabase::default();
     let (parsed, _diag) = db.parse_virtual_with_diagnostics(token_stream.clone());
     println!("{}", print_tree(&db, &parsed, true, true));

@@ -1,6 +1,5 @@
-use crate::ast::AstToString;
 use crate::{
-    AsCairo, AstInto, CollectionsAsCairo, FromAst, IntrospectError, Modifier, Result,
+    AsCairo, AstInto, AstToString, CollectionsAsCairo, FromAst, IntrospectError, Modifier, Result,
     terminal_to_string, vec_from_element_list,
 };
 use cairo_lang_syntax::node::ast::{

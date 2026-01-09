@@ -4,7 +4,7 @@ use crate::{AstInto, AstToString, FromAst};
 use cairo_lang_syntax::node::ast::{OptionTypeClause, TypeClause};
 use salsa::Database;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Ty(pub String);
 
 impl Deref for Ty {
@@ -99,7 +99,7 @@ impl Ty {
     }
 
     pub fn child_defs(&self) -> String {
-        format!("introspect::child_defs::<{}>()", &self.0)
+        format!("introspect::gen::child_defs::<{}>()", &self.0)
     }
 
     pub fn child_defs_if_needed(&self) -> Option<String> {
@@ -135,7 +135,7 @@ impl Tys for Vec<Ty> {
         match defs.len() {
             0 => "array![]".to_string(),
             1 => defs[0].clone(),
-            _ => format!("introspect::merge_defs(array![{}])", defs.join(", ")),
+            _ => format!("introspect::gen::merge_defs(array![{}])", defs.join(", ")),
         }
     }
 }

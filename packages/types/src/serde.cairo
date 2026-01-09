@@ -36,7 +36,7 @@ impl FeltIntoBool of Into<felt252, bool> {
     }
 }
 
-pub fn iserialize_keyed_type<T, +ISerde<T>>(id: felt252, value: @T, ref output: Array<felt252>){
+pub fn iserialize_keyed_type<T, +ISerde<T>>(id: felt252, value: @T, ref output: Array<felt252>) {
     output.append(id);
     ISerde::<T>::iserialize(value, ref output);
 }
@@ -336,25 +336,25 @@ pub impl ISerializeTuple1<T0, impl S0: ISerde<T0>, +Drop<T0>> of ISerializeTuple
     }
 }
 
-pub impl ISerializeTuple2<
-    T0, T1, impl S0: ISerde<T0>, impl S1: ISerde<T1>, +Drop<T0>, +Drop<T1>,
-> of ISerializeTuple<(T0, T1)> {
-    fn iserialize_tuple(self: (T0, T1), ref output: Array<felt252>) {
-        let (val0, val1) = self;
-        S0::iserialize(@val0, ref output);
-        S1::iserialize(@val1, ref output);
-    }
-}
+// pub impl ISerializeTuple2<
+//     T0, T1, impl S0: ISerde<T0>, impl S1: ISerde<T1>, +Drop<T0>, +Drop<T1>,
+// > of ISerializeTuple<(T0, T1)> {
+//     fn iserialize_tuple(self: (T0, T1), ref output: Array<felt252>) {
+//         let (val0, val1) = self;
+//         S0::iserialize(@val0, ref output);
+//         S1::iserialize(@val1, ref output);
+//     }
+// }
 
-pub impl ISerializeTupleSS2<
-    T0, T1, impl S0: ISerde<T0>, impl S1: ISerde<T1>, +Drop<T0>, +Drop<T1>,
-> of ISerializeTuple<(@T0, @T1)> {
-    fn iserialize_tuple(self: (@T0, @T1), ref output: Array<felt252>) {
-        let (val0, val1) = self;
-        S0::iserialize(val0, ref output);
-        S1::iserialize(val1, ref output);
-    }
-}
+// pub impl ISerializeTupleSS2<
+//     T0, T1, impl S0: ISerde<T0>, impl S1: ISerde<T1>, +Drop<T0>, +Drop<T1>,
+// > of ISerializeTuple<(@T0, @T1)> {
+//     fn iserialize_tuple(self: (@T0, @T1), ref output: Array<felt252>) {
+//         let (val0, val1) = self;
+//         S0::iserialize(val0, ref output);
+//         S1::iserialize(val1, ref output);
+//     }
+// }
 
 pub impl IDeserializeTuple2<
     T0, T1, impl S0: ISerde<T0>, impl S1: ISerde<T1>, +Drop<T0>, +Drop<T1>,
@@ -363,7 +363,6 @@ pub impl IDeserializeTuple2<
         Some((S0::ideserialize(ref serialized)?, S1::ideserialize(ref serialized)?))
     }
 }
-
 
 impl ISerdeTupleNext<
     T,

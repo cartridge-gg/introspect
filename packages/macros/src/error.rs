@@ -8,6 +8,8 @@ pub enum IntrospectError {
     NoItem(),
     #[error("Could not find struct")]
     NoStruct(),
+    #[error("Could not find enum")]
+    NoEnum(),
     #[error("Derive '{0}' not unnamed variant.")]
     WrongDeriveVariant(String),
     #[error("Derive macro must have arguments.")]

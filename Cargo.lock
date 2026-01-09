@@ -1477,6 +1477,7 @@ dependencies = [
 name = "introspect_macros"
 version = "0.1.0"
 dependencies = [
+ "cairo-lang-diagnostics",
  "cairo-lang-macro",
  "cairo-lang-parser",
  "cairo-lang-starknet-classes",

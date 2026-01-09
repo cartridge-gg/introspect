@@ -5,8 +5,8 @@ use super::{
 };
 use crate::type_def::{member_def_tpl, member_default_def_tpl, struct_def_tpl};
 use crate::{
-    AsCairo, AsCairoBytes, CollectionsAsCairo, GenericParams, IAttribute, Member, Result, Struct,
-    Ty,
+    AsCairo, AsCairoBytes, CollectionsAsCairo, GenericParams, IAttribute, Result, Struct,
+    Member, Ty,
 };
 
 pub struct IStruct {
@@ -63,7 +63,8 @@ impl IntrospectItemTrait for IStruct {
     }
 }
 
-impl IExtract<IMember, Member> for DefaultIExtractor {
+impl IExtract<IMember> for DefaultIExtractor {
+    type SyntaxType = Member;
     fn iextract(&self, module: &mut Member) -> Result<IMember> {
         let (attrs, iattrs, mattrs) = self.extract_attributes(mem::take(&mut module.attributes))?;
         module.attributes = attrs;
@@ -76,9 +77,11 @@ impl IExtract<IMember, Member> for DefaultIExtractor {
     }
 }
 
-impl IExtract<IStruct, Struct> for DefaultIExtractor {
+impl IExtract<IStruct> for DefaultIExtractor {
+    type SyntaxType = Struct;
     fn iextract(&self, module: &mut Struct) -> Result<IStruct> {
-        let (attrs, iattrs, mattrs) = self.extract_attributes(mem::take(&mut module.attributes))?;
+        let (attrs, iattrs, _mattrs) =
+            self.extract_attributes(mem::take(&mut module.attributes))?;
         module.attributes = attrs;
         Ok(IStruct {
             attributes: iattrs,

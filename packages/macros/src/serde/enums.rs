@@ -1,4 +1,4 @@
-use crate::items::IntrospectItemTrait;
+use crate::i_type::IntrospectItemTrait;
 use crate::serde::ToISerdeImpl;
 use crate::{IEnum, IVariant};
 

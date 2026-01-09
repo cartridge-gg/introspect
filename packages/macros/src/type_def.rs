@@ -63,46 +63,46 @@ pub fn as_type_def_boxed(variant: &str, type_def: String) -> String {
 }
 
 pub fn attribute_data_tpl(name: &str, data: &str) -> String {
-    format!("introspect::attribute_data({name}, {data})")
+    format!("introspect::gen::attribute_data({name}, {data})")
 }
 
 pub fn attribute_empty_tpl(name: &str) -> String {
-    format!("introspect::attribute_empty({name})")
+    format!("introspect::gen::attribute_empty({name})")
 }
 
 pub fn member_default_def_tpl(name: &str, attributes: &str, ty: &str) -> String {
-    format!("introspect::member_default_def::<{ty}>({name}, {attributes})")
+    format!("introspect::gen::member_default_def::<{ty}>({name}, {attributes})")
 }
 
 pub fn member_def_tpl(name: &str, attributes: &str, type_def: &str) -> String {
-    format!("introspect::member_def({name}, {attributes}, {type_def})")
+    format!("introspect::gen::member_def({name}, {attributes}, {type_def})")
 }
 
 pub fn struct_def_tpl(name: &str, attributes: &str, members: &str) -> String {
-    format!("introspect::struct_def({name}, {attributes}, {members})")
+    format!("introspect::gen::struct_def({name}, {attributes}, {members})")
 }
 
 pub fn variant_default_def_tpl(selector: &str, name: &str, attributes: &str, ty: &str) -> String {
-    format!("introspect::variant_default_def::<{ty}>({selector}, {name}, {attributes})")
+    format!("introspect::gen::variant_default_def::<{ty}>({selector}, {name}, {attributes})")
 }
 
 pub fn variant_def_tpl(selector: &str, name: &str, attributes: &str, type_def: &str) -> String {
-    format!("introspect::variant_def({selector}, {name}, {attributes}, {type_def})")
+    format!("introspect::gen::variant_def({selector}, {name}, {attributes}, {type_def})")
 }
 
 pub fn variant_unit_def_tpl(selector: &str, name: &str, attributes: &str) -> String {
-    format!("introspect::variant_unit_def({selector}, {name}, {attributes})")
+    format!("introspect::gen::variant_unit_def({selector}, {name}, {attributes})")
 }
 
 pub fn enum_def_tpl(name: &str, attributes: &str, variants: &str) -> String {
-    format!("introspect::enum_def({name}, {attributes}, {variants})")
+    format!("introspect::gen::enum_def({name}, {attributes}, {variants})")
 }
 
 pub fn fixed_array_def_tpl(type_def: &str, size: u32) -> String {
-    format!("introspect::FixedArrayDef {{ type_def: {type_def}, size: {size} }}))")
+    format!("introspect::gen::fixed_array_def({type_def}, {size})")
 }
 pub fn result_def_tpl(ok: &str, err: &str) -> String {
-    format!("introspect::ResultDef {{ ok: {ok}, err: {err} }}",)
+    format!("introspect::gen::result_def({ok}, {err})")
 }
 
 impl AsCairo for IAttribute {

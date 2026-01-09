@@ -1,5 +1,4 @@
 use crate::introspect::IntrospectImpl;
-use crate::introspect::item::get_introspection_type;
 use crate::utils::str_to_token_stream;
 use cairo_lang_macro::{ProcMacroResult, TokenStream, attribute_macro};
 use cairo_lang_parser::utils::SimpleParserDatabase;

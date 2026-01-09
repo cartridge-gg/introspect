@@ -1,16 +1,16 @@
-use crate::introspect::IntrospectImpl;
-use crate::introspect::item::get_introspection_type;
+use super::IntrospectImpl;
+use crate::IItem;
+use crate::i_type::DefaultIExtractor;
+use crate::i_type::extraction::IExtractFromTokenStream;
 use crate::serde::ToISerdeImpl;
 use crate::utils::str_to_token_stream;
 use cairo_lang_macro::{ProcMacroResult, TokenStream, derive_macro};
-use cairo_lang_parser::utils::SimpleParserDatabase;
 
 #[allow(non_snake_case)]
 #[derive_macro]
 fn Introspect(token_stream: TokenStream) -> ProcMacroResult {
-    let db = SimpleParserDatabase::default();
-    let (parsed, _diag) = db.parse_virtual_with_diagnostics(token_stream.clone());
-    let mut item = get_introspection_type(&db, parsed).unwrap();
+    let extractor = DefaultIExtractor::new();
+    let item: IItem = extractor.iextract_from_token_stream(token_stream).unwrap();
     let introspect_string = item.to_introspect_impl();
     let iserde_string = item.to_iserde_impl();
     let string = format!("{}\n\n{}", introspect_string, iserde_string);
@@ -21,9 +21,8 @@ fn Introspect(token_stream: TokenStream) -> ProcMacroResult {
 #[allow(non_snake_case)]
 #[derive_macro]
 fn IntrospectRef(token_stream: TokenStream) -> ProcMacroResult {
-    let db = SimpleParserDatabase::default();
-    let (parsed, _diag) = db.parse_virtual_with_diagnostics(token_stream.clone());
-    let mut item = get_introspection_type(&db, parsed).unwrap();
+    let extractor = DefaultIExtractor::new();
+    let item: IItem = extractor.iextract_from_token_stream(token_stream).unwrap();
     let introspect_string = item.to_introspect_ref_impl();
     let iserde_string = item.to_iserde_impl();
     let string = format!("{}\n\n{}", introspect_string, iserde_string);

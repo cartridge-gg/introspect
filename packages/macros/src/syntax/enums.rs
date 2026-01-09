@@ -1,10 +1,11 @@
 use crate::as_cairo::CollectionsAsCairo;
 use crate::ast::AstToString;
-use crate::attribute::Attribute;
-use crate::derive::Derives;
-use crate::params::GenericParams;
-use crate::{AsCairo, AstInto, FromAst, Result, TryFromAst, Ty, Visibility, vec_from_element_list};
+use crate::{
+    AsCairo, AstInto, Attribute, Derives, FromAst, GenericParams, IntrospectError, Result,
+    SyntaxItemTrait, TryFromAst, Ty, Visibility, vec_from_element_list,
+};
 use cairo_lang_syntax::node::ast::{ItemEnum, Variant as VariantAst};
+use cairo_lang_syntax::node::kind::SyntaxKind;
 use salsa::Database;
 
 pub struct Enum {
@@ -75,5 +76,23 @@ impl<'db> AsCairo for Enum {
             name = self.name,
             variants = self.variants.as_cairo_block_section()
         )
+    }
+}
+
+impl SyntaxItemTrait for Enum {
+    fn from_file_node<'db>(
+        db: &'db dyn Database,
+        node: cairo_lang_syntax::node::SyntaxNode<'db>,
+    ) -> Result<Self> {
+        for child in node.get_children(db)[0].get_children(db) {
+            let kind = child.kind(db);
+            match kind {
+                SyntaxKind::ItemEnum => {
+                    return Enum::try_from_syntax_node(db, *child);
+                }
+                _ => continue,
+            }
+        }
+        Err(IntrospectError::NoEnum())
     }
 }

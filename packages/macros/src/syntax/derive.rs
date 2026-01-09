@@ -1,5 +1,4 @@
-use crate::attribute::{Attribute, AttributeArg};
-use crate::{AsCairo, IntrospectError, Result};
+use crate::{AsCairo, IntrospectError, Result, Attribute, AttributeArg};
 use std::ops::Deref;
 
 const DERIVE_MACRO_NAME: &str = "derive";

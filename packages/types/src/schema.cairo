@@ -90,3 +90,15 @@ impl ColumnDefISerde of ISerde<ColumnDef> {
         Some(ColumnDef { id, name, attributes, type_def })
     }
 }
+
+
+pub fn column_def(
+    id: felt252, name: ByteArray, attributes: Span<Attribute>, type_def: TypeDef,
+) -> ColumnDef {
+    ColumnDef {
+        id,
+        name,
+        attributes,
+        type_def,
+    }
+} 

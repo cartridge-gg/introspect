@@ -1,11 +1,8 @@
-use crate::attribute::Attribute;
-use crate::derive::Derives;
 use crate::params::GenericParams;
 use crate::{
-    AsCairo, AstInto, AstToString, CollectionsAsCairo, FromAst, IntrospectError, Result,
-    TryFromAst, Ty, Visibility, vec_from_element_list,
+    AsCairo, AstInto, AstToString, Attribute, CollectionsAsCairo, Derives, FromAst,
+    IntrospectError, Result, SyntaxItemTrait, TryFromAst, Ty, Visibility, vec_from_element_list,
 };
-use cairo_lang_syntax::node::SyntaxNode;
 use cairo_lang_syntax::node::ast::{ItemStruct, Member as MemberAst};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use salsa::Database;
@@ -54,15 +51,6 @@ impl<'db> TryFromAst<'db, ItemStruct<'db>> for Struct {
     }
 }
 
-pub fn get_struct<'db>(db: &'db dyn Database, file: SyntaxNode<'db>) -> Result<Struct> {
-    for child in file.get_children(db)[0].get_children(db) {
-        if (&child).kind(db) == SyntaxKind::ItemStruct {
-            return Struct::try_from_syntax_node(db, *child);
-        }
-    }
-    Err(IntrospectError::NoItem())
-}
-
 impl AsCairo for Member {
     fn as_cairo(&self) -> String {
         format!(
@@ -87,5 +75,23 @@ impl AsCairo for Struct {
             params = self.generic_params.as_cairo(),
             members = self.members.as_cairo_block_section()
         )
+    }
+}
+
+impl SyntaxItemTrait for Struct {
+    fn from_file_node<'db>(
+        db: &'db dyn Database,
+        node: cairo_lang_syntax::node::SyntaxNode<'db>,
+    ) -> Result<Self> {
+        for child in node.get_children(db)[0].get_children(db) {
+            let kind = child.kind(db);
+            match kind {
+                SyntaxKind::ItemStruct => {
+                    return Struct::try_from_syntax_node(db, *child);
+                }
+                _ => continue,
+            }
+        }
+        Err(IntrospectError::NoStruct())
     }
 }
