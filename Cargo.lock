@@ -1503,6 +1503,7 @@ dependencies = [
  "indent",
  "indoc",
  "introspect_macros",
+ "itertools",
  "salsa",
  "starknet-types-core",
  "thiserror 2.0.17",

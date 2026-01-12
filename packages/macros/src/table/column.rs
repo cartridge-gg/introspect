@@ -5,7 +5,7 @@ use crate::{AsCairo, AsCairoBytes, CollectionsAsCairo, IAttribute, Ty};
 use starknet_types_core::felt::Felt;
 
 #[derive(Clone, Debug)]
-pub struct Column {
+pub struct ColumnDef {
     pub id: Felt,
     pub name: String,
     pub member: String,
@@ -19,8 +19,8 @@ pub fn column_def_tpl(id: &str, name: &str, attributes: &str, type_def: &str) ->
 }
 
 impl IMember {
-    pub fn to_column_default(&self) -> Column {
-        Column {
+    pub fn to_column_default(&self) -> ColumnDef {
+        ColumnDef {
             id: string_to_keccak_felt(&self.name),
             name: self.name.clone(),
             member: self.name.clone(),
@@ -29,8 +29,8 @@ impl IMember {
             type_def: TypeDefVariant::Default,
         }
     }
-    pub fn to_column(&self, id: Felt, name: String) -> Column {
-        Column {
+    pub fn to_column(&self, id: Felt, name: String) -> ColumnDef {
+        ColumnDef {
             id,
             name,
             member: self.name.clone(),
@@ -41,13 +41,13 @@ impl IMember {
     }
 }
 
-impl AsCairo for Column {
+impl AsCairo for ColumnDef {
     fn as_cairo(&self) -> String {
         column_def_tpl(
             &self.id.as_cairo(),
             &self.name.as_cairo_byte_array(),
             &self.attributes.as_cairo_span(),
-            self.type_def.type_def(self.ty.clone()).as_str(),
+            self.type_def.type_def(&self.ty).as_str(),
         )
     }
 }

@@ -78,8 +78,8 @@ fn test_foo() {
     IFooTable::delete_records([ss_key_1, ss_key_2]);
     IFooTable::delete_field(@key_1, FooColumns::name);
     IFooTable::delete_field(@key_1, FooColumns::name);
-    IFooTable::delete_field(@ss_key_1, IFooTable::Column::name);
-    IFooTable::delete_field(@key_1, @IFooTable::Column::name);
+    IFooTable::delete_field(@ss_key_1, FooColumns::name);
+    IFooTable::delete_field(@key_1, FooColumns::name);
     IFooTable::delete_field(@key_1, FooColumns::name);
     IFooTable::delete_fields(@key_1, [@FooColumns::name]);
     IFooTable::deletes_field([key_1, key_2].span(), @FooColumns::name);
@@ -113,11 +113,9 @@ fn test_character() {
     ICharacterTable::delete_records([@cid_1, @cid_2]);
     ICharacterTable::delete_records([cid_1, cid_2]);
     ICharacterTable::delete_records(@[@cid_1, @cid_2]);
+    ICharacterTable::delete_field(cid_1, CharacterColumns::name);
     ICharacterTable::delete_field(@cid_1, CharacterColumns::name);
-    ICharacterTable::delete_field(@cid_1, CharacterColumns::name);
-    ICharacterTable::delete_field(@cid_1, ICharacterTable::Column::name);
-    ICharacterTable::delete_field(@cid_1, @ICharacterTable::Column::name);
-    ICharacterTable::delete_field(@cid_1, CharacterColumns::name);
+    ICharacterTable::delete_field(@cid_1, @CharacterColumns::name);
     ICharacterTable::delete_fields(@cid_1, [@CharacterColumns::name]);
     ICharacterTable::deletes_field([cid_1, cid_2].span(), @CharacterColumns::name);
     ICharacterTable::deletes_fields(
@@ -149,9 +147,7 @@ fn test_player() {
     IPlayerTable::delete_records([12, 13]);
     IPlayerTable::delete_records(@[@12, @13]);
     IPlayerTable::delete_field(@12, PlayerColumns::name);
-    IPlayerTable::delete_field(@12, PlayerColumns::name);
-    IPlayerTable::delete_field(@12, IPlayerTable::Column::name);
-    IPlayerTable::delete_field(@12, @IPlayerTable::Column::name);
+    IPlayerTable::delete_field(12, @PlayerColumns::name);
     IPlayerTable::delete_field(@12, PlayerColumns::name);
     IPlayerTable::delete_fields(@12, [@PlayerColumns::name]);
     IPlayerTable::deletes_field([12, 13].span(), @PlayerColumns::name);

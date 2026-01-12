@@ -69,8 +69,8 @@ impl<'db> IntrospectItemTrait for IEnum {
     fn kind(&self) -> &str {
         "Enum"
     }
-    fn child_types(&self) -> Vec<Ty> {
-        self.variants.iter().filter_map(|v| v.ty.clone()).collect()
+    fn child_types(&self) -> Vec<&Ty> {
+        self.variants.iter().filter_map(|v| v.ty.as_ref()).collect()
     }
 }
 

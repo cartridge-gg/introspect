@@ -18,10 +18,10 @@ pub enum TypeDefVariant {
 }
 
 impl TypeDefVariant {
-    pub fn type_def(&self, ty: Ty) -> String {
+    pub fn type_def(&self, ty: &Ty) -> String {
         match self {
             TypeDefVariant::Default => {
-                format!("introspect::Introspect::<{}>::type_def()", ty.as_cairo())
+                format!("{I_PATH}::type_def::<{}>()", ty.as_cairo())
             }
             TypeDefVariant::TypeDef(type_def) => type_def.as_cairo(),
             TypeDefVariant::Fn(call) => call.clone(),
@@ -60,11 +60,21 @@ where
     }
 }
 
-impl Ty {
-    fn child_defs_if_not_of_base_types(&self) -> Option<String> {
-        match self.is_of_base_types() {
-            true => None,
-            false => Some(child_defs_tpl(&self.as_cairo())),
+pub trait ITys {
+    fn child_defs(&self) -> String;
+}
+
+impl ITys for [&Ty] {
+    fn child_defs(&self) -> String {
+        let mut defs: Vec<_> = self
+            .iter()
+            .filter(|t| !t.is_of_base_types())
+            .map(|t| child_defs_tpl(&t.as_cairo()))
+            .collect();
+        match defs.len() {
+            0 => "array![]".to_string(),
+            1 => defs.pop().unwrap(),
+            _ => format!("{I_PATH}::merge_defs(array![{}])", defs.join(", ")),
         }
     }
 }
@@ -72,18 +82,9 @@ impl Ty {
 pub trait IntrospectItemTrait {
     type ModuleType;
     fn kind(&self) -> &str;
-    fn child_types(&self) -> Vec<Ty>;
+    fn child_types(&self) -> Vec<&Ty>;
     fn child_defs(&self) -> String {
-        let mut defs: Vec<_> = self
-            .child_types()
-            .iter()
-            .filter_map(Ty::child_defs_if_not_of_base_types)
-            .collect();
-        match defs.len() {
-            0 => "array![]".to_string(),
-            1 => defs.pop().unwrap(),
-            _ => format!("{I_PATH}::merge_defs(array![{}])", defs.join(", ")),
-        }
+        self.child_types().child_defs()
     }
 }
 
@@ -115,7 +116,7 @@ impl IntrospectItemTrait for IItem {
             IItem::Enum(e) => e.kind(),
         }
     }
-    fn child_types(&self) -> Vec<Ty> {
+    fn child_types(&self) -> Vec<&Ty> {
         match self {
             IItem::Struct(s) => s.child_types(),
             IItem::Enum(e) => e.child_types(),

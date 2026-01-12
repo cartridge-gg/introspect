@@ -5,6 +5,10 @@ use introspect_types::{
 };
 use starknet_types_core::felt::Felt;
 
+pub trait ElementDefStringify<T> {
+    fn stringify_element_def(&self) -> String;
+}
+
 pub trait CairoElementDef {
     fn as_element_def(&self) -> String;
 }

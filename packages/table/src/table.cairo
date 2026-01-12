@@ -20,24 +20,16 @@ pub trait TableMeta {
 }
 
 pub trait TableColumns {
-    type Column;
     fn columns() -> Span<ColumnDef>;
     fn child_defs() -> Array<(felt252, TypeDef)>;
 }
 
 pub mod table_primary {
     use introspect_types::{PrimaryDef, PrimaryTypeDef};
-    pub impl MultiKey of super::TablePrimary {
-        type Primary = felt252;
-        fn primary_def() -> introspect_types::PrimaryDef {
-            PrimaryDef { name: "__id", type_def: PrimaryTypeDef::Felt252, attributes: [].span() }
-        }
-    }
-
     pub impl Default of super::TablePrimary {
         type Primary = felt252;
         fn primary_def() -> introspect_types::PrimaryDef {
-            PrimaryDef { name: "id", type_def: PrimaryTypeDef::Felt252, attributes: [].span() }
+            PrimaryDef { name: "__id", type_def: PrimaryTypeDef::Felt252, attributes: [].span() }
         }
     }
 }
@@ -64,6 +56,14 @@ impl KeySpanToIdImpl<
 
 pub trait RecordId<K, impl T: Table> {
     fn record_id(self: @K) -> felt252;
+}
+
+pub mod record_id_felt252 {
+    pub impl Impl<impl T: super::Table> of super::RecordId<felt252, T> {
+        fn record_id(self: @felt252) -> felt252 {
+            *self
+        }
+    }
 }
 
 pub trait RecordIds<KS, impl T: Table> {
@@ -366,7 +366,7 @@ pub impl RecordFieldImpl<
     }
 }
 
-pub mod iserde_table_member {
+pub mod table_member {
     use introspect_types::ISerde;
     use crate::Snapable;
     pub impl Impl<
@@ -479,7 +479,6 @@ pub impl ColumnGroupRecordsFields<
 
 pub trait Table {
     type Primary;
-    type Column;
     type Record;
     const ID: felt252;
     fn name() -> ByteArray;
@@ -492,7 +491,6 @@ pub trait Table {
 
 pub trait ITable {
     impl T: Table;
-    type Column;
     const ID: felt252;
     fn register_table();
     fn insert<R, +RecordableEvent<R, Self::T>, +Drop<R>>(record: R);
@@ -542,7 +540,6 @@ pub impl TableImpl<
     Record, impl Meta: TableMeta, impl Primary: TablePrimary, impl Columns: TableColumns,
 > of Table {
     type Primary = Primary::Primary;
-    type Column = Columns::Column;
     type Record = Record;
     const ID: felt252 = Meta::ID;
     fn name() -> ByteArray {
@@ -562,8 +559,7 @@ pub impl TableImpl<
     }
 }
 
-pub impl ITableImpl<impl T: Table, +ColumnId<T::Column>, +Drop<T::Column>> of ITable {
-    type Column = T::Column;
+pub impl ITableImpl<impl T: Table> of ITable {
     impl T = T;
     const ID: felt252 = T::ID;
     fn register_table() {

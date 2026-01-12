@@ -62,8 +62,8 @@ impl IntrospectItemTrait for IStruct {
     fn kind(&self) -> &str {
         "Struct"
     }
-    fn child_types(&self) -> Vec<Ty> {
-        self.members.iter().map(|m| m.ty.clone()).collect()
+    fn child_types(&self) -> Vec<&Ty> {
+        self.members.iter().map(|m| &m.ty).collect()
     }
 }
 

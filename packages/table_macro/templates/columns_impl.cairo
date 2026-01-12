@@ -1,9 +1,8 @@
-impl {{columns_impl}} of introspect_table::TableColumns {
-    type Column = {{column_enum}};
-    fn columns() -> Span<introspect_types::ColumnDef> {
+impl {{columns_impl}} of {{i_table_path}}::TableColumns {
+    fn columns() -> Span<{{i_path}}::ColumnDef> {
         {{column_defs}}
     }
-    fn child_defs() -> Array<(felt252, introspect_types::TypeDef)> {
+    fn child_defs() -> Array<(felt252, {{i_path}}::TypeDef)> {
         {{child_defs}}
     }
 }

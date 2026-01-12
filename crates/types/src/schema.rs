@@ -1,7 +1,7 @@
 use crate::utils::felt_to_utf8_string;
 use crate::{
-    Attribute, EncodedBytes, FeltIterator, Primary, PrimaryValue, Record, RecordValues, ToValue,
-    TypeDef, felt_to_bytes31,
+    Attribute, ElementDef, EncodedBytes, FeltIterator, Primary, PrimaryValue, Record, RecordValues,
+    ToValue, TypeDef, felt_to_bytes31,
 };
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
@@ -133,6 +133,9 @@ pub enum PrimaryTypeDef {
     StorageBaseAddress,
 }
 
+impl ElementDef for PrimaryTypeDef {}
+impl ElementDef for PrimaryDef {}
+
 impl From<&ColumnDef> for ColumnInfo {
     fn from(column_def: &ColumnDef) -> Self {
         ColumnInfo {
@@ -155,6 +158,31 @@ impl<T: AsRef<ColumnDef>> From<T> for ColumnInfo {
 }
 
 impl PrimaryTypeDef {
+    pub fn item_name(&self) -> &str {
+        match self {
+            PrimaryTypeDef::Felt252 => "Felt252",
+            PrimaryTypeDef::ShortUtf8 => "ShortUtf8",
+            PrimaryTypeDef::Bytes31 => "Bytes31",
+            PrimaryTypeDef::Bytes31E(_) => "Bytes31E",
+            PrimaryTypeDef::Bool => "Bool",
+            PrimaryTypeDef::U8 => "U8",
+            PrimaryTypeDef::U16 => "U16",
+            PrimaryTypeDef::U32 => "U32",
+            PrimaryTypeDef::U64 => "U64",
+            PrimaryTypeDef::U128 => "U128",
+            PrimaryTypeDef::I8 => "I8",
+            PrimaryTypeDef::I16 => "I16",
+            PrimaryTypeDef::I32 => "I32",
+            PrimaryTypeDef::I64 => "I64",
+            PrimaryTypeDef::I128 => "I128",
+            PrimaryTypeDef::ClassHash => "ClassHash",
+            PrimaryTypeDef::ContractAddress => "ContractAddress",
+            PrimaryTypeDef::EthAddress => "EthAddress",
+            PrimaryTypeDef::StorageAddress => "StorageAddress",
+            PrimaryTypeDef::StorageBaseAddress => "StorageBaseAddress",
+        }
+    }
+
     pub fn to_primary_value(&self, felt: Felt) -> Option<PrimaryValue> {
         match self {
             PrimaryTypeDef::Felt252 => Some(PrimaryValue::Felt252(felt)),

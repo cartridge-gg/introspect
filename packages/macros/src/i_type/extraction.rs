@@ -73,6 +73,22 @@ pub enum MacroAttribute {
     Encoded(String),
 }
 
+pub fn sort_attribute_variants(
+    attributes: Vec<AttributeVariant>,
+) -> (Vec<Attribute>, Vec<IAttribute>, Vec<MacroAttribute>) {
+    let mut macro_attributes = Vec::new();
+    let mut iattributes = Vec::new();
+    let mut other_attributes = Vec::new();
+    for attr in attributes {
+        match attr {
+            AttributeVariant::Macro(m) => macro_attributes.push(m),
+            AttributeVariant::Emit(i) => iattributes.push(i),
+            AttributeVariant::Ignore(o) => other_attributes.push(o),
+        }
+    }
+    (other_attributes, iattributes, macro_attributes)
+}
+
 impl DefaultIExtractor {
     pub fn new() -> Self {
         DefaultIExtractor {}
@@ -86,20 +102,11 @@ impl DefaultIExtractor {
         &self,
         attributes: Vec<Attribute>,
     ) -> Result<(Vec<Attribute>, Vec<IAttribute>, Vec<MacroAttribute>)> {
-        let mut macro_attributes = Vec::new();
-        let mut iattributes = Vec::new();
-        let mut other_attributes = Vec::new();
-        for attr in attributes {
-            let parsed = self.parse_attribute(attr)?;
-            for p in parsed {
-                match p {
-                    AttributeVariant::Macro(m) => macro_attributes.push(m),
-                    AttributeVariant::Emit(i) => iattributes.push(i),
-                    AttributeVariant::Ignore(o) => other_attributes.push(o),
-                }
-            }
-        }
-        Ok((other_attributes, iattributes, macro_attributes))
+        attributes
+            .into_iter()
+            .map(|a| self.parse_attribute(a))
+            .collect::<Result<Vec<_>>>()
+            .map(|v| sort_attribute_variants(v.into_iter().flatten().collect()))
     }
 
     pub fn parse_attribute(&self, attribute: Attribute) -> Result<Vec<AttributeVariant>> {

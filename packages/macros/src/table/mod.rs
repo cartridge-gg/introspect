@@ -2,7 +2,9 @@ use crate::Ty;
 use crate::ty::TyItem;
 
 pub mod column;
-pub use column::Column;
+pub mod primary;
+pub use column::ColumnDef;
+pub use primary::{PrimaryDef, PrimaryTypeDefVariant};
 
 impl Ty {
     pub fn is_primary_type(&self) -> bool {

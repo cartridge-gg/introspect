@@ -1,8 +1,8 @@
-pub use crate::introspect::merge_defs;
+use crate::PrimaryTypeDef;
 pub use crate::serde::iserialize_keyed_type;
 pub use crate::{
-    Attribute, EnumDef, FixedArrayDef, ISerde, Introspect, MemberDef, ResultDef, StructDef, TypeDef,
-    VariantDef,
+    Attribute, EnumDef, FixedArrayDef, ISerde, Introspect, MemberDef, PrimaryDef, PrimaryTrait,
+    ResultDef, StructDef, TypeDef, VariantDef,
 };
 
 #[inline(always)]
@@ -99,10 +99,15 @@ pub fn primary_def(
 }
 
 #[inline]
-pub fn primary_default_def<T, impl I: Introspect<T>>(
+pub fn primary_default_def<T, impl P: PrimaryTrait<T>>(
     name: ByteArray, attributes: Span<Attribute>,
 ) -> PrimaryDef {
-    PrimaryDef { name, attributes, type_def: I::type_def() }
+    PrimaryDef { name, attributes, type_def: P::to_type_def() }
+}
+
+#[inline]
+pub fn primary_type_def<T, impl P: PrimaryTrait<T>>() -> PrimaryTypeDef {
+    P::to_type_def()
 }
 
 #[inline]

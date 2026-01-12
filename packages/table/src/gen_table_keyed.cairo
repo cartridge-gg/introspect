@@ -30,10 +30,9 @@ impl FooTableMeta of introspect_table::TableMeta {
 }
 
 
-impl FooTablePrimary = introspect_table::table_primary::MultiKey;
+impl FooTablePrimary = introspect_table::table_primary::Default;
 
 impl FooTableColumns of introspect_table::TableColumns {
-    type Column = FooColumn;
     fn columns() -> Span<introspect_types::ColumnDef> {
         [
             introspect_types::ColumnDefTrait::new::<u128>(FooColumns::key_1, "key_1", [].span()),
@@ -60,12 +59,6 @@ pub impl FooKeySpanToPrimary of introspect_table::KeySpanToPrimary<Foo, FooTable
 
 ///// Non Overridable
 
-#[derive(Drop)]
-pub enum FooColumn {
-    name,
-    something,
-}
-
 pub mod FooColumns {
     pub const key_1: felt252 = selector!("key_1");
     pub const key_2: felt252 = selector!("key_2");
@@ -78,29 +71,16 @@ pub impl FooTable =
 
 pub impl IFooTable = introspect_table::ITableImpl<FooTable>;
 
-impl Foo_key_1_MemberImpl =
-    introspect_table::iserde_table_member::Impl<FooTable, FooColumns::key_1, u128>;
+impl Foo_key_1_MemberImpl = introspect_table::table_member::Impl<FooTable, FooColumns::key_1, u128>;
 
 impl Foo_key_2_MemberImpl =
-    introspect_table::iserde_table_member::Impl<FooTable, FooColumns::key_2, ByteArray>;
+    introspect_table::table_member::Impl<FooTable, FooColumns::key_2, ByteArray>;
 
 pub impl Foo_name_MemberImpl =
-    introspect_table::iserde_table_member::Impl<FooTable, FooColumns::name, ByteArray>;
+    introspect_table::table_member::Impl<FooTable, FooColumns::name, ByteArray>;
 
 pub impl Foo_something_MemberImpl =
-    introspect_table::iserde_table_member::Impl<FooTable, FooColumns::something, u8>;
-
-impl FooColumnImpl<
-    C, impl SS: introspect_table::Snapable<@C, FooColumn>,
-> of introspect_table::ColumnId<C, FooTable> {
-    const fn column_id(self: @C) -> felt252 {
-        match SS::snapshot(self) {
-            FooColumn::name => FooColumns::name,
-            FooColumn::something => FooColumns::something,
-        }
-    }
-}
-
+    introspect_table::table_member::Impl<FooTable, FooColumns::something, u8>;
 
 impl FooRecordKey of introspect_table::RecordKey<Foo, (@u128, @ByteArray), FooTable> {
     type Key = (u128, ByteArray);

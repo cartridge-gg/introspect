@@ -33,7 +33,6 @@ impl CharacterTablePrimary of introspect_table::TablePrimary {
 
 
 impl CharacterTableColumns of introspect_table::TableColumns {
-    type Column = CharacterColumn;
     fn columns() -> Span<introspect_types::ColumnDef> {
         [
             introspect_types::ColumnDef {
@@ -62,20 +61,13 @@ impl CharacterTableColumns of introspect_table::TableColumns {
     }
 }
 
-///// Non Overridable
-
-#[derive(Drop)]
-pub enum CharacterColumn {
-    name,
-    something,
-    player,
-}
-
 pub mod CharacterColumns {
     pub const name: felt252 = selector!("name");
     pub const something: felt252 = selector!("something");
     pub const player: felt252 = selector!("player");
 }
+
+///// Non Overridable
 
 pub impl CharacterTable =
     introspect_table::TableImpl<
@@ -85,27 +77,10 @@ pub impl CharacterTable =
 pub impl ICharacterTable = introspect_table::ITableImpl<CharacterTable>;
 
 pub impl Character_name_MemberImpl =
-    introspect_table::iserde_table_member::Impl<CharacterTable, CharacterColumns::name, ByteArray>;
+    introspect_table::table_member::Impl<CharacterTable, CharacterColumns::name, ByteArray>;
 
 pub impl Character_something_MemberImpl =
-    introspect_table::iserde_table_member::Impl<CharacterTable, CharacterColumns::something, u8>;
-pub impl Character_player_MemberImpl =
-    introspect_table::iserde_table_member::Impl<
-        CharacterTable, CharacterColumns::player, ContractAddress,
-    >;
-
-impl CharacterColumnImpl<
-    C, impl SS: introspect_table::Snapable<@C, CharacterColumn>,
-> of introspect_table::ColumnId<C, CharacterTable> {
-    const fn column_id(self: @C) -> felt252 {
-        match SS::snapshot(self) {
-            CharacterColumn::name => CharacterColumns::name,
-            CharacterColumn::something => CharacterColumns::something,
-            CharacterColumn::player => CharacterColumns::player,
-        }
-    }
-}
-
+    introspect_table::table_member::Impl<CharacterTable, CharacterColumns::something, u8>;
 
 impl CharacterRecordId of introspect_table::RecordId<Character, CharacterTable> {
     fn record_id(self: @Character) -> felt252 {
