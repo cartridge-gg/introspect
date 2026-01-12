@@ -27,7 +27,9 @@ impl ToTypeDef for IMember {
         let name = &self.name.as_cairo_byte_array();
         let attributes = &self.attributes.as_cairo_span();
         match &self.type_def {
-            TypeDefVariant::Default => member_default_def_tpl(name, attributes, &self.ty),
+            TypeDefVariant::Default => {
+                member_default_def_tpl(name, attributes, &self.ty.as_cairo())
+            }
             TypeDefVariant::TypeDef(type_def) => {
                 member_def_tpl(name, attributes, &type_def.as_cairo())
             }

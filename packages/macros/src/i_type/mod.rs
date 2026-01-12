@@ -1,16 +1,14 @@
 pub mod enums;
 pub mod extraction;
 pub mod structs;
-
+use crate::params::GenericParams;
+use crate::type_def::child_defs_tpl;
+use crate::{AsCairo, I_PATH, Item, ItemTrait, Result, Ty};
 pub use enums::{IEnum, IVariant};
 pub use extraction::{DefaultIExtractor, IExtract};
-pub use structs::{IMember, IStruct};
-
-use crate::params::GenericParams;
-use crate::ty::Tys;
-use crate::{AsCairo, Item, ItemTrait, Result, Ty};
 use introspect_types::TypeDef;
 use std::ops::Deref;
+pub use structs::{IMember, IStruct};
 
 #[derive(Clone, Debug)]
 pub enum TypeDefVariant {
@@ -62,12 +60,30 @@ where
     }
 }
 
+impl Ty {
+    fn child_defs_if_not_of_base_types(&self) -> Option<String> {
+        match self.is_of_base_types() {
+            true => None,
+            false => Some(child_defs_tpl(&self.as_cairo())),
+        }
+    }
+}
+
 pub trait IntrospectItemTrait {
     type ModuleType;
     fn kind(&self) -> &str;
     fn child_types(&self) -> Vec<Ty>;
     fn child_defs(&self) -> String {
-        self.child_types().child_defs()
+        let mut defs: Vec<_> = self
+            .child_types()
+            .iter()
+            .filter_map(Ty::child_defs_if_not_of_base_types)
+            .collect();
+        match defs.len() {
+            0 => "array![]".to_string(),
+            1 => defs.pop().unwrap(),
+            _ => format!("{I_PATH}::merge_defs(array![{}])", defs.join(", ")),
+        }
     }
 }
 

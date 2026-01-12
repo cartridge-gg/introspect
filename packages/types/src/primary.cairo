@@ -37,6 +37,17 @@ pub enum PrimaryTypeDef {
     StorageBaseAddress,
 }
 
+pub trait PrimaryTypeTrait<T>{
+    fn to_type_def() -> PrimaryTypeDef;
+    fn to_felt252(self: @T) -> felt252;
+}
+
+mod primary_type_impl{
+    impl Impl<T, const >of PrimaryTypeTrait<>
+}
+
+
+
 
 impl PrimaryTypeDefSelector of SelectorTrait<PrimaryTypeDef> {
     const fn selector(self: @PrimaryTypeDef) -> felt252 {

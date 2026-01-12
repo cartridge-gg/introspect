@@ -67,11 +67,3 @@ checksum = "sha256:5eae9444e31efdb72431bda696c2cf4ea98ee1475796ba8a3eb50c7279838
 dependencies = [
  "snforge_scarb_plugin",
 ]
-
-[[package]]
-name = "test"
-version = "0.1.2"
-dependencies = [
- "introspect",
- "introspect_macros",
-]

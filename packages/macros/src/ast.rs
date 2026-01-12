@@ -107,6 +107,17 @@ macro_rules! vec_from_element_list {
     };
 }
 
+#[macro_export]
+macro_rules! vec_try_from_element_list {
+    ($list:ident $(. $($methods:ident).+)?, $element:ident) => {
+        impl<'db> TryFromAst<'db, cairo_lang_syntax::node::ast::$list<'db>> for Vec<$element> {
+            fn try_from_ast(ast: cairo_lang_syntax::node::ast::$list<'db>, db: &'db dyn Database) -> Result<Vec<$element>> {
+                ast$(.$($methods(db)).+)?.elements(db).into_iter().map(|e| e.ast_try_into(db)).collect()
+            }
+        }
+    };
+}
+
 typed_syntax_node_to_string_without_trivia!(Expr);
 typed_syntax_node_to_string_without_trivia!(TypeClause.ty);
 

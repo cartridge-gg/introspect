@@ -1,4 +1,5 @@
 use core::fmt::Debug;
+use core::metaprogramming::TypeEqual;
 pub use snforge_std::fuzzable::{Fuzzable, generate_arg};
 
 pub trait Fuzzy<T, +Debug<T>, +Drop<T>> {
@@ -22,6 +23,17 @@ pub trait Fuzzy<T, +Debug<T>, +Drop<T>> {
     }
     fn generate_span_lt(max_length: u32) -> Span<T> {
         Self::generate_array_lt(max_length).span()
+    }
+    fn generate_fixed_array<
+        const N: u32, +Serde<Span<T>>, +Serde<[T; N]>,
+    >() -> [
+        T
+    ; N] {
+        let mut output: Array<felt252> = Default::default();
+        Self::generate_span(N).serialize(ref output);
+        output.pop_front().unwrap();
+        let mut span = output.span();
+        Serde::<[T; N]>::deserialize(ref span).unwrap()
     }
 }
 
@@ -61,6 +73,8 @@ pub trait FuzzableMaxDepth<T, +Drop<T>> {
     ) -> Span<T> {
         Self::generate_array_lt(depth_rem, max_length).span()
     }
+
+    
 }
 
 pub trait FuzzableMaxDepthNode<T> {

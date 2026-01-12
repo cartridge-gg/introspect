@@ -1,11 +1,14 @@
 pub mod enums;
 pub mod structs;
+pub mod utils;
 
 use crate::utils::str_to_token_stream;
-use crate::{Item, ItemTrait, SyntaxItemTrait};
+use crate::{Item, ItemTrait, SyntaxItemTrait, Ty};
 use cairo_lang_macro::{ProcMacroResult, TokenStream, derive_macro};
+use itertools::Itertools;
 
 const FUZZABLE_IMPL_TEMPLATE: &str = include_str!("../../templates/fuzzable_impl.cairo");
+const FUZZABLE_GENERATE_CALL: &str = "snforge_std::fuzzable::Fuzzable::generate()";
 
 #[allow(non_snake_case)]
 #[derive_macro]
@@ -37,6 +40,18 @@ impl FuzzableImpl for Item {
         match self {
             Item::Struct(s) => s.fuzzable_body(),
             Item::Enum(e) => e.fuzzable_body(),
+        }
+    }
+}
+
+impl Ty {
+    pub fn generate_fuzzable(&self) -> String {
+        match self {
+            Ty::Item(_) => FUZZABLE_GENERATE_CALL.to_string(),
+            Ty::Tuple(tup) => tup.iter().map(|_| FUZZABLE_GENERATE_CALL).join(", "),
+            Ty::FixedArray(_) => {
+                panic!("Fixed arrays are not supported yet in fuzzable generation");
+            }
         }
     }
 }

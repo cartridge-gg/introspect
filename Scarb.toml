@@ -14,7 +14,6 @@ members = [
     "packages/macros",
     "packages/tests",
     "packages/table",
-    "tests/test_contract",
 ]
 
 

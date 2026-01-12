@@ -156,6 +156,10 @@ pub fn result_type_def_tpl(ok: &str, err: &str) -> String {
     format!("{I_PATH}::result_type_def({ok}, {err})")
 }
 
+pub fn child_defs_tpl(type_str: &str) -> String {
+    format!("{I_PATH}::child_defs::<{}>()", type_str)
+}
+
 impl AsCairo for IAttribute {
     fn as_cairo(&self) -> String {
         match &self.data {

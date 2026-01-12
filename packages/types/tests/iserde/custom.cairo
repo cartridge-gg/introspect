@@ -9,13 +9,3 @@ use introspect_tests::introspect::{
     WeaponType, Weather,
 };
 
-
-fn test_introspect_iserde<>() {
-    let instance = T::default();
-    let mut serialized = instance.iserialize_inline();
-    assert_eq!(
-        ISerde::ideserialize(ref serialized).unwrap(),
-        instance,
-        "Deserialized doesnt match",
-    );
-}

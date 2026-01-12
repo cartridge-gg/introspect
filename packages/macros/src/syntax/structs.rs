@@ -1,8 +1,8 @@
 use crate::params::GenericParams;
 use crate::{
-    AsCairo, AstInto, AstToString, Attribute, CollectionsAsCairo, Derives, FromAst,
+    AsCairo, AstInto, AstToString, AstTryInto, Attribute, CollectionsAsCairo, Derives,
     IntrospectError, ItemTrait, Result, SyntaxItemTrait, TryFromAst, Ty, Visibility,
-    vec_from_element_list,
+    vec_try_from_element_list,
 };
 use cairo_lang_syntax::node::ast::{ItemStruct, Member as MemberAst};
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -24,18 +24,18 @@ pub struct Member {
     pub ty: Ty,
 }
 
-impl<'db> FromAst<'db, MemberAst<'db>> for Member {
-    fn from_ast(member: MemberAst<'db>, db: &'db dyn Database) -> Self {
-        Self {
+impl<'db> TryFromAst<'db, MemberAst<'db>> for Member {
+    fn try_from_ast(member: MemberAst<'db>, db: &'db dyn Database) -> Result<Self> {
+        Ok(Self {
             visibility: member.visibility(db).into(),
             name: member.name(db).to_string(db),
             attributes: vec![],
-            ty: member.type_clause(db).ast_into(db),
-        }
+            ty: member.type_clause(db).ast_try_into(db)?,
+        })
     }
 }
 
-vec_from_element_list!(MemberList, Member);
+vec_try_from_element_list!(MemberList, Member);
 
 impl<'db> TryFromAst<'db, ItemStruct<'db>> for Struct {
     fn try_from_ast(item: ItemStruct<'db>, db: &'db dyn Database) -> Result<Self> {
@@ -47,7 +47,7 @@ impl<'db> TryFromAst<'db, ItemStruct<'db>> for Struct {
             derives,
             name: item.name(db).to_string(db),
             generic_params: item.generic_params(db).ast_into(db),
-            members: item.members(db).ast_into(db),
+            members: item.members(db).ast_try_into(db)?,
         })
     }
 }

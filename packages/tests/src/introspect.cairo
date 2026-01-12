@@ -1,56 +1,20 @@
 use core::fmt::Debug;
 
-#[derive(Debug, Default, Introspect, Fuzzable)]
+#[derive(Debug, Default, Introspect)]
 pub struct TestStruct<T, S> {
     #[key]
     pub value: Span<T>,
     pub value2: (felt252, S),
 }
-#[derive(Debug, Default, Introspect, Fuzzable)]
+
+#[derive(Debug, Default, Introspect)]
 pub enum TestEnum<T> {
     #[default]
     Variant1,
     Variant2: TestStruct<T, felt252>,
 }
 
-
-pub impl GenTestStructFuzzableImpl<
-    T,
-    S,
-    +core::fmt::Debug<T>,
-    +snforge_std::fuzzable::Fuzzable<T>,
-    +core::fmt::Debug<S>,
-    +snforge_std::fuzzable::Fuzzable<S>,
-> of snforge_std::fuzzable::Fuzzable<TestStruct<T, S>> {
-    fn blank() -> TestStruct<T, S> {
-        Default::default()
-    }
-
-    fn generate() -> TestStruct<T, S> {
-        TestStruct {
-            value: snforge_std::fuzzable::Fuzzable::generate(),
-            value2: snforge_std::fuzzable::Fuzzable::generate(),
-        }
-    }
-}
-
-pub impl GenTestEnumFuzzableImpl<
-    T, +core::fmt::Debug<T>, +snforge_std::fuzzable::Fuzzable<T>,
-> of snforge_std::fuzzable::Fuzzable<TestEnum<T>> {
-    fn blank() -> TestEnum<T> {
-        Default::default()
-    }
-
-    fn generate() -> TestEnum<T> {
-        match snforge_std::fuzzable::generate_arg(0_u32, 1) {
-            0 => TestEnum::Variant1,
-            1 => TestEnum::Variant2(snforge_std::fuzzable::Fuzzable::generate()),
-            _ => Default::default(),
-        }
-    }
-}
-
-#[derive(Copy, Drop, Serde, IntrospectRef, Debug, PartialEq)]
+#[derive(Copy, Drop, Serde, IntrospectRef, Debug, PartialEq, Default, Fuzzable)]
 pub struct Foo {
     #[key]
     k1: u8,
@@ -59,7 +23,7 @@ pub struct Foo {
     v1: u128,
     v2: u32,
 }
-#[derive(Copy, Drop, Serde, Debug, Introspect)]
+#[derive(Copy, Drop, Serde, Debug, Introspect, Default, Fuzzable)]
 pub struct Foo2 {
     #[key]
     k1: u8,
@@ -69,7 +33,7 @@ pub struct Foo2 {
     v2: u32,
 }
 
-#[derive(Copy, Drop, Serde, Debug, Introspect)]
+#[derive(Copy, Drop, Serde, Debug, Introspect, Default, Fuzzable)]
 pub struct Foo3 {
     #[key]
     k1: u256,
@@ -79,7 +43,7 @@ pub struct Foo3 {
     v2: u32,
 }
 
-#[derive(Copy, Drop, Serde, Debug, IntrospectRef)]
+#[derive(Copy, Drop, Serde, Debug, IntrospectRef, Default, Fuzzable)]
 pub struct AStruct {
     a: u8,
     b: u8,
@@ -87,7 +51,7 @@ pub struct AStruct {
     d: u8,
 }
 
-#[derive(Copy, Drop, Serde, Debug, Introspect)]
+#[derive(Copy, Drop, Serde, Debug, Introspect, Default, Fuzzable)]
 pub struct Foo4 {
     #[key]
     id: felt252,
@@ -96,7 +60,7 @@ pub struct Foo4 {
     v2: u128,
     v3: AStruct,
 }
-#[derive(Copy, Drop, Serde, Debug, Introspect)]
+#[derive(Copy, Drop, Serde, Debug, Introspect, Default, Fuzzable)]
 pub struct FooSchema {
     v0: u256,
     v3: AStruct,
@@ -150,7 +114,7 @@ pub struct DojoStoreModel {
     d: MyEnum,
 }
 
-#[derive(Copy, Drop, Serde, Introspect, Default, Debug, PartialEq)]
+#[derive(Copy, Drop, Serde, Introspect, Default, Debug, PartialEq, Fuzzable)]
 pub enum EnumKey {
     #[default]
     KEY_1,

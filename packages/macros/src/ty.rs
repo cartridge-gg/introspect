@@ -1,16 +1,121 @@
-use crate::{AstInto, AstToString, FromAst, I_PATH};
+use crate::{AsCairo, AstToString, AstTryInto, IntrospectError, Result, TryFromAst};
 use cairo_lang_syntax::node::ast::{OptionTypeClause, TypeClause};
+use itertools::Itertools;
 use salsa::Database;
-use std::ops::Deref;
 
-#[derive(Clone, Debug)]
-pub struct Ty(pub String);
+#[derive(Clone, Debug, PartialEq)]
+pub struct FixedArray {
+    pub ty: Ty,
+    pub size: String,
+}
 
-impl Deref for Ty {
-    type Target = String;
+#[derive(Clone, Debug, PartialEq)]
+pub struct TyItem {
+    pub name: String,
+    pub params: Option<Vec<Ty>>,
+}
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
+#[derive(Clone, Debug, PartialEq)]
+pub enum Ty {
+    Item(TyItem),
+    Tuple(Vec<Ty>),
+    FixedArray(Box<FixedArray>),
+}
+
+impl TyItem {
+    pub fn parse(type_str: &str) -> Result<Self> {
+        if type_str.ends_with('>') {
+            let (name, types) =
+                parse_wrapped_types(type_str).ok_or(IntrospectError::FailedToParseType)?;
+            let params = types.into_iter().map(Ty::parse).collect::<Result<_>>()?;
+            Ok(Self {
+                name: name.to_string(),
+                params: Some(params),
+            })
+        } else {
+            Ok(Self {
+                name: type_str.to_string(),
+                params: None,
+            })
+        }
+    }
+
+    pub fn parse_ty(type_str: &str) -> Result<Ty> {
+        Self::parse(type_str).map(Ty::Item)
+    }
+}
+
+impl FixedArray {
+    pub fn parse(string: &str) -> Result<Self> {
+        let (type_str, size) =
+            parse_fixed_array(string).ok_or(IntrospectError::FailedToParseType)?;
+        Ty::parse(type_str).map(|ty| Self {
+            ty,
+            size: size.to_string(),
+        })
+    }
+    pub fn parse_ty(string: &str) -> Result<Ty> {
+        Self::parse(string).map(|fa| Ty::FixedArray(Box::new(fa)))
+    }
+}
+
+impl Ty {
+    pub fn parse(type_str: &str) -> Result<Self> {
+        let type_str = type_str.trim();
+        if type_str.starts_with('(') && type_str.ends_with(')') {
+            Ty::parse_list(type_str).map(Ty::Tuple)
+        } else if type_str.starts_with('[') && type_str.ends_with(']') {
+            FixedArray::parse_ty(type_str)
+        } else {
+            TyItem::parse(type_str).map(Ty::Item)
+        }
+    }
+
+    pub fn parse_list(type_str: &str) -> Result<Vec<Self>> {
+        match parse_list(type_str) {
+            Some(types) => types.into_iter().map(Ty::parse).collect::<Result<Vec<_>>>(),
+            None => Err(IntrospectError::FailedToParseType),
+        }
+    }
+
+    pub fn parse_wrapped(type_str: &str) -> Result<(&str, Vec<Self>)> {
+        let (wrapper, types) =
+            parse_wrapped_types(type_str).ok_or(IntrospectError::FailedToParseType)?;
+        let parsed_types: Result<Vec<Ty>> = types.into_iter().map(Ty::parse).collect();
+        parsed_types.map(|pts| (wrapper, pts))
+    }
+
+    pub fn is_of_base_types(&self) -> bool {
+        match self {
+            Ty::Item(i) => is_base_type(&i.name),
+            Ty::FixedArray(a) => a.ty.is_of_base_types(),
+            Ty::Tuple(t) => t.iter().all(Ty::is_of_base_types),
+        }
+    }
+
+    pub fn is_not_of_base_types(&self) -> bool {
+        !self.is_of_base_types()
+    }
+}
+
+fn tys_to_list_string(tys: &[Ty]) -> String {
+    tys.iter().map(Ty::as_cairo).join(", ")
+}
+
+impl AsCairo for Ty {
+    fn as_cairo(&self) -> String {
+        match self {
+            Ty::Item(item) => match &item.params {
+                Some(params) => format!("{}<{}>", item.name, tys_to_list_string(params)),
+                None => item.name.clone(),
+            },
+            Ty::Tuple(types) => {
+                format!("({})", tys_to_list_string(types))
+            }
+            Ty::FixedArray(fixed_array) => {
+                format!("[{}; {}]", fixed_array.ty.as_cairo(), fixed_array.size)
+            }
+        }
     }
 }
 
@@ -47,94 +152,65 @@ pub fn is_base_type(type_name: &str) -> bool {
     )
 }
 
-pub fn get_inner_type(type_name: &str) -> String {
+pub fn parse_wrapped_types(type_name: &str) -> Option<(&str, Vec<&str>)> {
     let start = type_name.find('<').unwrap();
-    type_name[start + 1..type_name.len() - 1].to_string()
+    Some((&type_name[..start], parse_list(&type_name[start..])?))
 }
 
-pub fn get_fixed_array_inner_type(type_name: &str) -> &str {
-    type_name[1..type_name.len() - 1]
-        .rsplitn(2, ';')
-        .last()
-        .unwrap()
-        .trim()
+pub fn parse_fixed_array(type_name: &str) -> Option<(&str, &str)> {
+    let mut splits = type_name[1..type_name.len() - 1].rsplitn(2, ';');
+    let len = splits.next()?.trim();
+    let inner_type = splits.last()?.trim();
+    Some((inner_type, len))
 }
 
-pub fn get_tuple_inner_types(type_name: &str) -> Vec<String> {
+pub fn parse_list(type_name: &str) -> Option<Vec<&str>> {
     let inner = &type_name[1..type_name.len() - 1];
-    let types: Vec<String> = inner
-        .split(',')
-        .map(|s| s.trim().to_string())
-        .filter(|s| !s.is_empty())
-        .collect();
-    types
-}
+    let mut types: Vec<&str> = Vec::new();
+    let mut stack: Vec<char> = Vec::new();
+    let mut start = 0;
 
-pub fn is_of_base_types(type_name: &str) -> bool {
-    if type_name.ends_with(">")
-        && (["Span<", "Array<", "Option<"]
-            .iter()
-            .any(|g| type_name.starts_with(g)))
-    {
-        is_of_base_types(&get_inner_type(&type_name))
-    } else if type_name.starts_with("[") && type_name.ends_with("]") {
-        is_of_base_types(get_fixed_array_inner_type(type_name))
-    } else if type_name.starts_with("(") && type_name.ends_with(")") {
-        get_tuple_inner_types(type_name)
-            .iter()
-            .all(|e| is_of_base_types(e))
-    } else {
-        is_base_type(type_name)
-    }
-}
-
-impl Ty {
-    pub fn is_base_type(&self) -> bool {
-        is_base_type(&self.0)
-    }
-
-    pub fn is_of_base_types(&self) -> bool {
-        is_of_base_types(&self.0)
-    }
-
-    pub fn child_defs(&self) -> String {
-        format!("{I_PATH}::child_defs::<{}>()", &self.0)
-    }
-
-    pub fn child_defs_if_needed(&self) -> Option<String> {
-        match self.is_of_base_types() {
-            true => None,
-            false => Some(self.child_defs()),
+    for (i, c) in inner.chars().enumerate() {
+        match c {
+            '(' => stack.push(')'),
+            '[' => stack.push(']'),
+            '<' => stack.push('>'),
+            '{' => stack.push('}'),
+            ')' | ']' | '>' | '}' => {
+                if stack.pop() != Some(c) {
+                    return None;
+                }
+            }
+            ',' if stack.is_empty() => {
+                types.push(inner[start..i].trim());
+                start = i + 1;
+            }
+            _ => {}
         }
     }
-}
 
-impl<'db> FromAst<'db, TypeClause<'db>> for Ty {
-    fn from_ast(ast: TypeClause<'db>, db: &'db dyn Database) -> Self {
-        Ty(ast.to_string(db))
+    match stack.is_empty() {
+        true => {
+            if start < inner.len() {
+                types.push(inner[start..].trim());
+            }
+            Some(types)
+        }
+        false => None,
     }
 }
 
-impl<'db> FromAst<'db, OptionTypeClause<'db>> for Option<Ty> {
-    fn from_ast(ast: OptionTypeClause<'db>, db: &'db dyn Database) -> Self {
+impl<'db> TryFromAst<'db, TypeClause<'db>> for Ty {
+    fn try_from_ast(ast: TypeClause<'db>, db: &'db dyn Database) -> Result<Self> {
+        Ty::parse(&ast.to_string(db))
+    }
+}
+
+impl<'db> TryFromAst<'db, OptionTypeClause<'db>> for Option<Ty> {
+    fn try_from_ast(ast: OptionTypeClause<'db>, db: &'db dyn Database) -> Result<Self> {
         match ast {
-            OptionTypeClause::Empty(_) => None,
-            OptionTypeClause::TypeClause(ty) => Some(ty.ast_into(db)),
-        }
-    }
-}
-
-pub trait Tys {
-    fn child_defs(&self) -> String;
-}
-
-impl Tys for Vec<Ty> {
-    fn child_defs(&self) -> String {
-        let defs: Vec<String> = self.iter().filter_map(Ty::child_defs_if_needed).collect();
-        match defs.len() {
-            0 => "array![]".to_string(),
-            1 => defs[0].clone(),
-            _ => format!("{I_PATH}::merge_defs(array![{}])", defs.join(", ")),
+            OptionTypeClause::Empty(_) => Ok(None),
+            OptionTypeClause::TypeClause(ty) => ty.ast_try_into(db).map(Some),
         }
     }
 }

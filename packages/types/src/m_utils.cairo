@@ -91,6 +91,20 @@ pub fn boxed_type_def(type_def: TypeDef) -> Box<TypeDef> {
     BoxTrait::new(type_def)
 }
 
+#[inline(always)]
+pub fn primary_def(
+    name: ByteArray, attributes: Span<Attribute>, type_def: PrimaryTypeDef,
+) -> PrimaryDef {
+    PrimaryDef { name, attributes, type_def }
+}
+
+#[inline]
+pub fn primary_default_def<T, impl I: Introspect<T>>(
+    name: ByteArray, attributes: Span<Attribute>,
+) -> PrimaryDef {
+    PrimaryDef { name, attributes, type_def: I::type_def() }
+}
+
 #[inline]
 pub fn iserialize<T, impl I: ISerde<T>>(value: @T, ref output: Array<felt252>) {
     I::iserialize(value, ref output);

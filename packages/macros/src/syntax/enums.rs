@@ -1,8 +1,8 @@
 use crate::as_cairo::CollectionsAsCairo;
 use crate::ast::AstToString;
 use crate::{
-    AsCairo, AstInto, Attribute, Derives, FromAst, GenericParams, IntrospectError, ItemTrait,
-    Result, SyntaxItemTrait, TryFromAst, Ty, Visibility, vec_from_element_list,
+    AsCairo, AstInto, AstTryInto, Attribute, Derives, GenericParams, IntrospectError, ItemTrait,
+    Result, SyntaxItemTrait, TryFromAst, Ty, Visibility, vec_try_from_element_list,
 };
 use cairo_lang_syntax::node::ast::{ItemEnum, Variant as VariantAst};
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -23,18 +23,18 @@ pub struct Variant {
     pub ty: Option<Ty>,
 }
 
-impl<'db> FromAst<'db, VariantAst<'db>> for Variant {
-    fn from_ast(variant: VariantAst<'db>, db: &'db dyn Database) -> Self {
+impl<'db> TryFromAst<'db, VariantAst<'db>> for Variant {
+    fn try_from_ast(variant: VariantAst<'db>, db: &'db dyn Database) -> Result<Self> {
         let name = variant.name(db).to_string(db);
-        Self {
+        Ok(Self {
             name,
             attributes: variant.attributes(db).ast_into(db),
-            ty: variant.type_clause(db).ast_into(db),
-        }
+            ty: variant.type_clause(db).ast_try_into(db)?,
+        })
     }
 }
 
-vec_from_element_list!(VariantList, Variant);
+vec_try_from_element_list!(VariantList, Variant);
 
 impl<'db> TryFromAst<'db, ItemEnum<'db>> for Enum {
     fn try_from_ast(item: ItemEnum<'db>, db: &'db dyn Database) -> Result<Self> {
@@ -46,7 +46,7 @@ impl<'db> TryFromAst<'db, ItemEnum<'db>> for Enum {
             derives,
             name: item.name(db).to_string(db),
             generic_params: item.generic_params(db).ast_into(db),
-            variants: item.variants(db).ast_into(db),
+            variants: item.variants(db).ast_try_into(db)?,
         })
     }
 }

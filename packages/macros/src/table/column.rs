@@ -1,5 +1,6 @@
 use crate::i_type::TypeDefVariant;
 use crate::i_type::structs::IMember;
+use crate::utils::string_to_keccak_felt;
 use crate::{AsCairo, AsCairoBytes, CollectionsAsCairo, IAttribute, Ty};
 use starknet_types_core::felt::Felt;
 
@@ -7,6 +8,7 @@ use starknet_types_core::felt::Felt;
 pub struct Column {
     pub id: Felt,
     pub name: String,
+    pub member: String,
     pub attributes: Vec<IAttribute>,
     pub ty: Ty,
     pub type_def: TypeDefVariant,
@@ -17,10 +19,21 @@ pub fn column_def_tpl(id: &str, name: &str, attributes: &str, type_def: &str) ->
 }
 
 impl IMember {
-    pub fn to_column(&self, id: Felt) -> Column {
+    pub fn to_column_default(&self) -> Column {
+        Column {
+            id: string_to_keccak_felt(&self.name),
+            name: self.name.clone(),
+            member: self.name.clone(),
+            ty: self.ty.clone(),
+            attributes: self.attributes.clone(),
+            type_def: TypeDefVariant::Default,
+        }
+    }
+    pub fn to_column(&self, id: Felt, name: String) -> Column {
         Column {
             id,
-            name: self.name.clone(),
+            name,
+            member: self.name.clone(),
             ty: self.ty.clone(),
             attributes: self.attributes.clone(),
             type_def: self.type_def.clone(),

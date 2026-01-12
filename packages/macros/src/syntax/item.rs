@@ -1,4 +1,4 @@
-use crate::{AsCairo, Enum, GenericParams, IntrospectError, ItemTrait, Result, Struct, TryFromAst};
+use crate::{Enum, GenericParams, IntrospectError, ItemTrait, Result, Struct, TryFromAst};
 use cairo_lang_macro::TokenStream;
 use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_syntax::node::SyntaxNode;

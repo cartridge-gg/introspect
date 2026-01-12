@@ -1,11 +1,11 @@
+use crate::I_TABLE_PATH;
+use crate::templates::table_meta_tpl;
 use crate::utils::felt_to_hex_string;
 use indent::indent_by;
-use introspect_macros::attribute::{IAttribute, iattributes_to_span};
-use introspect_macros::child_defs::combined_type_child_defs;
-use introspect_macros::column::make_column_def;
-use introspect_macros::introsepct_items::type_child_defs;
-use introspect_macros::utils::{spanify, string_to_keccak_felt};
-use introspect_macros::{Member, Struct};
+use introspect_macros::i_type::TypeDefVariant;
+use introspect_macros::table::column::Column;
+use introspect_macros::utils::string_to_keccak_felt;
+use introspect_macros::{AsCairoBytes, CollectionsAsCairo, I_PATH, IAttribute, Member, Struct, Ty};
 use starknet_types_core::felt::Felt;
 
 const TABLE_IMPL_NAME: &str = "{{impl_name}}Table";
@@ -30,17 +30,10 @@ pub struct Key {
     pub c_type: String,
 }
 
-pub struct Column {
-    pub id: Felt,
-    pub attributes: Vec<IAttribute>,
-    pub name: String,
-    pub member: String,
-    pub c_type: String,
-}
-
 pub struct Primary {
     pub name: String,
-    pub c_type: String,
+    pub ty: Ty,
+    pub type_def: TypeDefVariant,
 }
 
 pub struct Table {
@@ -66,7 +59,7 @@ trait TableMemberTrait {
 
 impl Column {
     pub fn id_hex(&self) -> String {
-        felt_to_hex_string(&self.id)
+        self.id.to_fixed_hex_string()
     }
 
     pub fn generate_column_def(&self) -> String {
@@ -104,30 +97,6 @@ impl<'db> TableMemberTrait for Member<'db> {
             name: self.name.clone(),
             c_type: self.ty.clone(),
         }
-    }
-
-    fn is_primary(&self) -> bool {
-        matches!(
-            self.ty.as_str(),
-            "felt252"
-                | "bool"
-                | "u8"
-                | "u16"
-                | "u32"
-                | "u64"
-                | "u128"
-                | "i8"
-                | "i16"
-                | "i32"
-                | "i64"
-                | "i128"
-                | "bytes31"
-                | "ClassHash"
-                | "ContractAddress"
-                | "EthAddress"
-                | "StorageAddress"
-                | "StorageBaseAddress"
-        )
     }
 
     fn is_key(&self) -> bool {
@@ -227,14 +196,14 @@ impl Table {
     }
 
     pub fn generate_meta_impl(&self) -> String {
-        META_IMPL_TPL
-            .replace("{{meta_impl}}", &self.meta_impl)
-            .replace("{{table_id}}", &self.id_hex())
-            .replace("{{table_name}}", &self.name)
-            .replace(
-                "{{attributes}}",
-                &indent_by(4, &iattributes_to_span(&self.attributes)),
-            )
+        table_meta_tpl(
+            I_PATH,
+            I_TABLE_PATH,
+            &self.meta_impl,
+            &self.id_hex(),
+            &self.name.as_cairo_byte_array(),
+            &self.attributes.as_cairo_span(),
+        )
     }
 
     pub fn generate_columns_impl(&self) -> String {

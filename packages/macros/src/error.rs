@@ -18,6 +18,8 @@ pub enum IntrospectError {
     InvalidDerivesArgumentFormat,
     #[error("attribute '{0}' has Invalid format.")]
     InvalidIntrospectAttributeFormat(String),
+    #[error("Failed to parse type.")]
+    FailedToParseType,
 }
 
 pub type Result<T> = std::result::Result<T, IntrospectError>;
