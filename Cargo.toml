@@ -10,7 +10,7 @@ members = [
 exclude = ["crates/type_library"]
 
 [workspace.package]
-edition = "2021"
+edition = "2024"
 license = "Apache-2.0"
 license-file = "LICENSE"
 repository = "https://github.com/cartridge-gg/introspect"
@@ -46,6 +46,7 @@ starknet-crypto = "0.8"
 starknet-types-core = "0.2.0"
 thiserror = "2.0.17"
 itertools = "0.14.0"
+const_format = "0.2.35"
 
 
 introspect_macros = { path = "packages/macros" }

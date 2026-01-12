@@ -13,9 +13,9 @@ pub use parser::ToValue;
 pub use reference::{DerefDefTrait, GetRefTypeDef};
 pub use schema::{ColumnDef, ColumnInfo, PrimaryDef, PrimaryTypeDef, TableSchema};
 pub use type_def::{
-    ArrayDef, ByteArrayDeserialization, ByteArrayEDef, CustomDef, EnumDef, Felt252DictDef,
-    FixedArrayDef, ItemDefTrait, MemberDef, NullableDef, OptionDef, RefDef, ResultDef, StructDef,
-    TupleDef, TypeDef, VariantDef,
+    ArrayDef, ByteArrayDeserialization, ByteArrayEDef, CustomDef, ElementDef, EnumDef,
+    Felt252DictDef, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef, OptionDef, RefDef,
+    ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
 };
 pub use utils::{
     FeltIterator, ascii_str_to_felt, ascii_str_to_limbs, bytes31_to_hex_string,

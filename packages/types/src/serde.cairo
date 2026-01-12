@@ -36,6 +36,7 @@ impl FeltIntoBool of Into<felt252, bool> {
     }
 }
 
+#[inline]
 pub fn iserialize_keyed_type<T, +ISerde<T>>(id: felt252, value: @T, ref output: Array<felt252>) {
     output.append(id);
     ISerde::<T>::iserialize(value, ref output);
@@ -82,6 +83,11 @@ pub impl U16ISerde = into_felt252::ISerdeImpl<u16>;
 pub impl U32ISerde = into_felt252::ISerdeImpl<u32>;
 pub impl U64ISerde = into_felt252::ISerdeImpl<u64>;
 pub impl U128ISerde = into_felt252::ISerdeImpl<u128>;
+pub impl I8ISerde = into_felt252::ISerdeImpl<i8>;
+pub impl I16ISerde = into_felt252::ISerdeImpl<i16>;
+pub impl I32ISerde = into_felt252::ISerdeImpl<i32>;
+pub impl I64ISerde = into_felt252::ISerdeImpl<i64>;
+pub impl I128ISerde = into_felt252::ISerdeImpl<i128>;
 pub impl ClassHashISerde = into_felt252::ISerdeImpl<ClassHash>;
 pub impl ContractAddressISerde = into_felt252::ISerdeImpl<ContractAddress>;
 pub impl EthAddressISerde = into_felt252::ISerdeImpl<starknet::EthAddress>;
@@ -263,7 +269,6 @@ pub impl NullableTISerde<T, impl S: ISerde<T>> of ISerde<Nullable<T>> {
         }
     }
 }
-
 
 pub impl ArrayTISerde<T, impl S: ISerde<T>, +Drop<T>> of ISerde<Array<T>> {
     fn iserialize(self: @Array<T>, ref output: Array<felt252>) {

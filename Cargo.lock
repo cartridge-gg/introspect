@@ -1482,6 +1482,7 @@ dependencies = [
  "cairo-lang-parser",
  "cairo-lang-starknet-classes",
  "cairo-lang-syntax",
+ "const_format",
  "indent",
  "indoc",
  "introspect-types",

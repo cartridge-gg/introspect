@@ -1,5 +1,5 @@
+use introspect::Attribute;
 use introspect_tests::{RandomCairoDisplayable, random_snake_string};
-use introspect_types::Attribute;
 use snforge_std::fuzzable::{Fuzzable, FuzzableBool};
 
 

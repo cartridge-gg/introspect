@@ -1,1 +1,0 @@
-introspect::member_def::<{{member_type}}>("{{name}}", [{{attributes_str}}].span())

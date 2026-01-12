@@ -1,1 +1,0 @@
-introspect::ColumnDefTrait::new::<{{type_def}}>({{id}}, "{{name}}", {{attributes_str}})

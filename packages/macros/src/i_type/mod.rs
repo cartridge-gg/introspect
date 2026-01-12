@@ -8,7 +8,7 @@ pub use structs::{IMember, IStruct};
 
 use crate::params::GenericParams;
 use crate::ty::Tys;
-use crate::{AsCairo, Item, Result, Ty};
+use crate::{AsCairo, Item, ItemTrait, Result, Ty};
 use introspect_types::TypeDef;
 use std::ops::Deref;
 
@@ -65,24 +65,7 @@ where
 pub trait IntrospectItemTrait {
     type ModuleType;
     fn kind(&self) -> &str;
-    fn name(&self) -> &str;
-    fn generic_params(&self) -> &GenericParams;
     fn child_types(&self) -> Vec<Ty>;
-    fn generics_clause(&self) -> String {
-        self.generic_params().as_cairo()
-    }
-    fn full_name(&self) -> String {
-        format!("{}{}", self.name(), self.generics_clause())
-    }
-    fn generics_call(&self) -> String {
-        self.generic_params().as_cairo_callable()
-    }
-    fn full_call(&self) -> String {
-        format!("{}{}", self.name(), self.generics_call())
-    }
-    fn generics_with_traits(&self, traits: &[&str]) -> String {
-        self.generic_params().with_trait_bounds(traits)
-    }
     fn child_defs(&self) -> String {
         self.child_types().child_defs()
     }
@@ -93,14 +76,7 @@ pub enum IItem {
     Enum(IEnum),
 }
 
-impl IntrospectItemTrait for IItem {
-    type ModuleType = Item;
-    fn kind(&self) -> &str {
-        match self {
-            IItem::Struct(s) => s.kind(),
-            IItem::Enum(e) => e.kind(),
-        }
-    }
+impl ItemTrait for IItem {
     fn name(&self) -> &str {
         match self {
             IItem::Struct(s) => s.name(),
@@ -111,6 +87,16 @@ impl IntrospectItemTrait for IItem {
         match self {
             IItem::Struct(s) => s.generic_params(),
             IItem::Enum(e) => e.generic_params(),
+        }
+    }
+}
+
+impl IntrospectItemTrait for IItem {
+    type ModuleType = Item;
+    fn kind(&self) -> &str {
+        match self {
+            IItem::Struct(s) => s.kind(),
+            IItem::Enum(e) => e.kind(),
         }
     }
     fn child_types(&self) -> Vec<Ty> {

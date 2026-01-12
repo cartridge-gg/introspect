@@ -1,8 +1,7 @@
-use std::ops::Deref;
-
-use crate::{AstInto, AstToString, FromAst};
+use crate::{AstInto, AstToString, FromAst, I_PATH};
 use cairo_lang_syntax::node::ast::{OptionTypeClause, TypeClause};
 use salsa::Database;
+use std::ops::Deref;
 
 #[derive(Clone, Debug)]
 pub struct Ty(pub String);
@@ -99,7 +98,7 @@ impl Ty {
     }
 
     pub fn child_defs(&self) -> String {
-        format!("introspect::gen::child_defs::<{}>()", &self.0)
+        format!("{I_PATH}::child_defs::<{}>()", &self.0)
     }
 
     pub fn child_defs_if_needed(&self) -> Option<String> {
@@ -135,7 +134,7 @@ impl Tys for Vec<Ty> {
         match defs.len() {
             0 => "array![]".to_string(),
             1 => defs[0].clone(),
-            _ => format!("introspect::gen::merge_defs(array![{}])", defs.join(", ")),
+            _ => format!("{I_PATH}::merge_defs(array![{}])", defs.join(", ")),
         }
     }
 }

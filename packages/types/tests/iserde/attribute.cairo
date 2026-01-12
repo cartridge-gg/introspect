@@ -11,7 +11,6 @@ fn test_iserde_attribute(attribute: Attribute, expected: Span<felt252>) {
     );
 }
 
-
 #[test]
 fn test_attribute_short_key_only() {
     const EXPECTED: [felt252; 1] = ['key' + 3 * SHIFT_30B + B31_3];

@@ -14,7 +14,6 @@ fn Introspect(token_stream: TokenStream) -> ProcMacroResult {
     let introspect_string = item.to_introspect_impl();
     let iserde_string = item.to_iserde_impl();
     let string = format!("{}\n\n{}", introspect_string, iserde_string);
-    println!("{}", string);
     ProcMacroResult::new(str_to_token_stream(&string))
 }
 
@@ -26,6 +25,5 @@ fn IntrospectRef(token_stream: TokenStream) -> ProcMacroResult {
     let introspect_string = item.to_introspect_ref_impl();
     let iserde_string = item.to_iserde_impl();
     let string = format!("{}\n\n{}", introspect_string, iserde_string);
-    println!("{}", string);
     ProcMacroResult::new(str_to_token_stream(&string))
 }

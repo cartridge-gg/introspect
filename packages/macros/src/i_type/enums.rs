@@ -6,7 +6,9 @@ use crate::type_def::{
     enum_def_tpl, variant_def_tpl, variant_default_def_tpl, variant_unit_def_tpl,
 };
 use crate::utils::string_to_keccak_felt;
-use crate::{AsCairo, AsCairoBytes, CollectionsAsCairo, Enum, IAttribute, Result, Ty, Variant};
+use crate::{
+    AsCairo, AsCairoBytes, CollectionsAsCairo, Enum, IAttribute, ItemTrait, Result, Ty, Variant,
+};
 use starknet_types_core::felt::Felt;
 use std::mem;
 
@@ -53,16 +55,19 @@ impl ToTypeDef for IEnum {
     }
 }
 
-impl<'db> IntrospectItemTrait for IEnum {
-    type ModuleType = Enum;
-    fn kind(&self) -> &str {
-        "Enum"
-    }
+impl ItemTrait for IEnum {
     fn name(&self) -> &str {
         &self.name
     }
     fn generic_params(&self) -> &GenericParams {
         &self.generic_params
+    }
+}
+
+impl<'db> IntrospectItemTrait for IEnum {
+    type ModuleType = Enum;
+    fn kind(&self) -> &str {
+        "Enum"
     }
     fn child_types(&self) -> Vec<Ty> {
         self.variants.iter().filter_map(|v| v.ty.clone()).collect()

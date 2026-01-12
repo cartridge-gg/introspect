@@ -1,5 +1,5 @@
+use introspect::{Attribute, ColumnDef, TypeDef};
 use introspect_tests::{ByteArrayExt, random_pascal_string};
-use introspect_types::{Attribute, ColumnDef, TypeDef};
 use snforge_std::fuzzable::{Fuzzable, FuzzableBool};
 use crate::Fuzzy;
 use super::FuzzyImpl;

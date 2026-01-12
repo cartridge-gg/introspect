@@ -1,13 +1,12 @@
-use std::mem;
-
 use super::{
     DefaultIExtractor, IExtract, IntrospectItemTrait, ToTypeDef, ToTypeDefs, TypeDefVariant,
 };
 use crate::type_def::{member_def_tpl, member_default_def_tpl, struct_def_tpl};
 use crate::{
-    AsCairo, AsCairoBytes, CollectionsAsCairo, GenericParams, IAttribute, Result, Struct,
-    Member, Ty,
+    AsCairo, AsCairoBytes, CollectionsAsCairo, GenericParams, IAttribute, ItemTrait, Member,
+    Result, Struct, Ty,
 };
+use std::mem;
 
 pub struct IStruct {
     pub attributes: Vec<IAttribute>,
@@ -47,16 +46,19 @@ impl ToTypeDef for IStruct {
     }
 }
 
-impl IntrospectItemTrait for IStruct {
-    type ModuleType = Struct;
-    fn kind(&self) -> &str {
-        "Struct"
-    }
+impl ItemTrait for IStruct {
     fn name(&self) -> &str {
         &self.name
     }
     fn generic_params(&self) -> &GenericParams {
         &self.generic_params
+    }
+}
+
+impl IntrospectItemTrait for IStruct {
+    type ModuleType = Struct;
+    fn kind(&self) -> &str {
+        "Struct"
     }
     fn child_types(&self) -> Vec<Ty> {
         self.members.iter().map(|m| m.ty.clone()).collect()

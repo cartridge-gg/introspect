@@ -1,9 +1,7 @@
+use introspect::{EnumDef, FixedArrayDef, MemberDef, ResultDef, StructDef, TypeDef, VariantDef};
 use introspect_tests::{
     ByteArrayExt, FuzzableMaxDepth, FuzzableMaxDepthNode, FuzzableMaxDepthNodeImpl, Fuzzy,
     random_pascal_string, random_snake_string,
-};
-use introspect_types::{
-    EnumDef, FixedArrayDef, MemberDef, ResultDef, StructDef, TypeDef, VariantDef,
 };
 use snforge_std::fuzzable::{Fuzzable, generate_arg};
 use super::attribute::FuzzableAttribute;

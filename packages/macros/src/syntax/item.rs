@@ -1,4 +1,4 @@
-use crate::{Enum, IntrospectError, Result, Struct, TryFromAst};
+use crate::{AsCairo, Enum, GenericParams, IntrospectError, ItemTrait, Result, Struct, TryFromAst};
 use cairo_lang_macro::TokenStream;
 use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_syntax::node::SyntaxNode;
@@ -37,5 +37,20 @@ impl SyntaxItemTrait for Item {
             }
         }
         Err(IntrospectError::NoItem())
+    }
+}
+
+impl ItemTrait for Item {
+    fn name(&self) -> &str {
+        match self {
+            Item::Struct(s) => &s.name,
+            Item::Enum(e) => &e.name,
+        }
+    }
+    fn generic_params(&self) -> &GenericParams {
+        match self {
+            Item::Struct(s) => &s.generic_params,
+            Item::Enum(e) => &e.generic_params,
+        }
     }
 }

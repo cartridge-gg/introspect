@@ -20,3 +20,4 @@ indoc = "2.0.7"
 starknet-types-core.workspace = true
 introspect-types.workspace = true
 itertools.workspace = true
+const_format = "0.2.35"

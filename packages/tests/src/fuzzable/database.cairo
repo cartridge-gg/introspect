@@ -1,4 +1,4 @@
-use introspect_events::database::{
+use introspect::events::database::{
     AddColumn, AddColumns, CreateFieldGroup, CreateIndex, CreateTable, CreateTableFromClassHash,
     CreateTableWithColumns, DeleteField, DeleteFieldGroup, DeleteFieldGroups, DeleteFields,
     DeleteRecord, DeleteRecords, DeletesField, DeletesFieldGroup, DeletesFieldGroups, DeletesFields,

@@ -1,4 +1,4 @@
-use introspect_types::{PrimaryDef, PrimaryTypeDef};
+use introspect::{PrimaryDef, PrimaryTypeDef};
 use snforge_std::fuzzable::{Fuzzable, generate_arg};
 use crate::{Fuzzy, random_snake_string};
 

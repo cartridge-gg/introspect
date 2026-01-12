@@ -27,6 +27,8 @@ impl Deref for ByteArray {
     }
 }
 
+pub trait ElementDef {}
+
 macro_rules! define_type_variants {
 
     (
@@ -57,6 +59,8 @@ macro_rules! define_type_variants {
                 }
             }
         }
+
+        impl ElementDef for TypeDef {}
     };
 
     // unit variant: TypeDef::Foo => "Foo"
@@ -177,6 +181,8 @@ macro_rules! item_def_trait {
                 TypeDef::$variant(maybe_boxed!(self, $boxed))
             }
         }
+
+        impl ElementDef for $type {}
     };
 }
 
@@ -308,6 +314,8 @@ impl MemberDef {
     }
 }
 
+impl ElementDef for MemberDef {}
+
 impl VariantDef {
     pub fn new(name: String, attributes: Vec<Attribute>, type_def: TypeDef) -> Self {
         VariantDef {
@@ -317,6 +325,8 @@ impl VariantDef {
         }
     }
 }
+
+impl ElementDef for VariantDef {}
 
 impl EnumDef {
     pub fn new(

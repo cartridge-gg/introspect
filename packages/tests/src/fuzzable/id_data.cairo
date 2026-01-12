@@ -1,4 +1,4 @@
-use introspect_types::IdData;
+use introspect::IdData;
 use snforge_std::fuzzable::Fuzzable;
 use super::Fuzzy;
 

@@ -1,8 +1,8 @@
 use crate::as_cairo::CollectionsAsCairo;
 use crate::ast::AstToString;
 use crate::{
-    AsCairo, AstInto, Attribute, Derives, FromAst, GenericParams, IntrospectError, Result,
-    SyntaxItemTrait, TryFromAst, Ty, Visibility, vec_from_element_list,
+    AsCairo, AstInto, Attribute, Derives, FromAst, GenericParams, IntrospectError, ItemTrait,
+    Result, SyntaxItemTrait, TryFromAst, Ty, Visibility, vec_from_element_list,
 };
 use cairo_lang_syntax::node::ast::{ItemEnum, Variant as VariantAst};
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -94,5 +94,14 @@ impl SyntaxItemTrait for Enum {
             }
         }
         Err(IntrospectError::NoEnum())
+    }
+}
+
+impl ItemTrait for Enum {
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn generic_params(&self) -> &GenericParams {
+        &self.generic_params
     }
 }
