@@ -11,13 +11,20 @@ pub fn str_to_token_stream(s: &str) -> TokenStream {
     TokenStream::new(vec![TokenTree::Ident(Token::new(s, TextSpan::call_site()))])
 }
 
-#[derive(Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+
+pub enum AttributeCallType {
+    Derive,
+    Attribute,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum Visibility {
     Default,
     Pub,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Modifier {
     Ref,
     Mut,

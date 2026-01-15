@@ -6,7 +6,6 @@ pub struct Player {
     pub something: u8,
     pub address: ContractAddress,
 }
-
 //// GENERATED CODE BELOW
 
 impl PlayerTableMeta of introspect_table::TableMeta {
@@ -18,10 +17,18 @@ impl PlayerTableMeta of introspect_table::TableMeta {
         [].span()
     }
 }
+// impl PlayerTablePrimary = introspect_table::table_primary::Default;
 
-
-impl PlayerTablePrimary = introspect_table::table_primary::Default;
-
+pub impl PlayerTablePrimary of introspect_table::TablePrimary {
+    type Primary = felt252;
+    fn primary_def() -> introspect_types::PrimaryDef {
+        introspect_types::PrimaryDef {
+            name: "__id",
+            type_def: introspect_types::PrimaryTypeDef::Felt252,
+            attributes: [].span(),
+        }
+    }
+}
 
 impl PlayerTableColumns of introspect_table::TableColumns {
     fn columns() -> Span<introspect_types::ColumnDef> {
@@ -52,36 +59,48 @@ impl PlayerTableColumns of introspect_table::TableColumns {
     }
 }
 
+
+// ///// Non Overridable
+
 pub mod PlayerColumns {
     pub const name: felt252 = selector!("name");
     pub const something: felt252 = selector!("something");
     pub const address: felt252 = selector!("address");
 }
 
-///// Non Overridable
-
-pub impl PlayerTable =
-    introspect_table::TableImpl<Player, PlayerTableMeta, PlayerTablePrimary, PlayerTableColumns>;
-
-pub impl IPlayerTable = introspect_table::ITableImpl<PlayerTable>;
-
-pub impl Player_name_MemberImpl =
-    introspect_table::m_utils::TableMemberImpl<PlayerTable, PlayerColumns::name, ByteArray>;
-
-pub impl Player_something_MemberImpl =
-    introspect_table::m_utils::TableMemberImpl<PlayerTable, PlayerColumns::something, u8>;
-pub impl Player_address_MemberImpl =
-    introspect_table::m_utils::TableMemberImpl<
-        PlayerTable, PlayerColumns::address, ContractAddress,
+pub impl PlayerTableSchema =
+    introspect_table::TableSchemaImpl<
+        Player, PlayerTableMeta, PlayerTablePrimary, PlayerTableColumns,
     >;
+pub impl PlayerTable = introspect_table::TableImpl<PlayerTableSchema>;
 
-impl PlayerRecordId = introspect_table::m_utils::RecordIdFelt252Impl<PlayerTable>;
 
+pub impl Player_name_MemberImpl<impl T: introspect_table::TableSchema[Record: Player]> =
+    introspect_table::m_utils::TableMemberImpl<T, PlayerColumns::name, ByteArray>;
+pub impl Player_something_MemberImpl<impl T: introspect_table::TableSchema[Record: Player]> =
+    introspect_table::m_utils::TableMemberImpl<T, PlayerColumns::something, u8>;
+pub impl Player_address_MemberImpl<impl T: introspect_table::TableSchema[Record: Player]> =
+    introspect_table::m_utils::TableMemberImpl<T, PlayerColumns::address, ContractAddress>;
 
-impl PlayerRecordValuesSpan of introspect_table::RecordValuesSpanTrait<Player, PlayerTable> {
-    fn serialize_values(self: @Player, ref data: Array<felt252>) {
-        Player_name_MemberImpl::serialize_member(self.name, ref data);
-        Player_something_MemberImpl::serialize_member(self.something, ref data);
-        Player_address_MemberImpl::serialize_member(self.address, ref data);
+// impl PlayerRecordId<
+//     K, impl T: introspect_table::TableSchema[Primary: u128, Record: Player], +Snapable<@K, u128>,
+// > =
+//     introspect_table::table::TablePrimaryIdImpl<K, PlayerTableSchema>;
+// impl CharacterRecordId<
+//     impl T: introspect_table::TableSchema[Primary: felt252],
+// > of introspect_table::RecordId<T::Primary, T> {
+//     fn record_id(self: @T::Primary) -> felt252 {
+//         introspect_types::PrimaryTrait::to_felt252(self)
+//     }
+// }
+
+pub impl PlayerRecordValuesSpan<
+    impl T: introspect_table::TableSchema[Record: Player],
+> of introspect_table::RecordValuesSpanTrait<T, T::Record> {
+    fn serialize_values(self: @T::Record, ref data: Array<felt252>) {
+        Player_name_MemberImpl::<T>::serialize_member(self.name, ref data);
+        Player_something_MemberImpl::<T>::serialize_member(self.something, ref data);
+        Player_address_MemberImpl::<T>::serialize_member(self.address, ref data);
     }
 }
+

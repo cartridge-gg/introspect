@@ -78,7 +78,7 @@ define_type_variants! (
         Felt252 => "felt252",
         ShortUtf8 => "ShortUtf8",
         Bytes31 => "bytes31",
-        Bytes31E(String) => "bytes31e",
+        Bytes31E(Bytes31EDef) => "bytes31e",
         Bool => "bool",
         U8 => "u8",
         U16 => "u16",
@@ -97,8 +97,8 @@ define_type_variants! (
         EthAddress => "EthAddress",
         StorageAddress => "StorageAddress",
         StorageBaseAddress => "StorageBaseAddress",
-        ByteArray(ByteArrayDeserialization) => "ByteArray",
-        Utf8String(ByteArrayDeserialization) => "Utf8String",
+        ByteArray => "ByteArray",
+        Utf8String => "Utf8String",
         ByteArrayE(ByteArrayEDef) => "ByteArrayE",
         Tuple(TupleDef) => "Tuple",
         Array(Box<ArrayDef>) => "Array",
@@ -257,7 +257,8 @@ item_def_constructors!(Felt252DictDef, Felt252Dict);
 item_def_constructors!(StructDef, Struct, [name: String, attributes: Vec<Attribute>, members: Vec<MemberDef>]);
 item_def_constructors!(RefDef, Ref, [id: Felt]);
 item_def_constructors!(CustomDef, Custom, [encoding: String]);
-item_def_constructors!(ByteArrayEDef, ByteArrayE, [mode: ByteArrayDeserialization, encoding: String]);
+item_def_constructors!(ByteArrayEDef, ByteArrayE, [encoding: String]);
+item_def_constructors!(Bytes31EDef, Bytes31E, [encoding: String]);
 item_def_constructors!(FixedArrayDef, FixedArray,  [type_def: TypeDef, size: u32], Box);
 item_def_constructors!(ResultDef, Result,  [ok: TypeDef, err: TypeDef], Box);
 

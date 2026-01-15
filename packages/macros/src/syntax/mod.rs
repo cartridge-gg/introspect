@@ -3,7 +3,9 @@ pub mod derive;
 pub mod enums;
 pub mod item;
 pub mod structs;
-pub use attribute::{Attribute, AttributeArg, AttributeArgClause, AttributeArgNamed};
+pub use attribute::{
+    Attribute, AttributeArg, AttributeArgClause, AttributeArgNamed, AttributesTrait,
+};
 pub use derive::Derives;
 pub use enums::{Enum, Variant};
 pub use item::{Item, SyntaxItemTrait};

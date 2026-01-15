@@ -109,7 +109,6 @@ pub struct CreateFieldGroup {
 /// Emitted when a new table is created.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct CreateTable {
-    #[key]
     pub id: felt252,
     pub name: ByteArray,
     pub attributes: Span<Attribute>,
@@ -119,7 +118,6 @@ pub struct CreateTable {
 /// Emitted when a new table is created with specified columns.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct CreateTableWithColumns {
-    #[key]
     pub id: felt252,
     pub name: ByteArray,
     pub attributes: Span<Attribute>,
@@ -130,7 +128,6 @@ pub struct CreateTableWithColumns {
 /// Emitted when a new table is created from a class hash.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct CreateTableFromClassHash {
-    #[key]
     pub id: felt252,
     pub name: ByteArray,
     pub class_hash: felt252,
@@ -139,7 +136,6 @@ pub struct CreateTableFromClassHash {
 ///Emitted when a table is renamed.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RenameTable {
-    #[key]
     pub id: felt252,
     pub name: ByteArray,
 }
@@ -147,15 +143,12 @@ pub struct RenameTable {
 ///Emitted when a table is dropped.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DropTable {
-    #[key]
     pub id: felt252,
 }
 
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct CreateIndex {
-    #[key]
     pub table: felt252,
-    #[key]
     pub id: felt252,
     pub name: ByteArray,
     pub columns: Span<felt252>,
@@ -164,9 +157,7 @@ pub struct CreateIndex {
 
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DropIndex {
-    #[key]
     pub table: felt252,
-    #[key]
     pub id: felt252,
 }
 
@@ -179,7 +170,6 @@ pub struct DropIndex {
 /// Emitted when the primary key field is renamed.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RenamePrimary {
-    #[key]
     pub table: felt252,
     pub name: ByteArray,
 }
@@ -187,7 +177,6 @@ pub struct RenamePrimary {
 /// Emitted when the primary key field is retyped.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RetypePrimary {
-    #[key]
     pub table: felt252,
     pub type_def: PrimaryTypeDef,
     pub attributes: Span<Attribute>,
@@ -202,9 +191,7 @@ pub struct RetypePrimary {
 
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct AddColumn {
-    #[key]
     pub table: felt252,
-    #[key]
     pub id: felt252,
     pub name: ByteArray,
     pub attributes: Span<Attribute>,
@@ -215,7 +202,6 @@ pub struct AddColumn {
 /// - columns: Definitions of the columns being added.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct AddColumns {
-    #[key]
     pub table: felt252,
     pub columns: Span<ColumnDef>,
 }
@@ -223,9 +209,7 @@ pub struct AddColumns {
 // Emitted when a column is renamed in a table.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RenameColumn {
-    #[key]
     pub table: felt252,
-    #[key]
     pub id: felt252,
     pub name: ByteArray,
 }
@@ -235,7 +219,6 @@ pub struct RenameColumn {
 /// - columns: List of (column ID, new name) pairs.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RenameColumns {
-    #[key]
     pub table: felt252,
     pub columns: Span<IdName>,
 }
@@ -243,9 +226,7 @@ pub struct RenameColumns {
 /// Emitted when a column is retyped in a table.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RetypeColumn {
-    #[key]
     pub table: felt252,
-    #[key]
     pub id: felt252,
     pub attributes: Span<Attribute>,
     pub type_def: TypeDef,
@@ -255,7 +236,6 @@ pub struct RetypeColumn {
 /// - columns: List of (column ID, new TypeDef) pairs.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RetypeColumns {
-    #[key]
     pub table: felt252,
     pub columns: Span<IdTypeDef>,
 }
@@ -263,9 +243,7 @@ pub struct RetypeColumns {
 /// Emitted when a column is undeclared from a table.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DropColumn {
-    #[key]
     pub table: felt252,
-    #[key]
     pub id: felt252,
 }
 
@@ -273,7 +251,6 @@ pub struct DropColumn {
 /// - ids: List of column IDs being dropped.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DropColumns {
-    #[key]
     pub table: felt252,
     pub ids: Span<felt252>,
 }
@@ -289,9 +266,7 @@ pub struct DropColumns {
 
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertRecord {
-    #[key]
     pub table: felt252,
-    #[key]
     pub record: felt252,
     pub data: Span<felt252>,
 }
@@ -299,7 +274,6 @@ pub struct InsertRecord {
 /// Insert multiple records into a table.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertRecords {
-    #[key]
     pub table: felt252,
     pub records_data: Span<IdData>,
 }
@@ -308,11 +282,8 @@ pub struct InsertRecords {
 /// Insert a single field into a record.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertField {
-    #[key]
     pub table: felt252,
-    #[key]
     pub record: felt252,
-    #[key]
     pub column: felt252,
     pub data: Span<felt252>,
 }
@@ -320,9 +291,7 @@ pub struct InsertField {
 /// Insert multiple fields into a record.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertFields {
-    #[key]
     pub table: felt252,
-    #[key]
     pub record: felt252,
     pub columns: Span<felt252>,
     pub data: Span<felt252>,
@@ -331,9 +300,7 @@ pub struct InsertFields {
 /// Insert a single field into multiple records.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertsField {
-    #[key]
     pub table: felt252,
-    #[key]
     pub column: felt252,
     pub records_data: Span<IdData>,
 }
@@ -341,7 +308,6 @@ pub struct InsertsField {
 /// Insert multiple fields into multiple records.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertsFields {
-    #[key]
     pub table: felt252,
     pub columns: Span<felt252>,
     pub records_data: Span<IdData>,
@@ -350,11 +316,8 @@ pub struct InsertsFields {
 /// Insert a schema into a record.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertFieldGroup {
-    #[key]
     pub table: felt252,
-    #[key]
     pub record: felt252,
-    #[key]
     pub group: felt252,
     pub data: Span<felt252>,
 }
@@ -363,9 +326,7 @@ pub struct InsertFieldGroup {
 /// Insert multiple groups of columns into a record.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertFieldGroups {
-    #[key]
     pub table: felt252,
-    #[key]
     pub record: felt252,
     pub groups: Span<felt252>,
     pub data: Span<felt252>,
@@ -374,7 +335,6 @@ pub struct InsertFieldGroups {
 /// Insert multiple records into a table using a schema.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct InsertsFieldGroup {
-    #[key]
     pub table: felt252,
     #[key]
     pub group: felt252,

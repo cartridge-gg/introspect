@@ -22,10 +22,10 @@ pub use introspect_types::Attribute as IAttribute;
 pub use item::ItemTrait;
 pub use params::GenericParams;
 pub use syntax::{
-    Attribute, AttributeArg, AttributeArgClause, AttributeArgNamed, Derives, Enum, Item, Member,
-    Struct, SyntaxItemTrait, Variant,
+    Attribute, AttributeArg, AttributeArgClause, AttributeArgNamed, AttributesTrait, Derives, Enum,
+    Item, Member, Struct, SyntaxItemTrait, Variant,
 };
 pub use ty::Ty;
-pub use utils::{Modifier, Visibility};
+pub use utils::{AttributeCallType, Modifier, Visibility};
 
 pub const I_PATH: &str = "introspect::m_utils";

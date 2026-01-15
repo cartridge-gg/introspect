@@ -1,4 +1,4 @@
-use crate::{AsCairo, IntrospectError, Result, Attribute, AttributeArg};
+use crate::{AsCairo, Attribute, AttributeArg, IntrospectError, Result};
 use std::ops::Deref;
 
 const DERIVE_MACRO_NAME: &str = "derive";
@@ -17,6 +17,8 @@ impl Attribute {
         self.name == DERIVE_MACRO_NAME
     }
 }
+
+#[derive(Clone, Debug)]
 pub struct Derives(pub Vec<String>);
 
 impl Deref for Derives {

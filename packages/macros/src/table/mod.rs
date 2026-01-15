@@ -1,5 +1,5 @@
 use crate::Ty;
-use crate::ty::TyItem;
+use crate::ty::CairoCoreType;
 
 pub mod column;
 pub mod primary;
@@ -8,33 +8,28 @@ pub use primary::{PrimaryDef, PrimaryTypeDefVariant};
 
 impl Ty {
     pub fn is_primary_type(&self) -> bool {
-        match &self {
-            Ty::Item(TyItem { name, params: None }) => ty_string_is_primary_type(name),
+        match self.get_core_type() {
+            Some(
+                CairoCoreType::Felt252
+                | CairoCoreType::Bool
+                | CairoCoreType::U8
+                | CairoCoreType::U16
+                | CairoCoreType::U32
+                | CairoCoreType::U64
+                | CairoCoreType::U128
+                | CairoCoreType::I8
+                | CairoCoreType::I16
+                | CairoCoreType::I32
+                | CairoCoreType::I64
+                | CairoCoreType::I128
+                | CairoCoreType::Bytes31
+                | CairoCoreType::ClassHash
+                | CairoCoreType::ContractAddress
+                | CairoCoreType::EthAddress
+                | CairoCoreType::StorageAddress
+                | CairoCoreType::StorageBaseAddress,
+            ) => true,
             _ => false,
         }
     }
-}
-
-pub fn ty_string_is_primary_type(type_str: &str) -> bool {
-    matches!(
-        type_str,
-        "felt252"
-            | "bool"
-            | "u8"
-            | "u16"
-            | "u32"
-            | "u64"
-            | "u128"
-            | "i8"
-            | "i16"
-            | "i32"
-            | "i64"
-            | "i128"
-            | "bytes31"
-            | "ClassHash"
-            | "ContractAddress"
-            | "EthAddress"
-            | "StorageAddress"
-            | "StorageBaseAddress"
-    )
 }

@@ -8,12 +8,59 @@ use cairo_lang_syntax::node::ast::{
     OptionArgListParenthesized,
 };
 use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
+use core::mem;
 use salsa::Database;
 
 #[derive(Clone, Debug)]
 pub struct Attribute {
     pub name: String,
     pub args: Option<Vec<AttributeArg>>,
+}
+
+pub trait AttributesTrait {
+    fn attributes_mut(&mut self) -> &mut Vec<Attribute>;
+    fn attributes(&self) -> &[Attribute];
+    fn has_attribute(&self, name: &str) -> bool {
+        self.attributes()
+            .iter()
+            .any(|attr| attr.name.as_str() == name)
+    }
+    fn has_name_only_attribute(&self, name: &str) -> bool {
+        self.attributes()
+            .iter()
+            .any(|attr| attr.name.as_str() == name && attr.args.is_none())
+    }
+    fn get_attribute(&self, name: &str) -> Option<&Attribute> {
+        self.attributes()
+            .iter()
+            .find(|attr| attr.name.as_str() == name)
+    }
+    fn update_attributes(&mut self, attributes: Vec<Attribute>) {
+        *self.attributes_mut() = attributes;
+    }
+    fn take_attributes(&mut self) -> Vec<Attribute> {
+        mem::take(self.attributes_mut())
+    }
+    fn push_attribute(&mut self, attribute: Attribute) {
+        self.attributes_mut().push(attribute);
+    }
+}
+
+#[macro_export]
+macro_rules! impl_attributes_trait {
+    ($type:ty) => {
+        $crate::impl_attributes_trait!($type, attributes);
+    };
+    ($type:ty, $field:ident) => {
+        impl $crate::syntax::attribute::AttributesTrait for $type {
+            fn attributes_mut(&mut self) -> &mut Vec<$crate::syntax::attribute::Attribute> {
+                &mut self.$field
+            }
+            fn attributes(&self) -> &[$crate::syntax::attribute::Attribute] {
+                &self.$field
+            }
+        }
+    };
 }
 
 impl Attribute {
@@ -38,6 +85,7 @@ impl Attribute {
             None => Ok(vec![]),
         }
     }
+    pub fn single_value_arg
 }
 
 #[derive(Clone, Debug)]

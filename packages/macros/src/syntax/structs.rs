@@ -1,13 +1,14 @@
 use crate::params::GenericParams;
 use crate::{
-    AsCairo, AstInto, AstToString, AstTryInto, Attribute, CollectionsAsCairo, Derives,
-    IntrospectError, ItemTrait, Result, SyntaxItemTrait, TryFromAst, Ty, Visibility,
-    vec_try_from_element_list,
+    AsCairo, AstInto, AstToString, AstTryInto, Attribute, AttributesTrait, CollectionsAsCairo,
+    Derives, IntrospectError, ItemTrait, Result, SyntaxItemTrait, TryFromAst, Ty, Visibility,
+    impl_attributes_trait, vec_try_from_element_list,
 };
 use cairo_lang_syntax::node::ast::{ItemStruct, Member as MemberAst};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use salsa::Database;
 
+#[derive(Clone, Debug)]
 pub struct Struct {
     pub visibility: Visibility,
     pub attributes: Vec<Attribute>,
@@ -17,11 +18,24 @@ pub struct Struct {
     pub members: Vec<Member>,
 }
 
+#[derive(Clone, Debug)]
 pub struct Member {
     pub visibility: Visibility,
     pub name: String,
     pub attributes: Vec<Attribute>,
     pub ty: Ty,
+}
+
+impl_attributes_trait!(Struct);
+impl_attributes_trait!(Member);
+
+impl Struct {
+    pub fn get_key_members(&self) -> Vec<&Member> {
+        self.members
+            .iter()
+            .filter(|m| m.has_name_only_attribute("key"))
+            .collect()
+    }
 }
 
 impl<'db> TryFromAst<'db, MemberAst<'db>> for Member {

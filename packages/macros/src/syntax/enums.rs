@@ -2,7 +2,8 @@ use crate::as_cairo::CollectionsAsCairo;
 use crate::ast::AstToString;
 use crate::{
     AsCairo, AstInto, AstTryInto, Attribute, Derives, GenericParams, IntrospectError, ItemTrait,
-    Result, SyntaxItemTrait, TryFromAst, Ty, Visibility, vec_try_from_element_list,
+    Result, SyntaxItemTrait, TryFromAst, Ty, Visibility, impl_attributes_trait,
+    vec_try_from_element_list,
 };
 use cairo_lang_syntax::node::ast::{ItemEnum, Variant as VariantAst};
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -22,6 +23,9 @@ pub struct Variant {
     pub name: String,
     pub ty: Option<Ty>,
 }
+
+impl_attributes_trait!(Enum);
+impl_attributes_trait!(Variant);
 
 impl<'db> TryFromAst<'db, VariantAst<'db>> for Variant {
     fn try_from_ast(variant: VariantAst<'db>, db: &'db dyn Database) -> Result<Self> {

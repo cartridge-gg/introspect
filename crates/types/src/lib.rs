@@ -9,11 +9,11 @@ pub mod utils;
 pub mod value;
 pub use attribute::Attribute;
 pub use iserde::{ISerde, ISerdeEnd, ISerdeItem};
-pub use parser::ToValue;
+pub use parser::{DefaultParser, ToValue};
 pub use reference::{DerefDefTrait, GetRefTypeDef};
-pub use schema::{ColumnDef, ColumnInfo, PrimaryDef, PrimaryTypeDef, TableSchema};
+pub use schema::{ColumnDef, ColumnInfo, PrimaryDef, PrimaryTypeDef, RecordParser, TableSchema};
 pub use type_def::{
-    ArrayDef, ByteArrayDeserialization, ByteArrayEDef, CustomDef, ElementDef, EnumDef,
+    ArrayDef, ByteArrayDeserialization, ByteArrayEDef, Bytes31EDef, CustomDef, ElementDef, EnumDef,
     Felt252DictDef, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef, OptionDef, RefDef,
     ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
 };

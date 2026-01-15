@@ -1,7 +1,7 @@
 use crate::{AsCairo, AsCairoBytes, AsCairoWith, CollectionsAsCairo, I_PATH, IAttribute};
 use introspect_types::{
-    ByteArrayEDef, CustomDef, ElementDef, EnumDef, FixedArrayDef, MemberDef, ResultDef, StructDef,
-    TupleDef, TypeDef, VariantDef,
+    ByteArrayEDef, Bytes31EDef, CustomDef, ElementDef, EnumDef, FixedArrayDef, MemberDef,
+    ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
 };
 use starknet_types_core::felt::Felt;
 
@@ -64,10 +64,10 @@ impl CairoElementDef for TypeDef {
             | TypeDef::EthAddress
             | TypeDef::StorageAddress
             | TypeDef::StorageBaseAddress
-            | TypeDef::ByteArray(_)
-            | TypeDef::Utf8String(_) => as_unit_type_def(self.item_name()),
-            TypeDef::Bytes31E(encoding)
-            | TypeDef::ByteArrayE(ByteArrayEDef { encoding, mode: _ })
+            | TypeDef::ByteArray
+            | TypeDef::Utf8String => as_unit_type_def(self.item_name()),
+            TypeDef::Bytes31E(Bytes31EDef { encoding })
+            | TypeDef::ByteArrayE(ByteArrayEDef { encoding })
             | TypeDef::Custom(CustomDef { encoding }) => {
                 as_type_def(self.item_name(), encoding.as_cairo_byte_array())
             }

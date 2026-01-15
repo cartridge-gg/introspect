@@ -12,7 +12,7 @@ vec_from_element_list!(WrappedGenericParamList.generic_params, String);
 
 typed_syntax_node_to_string_without_trivia!(GenericParam);
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct GenericParams(pub Vec<String>);
 
 impl GenericParams {

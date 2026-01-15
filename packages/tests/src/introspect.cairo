@@ -1,5 +1,15 @@
 use core::fmt::Debug;
 
+const TEST: felt252 = 42;
+
+#[derive(PrintAll)]
+#[some_attribute(TEST, "qwee", blah: blah, true, '1234', 0x123, 0b101)]
+struct TestStruct {
+    a: felt252,
+    b: felt252,
+}
+
+
 #[derive(Debug, Default, Introspect)]
 pub struct TestStruct<T, S> {
     #[key]

@@ -21,6 +21,16 @@ impl CharacterTableMeta of introspect_table::TableMeta {
     }
 }
 
+impl CharacterTableMeta2 of introspect_table::TableMeta {
+    const ID: felt252 = selector!("Character");
+    fn name() -> ByteArray {
+        "Character"
+    }
+    fn attributes() -> Span<introspect_types::Attribute> {
+        [].span()
+    }
+}
+
 
 impl CharacterTablePrimary of introspect_table::TablePrimary {
     type Primary = u128;
@@ -69,30 +79,39 @@ pub mod CharacterColumns {
 
 ///// Non Overridable
 
-pub impl CharacterTable =
-    introspect_table::TableImpl<
+pub impl CharacterTableSchema =
+    introspect_table::TableSchemaImpl<
         Character, CharacterTableMeta, CharacterTablePrimary, CharacterTableColumns,
     >;
 
-pub impl ICharacterTable = introspect_table::ITableImpl<CharacterTable>;
+pub impl CharacterTable = introspect_table::TableImpl<CharacterTableSchema>;
 
-pub impl Character_name_MemberImpl =
-    introspect_table::table_member::Impl<CharacterTable, CharacterColumns::name, ByteArray>;
+pub impl CharacterTableSchema2 =
+    introspect_table::TableSchemaImpl<
+        Character, CharacterTableMeta2, CharacterTablePrimary, CharacterTableColumns,
+    >;
 
-pub impl Character_something_MemberImpl =
-    introspect_table::table_member::Impl<CharacterTable, CharacterColumns::something, u8>;
+pub impl CharacterTable2 = introspect_table::TableImpl<CharacterTableSchema2>;
 
-impl CharacterRecordId of introspect_table::RecordId<Character, CharacterTable> {
-    fn record_id(self: @Character) -> felt252 {
+pub impl Character_name_MemberImpl<impl T: introspect_table::TableSchema[Record: Character]> =
+    introspect_table::m_utils::TableMemberImpl<T, CharacterColumns::name, ByteArray>;
+
+pub impl Character_something_MemberImpl<impl T: introspect_table::TableSchema[Record: Character]> =
+    introspect_table::m_utils::TableMemberImpl<T, CharacterColumns::something, u8>;
+
+impl CharacterRecordId<
+    impl T: introspect_table::TableSchema[Record: Character],
+> of introspect_table::RecordId<T::Record, T> {
+    fn record_id(self: @T::Record) -> felt252 {
         introspect_types::PrimaryTrait::to_felt252(self.cid)
     }
 }
 
-impl CharacterRecordValuesSpan of introspect_table::RecordValuesSpanTrait<
-    Character, CharacterTable,
-> {
-    fn serialize_values(self: @Character, ref data: Array<felt252>) {
-        Character_name_MemberImpl::serialize_member(self.name, ref data);
-        Character_something_MemberImpl::serialize_member(self.something, ref data);
+impl CharacterRecordValuesSpan<
+    impl T: introspect_table::TableSchema[Record: Character],
+> of introspect_table::RecordValuesSpanTrait<T, T::Record> {
+    fn serialize_values(self: @T::Record, ref data: Array<felt252>) {
+        Character_name_MemberImpl::<T>::serialize_member(self.name, ref data);
+        Character_something_MemberImpl::<T>::serialize_member(self.something, ref data);
     }
 }

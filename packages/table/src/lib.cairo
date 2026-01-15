@@ -8,7 +8,7 @@ pub mod m_utils;
 pub mod table;
 pub use deref::{Snapable, Spannable};
 pub use table::{
-    ColumnId, FieldOnlyColumnGroup, ITableImpl, IdColumnGroup, KeySpanToId, KeySpanToPrimary,
-    MemberTrait, RecordId, RecordKey, RecordValuesSpanTrait, SerialisedKey, Table, TableColumns,
-    TableImpl, TableMeta, TablePrimary, table_member, table_primary,
+    ColumnId, FieldOnlyColumnGroup, IdColumnGroup, KeySpanToId, KeySpanToPrimary, MemberTrait,
+    RecordId, RecordKey, RecordValuesSpanTrait, SerialisedKey, TableColumns, TableImpl, TableMeta,
+    TablePrimary, TableSchema, TableSchemaImpl,
 };

@@ -1,3 +1,4 @@
+use crate::parser::DefaultParser;
 use crate::utils::felt_to_utf8_string;
 use crate::{
     Attribute, ElementDef, EncodedBytes, FeltIterator, Primary, PrimaryValue, Record, RecordValues,
@@ -16,6 +17,54 @@ pub struct TableSchema {
     pub columns: Vec<ColumnDef>,
 }
 
+pub trait RecordParser {
+    fn to_record(
+        &self,
+        schema: &TableSchema,
+        primary: Felt,
+        data: &mut FeltIterator,
+    ) -> Option<Record>;
+    fn to_record_values(
+        &self,
+        schema: &TableSchema,
+        primary: Felt,
+        data: &mut FeltIterator,
+    ) -> Option<RecordValues>;
+}
+
+impl RecordParser for DefaultParser {
+    fn to_record(
+        &self,
+        schema: &TableSchema,
+        primary: Felt,
+        data: &mut FeltIterator,
+    ) -> Option<Record> {
+        Some(Record {
+            table_id: schema.id.clone(),
+            table_name: schema.name.clone(),
+            attributes: schema.attributes.clone(),
+            primary: schema.primary.to_primary(primary)?,
+            fields: self.to_value(&schema.columns, data)?,
+        })
+    }
+
+    fn to_record_values(
+        &self,
+        schema: &TableSchema,
+        primary: Felt,
+        data: &mut FeltIterator,
+    ) -> Option<RecordValues> {
+        Some(RecordValues {
+            primary: schema.primary.type_def.to_primary_value(primary)?,
+            fields: schema
+                .columns
+                .iter()
+                .map(|col| self.to_value(&col.type_def, data))
+                .collect::<Option<Vec<_>>>()?,
+        })
+    }
+}
+
 impl TableSchema {
     pub fn new(
         id: Felt,
@@ -31,26 +80,6 @@ impl TableSchema {
             primary,
             columns,
         }
-    }
-    pub fn to_record(&self, primary: Felt, data: &mut FeltIterator) -> Option<Record> {
-        Some(Record {
-            table_id: self.id.clone(),
-            table_name: self.name.clone(),
-            attributes: self.attributes.clone(),
-            primary: self.primary.to_primary(primary)?,
-            fields: self.columns.to_value(data)?,
-        })
-    }
-
-    pub fn to_record_values(&self, primary: Felt, data: &mut FeltIterator) -> Option<RecordValues> {
-        Some(RecordValues {
-            primary: self.primary.type_def.to_primary_value(primary)?,
-            fields: self
-                .columns
-                .iter()
-                .map(|col| col.type_def.to_value(data))
-                .collect::<Option<Vec<_>>>()?,
-        })
     }
 
     pub fn to_schema_info(&self) -> SchemaInfo {

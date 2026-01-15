@@ -131,9 +131,11 @@ pub mod tmp_impl {
     pub impl IPrimaryImpl<
         T, const Enum: PrimaryTypeDef, +Copy<T>, +Into<T, felt252>,
     > of PrimaryTrait<T> {
+        #[inline(always)]
         fn to_type_def() -> PrimaryTypeDef {
             Enum
         }
+        #[inline(always)]
         fn to_felt252(self: @T) -> felt252 {
             (*self).into()
         }

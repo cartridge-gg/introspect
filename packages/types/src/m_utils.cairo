@@ -5,6 +5,7 @@ pub use crate::{
     ResultDef, StructDef, TypeDef, VariantDef,
 };
 
+
 #[inline(always)]
 pub fn member_def(name: ByteArray, attributes: Span<Attribute>, type_def: TypeDef) -> MemberDef {
     MemberDef { name, type_def, attributes }

@@ -1502,6 +1502,7 @@ dependencies = [
  "cairo-lang-syntax",
  "indent",
  "indoc",
+ "introspect-types",
  "introspect_macros",
  "itertools",
  "salsa",

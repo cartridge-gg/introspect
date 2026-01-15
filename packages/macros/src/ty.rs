@@ -22,6 +22,58 @@ pub enum Ty {
     FixedArray(Box<FixedArray>),
 }
 
+pub enum CairoCoreType {
+    Felt252,
+    Bool,
+    U8,
+    U16,
+    U32,
+    U64,
+    U128,
+    U256,
+    U512,
+    I8,
+    I16,
+    I32,
+    I64,
+    I128,
+    Bytes31,
+    ClassHash,
+    ContractAddress,
+    EthAddress,
+    StorageAddress,
+    StorageBaseAddress,
+    ByteArray,
+}
+
+impl CairoCoreType {
+    pub fn type_str(&self) -> &str {
+        match self {
+            CairoCoreType::Felt252 => "felt252",
+            CairoCoreType::Bool => "bool",
+            CairoCoreType::U8 => "u8",
+            CairoCoreType::U16 => "u16",
+            CairoCoreType::U32 => "u32",
+            CairoCoreType::U64 => "u64",
+            CairoCoreType::U128 => "u128",
+            CairoCoreType::U256 => "u256",
+            CairoCoreType::U512 => "u512",
+            CairoCoreType::I8 => "i8",
+            CairoCoreType::I16 => "i16",
+            CairoCoreType::I32 => "i32",
+            CairoCoreType::I64 => "i64",
+            CairoCoreType::I128 => "i128",
+            CairoCoreType::Bytes31 => "bytes31",
+            CairoCoreType::ClassHash => "ClassHash",
+            CairoCoreType::ContractAddress => "ContractAddress",
+            CairoCoreType::EthAddress => "EthAddress",
+            CairoCoreType::StorageAddress => "StorageAddress",
+            CairoCoreType::StorageBaseAddress => "StorageBaseAddress",
+            CairoCoreType::ByteArray => "ByteArray",
+        }
+    }
+}
+
 impl TyItem {
     pub fn parse(type_str: &str) -> Result<Self> {
         if type_str.ends_with('>') {
@@ -83,6 +135,49 @@ impl Ty {
             parse_wrapped_types(type_str).ok_or(IntrospectError::FailedToParseType)?;
         let parsed_types: Result<Vec<Ty>> = types.into_iter().map(Ty::parse).collect();
         parsed_types.map(|pts| (wrapper, pts))
+    }
+
+    pub fn get_core_type(&self) -> Option<CairoCoreType> {
+        match self {
+            Ty::Item(item) if item.params.is_none() => match item.name.as_str() {
+                "felt252" => Some(CairoCoreType::Felt252),
+                "bool" => Some(CairoCoreType::Bool),
+                "u8" => Some(CairoCoreType::U8),
+                "u16" => Some(CairoCoreType::U16),
+                "u32" => Some(CairoCoreType::U32),
+                "u64" => Some(CairoCoreType::U64),
+                "u128" => Some(CairoCoreType::U128),
+                "u256" => Some(CairoCoreType::U256),
+                "u512" => Some(CairoCoreType::U512),
+                "i8" => Some(CairoCoreType::I8),
+                "i16" => Some(CairoCoreType::I16),
+                "i32" => Some(CairoCoreType::I32),
+                "i64" => Some(CairoCoreType::I64),
+                "i128" => Some(CairoCoreType::I128),
+                "bytes31" => Some(CairoCoreType::Bytes31),
+                "ClassHash" | "starknet::ClassHash" => Some(CairoCoreType::ClassHash),
+                "ContractAddress" | "starknet::ContractAddress" => {
+                    Some(CairoCoreType::ContractAddress)
+                }
+                "EthAddress" | "starknet::EthAddress" => Some(CairoCoreType::EthAddress),
+                "StorageAddress" | "starknet::StorageAddress" => {
+                    Some(CairoCoreType::StorageAddress)
+                }
+                "StorageBaseAddress" | "starknet::storage_access::StorageBaseAddress" => {
+                    Some(CairoCoreType::StorageBaseAddress)
+                }
+                "ByteArray" => Some(CairoCoreType::ByteArray),
+                _ => None,
+            },
+            _ => None,
+        }
+    }
+
+    pub fn is_core_type(&self, core_type: CairoCoreType) -> bool {
+        match self {
+            Ty::Item(item) => item.name == core_type.type_str() && item.params.is_none(),
+            _ => false,
+        }
     }
 
     pub fn is_of_base_types(&self) -> bool {

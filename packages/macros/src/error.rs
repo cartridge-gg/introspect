@@ -20,6 +20,14 @@ pub enum IntrospectError {
     InvalidIntrospectAttributeFormat(String),
     #[error("Failed to parse type.")]
     FailedToParseType,
+    #[error("Only ByteArray and Bytes31 core types are supported for raw types.")]
+    UnsupportedRawType,
+    #[error("Only ByteArray and Bytes31 core types are supported for encoded types.")]
+    UnsupportedEncodedType,
+    #[error("Mutiple type modifiers found on type.")]
+    MultipleTypeModifiers,
+    #[error("Derive attribute not supported for introspect attributes macros.")]
+    DeriveCallNotSupported,
 }
 
 pub type Result<T> = std::result::Result<T, IntrospectError>;

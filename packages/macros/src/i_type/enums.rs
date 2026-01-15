@@ -1,16 +1,18 @@
 use super::{
     DefaultIExtractor, IExtract, IntrospectItemTrait, ToTypeDef, ToTypeDefs, TypeDefVariant,
 };
+use crate::i_type::attribute::MacroAttributeTrait;
+use crate::i_type::{AttributeParser, AttributeVariant, ExtractTypeDef};
 use crate::params::GenericParams;
 use crate::type_def::{
     enum_def_tpl, variant_def_tpl, variant_default_def_tpl, variant_unit_def_tpl,
 };
 use crate::utils::string_to_keccak_felt;
 use crate::{
-    AsCairo, AsCairoBytes, CollectionsAsCairo, Enum, IAttribute, ItemTrait, Result, Ty, Variant,
+    AsCairo, AsCairoBytes, Attribute, CollectionsAsCairo, Enum, IAttribute, IntrospectError,
+    ItemTrait, Result, Ty, Variant,
 };
 use starknet_types_core::felt::Felt;
-use std::mem;
 
 pub struct IEnum {
     pub name: String,
@@ -26,6 +28,10 @@ pub struct IVariant {
     pub ty: Option<Ty>,
     pub type_def: TypeDefVariant,
 }
+
+pub enum EnumMacroAttribute {}
+
+impl MacroAttributeTrait for EnumMacroAttribute {}
 
 impl ToTypeDef for IVariant {
     fn to_type_def(&self) -> String {
@@ -76,36 +82,41 @@ impl<'db> IntrospectItemTrait for IEnum {
 
 impl IExtract<IVariant> for DefaultIExtractor {
     type SyntaxType = Variant;
+    type Error = IntrospectError;
     fn iextract(&self, variant: &mut Variant) -> Result<IVariant> {
-        let (attrs, iattrs, mattrs) =
-            self.extract_attributes(mem::take(&mut variant.attributes))?;
-        variant.attributes = attrs;
-        let type_def = match &variant.ty {
-            Some(t) => self.parse_type_def(t, &mattrs),
-            None => TypeDefVariant::Default,
-        };
+        let (iattrs, mattrs) = self.parse_attributes(variant)?;
         Ok(IVariant {
             selector: string_to_keccak_felt(&variant.name),
             name: variant.name.clone(),
             attributes: iattrs,
             ty: variant.ty.clone(),
-            type_def,
+            type_def: self.extract_option_type_def(&variant.ty, &mattrs)?,
         })
     }
 }
 
 impl IExtract<IEnum> for DefaultIExtractor {
     type SyntaxType = Enum;
-    fn iextract(&self, module: &mut Enum) -> Result<IEnum> {
-        let (attrs, iattrs, _mattrs) =
-            self.extract_attributes(mem::take(&mut module.attributes))?;
-        module.attributes = attrs;
-
+    type Error = IntrospectError;
+    fn iextract(&self, item: &mut Enum) -> Result<IEnum> {
+        let (intro_attrs, _macro_attrs): (_, Vec<EnumMacroAttribute>) =
+            self.parse_attributes(item)?;
         Ok(IEnum {
-            name: module.name.clone(),
-            attributes: iattrs,
-            generic_params: module.generic_params.clone(),
-            variants: self.iextracts(&mut module.variants)?,
+            name: item.name.clone(),
+            attributes: intro_attrs,
+            generic_params: item.generic_params.clone(),
+            variants: self.iextracts(&mut item.variants)?,
         })
+    }
+}
+
+impl AttributeParser<Enum, EnumMacroAttribute> for DefaultIExtractor {
+    type Error = IntrospectError;
+    fn parse_attribute(
+        &self,
+        _item: &mut Enum,
+        attribute: Attribute,
+    ) -> Result<Vec<AttributeVariant<EnumMacroAttribute>>> {
+        attribute.into()
     }
 }
