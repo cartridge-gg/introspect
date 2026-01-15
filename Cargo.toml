@@ -4,6 +4,7 @@ resolver = "2"
 members = [
     "crates/types",
     "crates/events",
+    "crates/macros",
     "packages/macros",
     "packages/table_macro",
 ]
@@ -53,3 +54,4 @@ introspect_macros = { path = "packages/macros" }
 introspect_table_macros = { path = "packages/table_macro" }
 introspect-events = { path = "crates/events" }
 introspect-types = { path = "crates/types" }
+introspect-rust-macros = { path = "crates/macros" }

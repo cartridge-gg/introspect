@@ -16,9 +16,8 @@ pub mod type_def;
 pub mod utils;
 pub use as_cairo::{AsCairo, AsCairoBytes, AsCairoWith, CollectionsAsCairo};
 pub use ast::{AstInto, AstToString, AstTryInto, FromAst, TryFromAst};
-pub use error::{IntrospectError, Result};
+pub use error::{IntrospectError, IntrospectResult};
 pub use i_type::{IEnum, IItem, IMember, IStruct, IVariant};
-pub use introspect_types::Attribute as IAttribute;
 pub use item::ItemTrait;
 pub use params::GenericParams;
 pub use syntax::{
@@ -29,3 +28,4 @@ pub use ty::Ty;
 pub use utils::{AttributeCallType, Modifier, Visibility};
 
 pub const I_PATH: &str = "introspect::m_utils";
+pub type IAttribute = introspect_types::Attribute;

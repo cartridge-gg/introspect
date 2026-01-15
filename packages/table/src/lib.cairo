@@ -9,6 +9,6 @@ pub mod table;
 pub use deref::{Snapable, Spannable};
 pub use table::{
     ColumnId, FieldOnlyColumnGroup, IdColumnGroup, KeySpanToId, KeySpanToPrimary, MemberTrait,
-    RecordId, RecordKey, RecordValuesSpanTrait, SerialisedKey, TableColumns, TableImpl, TableMeta,
-    TablePrimary, TableSchema, TableSchemaImpl,
+    RecordId, RecordKey, RecordValuesSpanTrait, SerialisedKey, TableImpl, TableMeta, TableSchema,
+    TableSchemaImpl, TableStructure,
 };

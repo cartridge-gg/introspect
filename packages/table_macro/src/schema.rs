@@ -1,9 +1,9 @@
 use crate::templates::{
     column_enum_name_tpl, column_id_const, columns_impl_tpl, columns_mod_name_tpl,
-    i_table_impl_name_tpl, member_impl_name_tpl, member_impl_tpl, primary_default_impl_tpl,
-    primary_impl_tpl, required_no_id_impls_tpl, serialize_member_call_tpl,
-    table_columns_impl_name_tpl, table_impl_name_tpl, table_impl_tpl, table_meta_impl_name_tpl,
-    table_meta_tpl, table_primary_impl_name_tpl, table_schema_impl_tpl,
+    i_table_impl_name_tpl, member_impl_name_tpl, member_impl_tpl, members_impl_name_tpl,
+    primary_default_impl_tpl, primary_impl_tpl, required_no_id_impls_tpl,
+    serialize_member_call_tpl, table_columns_impl_name_tpl, table_impl_name_tpl, table_impl_tpl,
+    table_meta_impl_name_tpl, table_meta_tpl, table_primary_impl_name_tpl, table_schema_impl_tpl,
 };
 use crate::utils::felt_to_hex_string;
 use crate::{Column, I_TABLE_PATH, IdVariant, TableError, TableResult};
@@ -43,14 +43,6 @@ pub struct Schema {
     pub columns_name: String,
 }
 
-pub struct Table {
-    pub id: IdVariant,
-    pub name: String,
-    pub attributes: Vec<IAttribute>,
-    pub impl_name: String,
-    pub meta_impl: String,
-}
-
 trait TableMemberTrait {
     fn is_primary(&self) -> bool;
     fn is_key(&self) -> bool;
@@ -79,6 +71,20 @@ impl TableMemberTrait for Member {
 pub struct TableAttribute {
     name: String,
     id: IdVariant,
+}
+
+impl IExtract<Schema> for DefaultIExtractor {
+    type SyntaxType = Struct;
+    type Error = TableError;
+    fn iextract(&self, module: &mut Self::SyntaxType) -> Result<Schema, Self::Error> {
+        Ok(Schema {
+            name: module.name.clone(),
+            key: KeyType::None,
+            columns: vec![],
+            members_impl_name: members_impl_name_tpl(&module.name),
+            columns_name: columns_mod_name_tpl(&module.name),
+        })
+    }
 }
 
 trait IExtractTable {

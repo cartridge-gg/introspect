@@ -32,17 +32,14 @@ impl CharacterTableMeta2 of introspect_table::TableMeta {
 }
 
 
-impl CharacterTablePrimary of introspect_table::TablePrimary {
+impl CharacterStructure of introspect_table::TableStructure {
     type Primary = u128;
+    type Record = Character;
     fn primary_def() -> introspect_types::PrimaryDef {
         introspect_types::PrimaryDef {
             name: "cid", attributes: [].span(), type_def: introspect_types::PrimaryTypeDef::U128,
         }
     }
-}
-
-
-impl CharacterTableColumns of introspect_table::TableColumns {
     fn columns() -> Span<introspect_types::ColumnDef> {
         [
             introspect_types::ColumnDef {
@@ -80,16 +77,12 @@ pub mod CharacterColumns {
 ///// Non Overridable
 
 pub impl CharacterTableSchema =
-    introspect_table::TableSchemaImpl<
-        Character, CharacterTableMeta, CharacterTablePrimary, CharacterTableColumns,
-    >;
+    introspect_table::TableSchemaImpl<CharacterTableMeta, CharacterStructure>;
 
 pub impl CharacterTable = introspect_table::TableImpl<CharacterTableSchema>;
 
 pub impl CharacterTableSchema2 =
-    introspect_table::TableSchemaImpl<
-        Character, CharacterTableMeta2, CharacterTablePrimary, CharacterTableColumns,
-    >;
+    introspect_table::TableSchemaImpl<CharacterTableMeta2, CharacterStructure>;
 
 pub impl CharacterTable2 = introspect_table::TableImpl<CharacterTableSchema2>;
 

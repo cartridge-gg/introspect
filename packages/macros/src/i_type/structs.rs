@@ -1,14 +1,13 @@
 use super::{
-    AttributeParser, AttributeVariant, IExtract, IntrospectItemTrait, ToTypeDef, ToTypeDefs,
-    TypeDefVariant,
+    AttributeParser, IExtract, IntrospectItemTrait, ToTypeDef, ToTypeDefs, TypeDefVariant,
+    TypeModTrait,
 };
-use crate::i_type::ExtractTypeDef;
 use crate::i_type::attribute::MacroAttributeTrait;
 use crate::i_type::default::DefaultIExtractor;
 use crate::type_def::{member_def_tpl, member_default_def_tpl, struct_def_tpl};
 use crate::{
-    AsCairo, AsCairoBytes, Attribute, CollectionsAsCairo, GenericParams, IAttribute,
-    IntrospectError, ItemTrait, Member, Result, Struct, Ty,
+    AsCairo, AsCairoBytes, CollectionsAsCairo, GenericParams, IAttribute, IntrospectError,
+    IntrospectResult, ItemTrait, Member, Struct, Ty,
 };
 
 pub struct IStruct {
@@ -19,6 +18,7 @@ pub struct IStruct {
 }
 
 pub struct IMember {
+    pub field: String,
     pub name: String,
     pub attributes: Vec<IAttribute>,
     pub ty: Ty,
@@ -77,14 +77,15 @@ impl IntrospectItemTrait for IStruct {
 impl IExtract<IMember> for DefaultIExtractor {
     type SyntaxType = Member;
     type Error = IntrospectError;
-    fn iextract(&self, member: &mut Member) -> Result<IMember> {
-        let (intro_attrs, macro_attrs) = self.parse_attributes(member)?;
+    fn iextract(&self, member: &mut Member) -> IntrospectResult<IMember> {
+        let (macro_attrs, intro_attrs) = self.parse_attributes(member)?;
 
         Ok(IMember {
             name: member.name.clone(),
+            field: member.name.clone(),
             ty: member.ty.clone(),
             attributes: intro_attrs,
-            type_def: self.extract_type_def(&member.ty, &macro_attrs)?,
+            type_def: macro_attrs.get_type_def(&member.ty)?,
         })
     }
 }
@@ -92,9 +93,8 @@ impl IExtract<IMember> for DefaultIExtractor {
 impl IExtract<IStruct> for DefaultIExtractor {
     type SyntaxType = Struct;
     type Error = IntrospectError;
-    fn iextract(&self, item: &mut Struct) -> Result<IStruct> {
-        let (intro_attrs, _macro_attrs): (_, Vec<StructAttributes>) =
-            self.parse_attributes(item)?;
+    fn iextract(&self, item: &mut Struct) -> IntrospectResult<IStruct> {
+        let (_macro_attrs, intro_attrs): ((), _) = self.parse_attributes(item)?;
         Ok(IStruct {
             attributes: intro_attrs,
             name: item.name.clone(),
@@ -104,13 +104,6 @@ impl IExtract<IStruct> for DefaultIExtractor {
     }
 }
 
-impl AttributeParser<Struct, StructAttributes> for DefaultIExtractor {
+impl AttributeParser<Struct, ()> for DefaultIExtractor {
     type Error = IntrospectError;
-    fn parse_attribute(
-        &self,
-        _item: &mut Struct,
-        attribute: Attribute,
-    ) -> Result<Vec<AttributeVariant<StructAttributes>>> {
-        Ok(vec![AttributeVariant::Cairo(attribute)])
-    }
 }

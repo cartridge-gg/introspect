@@ -7,10 +7,10 @@ pub enum TableError {
     IntrospectError(#[from] IntrospectError),
     #[error("Keys must come before other columns in the struct.")]
     KeysNotFirst,
-    #[error("Duplicate column attribute found")]
-    DuplicateColumnAttribute,
+    #[error("Duplicate column attribute {0} found")]
+    DuplicateColumnAttribute(String),
     #[error("Parsing Column id")]
     ColumnIdParseError,
 }
 
-pub type Result<T> = std::result::Result<T, TableError>;
+pub type TableResult<T> = std::result::Result<T, TableError>;

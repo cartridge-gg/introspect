@@ -1,11 +1,10 @@
 use introspect_types::{ByteArrayEDef, Bytes31EDef, TypeDef};
 
 use super::ToTypeDefVariant;
-use crate::i_type::attribute::MacroAttributeTrait;
 use crate::i_type::extraction::IExtractor;
-use crate::i_type::{AttributeParser, AttributeVariant, ExtractTypeDef, TypeDefVariant};
+use crate::i_type::{AttributeParser, AttributeVariant, TypeDefVariant};
 use crate::ty::CairoCoreType;
-use crate::{Attribute, AttributeCallType, AttributesTrait, IntrospectError, Result, Ty};
+use crate::{Attribute, AttributeCallType, AttributesTrait, IntrospectError, IntrospectResult, Ty};
 
 pub struct DefaultIExtractor {
     pub attribute_type: AttributeCallType,
@@ -27,13 +26,22 @@ pub enum TypeMod {
     Encoded(String),
 }
 
-pub trait TypeModTrait
-where
-    Self: Sized,
-{
-    fn get_type_mod(&self) -> Option<TypeMod>;
-    fn set_type_mod(&mut self, type_mod: TypeMod) -> Result<()>;
-    fn parse_attribute(&mut self, attribute: &Attribute) -> Option<Result<()>> {
+pub trait TypeModMemberTrait {
+    fn get_mut_type_mod(&mut self) -> &mut Option<TypeMod>;
+    fn set_type_mod(&mut self, type_mod: TypeMod) -> IntrospectResult<()> {
+        match self.get_mut_type_mod().replace(type_mod) {
+            Some(_) => Err(IntrospectError::MultipleTypeModifiers),
+            None => Ok(()),
+        }
+    }
+    fn extract_type_mod_return_empty<T>(
+        &mut self,
+        attribute: &Attribute,
+    ) -> Option<IntrospectResult<Vec<T>>> {
+        self.extract_type_mod(attribute)
+            .map(|res| res.map(|_| Vec::new()))
+    }
+    fn extract_type_mod(&mut self, attribute: &Attribute) -> Option<IntrospectResult<()>> {
         match attribute.name.as_str() {
             "raw" => match &attribute.args {
                 None => Some(self.set_type_mod(TypeMod::Raw)),
@@ -47,7 +55,11 @@ where
             _ => None,
         }
     }
-    fn get_type_def(&self, ty: &Ty) -> Result<TypeDefVariant> {
+}
+
+pub trait TypeModTrait: Sized {
+    fn get_type_mod(self) -> Option<TypeMod>;
+    fn get_type_def(self, ty: &Ty) -> IntrospectResult<TypeDefVariant> {
         match self.get_type_mod() {
             Some(TypeMod::Raw) => match ty.get_core_type() {
                 Some(CairoCoreType::ByteArray) => Ok(TypeDefVariant::TypeDef(TypeDef::ByteArray)),
@@ -64,20 +76,23 @@ where
             _ => Ok(TypeDefVariant::Default),
         }
     }
+    fn get_type_def_option(self, ty: &Option<Ty>) -> IntrospectResult<TypeDefVariant> {
+        match ty {
+            Some(t) => self.get_type_def(t),
+            None => Ok(TypeDefVariant::Default),
+        }
+    }
 }
 
 impl TypeModTrait for Option<TypeMod> {
-    fn set_type_mod(&mut self, type_mod: TypeMod) -> Result<()> {
-        match self {
-            Some(_) => Err(IntrospectError::MultipleTypeModifiers),
-            None => {
-                *self = Some(type_mod);
-                Ok(())
-            }
-        }
+    fn get_type_mod(self) -> Option<TypeMod> {
+        self
     }
-    fn get_type_mod(&self) -> Option<TypeMod> {
-        self.clone()
+}
+
+impl TypeModMemberTrait for Option<TypeMod> {
+    fn get_mut_type_mod(&mut self) -> &mut Option<TypeMod> {
+        self
     }
 }
 
@@ -97,10 +112,10 @@ where
         _item: &mut T,
         type_mod: &mut Option<TypeMod>,
         attribute: Attribute,
-    ) -> Result<Vec<AttributeVariant>> {
-        match type_mod.parse_attribute(&attribute) {
-            None => Ok(attribute.into()),
-            Some(res) => res.map(|_| Vec::new()),
+    ) -> IntrospectResult<Vec<AttributeVariant>> {
+        match type_mod.extract_type_mod_return_empty(&attribute) {
+            None => attribute.into(),
+            Some(res) => res,
         }
     }
 }

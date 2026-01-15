@@ -2,7 +2,7 @@ use crate::as_cairo::CollectionsAsCairo;
 use crate::ast::AstToString;
 use crate::{
     AsCairo, AstInto, AstTryInto, Attribute, Derives, GenericParams, IntrospectError, ItemTrait,
-    Result, SyntaxItemTrait, TryFromAst, Ty, Visibility, impl_attributes_trait,
+    IntrospectResult, SyntaxItemTrait, TryFromAst, Ty, Visibility, impl_attributes_trait,
     vec_try_from_element_list,
 };
 use cairo_lang_syntax::node::ast::{ItemEnum, Variant as VariantAst};
@@ -28,7 +28,7 @@ impl_attributes_trait!(Enum);
 impl_attributes_trait!(Variant);
 
 impl<'db> TryFromAst<'db, VariantAst<'db>> for Variant {
-    fn try_from_ast(variant: VariantAst<'db>, db: &'db dyn Database) -> Result<Self> {
+    fn try_from_ast(variant: VariantAst<'db>, db: &'db dyn Database) -> IntrospectResult<Self> {
         let name = variant.name(db).to_string(db);
         Ok(Self {
             name,
@@ -41,7 +41,7 @@ impl<'db> TryFromAst<'db, VariantAst<'db>> for Variant {
 vec_try_from_element_list!(VariantList, Variant);
 
 impl<'db> TryFromAst<'db, ItemEnum<'db>> for Enum {
-    fn try_from_ast(item: ItemEnum<'db>, db: &'db dyn Database) -> Result<Self> {
+    fn try_from_ast(item: ItemEnum<'db>, db: &'db dyn Database) -> IntrospectResult<Self> {
         let all_attributes: Vec<Attribute> = item.attributes(db).ast_into(db);
         let (attributes, derives) = Derives::split_derives(all_attributes)?;
         Ok(Self {
@@ -87,7 +87,7 @@ impl SyntaxItemTrait for Enum {
     fn from_file_node<'db>(
         db: &'db dyn Database,
         node: cairo_lang_syntax::node::SyntaxNode<'db>,
-    ) -> Result<Self> {
+    ) -> IntrospectResult<Self> {
         for child in node.get_children(db)[0].get_children(db) {
             let kind = child.kind(db);
             match kind {

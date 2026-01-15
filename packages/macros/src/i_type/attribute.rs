@@ -54,10 +54,12 @@ pub trait AttributeParser<T: AttributesTrait, MacroAttribute: Default> {
     type Error;
     fn parse_attribute(
         &self,
-        item: &mut T,
-        macro_attributes: &mut MacroAttribute,
+        _item: &mut T,
+        _macro_attributes: &mut MacroAttribute,
         attribute: Attribute,
-    ) -> Result<Vec<AttributeVariant>, Self::Error>;
+    ) -> Result<Vec<AttributeVariant>, Self::Error> {
+        attribute.into()
+    }
     fn parse_attributes(
         &self,
         item: &mut T,

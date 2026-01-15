@@ -8,30 +8,24 @@ use introspect_types::{Attribute, ColumnDef, IdData, PrimaryDef, PrimaryTrait, T
 use crate::{Snapable, Spannable};
 
 
-pub trait TablePrimary {
-    type Primary;
-    fn primary_def() -> PrimaryDef;
-}
-
 pub trait TableMeta {
     const ID: felt252;
     fn name() -> ByteArray;
     fn attributes() -> Span<Attribute>;
 }
 
-pub trait TableColumns {
-    fn columns() -> Span<ColumnDef>;
-    fn child_defs() -> Array<(felt252, TypeDef)>;
-}
-
-pub mod table_primary {
-    use introspect_types::{PrimaryDef, PrimaryTypeDef};
-    pub impl Default of super::TablePrimary {
-        type Primary = felt252;
-        fn primary_def() -> introspect_types::PrimaryDef {
-            PrimaryDef { name: "__id", type_def: PrimaryTypeDef::Felt252, attributes: [].span() }
+pub trait TableStructure {
+    type Primary;
+    type Record;
+    fn primary_def() -> PrimaryDef {
+        introspect_types::PrimaryDef {
+            name: "__id",
+            type_def: introspect_types::PrimaryTypeDef::Felt252,
+            attributes: [].span(),
         }
     }
+    fn columns() -> Span<ColumnDef>;
+    fn child_defs() -> Array<(felt252, TypeDef)>;
 }
 
 pub trait KeySpanToPrimary<R, impl T: TableSchema> {
@@ -409,11 +403,11 @@ pub mod table_member {
     }
 }
 
-pub trait RecordableEvent<R, impl T: TableSchema> {
+pub trait RecordableEvent<R, impl Schema: TableSchema> {
     fn emit_recordable(record: @R);
 }
 
-pub trait RecordablesEvent<RS, impl T: TableSchema> {
+pub trait RecordablesEvent<RS, impl Schema: TableSchema> {
     fn emit_recordables(records: RS);
 }
 
@@ -518,100 +512,109 @@ pub trait TableSchema {
 
 
 pub trait Table {
-    impl T: TableSchema;
-    const ID: felt252;
+    impl Schema: TableSchema;
     fn register_table();
-    fn insert<R, +RecordableEvent<R, Self::T>, +Drop<R>>(record: R);
-    fn inserts<RS, +RecordablesEvent<RS, Self::T>, +Drop<RS>>(records: RS);
+    fn insert<R, +RecordableEvent<R, Self::Schema>, +Drop<R>>(record: R);
+    fn inserts<RS, +RecordablesEvent<RS, Self::Schema>, +Drop<RS>>(records: RS);
     fn insert_field<
         const ID: felt252,
         K,
         F,
-        +RecordId<K, Self::T>,
-        impl M: MemberTrait<Self::T::Record, Self::T, ID>,
+        +RecordId<K, Self::Schema>,
+        impl M: MemberTrait<Self::Schema::Record, Self::Schema, ID>,
         +Snapable<F, M::Type>,
         +Drop<K>,
         +Drop<F>,
     >(
         id: K, field: F,
     );
-    fn insert_fields<R, +RecordFieldsEvent<R, Self::T>, +Drop<R>>(record: R);
+    fn insert_fields<R, +RecordFieldsEvent<R, Self::Schema>, +Drop<R>>(record: R);
     fn inserts_field<
         const ID: felt252,
         RFS,
-        impl M: MemberTrait<Self::T::Record, Self::T, ID>,
-        +RecordsField<ID, RFS, Self::T, M>,
+        impl M: MemberTrait<Self::Schema::Record, Self::Schema, ID>,
+        +RecordsField<ID, RFS, Self::Schema, M>,
     >(
         id_fields: RFS,
     );
-    fn inserts_fields<RS, +RecordsFieldsEvent<RS, Self::T>, +Drop<RS>>(records: RS);
-    fn delete_record<K, +RecordId<K, Self::T>, +Drop<K>>(id: K);
-    fn delete_records<KS, +RecordIds<KS, Self::T>, +Drop<KS>>(ids: KS);
-    fn delete_field<K, C, +RecordId<K, Self::T>, +ColumnId<C, Self::T>, +Drop<K>, +Drop<C>>(
+    fn inserts_fields<RS, +RecordsFieldsEvent<RS, Self::Schema>, +Drop<RS>>(records: RS);
+    fn delete_record<K, +RecordId<K, Self::Schema>, +Drop<K>>(id: K);
+    fn delete_records<KS, +RecordIds<KS, Self::Schema>, +Drop<KS>>(ids: KS);
+    fn delete_field<
+        K, C, +RecordId<K, Self::Schema>, +ColumnId<C, Self::Schema>, +Drop<K>, +Drop<C>,
+    >(
         id: K, column: C,
     );
-    fn delete_fields<K, CS, +RecordId<K, Self::T>, +ColumnIds<CS, Self::T>, +Drop<K>, +Drop<CS>>(
+    fn delete_fields<
+        K, CS, +RecordId<K, Self::Schema>, +ColumnIds<CS, Self::Schema>, +Drop<K>, +Drop<CS>,
+    >(
         id: K, columns: CS,
     );
-    fn deletes_field<KS, C, impl TID: RecordIds<KS, Self::T>, +ColumnId<C, Self::T>, +Drop<C>>(
+    fn deletes_field<
+        KS, C, impl TID: RecordIds<KS, Self::Schema>, +ColumnId<C, Self::Schema>, +Drop<C>,
+    >(
         ids: KS, column: C,
     );
     fn deletes_fields<
-        KS, CS, +RecordIds<KS, Self::T>, +ColumnIds<CS, Self::T>, +Drop<KS>, +Drop<CS>,
+        KS, CS, +RecordIds<KS, Self::Schema>, +ColumnIds<CS, Self::Schema>, +Drop<KS>, +Drop<CS>,
     >(
         ids: KS, columns: CS,
     );
 }
 
 
-pub impl TableSchemaImpl<
-    Record, impl Meta: TableMeta, impl Primary: TablePrimary, impl Columns: TableColumns,
-> of TableSchema {
-    type Primary = Primary::Primary;
-    type Record = Record;
+pub impl TableSchemaImpl<impl Meta: TableMeta, impl Structure: TableStructure> of TableSchema {
+    type Primary = Structure::Primary;
+    type Record = Structure::Record;
     const ID: felt252 = Meta::ID;
+
+    #[inline(always)]
     fn name() -> ByteArray {
         Meta::name()
     }
+    #[inline(always)]
     fn attributes() -> Span<Attribute> {
         Meta::attributes()
     }
+    #[inline(always)]
     fn primary() -> PrimaryDef {
-        Primary::primary_def()
+        Structure::primary_def()
     }
+    #[inline(always)]
     fn columns() -> Span<ColumnDef> {
-        Columns::columns()
+        Structure::columns()
     }
+    #[inline(always)]
     fn child_defs() -> Array<(felt252, TypeDef)> {
-        Columns::child_defs()
+        Structure::child_defs()
     }
 }
 
-pub impl TableImpl<impl T: TableSchema> of Table {
-    impl T = T;
-    const ID: felt252 = T::ID;
+
+pub impl TableImpl<impl Schema: TableSchema> of Table {
+    impl Schema = Schema;
     fn register_table() {
         CreateTableWithColumns {
-            id: T::ID,
-            name: T::name(),
-            attributes: T::attributes(),
-            primary: T::primary(),
-            columns: T::columns(),
+            id: Schema::ID,
+            name: Schema::name(),
+            attributes: Schema::attributes(),
+            primary: Schema::primary(),
+            columns: Schema::columns(),
         }
             .emit_event();
     }
-    fn insert<R, impl RE: RecordableEvent<R, T>, +Drop<R>>(record: R) {
+    fn insert<R, impl RE: RecordableEvent<R, Schema>, +Drop<R>>(record: R) {
         RE::emit_recordable(@record);
     }
-    fn inserts<RS, impl RE: RecordablesEvent<RS, T>, +Drop<RS>>(records: RS) {
+    fn inserts<RS, impl RE: RecordablesEvent<RS, Schema>, +Drop<RS>>(records: RS) {
         RE::emit_recordables(records);
     }
     fn insert_field<
         const ID: felt252,
         K,
         F,
-        impl TID: RecordId<K, Self::T>,
-        impl M: MemberTrait<Self::T::Record, Self::T, ID>,
+        impl TID: RecordId<K, Self::Schema>,
+        impl M: MemberTrait<Self::Schema::Record, Self::Schema, ID>,
         +Snapable<F, M::Type>,
         +Drop<K>,
         +Drop<F>,
@@ -619,7 +622,7 @@ pub impl TableImpl<impl T: TableSchema> of Table {
         id: K, field: F,
     ) {
         InsertField {
-            table: T::ID,
+            table: Schema::ID,
             record: TID::record_id(@id),
             column: ID,
             data: M::serialize_member_inline(field),
@@ -627,76 +630,83 @@ pub impl TableImpl<impl T: TableSchema> of Table {
             .emit_event();
     }
 
-    fn insert_fields<R, impl RE: RecordFieldsEvent<R, T>, +Drop<R>>(record: R) {
+    fn insert_fields<R, impl RE: RecordFieldsEvent<R, Schema>, +Drop<R>>(record: R) {
         RE::emit_record_fields(@record);
     }
 
     fn inserts_field<
         const ID: felt252,
         RFS,
-        impl M: MemberTrait<Self::T::Record, Self::T, ID>,
-        impl RF: RecordsField<ID, RFS, Self::T, M>,
+        impl M: MemberTrait<Self::Schema::Record, Self::Schema, ID>,
+        impl RF: RecordsField<ID, RFS, Self::Schema, M>,
     >(
         id_fields: RFS,
     ) {
         let records_data = RF::records_field_datas(id_fields);
-        InsertsField { table: T::ID, column: ID, records_data }.emit_event();
+        InsertsField { table: Schema::ID, column: ID, records_data }.emit_event();
     }
-    fn inserts_fields<RS, impl RE: RecordsFieldsEvent<RS, T>, +Drop<RS>>(records: RS) {
+    fn inserts_fields<RS, impl RE: RecordsFieldsEvent<RS, Schema>, +Drop<RS>>(records: RS) {
         RE::emit_records_fields(records);
     }
-    fn delete_record<K, impl TID: RecordId<K, Self::T>, +Drop<K>>(id: K) {
-        DeleteRecord { table: T::ID, record: TID::record_id(@id) }.emit_event();
+    fn delete_record<K, impl TID: RecordId<K, Self::Schema>, +Drop<K>>(id: K) {
+        DeleteRecord { table: Schema::ID, record: TID::record_id(@id) }.emit_event();
     }
-    fn delete_records<KS, impl TID: RecordIds<KS, Self::T>, +Drop<KS>>(ids: KS) {
-        DeleteRecords { table: T::ID, records: TID::record_ids(ids) }.emit_event();
+    fn delete_records<KS, impl TID: RecordIds<KS, Self::Schema>, +Drop<KS>>(ids: KS) {
+        DeleteRecords { table: Schema::ID, records: TID::record_ids(ids) }.emit_event();
     }
     fn delete_field<
-        K, C, impl TID: RecordId<K, Self::T>, impl CID: ColumnId<C, Self::T>, +Drop<K>, +Drop<C>,
+        K,
+        C,
+        impl TID: RecordId<K, Self::Schema>,
+        impl CID: ColumnId<C, Self::Schema>,
+        +Drop<K>,
+        +Drop<C>,
     >(
         id: K, column: C,
     ) {
-        DeleteField { table: T::ID, record: TID::record_id(@id), column: CID::column_id(@column) }
+        DeleteField {
+            table: Schema::ID, record: TID::record_id(@id), column: CID::column_id(@column),
+        }
             .emit_event();
     }
 
     fn delete_fields<
         K,
         CS,
-        impl TID: RecordId<K, Self::T>,
-        impl CID: ColumnIds<CS, Self::T>,
+        impl TID: RecordId<K, Self::Schema>,
+        impl CID: ColumnIds<CS, Self::Schema>,
         +Drop<K>,
         +Drop<CS>,
     >(
         id: K, columns: CS,
     ) {
         DeleteFields {
-            table: T::ID, record: TID::record_id(@id), columns: CID::columns_ids(columns),
+            table: Schema::ID, record: TID::record_id(@id), columns: CID::columns_ids(columns),
         }
             .emit_event();
     }
     fn deletes_field<
-        KS, C, impl TID: RecordIds<KS, Self::T>, impl CID: ColumnId<C, Self::T>, +Drop<C>,
+        KS, C, impl TID: RecordIds<KS, Self::Schema>, impl CID: ColumnId<C, Self::Schema>, +Drop<C>,
     >(
         ids: KS, column: C,
     ) {
         DeletesField {
-            table: T::ID, records: TID::record_ids(ids), column: CID::column_id(@column),
+            table: Schema::ID, records: TID::record_ids(ids), column: CID::column_id(@column),
         }
             .emit_event();
     }
     fn deletes_fields<
         KS,
         CS,
-        impl TID: RecordIds<KS, Self::T>,
-        impl CID: ColumnIds<CS, Self::T>,
+        impl TID: RecordIds<KS, Self::Schema>,
+        impl CID: ColumnIds<CS, Self::Schema>,
         +Drop<KS>,
         +Drop<CS>,
     >(
         ids: KS, columns: CS,
     ) {
         DeletesFields {
-            table: T::ID, records: TID::record_ids(ids), columns: CID::columns_ids(columns),
+            table: Schema::ID, records: TID::record_ids(ids), columns: CID::columns_ids(columns),
         }
             .emit_event();
     }

@@ -1,11 +1,12 @@
 pub use super::{IEnum, IExtract, IMember, IStruct, IVariant};
 use crate::type_def::child_defs_tpl;
-use crate::{AsCairo, I_PATH, Result, Ty};
+use crate::{AsCairo, I_PATH, IntrospectResult, Ty};
 use introspect_types::{ItemDefTrait, TypeDef};
 use std::ops::Deref;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub enum TypeDefVariant {
+    #[default]
     Default,
     TypeDef(TypeDef),
     Fn(String),
@@ -17,12 +18,12 @@ pub trait ExtractTypeDef {
         &self,
         ty: &Ty,
         attributes: &[Self::MacroAttribute],
-    ) -> Result<TypeDefVariant>;
+    ) -> IntrospectResult<TypeDefVariant>;
     fn extract_option_type_def(
         &self,
         ty: &Option<Ty>,
         attributes: &[Self::MacroAttribute],
-    ) -> Result<TypeDefVariant>;
+    ) -> IntrospectResult<TypeDefVariant>;
 }
 
 impl TypeDefVariant {

@@ -1,10 +1,10 @@
-use crate::{AsCairo, Attribute, AttributeArg, IntrospectError, Result};
+use crate::{AsCairo, Attribute, AttributeArg, IntrospectError, IntrospectResult};
 use std::ops::Deref;
 
 const DERIVE_MACRO_NAME: &str = "derive";
 
 impl Attribute {
-    pub fn to_derives(self) -> Result<Vec<String>> {
+    pub fn to_derives(self) -> IntrospectResult<Vec<String>> {
         self.args
             .ok_or(IntrospectError::DeriveMacroMissingArgs)?
             .into_iter()
@@ -29,7 +29,7 @@ impl Deref for Derives {
 }
 
 impl Derives {
-    pub fn split_derives(attributes: Vec<Attribute>) -> Result<(Vec<Attribute>, Self)> {
+    pub fn split_derives(attributes: Vec<Attribute>) -> IntrospectResult<(Vec<Attribute>, Self)> {
         let mut other_attributes = Vec::new();
         let mut derives = Vec::new();
         for attr in attributes {

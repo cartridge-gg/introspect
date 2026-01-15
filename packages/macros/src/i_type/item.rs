@@ -1,7 +1,7 @@
 use super::{IEnum, IStruct};
 use crate::i_type::{DefaultIExtractor, IExtract, ITys};
 use crate::params::GenericParams;
-use crate::{IntrospectError, Item, ItemTrait, Result, Ty};
+use crate::{IntrospectError, Item, ItemTrait, IntrospectResult, Ty};
 pub trait IntrospectItemTrait {
     type ModuleType;
     fn kind(&self) -> &str;
@@ -50,7 +50,7 @@ impl IntrospectItemTrait for IItem {
 impl IExtract<IItem> for DefaultIExtractor {
     type SyntaxType = Item;
     type Error = IntrospectError;
-    fn iextract(&self, item: &mut Item) -> Result<IItem> {
+    fn iextract(&self, item: &mut Item) -> IntrospectResult<IItem> {
         match item {
             Item::Struct(s) => self.iextract(s).map(IItem::Struct),
             Item::Enum(e) => self.iextract(e).map(IItem::Enum),

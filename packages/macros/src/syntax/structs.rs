@@ -1,7 +1,7 @@
 use crate::params::GenericParams;
 use crate::{
     AsCairo, AstInto, AstToString, AstTryInto, Attribute, AttributesTrait, CollectionsAsCairo,
-    Derives, IntrospectError, ItemTrait, Result, SyntaxItemTrait, TryFromAst, Ty, Visibility,
+    Derives, IntrospectError, ItemTrait, IntrospectResult, SyntaxItemTrait, TryFromAst, Ty, Visibility,
     impl_attributes_trait, vec_try_from_element_list,
 };
 use cairo_lang_syntax::node::ast::{ItemStruct, Member as MemberAst};
@@ -39,7 +39,7 @@ impl Struct {
 }
 
 impl<'db> TryFromAst<'db, MemberAst<'db>> for Member {
-    fn try_from_ast(member: MemberAst<'db>, db: &'db dyn Database) -> Result<Self> {
+    fn try_from_ast(member: MemberAst<'db>, db: &'db dyn Database) -> IntrospectResult<Self> {
         Ok(Self {
             visibility: member.visibility(db).into(),
             name: member.name(db).to_string(db),
@@ -52,7 +52,7 @@ impl<'db> TryFromAst<'db, MemberAst<'db>> for Member {
 vec_try_from_element_list!(MemberList, Member);
 
 impl<'db> TryFromAst<'db, ItemStruct<'db>> for Struct {
-    fn try_from_ast(item: ItemStruct<'db>, db: &'db dyn Database) -> Result<Self> {
+    fn try_from_ast(item: ItemStruct<'db>, db: &'db dyn Database) -> IntrospectResult<Self> {
         let all_attributes: Vec<Attribute> = item.attributes(db).ast_into(db);
         let (attributes, derives) = Derives::split_derives(all_attributes)?;
         Ok(Self {
@@ -97,7 +97,7 @@ impl SyntaxItemTrait for Struct {
     fn from_file_node<'db>(
         db: &'db dyn Database,
         node: cairo_lang_syntax::node::SyntaxNode<'db>,
-    ) -> Result<Self> {
+    ) -> IntrospectResult<Self> {
         for child in node.get_children(db)[0].get_children(db) {
             let kind = child.kind(db);
             match kind {

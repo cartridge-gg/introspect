@@ -1,6 +1,6 @@
 use crate::{
-    AsCairo, AstInto, AstToString, CollectionsAsCairo, FromAst, IntrospectError, Modifier, Result,
-    terminal_to_string, vec_from_element_list,
+    AsCairo, AstInto, AstToString, CollectionsAsCairo, FromAst, IntrospectError, IntrospectResult,
+    Modifier, terminal_to_string, vec_from_element_list,
 };
 use cairo_lang_syntax::node::ast::{
     Arg as AstArg, ArgClause as AstArgClause, ArgClauseNamed as AstArgClauseNamed,
@@ -67,16 +67,16 @@ impl Attribute {
     pub fn format_error(&self) -> IntrospectError {
         IntrospectError::InvalidIntrospectAttributeFormat(self.name.clone())
     }
-    pub fn format_err<T>(&self) -> Result<T> {
+    pub fn format_err<T>(&self) -> IntrospectResult<T> {
         Err(self.format_error())
     }
-    pub fn single_unnamed_arg(&self) -> Result<String> {
+    pub fn single_unnamed_arg(&self) -> IntrospectResult<String> {
         match &self.args {
             Some(args) if args.len() == 1 => args[0].as_unnamed().ok_or(self.format_error()),
             _ => Err(self.format_error()),
         }
     }
-    pub fn all_unnamed_args(&self) -> Result<Vec<String>> {
+    pub fn all_unnamed_args(&self) -> IntrospectResult<Vec<String>> {
         match &self.args {
             Some(args) => args
                 .iter()
@@ -85,7 +85,6 @@ impl Attribute {
             None => Ok(vec![]),
         }
     }
-    pub fn single_value_arg
 }
 
 #[derive(Clone, Debug)]

@@ -17,20 +17,10 @@ impl PlayerTableMeta of introspect_table::TableMeta {
         [].span()
     }
 }
-// impl PlayerTablePrimary = introspect_table::table_primary::Default;
 
-pub impl PlayerTablePrimary of introspect_table::TablePrimary {
+impl PlayerStructure of introspect_table::TableStructure {
     type Primary = felt252;
-    fn primary_def() -> introspect_types::PrimaryDef {
-        introspect_types::PrimaryDef {
-            name: "__id",
-            type_def: introspect_types::PrimaryTypeDef::Felt252,
-            attributes: [].span(),
-        }
-    }
-}
-
-impl PlayerTableColumns of introspect_table::TableColumns {
+    type Record = Player;
     fn columns() -> Span<introspect_types::ColumnDef> {
         [
             introspect_types::ColumnDef {
@@ -68,10 +58,7 @@ pub mod PlayerColumns {
     pub const address: felt252 = selector!("address");
 }
 
-pub impl PlayerTableSchema =
-    introspect_table::TableSchemaImpl<
-        Player, PlayerTableMeta, PlayerTablePrimary, PlayerTableColumns,
-    >;
+pub impl PlayerTableSchema = introspect_table::TableSchemaImpl<PlayerTableMeta, PlayerStructure>;
 pub impl PlayerTable = introspect_table::TableImpl<PlayerTableSchema>;
 
 

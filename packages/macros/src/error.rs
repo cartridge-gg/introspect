@@ -28,6 +28,8 @@ pub enum IntrospectError {
     MultipleTypeModifiers,
     #[error("Derive attribute not supported for introspect attributes macros.")]
     DeriveCallNotSupported,
+    #[error("Duplicate attribute '{0}'.")]
+    DuplicateAttribute(String),
 }
 
-pub type Result<T> = std::result::Result<T, IntrospectError>;
+pub type IntrospectResult<T> = std::result::Result<T, IntrospectError>;

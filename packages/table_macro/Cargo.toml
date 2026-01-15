@@ -18,5 +18,6 @@ indent.workspace = true
 indoc = "2.0.7"
 introspect_macros.workspace = true
 introspect-types.workspace = true
+introspect-rust-macros.workspace = true
 starknet-types-core.workspace = true
 itertools.workspace = true

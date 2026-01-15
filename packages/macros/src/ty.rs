@@ -1,4 +1,4 @@
-use crate::{AsCairo, AstToString, AstTryInto, IntrospectError, Result, TryFromAst};
+use crate::{AsCairo, AstToString, AstTryInto, IntrospectError, IntrospectResult, TryFromAst};
 use cairo_lang_syntax::node::ast::{OptionTypeClause, TypeClause};
 use itertools::Itertools;
 use salsa::Database;
@@ -75,11 +75,11 @@ impl CairoCoreType {
 }
 
 impl TyItem {
-    pub fn parse(type_str: &str) -> Result<Self> {
+    pub fn parse(type_str: &str) -> IntrospectResult<Self> {
         if type_str.ends_with('>') {
             let (name, types) =
                 parse_wrapped_types(type_str).ok_or(IntrospectError::FailedToParseType)?;
-            let params = types.into_iter().map(Ty::parse).collect::<Result<_>>()?;
+            let params = types.into_iter().map(Ty::parse).collect::<IntrospectResult<_>>()?;
             Ok(Self {
                 name: name.to_string(),
                 params: Some(params),
@@ -92,13 +92,13 @@ impl TyItem {
         }
     }
 
-    pub fn parse_ty(type_str: &str) -> Result<Ty> {
+    pub fn parse_ty(type_str: &str) -> IntrospectResult<Ty> {
         Self::parse(type_str).map(Ty::Item)
     }
 }
 
 impl FixedArray {
-    pub fn parse(string: &str) -> Result<Self> {
+    pub fn parse(string: &str) -> IntrospectResult<Self> {
         let (type_str, size) =
             parse_fixed_array(string).ok_or(IntrospectError::FailedToParseType)?;
         Ty::parse(type_str).map(|ty| Self {
@@ -106,13 +106,13 @@ impl FixedArray {
             size: size.to_string(),
         })
     }
-    pub fn parse_ty(string: &str) -> Result<Ty> {
+    pub fn parse_ty(string: &str) -> IntrospectResult<Ty> {
         Self::parse(string).map(|fa| Ty::FixedArray(Box::new(fa)))
     }
 }
 
 impl Ty {
-    pub fn parse(type_str: &str) -> Result<Self> {
+    pub fn parse(type_str: &str) -> IntrospectResult<Self> {
         let type_str = type_str.trim();
         if type_str.starts_with('(') && type_str.ends_with(')') {
             Ty::parse_list(type_str).map(Ty::Tuple)
@@ -123,17 +123,17 @@ impl Ty {
         }
     }
 
-    pub fn parse_list(type_str: &str) -> Result<Vec<Self>> {
+    pub fn parse_list(type_str: &str) -> IntrospectResult<Vec<Self>> {
         match parse_list(type_str) {
-            Some(types) => types.into_iter().map(Ty::parse).collect::<Result<Vec<_>>>(),
+            Some(types) => types.into_iter().map(Ty::parse).collect::<IntrospectResult<Vec<_>>>(),
             None => Err(IntrospectError::FailedToParseType),
         }
     }
 
-    pub fn parse_wrapped(type_str: &str) -> Result<(&str, Vec<Self>)> {
+    pub fn parse_wrapped(type_str: &str) -> IntrospectResult<(&str, Vec<Self>)> {
         let (wrapper, types) =
             parse_wrapped_types(type_str).ok_or(IntrospectError::FailedToParseType)?;
-        let parsed_types: Result<Vec<Ty>> = types.into_iter().map(Ty::parse).collect();
+        let parsed_types: IntrospectResult<Vec<Ty>> = types.into_iter().map(Ty::parse).collect();
         parsed_types.map(|pts| (wrapper, pts))
     }
 
@@ -296,13 +296,13 @@ pub fn parse_list(type_name: &str) -> Option<Vec<&str>> {
 }
 
 impl<'db> TryFromAst<'db, TypeClause<'db>> for Ty {
-    fn try_from_ast(ast: TypeClause<'db>, db: &'db dyn Database) -> Result<Self> {
+    fn try_from_ast(ast: TypeClause<'db>, db: &'db dyn Database) -> IntrospectResult<Self> {
         Ty::parse(&ast.to_string(db))
     }
 }
 
 impl<'db> TryFromAst<'db, OptionTypeClause<'db>> for Option<Ty> {
-    fn try_from_ast(ast: OptionTypeClause<'db>, db: &'db dyn Database) -> Result<Self> {
+    fn try_from_ast(ast: OptionTypeClause<'db>, db: &'db dyn Database) -> IntrospectResult<Self> {
         match ast {
             OptionTypeClause::Empty(_) => Ok(None),
             OptionTypeClause::TypeClause(ty) => ty.ast_try_into(db).map(Some),

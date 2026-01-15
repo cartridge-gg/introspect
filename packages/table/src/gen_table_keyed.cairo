@@ -29,10 +29,9 @@ impl FooTableMeta of introspect_table::TableMeta {
     }
 }
 
-
-impl FooTablePrimary = introspect_table::m_utils::TablePrimaryDefaultImpl;
-
-impl FooTableColumns of introspect_table::TableColumns {
+impl FooStructure of introspect_table::TableStructure {
+    type Primary = felt252;
+    type Record = Foo;
     fn columns() -> Span<introspect_types::ColumnDef> {
         [
             introspect_types::ColumnDefTrait::new::<u128>(FooColumns::key_1, "key_1", [].span()),
@@ -67,8 +66,7 @@ pub mod FooColumns {
     pub const something: felt252 = selector!("something");
 }
 
-pub impl FooTableSchema =
-    introspect_table::TableSchemaImpl<Foo, FooTableMeta, FooTablePrimary, FooTableColumns>;
+pub impl FooTableSchema = introspect_table::TableSchemaImpl<FooTableMeta, FooStructure>;
 
 pub impl FooTable = introspect_table::TableImpl<FooTableSchema>;
 

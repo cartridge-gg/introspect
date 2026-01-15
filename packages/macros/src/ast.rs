@@ -1,4 +1,4 @@
-use crate::Result;
+use crate::IntrospectResult;
 use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
 use salsa::Database;
 
@@ -18,8 +18,11 @@ where
     Self: Sized,
     T: TypedSyntaxNode<'db>,
 {
-    fn try_from_ast(ast: T, db: &'db dyn Database) -> Result<Self>;
-    fn try_from_syntax_node(db: &'db dyn Database, node: SyntaxNode<'db>) -> Result<Self> {
+    fn try_from_ast(ast: T, db: &'db dyn Database) -> IntrospectResult<Self>;
+    fn try_from_syntax_node(
+        db: &'db dyn Database,
+        node: SyntaxNode<'db>,
+    ) -> IntrospectResult<Self> {
         Self::try_from_ast(T::from_syntax_node(db, node), db)
     }
 }
@@ -35,7 +38,7 @@ pub trait AstTryInto<'db, T>
 where
     Self: TypedSyntaxNode<'db>,
 {
-    fn ast_try_into(self, db: &'db dyn Database) -> Result<T>;
+    fn ast_try_into(self, db: &'db dyn Database) -> IntrospectResult<T>;
 }
 
 impl<'db, T, U> AstInto<'db, U> for T
@@ -53,7 +56,7 @@ where
     T: TypedSyntaxNode<'db>,
     U: TryFromAst<'db, T>,
 {
-    fn ast_try_into(self, db: &'db dyn Database) -> Result<U> {
+    fn ast_try_into(self, db: &'db dyn Database) -> IntrospectResult<U> {
         U::try_from_ast(self, db)
     }
 }
@@ -111,7 +114,7 @@ macro_rules! vec_from_element_list {
 macro_rules! vec_try_from_element_list {
     ($list:ident $(. $($methods:ident).+)?, $element:ident) => {
         impl<'db> TryFromAst<'db, cairo_lang_syntax::node::ast::$list<'db>> for Vec<$element> {
-            fn try_from_ast(ast: cairo_lang_syntax::node::ast::$list<'db>, db: &'db dyn Database) -> Result<Vec<$element>> {
+            fn try_from_ast(ast: cairo_lang_syntax::node::ast::$list<'db>, db: &'db dyn Database) -> IntrospectResult<Vec<$element>> {
                 ast$(.$($methods(db)).+)?.elements(db).into_iter().map(|e| e.ast_try_into(db)).collect()
             }
         }
