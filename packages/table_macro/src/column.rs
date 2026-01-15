@@ -1,10 +1,13 @@
-use crate::{IdVariant, IntrospectResult, TableError, TableResult};
+use crate::templates::{column_id_const, member_impl_name_tpl};
+use crate::{IdVariant, TableError, TableResult};
 use introspect_macros::i_type::default::{TypeMod, TypeModMemberTrait};
 use introspect_macros::i_type::{
     AttributeParser, AttributeVariant, DefaultIExtractor, IExtract, TypeDefVariant, TypeModTrait,
 };
-use introspect_macros::utils::string_to_keccak_felt;
-use introspect_macros::{IAttribute, Member, Ty};
+use introspect_macros::table::column::column_def_tpl;
+use introspect_macros::type_def::{CairoElementDef, CairoElementDefWith};
+use introspect_macros::utils::string_to_keccak_hex;
+use introspect_macros::{AsCairoBytes, CollectionsAsCairo, IAttribute, Member, Ty};
 use introspect_rust_macros::macro_attributes;
 
 pub struct Column {
@@ -67,12 +70,36 @@ impl IExtract<Column> for DefaultIExtractor {
         let (ColumnAttributes { name, id, type_mod }, attributes): (ColumnAttributes, _) =
             self.parse_attributes(member)?;
         Ok(Column {
-            id: id.unwrap_or_else(|| IdVariant::Felt(string_to_keccak_felt(&member.name))),
+            id: id.unwrap_or_else(|| IdVariant::Felt(string_to_keccak_hex(&member.name))),
             name: name.unwrap_or_else(|| member.name.clone()),
             member: member.name.clone(),
             ty: member.ty.clone(),
             attributes,
             type_def: type_mod.get_type_def(&member.ty)?,
         })
+    }
+}
+
+impl Column {
+    pub fn id_const(&self) -> String {
+        let id = match &self.id {
+            IdVariant::Felt(felt_str) => felt_str,
+            IdVariant::Const(const_str) => &format!("super::{const_str}"),
+        };
+        column_id_const(&self.name, id)
+    }
+    pub fn serialize_member_impl_name(&self, struct_name: &str) -> String {
+        member_impl_name_tpl(struct_name, &self.member)
+    }
+}
+
+impl CairoElementDefWith<String> for Column {
+    fn as_element_def_with(&self, column_mod_name: &String) -> String {
+        column_def_tpl(
+            &format!("{column_mod_name}::{}", self.member),
+            &self.name.as_cairo_byte_array(),
+            &self.attributes.as_cairo_span(),
+            &self.type_def.type_def(&self.ty),
+        )
     }
 }

@@ -1,4 +1,4 @@
-use crate::{AttributeCallType, IntrospectError, SyntaxItemTrait};
+use crate::{AttributeArg, AttributeCallType, IntrospectError, SyntaxItemTrait};
 use cairo_lang_macro::TokenStream;
 use salsa::Database;
 
@@ -15,6 +15,16 @@ pub trait IExtract<T> {
     fn iextracts(&self, modules: &mut [Self::SyntaxType]) -> Result<Vec<T>, Self::Error> {
         modules.iter_mut().map(|m| self.iextract(m)).collect()
     }
+}
+
+pub trait IExtractWithArgs<T> {
+    type SyntaxType;
+    type Error;
+    fn iextract_with_args(
+        &self,
+        module: &mut Self::SyntaxType,
+        attributes: &Vec<AttributeArg>,
+    ) -> Result<T, Self::Error>;
 }
 
 pub trait IExtractWith<T, C> {

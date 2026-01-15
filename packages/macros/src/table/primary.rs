@@ -5,6 +5,7 @@ use introspect_types::PrimaryTypeDef;
 #[derive(Clone, Debug)]
 pub struct PrimaryDef {
     pub name: String,
+    pub member: Option<String>,
     pub attributes: Vec<IAttribute>,
     pub ty: Ty,
     pub type_def: PrimaryTypeDefVariant,
@@ -18,7 +19,7 @@ pub enum PrimaryTypeDefVariant {
 }
 
 impl PrimaryTypeDefVariant {
-    pub fn type_def(&self, ty: Ty) -> String {
+    pub fn type_def(&self, ty: &Ty) -> String {
         match self {
             PrimaryTypeDefVariant::Default => {
                 format!("{I_PATH}::primary_type_def::<{}>()", ty.as_cairo())

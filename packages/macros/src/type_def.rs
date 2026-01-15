@@ -3,6 +3,7 @@ use introspect_types::{
     ByteArrayEDef, Bytes31EDef, CustomDef, ElementDef, EnumDef, FixedArrayDef, MemberDef,
     ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
 };
+use itertools::Itertools;
 use starknet_types_core::felt::Felt;
 
 pub trait ElementDefStringify<T> {
@@ -15,6 +16,20 @@ pub trait CairoElementDef {
 
 pub trait CairoElementDefWith<C> {
     fn as_element_def_with(&self, context: &C) -> String;
+}
+
+pub trait CairoElementDefsWith<C> {
+    fn as_element_def_span_with(&self, context: &C) -> String;
+}
+
+impl<C, T: CairoElementDefWith<C>> CairoElementDefsWith<C> for Vec<T> {
+    fn as_element_def_span_with(&self, context: &C) -> String {
+        let string = self
+            .iter()
+            .map(|element| element.as_element_def_with(context))
+            .join(",");
+        format!("[{string}].span()")
+    }
 }
 
 impl<T: ElementDef + CairoElementDef> AsCairo for T {

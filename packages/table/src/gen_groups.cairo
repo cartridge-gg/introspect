@@ -43,7 +43,7 @@ mod AColumnGroup_column_selectors {
 }
 
 pub impl AColumnGroupTableDataImpl<
-    impl T: introspect_table::TableSchema,
+    impl T: introspect_table::TableStructure,
     impl name_Member: introspect_table::MemberTrait<
         T::Record, T, AColumnGroup_column_selectors::name,
     >,
@@ -72,7 +72,7 @@ mod AKeyedColumnGroup_column_selectors {
 }
 
 impl AKeyedColumnGroupKeySpanDataSpanImpl<
-    impl T: introspect_table::TableSchema,
+    impl T: introspect_table::TableStructure,
     impl key_1_Member: introspect_table::MemberTrait<
         T::Record, T, AKeyedColumnGroup_column_selectors::key_1,
     >[Type: u128],
@@ -107,7 +107,7 @@ mod AnIdColumnGroup_column_selectors {
 }
 
 impl AnIdColumnGroupImpl<
-    impl T: introspect_table::TableSchema,
+    impl T: introspect_table::TableStructure,
     impl something_Member: introspect_table::MemberTrait<
         T::Record, T, AnIdColumnGroup_column_selectors::something,
     >[Type: u8],

@@ -65,6 +65,52 @@ pub trait CollectionsAsCairo<S> {
     // }
 }
 
+pub trait CollectionsAsCairoWith<S, C> {
+    fn as_cairo_elements_with(&self, context: &C) -> Vec<String>;
+    fn as_cairo_block_with(&self, context: &C) -> String {
+        let elements = self.as_cairo_elements_with(context);
+        match elements.len() {
+            0 => "".to_string(),
+            _ => elements.join("\n") + "\n",
+        }
+    }
+    // fn as_cairo_block_indented(&self, indent: usize) -> String {
+    //     indent_by(indent, self.as_cairo_block())
+    // }
+    fn as_cairo_csv_wrapped_with(&self, context: &C, prefix: &str, suffix: &str) -> String {
+        format!("{}{}{}", prefix, self.as_cairo_csv_with(context), suffix)
+    }
+
+    fn as_cairo_block_section_with(&self, context: &C) -> String {
+        let elements = self.as_cairo_elements_with(context);
+        match elements.len() {
+            0 => "".to_string(),
+            _ => format!("\n{}\n", indent_all_by(4, elements.join("\n"))),
+        }
+    }
+    fn as_cairo_csv_with(&self, context: &C) -> String {
+        self.as_cairo_elements_with(context).join(",")
+    }
+    fn as_cairo_delimited_with(&self, context: &C, delimiter: &str) -> String {
+        self.as_cairo_elements_with(context).join(delimiter)
+    }
+    fn as_cairo_span_with(&self, context: &C) -> String {
+        let elements = self.as_cairo_elements_with(context);
+        format!("[{}].span()", elements.join(","))
+    }
+    fn as_cairo_array_with(&self, context: &C) -> String {
+        let elements = self.as_cairo_elements_with(context);
+        format!("array![{}]", elements.join(","))
+    }
+    fn as_cairo_fixed_array_with(&self, context: &C) -> String {
+        let elements = self.as_cairo_elements_with(context);
+        format!("[{}]", elements.join(","))
+    }
+    // fn as_cairo_delimited_indented(&self, delimiter: &str, indent: usize) -> String {
+    //     indent_by(indent, self.as_cairo_delimited(delimiter))
+    // }
+}
+
 impl AsCairo for String {
     fn as_cairo(&self) -> String {
         self.clone()

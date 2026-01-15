@@ -1,32 +1,55 @@
-use crate::{TableResult, TableError};
-use introspect_macros::utils::string_to_keccak_felt;
-use introspect_types::ascii_str_to_felt;
-use starknet_types_core::felt::Felt;
+use crate::{TableError, TableResult};
+use introspect_macros::utils::string_to_keccak_hex;
 
 pub enum IdVariant {
-    Felt(Felt),
+    Felt(String),
     Const(String),
 }
 
 impl TryFrom<String> for IdVariant {
     type Error = TableError;
-    fn try_from(arg: String) -> TableResult<Self> {
-        if arg.starts_with("'") && arg.ends_with("'") {
-            Ok(IdVariant::Felt(ascii_str_to_felt(&arg[1..arg.len() - 1])))
-        } else if arg.starts_with("\"") && arg.ends_with("\"") {
-            Ok(IdVariant::Felt(string_to_keccak_felt(
-                &arg[1..arg.len() - 1],
+    fn try_from(string: String) -> TableResult<IdVariant> {
+        if (string.starts_with("'") && string.ends_with("'"))
+            && string.starts_with(|c: char| c.is_ascii_digit())
+            && string.starts_with("0x")
+            || string.starts_with("0b")
+        {
+            Ok(IdVariant::Felt(string))
+        } else if string.starts_with("\"") && string.ends_with("\"") {
+            Ok(IdVariant::Felt(string_to_keccak_hex(
+                &string[1..string.len() - 1],
             )))
-        } else if arg.starts_with("0x") {
-            Ok(IdVariant::Felt(
-                Felt::from_hex(&arg).map_err(|_| TableError::ColumnIdParseError)?,
-            ))
-        } else if arg.starts_with("0b") {
-            Err(TableError::ColumnIdParseError)
-        } else if let Ok(felt) = Felt::from_dec_str(&arg) {
-            Ok(IdVariant::Felt(felt))
         } else {
-            Ok(IdVariant::Const(arg))
+            Ok(IdVariant::Const(string))
+        }
+    }
+}
+
+impl ToString for IdVariant {
+    fn to_string(&self) -> String {
+        match self {
+            IdVariant::Felt(s) | IdVariant::Const(s) => s.clone(),
+        }
+    }
+}
+
+impl From<IdVariant> for String {
+    fn from(id: IdVariant) -> Self {
+        match id {
+            IdVariant::Felt(s) | IdVariant::Const(s) => s,
+        }
+    }
+}
+
+pub trait IdVariantTrait {
+    fn to_id_string(self, string: &str) -> String;
+}
+
+impl IdVariantTrait for Option<IdVariant> {
+    fn to_id_string(self, string: &str) -> String {
+        match self {
+            Some(id) => id.into(),
+            None => string_to_keccak_hex(string),
         }
     }
 }

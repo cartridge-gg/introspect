@@ -1,7 +1,7 @@
 use crate::i_type::TypeDefVariant;
 use crate::i_type::structs::IMember;
 use crate::utils::string_to_keccak_felt;
-use crate::{AsCairo, AsCairoBytes, CollectionsAsCairo, IAttribute, Ty};
+use crate::{AsCairo, AsCairoBytes, CollectionsAsCairo, I_PATH, IAttribute, Ty};
 use starknet_types_core::felt::Felt;
 
 #[derive(Clone, Debug)]
@@ -15,7 +15,7 @@ pub struct ColumnDef {
 }
 
 pub fn column_def_tpl(id: &str, name: &str, attributes: &str, type_def: &str) -> String {
-    format!("introspect::column_def({id}, {name}, {attributes}, {type_def})")
+    format!("{I_PATH}::column_def({id}, {name}, {attributes}, {type_def})")
 }
 
 impl IMember {

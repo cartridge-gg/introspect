@@ -1,7 +1,5 @@
 use crate::gen_groups::{AColumnGroup, AKeyedColumnGroup, AnIdColumnGroup};
-use crate::gen_table_id::{
-    Character, CharacterColumns, CharacterTable, CharacterTable2, CharacterTableSchema,
-};
+use crate::gen_table_id::{Character, CharacterColumns, CharacterTable, CharacterTable2};
 use crate::gen_table_keyed::{Foo, FooColumns, FooTable};
 use crate::gen_table_no_id::{Player, PlayerColumns, PlayerTable};
 
