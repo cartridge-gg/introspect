@@ -7,6 +7,7 @@ pub mod i_type;
 pub mod inline;
 pub mod introspect;
 pub mod item;
+pub mod manager;
 pub mod params;
 pub mod serde;
 pub mod syntax;

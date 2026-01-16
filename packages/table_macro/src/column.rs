@@ -5,7 +5,7 @@ use introspect_macros::i_type::{
     AttributeParser, AttributeVariant, DefaultIExtractor, IExtract, TypeDefVariant, TypeModTrait,
 };
 use introspect_macros::table::column::column_def_tpl;
-use introspect_macros::type_def::{CairoElementDef, CairoElementDefWith};
+use introspect_macros::type_def::CairoElementDefWith;
 use introspect_macros::utils::string_to_keccak_hex;
 use introspect_macros::{AsCairoBytes, CollectionsAsCairo, IAttribute, Member, Ty};
 use introspect_rust_macros::macro_attributes;

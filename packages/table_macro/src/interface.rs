@@ -5,7 +5,7 @@ use introspect_macros::i_type::{AttributeParser, DefaultIExtractor, IExtract};
 use introspect_macros::{CollectionsAsCairo, IAttribute, Struct};
 use introspect_rust_macros::macro_attributes;
 
-pub struct Table {
+pub struct TableInterface {
     pub id: String,
     pub name: String,
     pub attributes: Vec<IAttribute>,
@@ -20,12 +20,12 @@ pub struct TableAttributes {
     id: IdVariant,
 }
 
-impl IExtract<Table> for DefaultIExtractor {
+impl IExtract<TableInterface> for DefaultIExtractor {
     type SyntaxType = Struct;
     type Error = TableError;
-    fn iextract(&self, item: &mut Self::SyntaxType) -> TableResult<Table> {
+    fn iextract(&self, item: &mut Self::SyntaxType) -> TableResult<TableInterface> {
         let name = name.unwrap_or_else(|| item.name.clone());
-        Ok(Table {
+        Ok(TableInterface {
             id: id.to_id_string(&name),
             attributes,
             impl_name: format!("{}Table", name),
@@ -35,7 +35,7 @@ impl IExtract<Table> for DefaultIExtractor {
     }
 }
 
-impl Table {
+impl TableInterface {
     pub fn table_impl(&self, struct_impl_name: &str) -> String {
         table_impl_tpl(&self.impl_name, struct_impl_name, &self.meta_impl_name)
     }
