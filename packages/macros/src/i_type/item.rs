@@ -1,13 +1,13 @@
 use super::{IEnum, IStruct};
 use crate::i_type::{DefaultIExtractor, IExtract, ITys};
 use crate::params::GenericParams;
-use crate::{IntrospectError, Item, ItemTrait, IntrospectResult, Ty};
+use crate::{IntrospectError, IntrospectResult, Item, ItemTrait, Ty};
 pub trait IntrospectItemTrait {
     type ModuleType;
     fn kind(&self) -> &str;
     fn child_types(&self) -> Vec<&Ty>;
-    fn child_defs(&self) -> String {
-        self.child_types().child_defs()
+    fn child_defs(&self, i_path: &str) -> String {
+        self.child_types().collect_child_defs(i_path)
     }
 }
 

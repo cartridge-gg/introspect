@@ -1,8 +1,8 @@
 use crate::params::GenericParams;
 use crate::{
     AsCairo, AstInto, AstToString, AstTryInto, Attribute, AttributesTrait, CollectionsAsCairo,
-    Derives, IntrospectError, ItemTrait, IntrospectResult, SyntaxItemTrait, TryFromAst, Ty, Visibility,
-    impl_attributes_trait, vec_try_from_element_list,
+    Derives, IntrospectError, IntrospectResult, ItemTrait, SyntaxItemTrait, TryFromAst, Ty,
+    Visibility, impl_attributes_trait, vec_try_from_element_list,
 };
 use cairo_lang_syntax::node::ast::{ItemStruct, Member as MemberAst};
 use cairo_lang_syntax::node::kind::SyntaxKind;

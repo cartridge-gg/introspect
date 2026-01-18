@@ -98,43 +98,43 @@ pub impl MemberDefImpl of MemberDefTrait {
 }
 
 pub mod selectors {
-    pub const None: felt252 = 0;
-    pub const Felt252: felt252 = 'felt252';
-    pub const ShortUtf8: felt252 = 'ShortUtf8';
-    pub const Bytes31: felt252 = 'bytes31';
-    pub const Bytes31E: felt252 = 'bytes31e';
-    pub const Bool: felt252 = 'bool';
-    pub const U8: felt252 = 'u8';
-    pub const U16: felt252 = 'u16';
-    pub const U32: felt252 = 'u32';
-    pub const U64: felt252 = 'u64';
-    pub const U128: felt252 = 'u128';
-    pub const U256: felt252 = 'u256';
-    pub const U512: felt252 = 'u512';
-    pub const I8: felt252 = 'i8';
-    pub const I16: felt252 = 'i16';
-    pub const I32: felt252 = 'i32';
-    pub const I64: felt252 = 'i64';
-    pub const I128: felt252 = 'i128';
-    pub const ClassHash: felt252 = 'ClassHash';
-    pub const ContractAddress: felt252 = 'ContractAddress';
-    pub const EthAddress: felt252 = 'EthAddress';
-    pub const StorageAddress: felt252 = 'StorageAddress';
-    pub const StorageBaseAddress: felt252 = 'StorageBaseAddress';
-    pub const ByteArray: felt252 = 'ByteArray';
-    pub const Utf8String: felt252 = 'Utf8String';
-    pub const ByteArrayE: felt252 = 'ByteArrayE';
-    pub const Tuple: felt252 = 'Tuple';
-    pub const Array: felt252 = 'Array';
-    pub const FixedArray: felt252 = 'FixedArray';
-    pub const Felt252Dict: felt252 = 'Felt252Dict';
-    pub const Struct: felt252 = 'struct';
-    pub const Enum: felt252 = 'enum';
-    pub const Ref: felt252 = 'ref';
-    pub const Custom: felt252 = 'custom';
-    pub const Option: felt252 = 'Option';
-    pub const Result: felt252 = 'Result';
-    pub const Nullable: felt252 = 'Nullable';
+    pub const None: core::felt252 = 0;
+    pub const felt252: core::felt252 = 'felt252';
+    pub const ShortUtf8: core::felt252 = 'ShortUtf8';
+    pub const bytes31: core::felt252 = 'bytes31';
+    pub const bytes31E: core::felt252 = 'bytes31e';
+    pub const bool: core::felt252 = 'bool';
+    pub const u8: core::felt252 = 'u8';
+    pub const u16: core::felt252 = 'u16';
+    pub const u32: core::felt252 = 'u32';
+    pub const u64: core::felt252 = 'u64';
+    pub const u128: core::felt252 = 'u128';
+    pub const u256: core::felt252 = 'u256';
+    pub const u512: core::felt252 = 'u512';
+    pub const i8: core::felt252 = 'i8';
+    pub const i16: core::felt252 = 'i16';
+    pub const i32: core::felt252 = 'i32';
+    pub const i64: core::felt252 = 'i64';
+    pub const i128: core::felt252 = 'i128';
+    pub const ClassHash: core::felt252 = 'ClassHash';
+    pub const ContractAddress: core::felt252 = 'ContractAddress';
+    pub const EthAddress: core::felt252 = 'EthAddress';
+    pub const StorageAddress: core::felt252 = 'StorageAddress';
+    pub const StorageBaseAddress: core::felt252 = 'StorageBaseAddress';
+    pub const ByteArray: core::felt252 = 'ByteArray';
+    pub const Utf8String: core::felt252 = 'Utf8String';
+    pub const ByteArrayE: core::felt252 = 'ByteArrayE';
+    pub const Tuple: core::felt252 = 'Tuple';
+    pub const Array: core::felt252 = 'Array';
+    pub const FixedArray: core::felt252 = 'FixedArray';
+    pub const Felt252Dict: core::felt252 = 'Felt252Dict';
+    pub const Struct: core::felt252 = 'struct';
+    pub const Enum: core::felt252 = 'enum';
+    pub const Ref: core::felt252 = 'ref';
+    pub const Custom: core::felt252 = 'custom';
+    pub const Option: core::felt252 = 'Option';
+    pub const Result: core::felt252 = 'Result';
+    pub const Nullable: core::felt252 = 'Nullable';
 }
 
 pub trait SelectorTrait<T> {
@@ -145,23 +145,23 @@ impl TypeDefSelector of SelectorTrait<TypeDef> {
     const fn selector(self: @TypeDef) -> felt252 {
         match self {
             TypeDef::None => selectors::None,
-            TypeDef::Felt252 => selectors::Felt252,
+            TypeDef::Felt252 => selectors::felt252,
             TypeDef::ShortUtf8 => selectors::ShortUtf8,
-            TypeDef::Bytes31 => selectors::Bytes31,
-            TypeDef::Bytes31E(_) => selectors::Bytes31E,
-            TypeDef::Bool => selectors::Bool,
-            TypeDef::U8 => selectors::U8,
-            TypeDef::U16 => selectors::U16,
-            TypeDef::U32 => selectors::U32,
-            TypeDef::U64 => selectors::U64,
-            TypeDef::U128 => selectors::U128,
-            TypeDef::U256 => selectors::U256,
-            TypeDef::U512 => selectors::U512,
-            TypeDef::I8 => selectors::I8,
-            TypeDef::I16 => selectors::I16,
-            TypeDef::I32 => selectors::I32,
-            TypeDef::I64 => selectors::I64,
-            TypeDef::I128 => selectors::I128,
+            TypeDef::Bytes31 => selectors::bytes31,
+            TypeDef::Bytes31E(_) => selectors::bytes31E,
+            TypeDef::Bool => selectors::bool,
+            TypeDef::U8 => selectors::u8,
+            TypeDef::U16 => selectors::u16,
+            TypeDef::U32 => selectors::u32,
+            TypeDef::U64 => selectors::u64,
+            TypeDef::U128 => selectors::u128,
+            TypeDef::U256 => selectors::u256,
+            TypeDef::U512 => selectors::u512,
+            TypeDef::I8 => selectors::i8,
+            TypeDef::I16 => selectors::i16,
+            TypeDef::I32 => selectors::i32,
+            TypeDef::I64 => selectors::i64,
+            TypeDef::I128 => selectors::i128,
             TypeDef::ClassHash => selectors::ClassHash,
             TypeDef::ContractAddress => selectors::ContractAddress,
             TypeDef::EthAddress => selectors::EthAddress,
@@ -238,39 +238,39 @@ impl TySerde of Serde<TypeDef> {
 
         if tag == 0 {
             Option::Some(TypeDef::None)
-        } else if tag == selectors::Felt252 {
+        } else if tag == selectors::felt252 {
             Option::Some(TypeDef::Felt252)
         } else if tag == selectors::ShortUtf8 {
             Option::Some(TypeDef::ShortUtf8)
-        } else if tag == selectors::Bytes31 {
+        } else if tag == selectors::bytes31 {
             Option::Some(TypeDef::Bytes31)
-        } else if tag == selectors::Bytes31E {
+        } else if tag == selectors::bytes31E {
             Option::Some(TypeDef::Bytes31E(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Bool {
+        } else if tag == selectors::bool {
             Option::Some(TypeDef::Bool)
-        } else if tag == selectors::U8 {
+        } else if tag == selectors::u8 {
             Option::Some(TypeDef::U8)
-        } else if tag == selectors::U16 {
+        } else if tag == selectors::u16 {
             Option::Some(TypeDef::U16)
-        } else if tag == selectors::U32 {
+        } else if tag == selectors::u32 {
             Option::Some(TypeDef::U32)
-        } else if tag == selectors::U64 {
+        } else if tag == selectors::u64 {
             Option::Some(TypeDef::U64)
-        } else if tag == selectors::U128 {
+        } else if tag == selectors::u128 {
             Option::Some(TypeDef::U128)
-        } else if tag == selectors::U256 {
+        } else if tag == selectors::u256 {
             Option::Some(TypeDef::U256)
-        } else if tag == selectors::U512 {
+        } else if tag == selectors::u512 {
             Option::Some(TypeDef::U512)
-        } else if tag == selectors::I8 {
+        } else if tag == selectors::i8 {
             Option::Some(TypeDef::I8)
-        } else if tag == selectors::I16 {
+        } else if tag == selectors::i16 {
             Option::Some(TypeDef::I16)
-        } else if tag == selectors::I32 {
+        } else if tag == selectors::i32 {
             Option::Some(TypeDef::I32)
-        } else if tag == selectors::I64 {
+        } else if tag == selectors::i64 {
             Option::Some(TypeDef::I64)
-        } else if tag == selectors::I128 {
+        } else if tag == selectors::i128 {
             Option::Some(TypeDef::I128)
         } else if tag == selectors::ClassHash {
             Option::Some(TypeDef::ClassHash)
@@ -369,39 +369,39 @@ impl TyISerde of ISerde<TypeDef> {
 
         if tag == 0 {
             Option::Some(TypeDef::None)
-        } else if tag == selectors::Felt252 {
+        } else if tag == selectors::felt252 {
             Option::Some(TypeDef::Felt252)
         } else if tag == selectors::ShortUtf8 {
             Option::Some(TypeDef::ShortUtf8)
-        } else if tag == selectors::Bytes31 {
+        } else if tag == selectors::bytes31 {
             Option::Some(TypeDef::Bytes31)
-        } else if tag == selectors::Bytes31E {
+        } else if tag == selectors::bytes31E {
             Option::Some(TypeDef::Bytes31E(ISerde::ideserialize(ref serialized)?))
-        } else if tag == selectors::Bool {
+        } else if tag == selectors::bool {
             Option::Some(TypeDef::Bool)
-        } else if tag == selectors::U8 {
+        } else if tag == selectors::u8 {
             Option::Some(TypeDef::U8)
-        } else if tag == selectors::U16 {
+        } else if tag == selectors::u16 {
             Option::Some(TypeDef::U16)
-        } else if tag == selectors::U32 {
+        } else if tag == selectors::u32 {
             Option::Some(TypeDef::U32)
-        } else if tag == selectors::U64 {
+        } else if tag == selectors::u64 {
             Option::Some(TypeDef::U64)
-        } else if tag == selectors::U128 {
+        } else if tag == selectors::u128 {
             Option::Some(TypeDef::U128)
-        } else if tag == selectors::U256 {
+        } else if tag == selectors::u256 {
             Option::Some(TypeDef::U256)
-        } else if tag == selectors::U512 {
+        } else if tag == selectors::u512 {
             Option::Some(TypeDef::U512)
-        } else if tag == selectors::I8 {
+        } else if tag == selectors::i8 {
             Option::Some(TypeDef::I8)
-        } else if tag == selectors::I16 {
+        } else if tag == selectors::i16 {
             Option::Some(TypeDef::I16)
-        } else if tag == selectors::I32 {
+        } else if tag == selectors::i32 {
             Option::Some(TypeDef::I32)
-        } else if tag == selectors::I64 {
+        } else if tag == selectors::i64 {
             Option::Some(TypeDef::I64)
-        } else if tag == selectors::I128 {
+        } else if tag == selectors::i128 {
             Option::Some(TypeDef::I128)
         } else if tag == selectors::ClassHash {
             Option::Some(TypeDef::ClassHash)
@@ -572,4 +572,3 @@ impl ResultDefISerde of ISerde<ResultDef> {
         Some(ResultDef { ok, err })
     }
 }
-

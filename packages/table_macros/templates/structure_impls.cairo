@@ -2,7 +2,7 @@ pub mod {{columns_mod_name}}{
     {{column_consts}}
 }
 
-impl {{struct_impl_name}} of {{i_table_path}}::TableStructure {
+impl {{struct_impl_name}} of {{i_path}}::TableStructure {
     type Primary = {{primary_ty}};
     type Record = {{struct_name}};
     fn primary_def() -> {{i_path}}::PrimaryDef {
@@ -18,7 +18,7 @@ impl {{struct_impl_name}} of {{i_table_path}}::TableStructure {
 
 {{member_impls}}
 
-impl {{struct_name}}RecordValuesSpan of {{i_table_path}}::RecordValuesSpanTrait<{{struct_impl_name}}, {{struct_name}}> {
+impl {{struct_name}}RecordValuesSpan of {{i_path}}::RecordValuesSpanTrait<{{struct_impl_name}}, {{struct_name}}> {
     fn serialize_values(self: @{{struct_name}}, ref data: Array<felt252>) {
         {{serialize_member_calls}}
     }

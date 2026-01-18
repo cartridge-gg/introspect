@@ -11,4 +11,4 @@ pub use enums::{IEnum, IVariant};
 pub use extraction::IExtract;
 pub use item::{IItem, IntrospectItemTrait};
 pub use structs::{IMember, IStruct};
-pub use types::{ExtractTypeDef, ITys, ToTypeDef, ToTypeDefVariant, ToTypeDefs, TypeDefVariant};
+pub use types::{ExtractTypeDef, ITys, ToTypeDefVariant, TypeDefVariant};

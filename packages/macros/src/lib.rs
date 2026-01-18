@@ -26,6 +26,9 @@ pub use syntax::{
     Item, Member, Struct, SyntaxItemTrait, Variant,
 };
 pub use ty::Ty;
+pub use type_def::{
+    CairoElementDef, CairoElementDefWith, CairoElementDefs, CairoElementDefsWith, CairoTypeDef,
+};
 pub use utils::{AttributeCallType, Modifier, Visibility};
 
 pub const I_PATH: &str = "introspect::m_utils";

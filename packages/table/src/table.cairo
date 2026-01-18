@@ -4,19 +4,15 @@ use introspect_events::database::{
     DeletesFields, InsertField, InsertFieldGroup, InsertFields, InsertRecord, InsertRecords,
     InsertsField, InsertsFieldGroup, InsertsFields,
 };
-use introspect_types::{Attribute, ColumnDef, IdData, PrimaryDef, PrimaryTrait, TypeDef};
+use introspect_types::{Attribute, ChildDefs, ColumnDef, IdData, PrimaryDef, PrimaryTrait};
 use crate::{Snapable, Spannable};
-
-
-pub trait TableMeta {
-    const ID: felt252;
-    fn name() -> ByteArray;
-    fn attributes() -> Span<Attribute>;
-}
 
 pub trait TableStructure {
     type Primary;
     type Record;
+    fn attributes() -> Span<Attribute> {
+        [].span()
+    }
     fn primary() -> PrimaryDef {
         introspect_types::PrimaryDef {
             name: "__id",
@@ -25,7 +21,7 @@ pub trait TableStructure {
         }
     }
     fn columns() -> Span<ColumnDef>;
-    fn child_defs() -> Array<(felt252, TypeDef)>;
+    fn collect_child_defs(ref defs: ChildDefs);
 }
 
 pub trait KeySpanToPrimary<R, impl Struct: TableStructure> {
@@ -414,11 +410,11 @@ pub mod table_member {
     }
 }
 
-pub trait RecordableEvent<R, impl Struct: TableStructure, impl Meta: TableMeta> {
+pub trait RecordableEvent<R, impl Struct: TableStructure, const ID: felt252> {
     fn emit_recordable(record: @R);
 }
 
-pub trait RecordablesEvent<RS, impl Struct: TableStructure, impl Meta: TableMeta> {
+pub trait RecordablesEvent<RS, impl Struct: TableStructure, const ID: felt252> {
     fn emit_recordables(records: RS);
 }
 
@@ -426,14 +422,14 @@ pub trait RecordablesEvent<RS, impl Struct: TableStructure, impl Meta: TableMeta
 pub impl EmitRecordableRecordImpl<
     R,
     impl Struct: TableStructure,
-    impl Meta: TableMeta,
+    const ID: felt252,
     impl RT: RecordTrait<R, Struct>,
     impl IDD: RecordIdData<R, Struct>,
     +Drop<R>,
-> of RecordableEvent<R, Struct, Meta> {
+> of RecordableEvent<R, Struct, ID> {
     fn emit_recordable(record: @R) {
         let id_data = IDD::record_id_data(record);
-        InsertRecord { table: Meta::ID, record: id_data.id, data: id_data.data }.emit_event();
+        InsertRecord { table: ID, record: id_data.id, data: id_data.data }.emit_event();
     }
 }
 
@@ -441,69 +437,68 @@ pub impl EmitRecordableRecordsImpl<
     RS,
     R,
     impl Struct: TableStructure,
-    impl Meta: TableMeta,
+    const ID: felt252,
     impl IDD: RecordIdData<R, Struct>,
     +RecordTrait<R>,
     +Spannable<RS, R>,
     +Drop<RS>,
-> of RecordablesEvent<RS, Struct, Meta> {
+> of RecordablesEvent<RS, Struct, ID> {
     fn emit_recordables(records: RS) {
         let records_data = RecordIdDatasImpl::multi_id_data(records);
-        InsertRecords { table: Meta::ID, records_data }.emit_event();
+        InsertRecords { table: ID, records_data }.emit_event();
     }
 }
 
 pub impl ColumnGroupRecordable<
     R,
-    const SIZE: usize,
     impl Struct: TableStructure,
-    impl Meta: TableMeta,
+    const ID: felt252,
+    const SIZE: usize,
     impl CG: IdColumnGroup<R, SIZE, Struct>,
     +Drop<R>,
-> of RecordableEvent<R, Struct> {
+> of RecordableEvent<R, Struct, ID> {
     fn emit_recordable(record: @R) {
         let (record, data) = CG::group_tuple(record);
-        InsertFieldGroup { table: Meta::ID, record, group: CG::GROUP_ID, data }.emit_event();
+        InsertFieldGroup { table: ID, record, group: CG::GROUP_ID, data }.emit_event();
     }
 }
 
 pub impl ColumnGroupRecordables<
     RS,
     R,
-    const SIZE: usize,
     impl Struct: TableStructure,
-    impl Meta: TableMeta,
+    const ID: felt252,
+    const SIZE: usize,
     impl G: IdColumnGroup<R, SIZE>,
     +Spannable<RS, R>,
     +Drop<RS>,
-> of RecordablesEvent<RS, Struct> {
+> of RecordablesEvent<RS, Struct, ID> {
     fn emit_recordables(records: RS) {
         let records_data = MultiIdColumnGroup::multi_id_data(records);
-        InsertsFieldGroup { table: Meta::ID, group: G::GROUP_ID, records_data }.emit_event();
+        InsertsFieldGroup { table: ID, group: G::GROUP_ID, records_data }.emit_event();
     }
 }
 
-trait RecordFieldsEvent<R, impl Struct: TableStructure, impl Meta: TableMeta> {
+trait RecordFieldsEvent<R, impl Struct: TableStructure, const ID: felt252> {
     fn emit_record_fields(record_fields: @R);
 }
 
-trait RecordsFieldsEvent<RS, impl Struct: TableStructure, impl Meta: TableMeta> {
+trait RecordsFieldsEvent<RS, impl Struct: TableStructure, const ID: felt252> {
     fn emit_records_fields(records_fields: RS);
 }
 
 pub impl ColumnGroupRecordFields<
     R,
-    const SIZE: usize,
     impl Struct: TableStructure,
-    impl Meta: TableMeta,
+    const ID: felt252,
+    const SIZE: usize,
     impl CG: IdColumnGroup<R, SIZE, Struct>,
     +Drop<R>,
     impl S: ToSpanTrait<[felt252; SIZE], felt252>,
-> of RecordFieldsEvent<R, Struct, Meta> {
+> of RecordFieldsEvent<R, Struct, ID> {
     fn emit_record_fields(record_fields: @R) {
         let (record, data) = CG::group_tuple(record_fields);
-        InsertFields { table: Meta::ID, record, columns: S::span(@CG::COLUMN_IDS), data }
-            .emit_event();
+        InsertFields { table: ID, record, columns: S::span(@CG::COLUMN_IDS), data }.emit_event();
     }
 }
 
@@ -512,127 +507,49 @@ pub impl ColumnGroupRecordsFields<
     R,
     const SIZE: usize,
     impl Struct: TableStructure,
-    impl Meta: TableMeta,
+    const ID: felt252,
     impl CG: IdColumnGroup<R, SIZE, Struct>,
     +Spannable<RS, R>,
     +Drop<RS>,
     impl S: ToSpanTrait<[felt252; SIZE], felt252>,
-> of RecordsFieldsEvent<RS, Struct, Meta> {
+> of RecordsFieldsEvent<RS, Struct, ID> {
     fn emit_records_fields(records_fields: RS) {
         let records_data = MultiIdColumnGroup::multi_id_data(records_fields);
-        InsertsFields { table: Meta::ID, columns: S::span(@CG::COLUMN_IDS), records_data }
-            .emit_event();
+        InsertsFields { table: ID, columns: S::span(@CG::COLUMN_IDS), records_data }.emit_event();
     }
 }
 
 
-pub trait Table {
+pub trait ITable {
     impl Struct: TableStructure;
-    impl Meta: TableMeta;
-    fn register_table();
-    fn insert<R, +RecordableEvent<R, Self::Struct, Self::Meta>, +Drop<R>>(record: R);
-    fn inserts<RS, +RecordablesEvent<RS, Self::Struct, Self::Meta>, +Drop<RS>>(records: RS);
-    fn insert_field<
-        const ID: felt252,
-        K,
-        F,
-        +RecordId<K, Self::Struct>,
-        impl M: MemberTrait<Self::Struct::Record, Self::Struct, ID>,
-        +Snapable<F, M::Type>,
-        +Drop<K>,
-        +Drop<F>,
-    >(
-        id: K, field: F,
-    );
-    fn insert_fields<R, +RecordFieldsEvent<R, Self::Struct, Self::Meta>, +Drop<R>>(record: R);
-    fn inserts_field<
-        const ID: felt252,
-        RFS,
-        impl M: MemberTrait<Self::Struct::Record, Self::Struct, ID>,
-        +RecordsField<ID, RFS, Self::Struct, M>,
-    >(
-        id_fields: RFS,
-    );
-    fn inserts_fields<RS, +RecordsFieldsEvent<RS, Self::Struct, Self::Meta>, +Drop<RS>>(
-        records: RS,
-    );
-    fn delete_record<K, +RecordId<K, Self::Struct>, +Drop<K>>(id: K);
-    fn delete_records<KS, +RecordIds<KS, Self::Struct>, +Drop<KS>>(ids: KS);
-    fn delete_field<
-        K, C, +RecordId<K, Self::Struct>, +ColumnId<C, Self::Struct>, +Drop<K>, +Drop<C>,
-    >(
-        id: K, column: C,
-    );
-    fn delete_fields<
-        K, CS, +RecordId<K, Self::Struct>, +ColumnIds<CS, Self::Struct>, +Drop<K>, +Drop<CS>,
-    >(
-        id: K, columns: CS,
-    );
-    fn deletes_field<
-        KS, C, impl TID: RecordIds<KS, Self::Struct>, +ColumnId<C, Self::Struct>, +Drop<C>,
-    >(
-        ids: KS, column: C,
-    );
-    fn deletes_fields<
-        KS, CS, +RecordIds<KS, Self::Struct>, +ColumnIds<CS, Self::Struct>, +Drop<KS>, +Drop<CS>,
-    >(
-        ids: KS, columns: CS,
-    );
-}
-
-
-// pub impl TableSchemaImpl<impl Meta: TableMeta, impl Structure: TableStructure> of TableSchema {
-//     type Primary = Structure::Primary;
-//     type Record = Structure::Record;
-//     const ID: felt252 = Meta::ID;
-
-//     #[inline(always)]
-//     fn name() -> ByteArray {
-//         Meta::name()
-//     }
-//     #[inline(always)]
-//     fn attributes() -> Span<Attribute> {
-//         Meta::attributes()
-//     }
-//     #[inline(always)]
-//     fn primary() -> PrimaryDef {
-//         Structure::primary_def()
-//     }
-//     #[inline(always)]
-//     fn columns() -> Span<ColumnDef> {
-//         Structure::columns()
-//     }
-//     #[inline(always)]
-//     fn child_defs() -> Array<(felt252, TypeDef)> {
-//         Structure::child_defs()
-//     }
-// }
-
-pub impl TableImpl<impl Struct: TableStructure, impl Meta: TableMeta> of Table {
-    impl Struct = Struct;
-    impl Meta = Meta;
+    const ID: felt252;
+    fn name() -> ByteArray;
     fn register_table() {
         CreateTableWithColumns {
-            id: Meta::ID,
-            name: Meta::name(),
-            attributes: Meta::attributes(),
-            primary: Struct::primary(),
-            columns: Struct::columns(),
+            id: Self::ID,
+            name: Self::name(),
+            attributes: Self::Struct::attributes(),
+            primary: Self::Struct::primary(),
+            columns: Self::Struct::columns(),
         }
             .emit_event();
     }
-    fn insert<R, impl RE: RecordableEvent<R, Struct, Meta>, +Drop<R>>(record: R) {
+    fn insert<R, impl RE: RecordableEvent<R, Self::Struct, Self::ID>, +Drop<R>>(
+        record: R,
+    ) {
         RE::emit_recordable(@record);
     }
-    fn inserts<RS, impl RE: RecordablesEvent<RS, Struct, Meta>, +Drop<RS>>(records: RS) {
+    fn inserts<RS, impl RE: RecordablesEvent<RS, Self::Struct, Self::ID>, +Drop<RS>>(
+        records: RS,
+    ) {
         RE::emit_recordables(records);
     }
     fn insert_field<
         const ID: felt252,
         K,
         F,
-        impl TID: RecordId<K, Struct>,
-        impl M: MemberTrait<Struct::Record, Struct, ID>,
+        impl TID: RecordId<K, Self::Struct>,
+        impl M: MemberTrait<Self::Struct::Record, Self::Struct, ID>,
         +Snapable<F, M::Type>,
         +Drop<K>,
         +Drop<F>,
@@ -640,81 +557,96 @@ pub impl TableImpl<impl Struct: TableStructure, impl Meta: TableMeta> of Table {
         id: K, field: F,
     ) {
         InsertField {
-            table: Meta::ID,
+            table: Self::ID,
             record: TID::record_id(@id),
             column: ID,
             data: M::serialize_member_inline(field),
         }
             .emit_event();
     }
-
-    fn insert_fields<R, impl RE: RecordFieldsEvent<R, Struct, Meta>, +Drop<R>>(record: R) {
+    fn insert_fields<R, impl RE: RecordFieldsEvent<R, Self::Struct, Self::ID>, +Drop<R>>(
+        record: R,
+    ) {
         RE::emit_record_fields(@record);
     }
-
     fn inserts_field<
         const ID: felt252,
         RFS,
-        impl M: MemberTrait<Struct::Record, Struct, ID>,
-        impl RF: RecordsField<ID, RFS, Struct, M>,
+        impl M: MemberTrait<Self::Struct::Record, Self::Struct, ID>,
+        impl RF: RecordsField<ID, RFS, Self::Struct, M>,
     >(
         id_fields: RFS,
     ) {
         let records_data = RF::records_field_datas(id_fields);
-        InsertsField { table: Meta::ID, column: ID, records_data }.emit_event();
+        InsertsField { table: Self::ID, column: ID, records_data }.emit_event();
     }
-    fn inserts_fields<RS, impl RE: RecordsFieldsEvent<RS, Struct, Meta>, +Drop<RS>>(records: RS) {
+    fn inserts_fields<RS, impl RE: RecordsFieldsEvent<RS, Self::Struct, Self::ID>, +Drop<RS>>(
+        records: RS,
+    ) {
         RE::emit_records_fields(records);
     }
-    fn delete_record<K, impl TID: RecordId<K, Struct>, +Drop<K>>(id: K) {
-        DeleteRecord { table: Meta::ID, record: TID::record_id(@id) }.emit_event();
+    fn delete_record<K, impl RID: RecordId<K, Self::Struct>, +Drop<K>>(
+        id: K,
+    ) {
+        DeleteRecord { table: Self::ID, record: RID::record_id(@id) }.emit_event();
     }
-    fn delete_records<KS, impl TID: RecordIds<KS, Struct>, +Drop<KS>>(ids: KS) {
-        DeleteRecords { table: Meta::ID, records: TID::record_ids(ids) }.emit_event();
+    fn delete_records<KS, impl RID: RecordIds<KS, Self::Struct>, +Drop<KS>>(
+        ids: KS,
+    ) {
+        DeleteRecords { table: Self::ID, records: RID::record_ids(ids) }.emit_event();
     }
     fn delete_field<
-        K, C, impl TID: RecordId<K, Struct>, impl CID: ColumnId<C, Struct>, +Drop<K>, +Drop<C>,
+        K,
+        C,
+        impl RID: RecordId<K, Self::Struct>,
+        impl CID: ColumnId<C, Self::Struct>,
+        +Drop<K>,
+        +Drop<C>,
     >(
         id: K, column: C,
     ) {
         DeleteField {
-            table: Meta::ID, record: TID::record_id(@id), column: CID::column_id(@column),
+            table: Self::ID, record: RID::record_id(@id), column: CID::column_id(@column),
         }
             .emit_event();
     }
-
     fn delete_fields<
-        K, CS, impl TID: RecordId<K, Struct>, impl CID: ColumnIds<CS, Struct>, +Drop<K>, +Drop<CS>,
+        K,
+        CS,
+        impl RID: RecordId<K, Self::Struct>,
+        impl CID: ColumnIds<CS, Self::Struct>,
+        +Drop<K>,
+        +Drop<CS>,
     >(
         id: K, columns: CS,
     ) {
         DeleteFields {
-            table: Meta::ID, record: TID::record_id(@id), columns: CID::columns_ids(columns),
+            table: Self::ID, record: RID::record_id(@id), columns: CID::columns_ids(columns),
         }
             .emit_event();
     }
     fn deletes_field<
-        KS, C, impl TID: RecordIds<KS, Struct>, impl CID: ColumnId<C, Struct>, +Drop<C>,
+        KS, C, impl TID: RecordIds<KS, Self::Struct>, impl CID: ColumnId<C, Self::Struct>, +Drop<C>,
     >(
         ids: KS, column: C,
     ) {
         DeletesField {
-            table: Meta::ID, records: TID::record_ids(ids), column: CID::column_id(@column),
+            table: Self::ID, records: TID::record_ids(ids), column: CID::column_id(@column),
         }
             .emit_event();
     }
     fn deletes_fields<
         KS,
         CS,
-        impl TID: RecordIds<KS, Struct>,
-        impl CID: ColumnIds<CS, Struct>,
+        impl RID: RecordIds<KS, Self::Struct>,
+        impl CID: ColumnIds<CS, Self::Struct>,
         +Drop<KS>,
         +Drop<CS>,
     >(
         ids: KS, columns: CS,
     ) {
         DeletesFields {
-            table: Meta::ID, records: TID::record_ids(ids), columns: CID::columns_ids(columns),
+            table: Self::ID, records: RID::record_ids(ids), columns: CID::columns_ids(columns),
         }
             .emit_event();
     }

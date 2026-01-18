@@ -1,13 +1,10 @@
-use super::{
-    AttributeParser, IExtract, IntrospectItemTrait, ToTypeDef, ToTypeDefs, TypeDefVariant,
-    TypeModTrait,
-};
+use super::{AttributeParser, IExtract, IntrospectItemTrait, TypeDefVariant, TypeModTrait};
 use crate::i_type::attribute::MacroAttributeTrait;
 use crate::i_type::default::DefaultIExtractor;
 use crate::type_def::{member_def_tpl, member_default_def_tpl, struct_def_tpl};
 use crate::{
-    AsCairo, AsCairoBytes, CollectionsAsCairo, GenericParams, IAttribute, IntrospectError,
-    IntrospectResult, ItemTrait, Member, Struct, Ty,
+    AsCairo, AsCairoBytes, CairoElementDef, CairoElementDefs, CairoTypeDef, GenericParams,
+    IAttribute, IntrospectError, IntrospectResult, ItemTrait, Member, Struct, Ty,
 };
 
 pub struct IStruct {
@@ -29,28 +26,29 @@ pub struct IMember {
 pub struct StructAttributes {}
 impl MacroAttributeTrait for StructAttributes {}
 
-impl ToTypeDef for IMember {
-    fn to_type_def(&self) -> String {
+impl CairoElementDef for IMember {
+    fn as_element_def(&self, i_path: &str) -> String {
         let name = &self.name.as_cairo_byte_array();
-        let attributes = &self.attributes.as_cairo_span();
+        let attributes = &self.attributes.as_element_defs_span(i_path);
         match &self.type_def {
             TypeDefVariant::Default => {
-                member_default_def_tpl(name, attributes, &self.ty.as_cairo())
+                member_default_def_tpl(i_path, name, attributes, &self.ty.as_cairo())
             }
             TypeDefVariant::TypeDef(type_def) => {
-                member_def_tpl(name, attributes, &type_def.as_cairo())
+                member_def_tpl(i_path, name, attributes, &type_def.as_type_def(i_path))
             }
-            TypeDefVariant::Fn(call) => member_def_tpl(name, attributes, call),
+            TypeDefVariant::Fn(call) => member_def_tpl(i_path, name, attributes, call),
         }
     }
 }
 
-impl ToTypeDef for IStruct {
-    fn to_type_def(&self) -> String {
+impl CairoElementDef for IStruct {
+    fn as_element_def(&self, i_path: &str) -> String {
         struct_def_tpl(
+            i_path,
             &self.name.as_cairo_byte_array(),
-            &self.attributes.as_cairo_span(),
-            &self.members.to_type_defs_span(),
+            &self.attributes.as_element_defs_span(i_path),
+            &self.members.as_element_defs_span(i_path),
         )
     }
 }

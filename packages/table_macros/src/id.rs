@@ -1,6 +1,7 @@
 use crate::{TableError, TableResult};
 use introspect_macros::utils::string_to_keccak_hex;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum IdVariant {
     Felt(String),
     Const(String),

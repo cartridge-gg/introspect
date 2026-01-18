@@ -10,7 +10,3 @@ pub struct TableManager<T> {
     pub interfaces: Vec<TableInterface>,
     pub extractor: T,
 }
-
-impl<T> TableManager<T> {
-    fn from_struct(item: Struct) -> Self {}
-}

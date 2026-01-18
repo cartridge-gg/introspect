@@ -1,55 +1,88 @@
-use core::dict::Felt252Dict;
 use core::integer::u512;
 use core::poseidon::poseidon_hash_span;
 use starknet::storage_access::StorageBaseAddress;
 use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
-use crate::type_def::MemberDefTrait;
-use crate::{FixedArrayDef, ResultDef, StructDef, TypeDef};
+use crate::type_def::{MemberDefTrait, selectors};
+use crate::{FixedArrayDef, ISerde, ResultDef, StructDef, TypeDef};
+
+pub trait IntrospectRef<T> {
+    fn ref_type_def() -> TypeDef;
+    fn collect_ref_child_defs(ref defs: ChildDefs);
+}
 
 pub trait Introspect<T> {
     fn type_def() -> TypeDef;
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        Default::default()
+    fn type_id() -> felt252 {
+        hash_type_def(@Self::type_def())
     }
-    fn hash() -> felt252 {
-        let mut serialized: Array<felt252> = Default::default();
-        Serde::<TypeDef>::serialize(@Self::type_def(), ref serialized);
-        poseidon_hash_span(serialized.span())
+    fn collect_child_defs(ref defs: ChildDefs) {}
+}
+
+pub type ChildDefs = Array<ChildDef>;
+
+#[derive(Drop)]
+pub struct ChildDef {
+    pub id: felt252,
+    pub type_def: Span<felt252>,
+}
+
+impl ChildDefISerde of ISerde<ChildDef> {
+    fn iserialize(self: @ChildDef, ref output: Array<felt252>) {
+        output.append(*self.id);
+        output.append_span(*self.type_def);
+    }
+
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<ChildDef> {
+        let id = *serialized.pop_front()?;
+        let type_def = ISerde::ideserialize(ref serialized)?;
+        Some(ChildDef { id, type_def })
     }
 }
 
-pub fn merge_defs(
-    mut schemas_array: Array<Array<(felt252, TypeDef)>>,
-) -> Array<(felt252, TypeDef)> {
-    let mut merged = if let Option::Some(first) = schemas_array.pop_front() {
-        first
-    } else {
-        return Default::default();
-    };
-    let mut added: Felt252Dict<bool> = Default::default();
-    loop {
-        match schemas_array.pop_front() {
-            Option::Some(child_defs) => {
-                for (id, def) in child_defs {
-                    if !added.get(id) {
-                        added.insert(id, true);
-                        merged.append((id, def));
-                    }
-                }
-            },
-            Option::None => { break; },
-        }
+pub impl IntrospectRefImpl<T, impl IR: IntrospectRef<T>> of Introspect<T> {
+    fn type_def() -> TypeDef {
+        TypeDef::Ref(Self::type_id())
     }
-    merged
+    fn type_id() -> felt252 {
+        hash_type_def(@IR::ref_type_def())
+    }
+    fn collect_child_defs(ref defs: ChildDefs) {
+        IR::collect_ref_child_defs(ref defs);
+        let type_def_span = IR::ref_type_def().iserialize_inline();
+        add_child_def(ref defs, poseidon_hash_span(type_def_span), type_def_span)
+    }
+}
+
+pub fn hash_type_def(type_def: @TypeDef) -> felt252 {
+    hash_type_def_span(type_def.iserialize_inline())
+}
+
+pub fn hash_type_def_span(type_def_span: Span<felt252>) -> felt252 {
+    poseidon_hash_span(type_def_span)
+}
+
+pub fn add_child_def(ref defs: ChildDefs, hash: felt252, type_def_span: Span<felt252>) {
+    let mut n = 0;
+    let len = defs.len();
+    while n != len {
+        if *defs[n].id == hash {
+            return;
+        }
+        n += 1;
+    }
+    defs.append(ChildDef { id: hash, type_def: type_def_span });
 }
 
 
 pub mod primitive_impl {
     use crate::TypeDef;
     use super::Introspect;
-    pub impl PrimitiveIntrospect<T, const TY: TypeDef> of Introspect<T> {
+    pub impl PrimitiveIntrospect<T, const TY: TypeDef, const ID: felt252> of Introspect<T> {
         fn type_def() -> TypeDef {
             TY
+        }
+        fn type_id() -> felt252 {
+            ID
         }
     }
 }
@@ -60,48 +93,57 @@ pub mod empty_impl {
         fn type_def() -> TypeDef {
             TypeDef::None
         }
+        fn type_id() -> felt252 {
+            0
+        }
     }
 }
 
-pub impl Felt252Introspect = primitive_impl::PrimitiveIntrospect<felt252, TypeDef::Felt252>;
-pub impl Bytes31Introspect = primitive_impl::PrimitiveIntrospect<bytes31, TypeDef::Bytes31>;
-pub impl BoolIntrospect = primitive_impl::PrimitiveIntrospect<bool, TypeDef::Bool>;
-pub impl U8Introspect = primitive_impl::PrimitiveIntrospect<u8, TypeDef::U8>;
-pub impl U16Introspect = primitive_impl::PrimitiveIntrospect<u16, TypeDef::U16>;
-pub impl U32Introspect = primitive_impl::PrimitiveIntrospect<u32, TypeDef::U32>;
-pub impl U64Introspect = primitive_impl::PrimitiveIntrospect<u64, TypeDef::U64>;
-pub impl U128Introspect = primitive_impl::PrimitiveIntrospect<u128, TypeDef::U128>;
-pub impl U256Introspect = primitive_impl::PrimitiveIntrospect<u256, TypeDef::U256>;
-pub impl U512Introspect = primitive_impl::PrimitiveIntrospect<u512, TypeDef::U512>;
-pub impl I8Introspect = primitive_impl::PrimitiveIntrospect<i8, TypeDef::I8>;
-pub impl I16Introspect = primitive_impl::PrimitiveIntrospect<i16, TypeDef::I16>;
-pub impl I32Introspect = primitive_impl::PrimitiveIntrospect<i32, TypeDef::I32>;
-pub impl I64Introspect = primitive_impl::PrimitiveIntrospect<i64, TypeDef::I64>;
-pub impl I128Introspect = primitive_impl::PrimitiveIntrospect<i128, TypeDef::I128>;
-pub impl ClassHashIntrospect = primitive_impl::PrimitiveIntrospect<ClassHash, TypeDef::ClassHash>;
+pub impl Felt252Introspect =
+    primitive_impl::PrimitiveIntrospect<felt252, TypeDef::Felt252, selectors::felt252>;
+pub impl Bytes31Introspect =
+    primitive_impl::PrimitiveIntrospect<bytes31, TypeDef::Bytes31, selectors::bytes31>;
+pub impl BoolIntrospect = primitive_impl::PrimitiveIntrospect<bool, TypeDef::Bool, selectors::bool>;
+pub impl U8Introspect = primitive_impl::PrimitiveIntrospect<u8, TypeDef::U8, selectors::u8>;
+pub impl U16Introspect = primitive_impl::PrimitiveIntrospect<u16, TypeDef::U16, selectors::u16>;
+pub impl U32Introspect = primitive_impl::PrimitiveIntrospect<u32, TypeDef::U32, selectors::u32>;
+pub impl U64Introspect = primitive_impl::PrimitiveIntrospect<u64, TypeDef::U64, selectors::u64>;
+pub impl U128Introspect = primitive_impl::PrimitiveIntrospect<u128, TypeDef::U128, selectors::u128>;
+pub impl U256Introspect = primitive_impl::PrimitiveIntrospect<u256, TypeDef::U256, selectors::u256>;
+pub impl U512Introspect = primitive_impl::PrimitiveIntrospect<u512, TypeDef::U512, selectors::u512>;
+pub impl I8Introspect = primitive_impl::PrimitiveIntrospect<i8, TypeDef::I8, selectors::i8>;
+pub impl I16Introspect = primitive_impl::PrimitiveIntrospect<i16, TypeDef::I16, selectors::i16>;
+pub impl I32Introspect = primitive_impl::PrimitiveIntrospect<i32, TypeDef::I32, selectors::i32>;
+pub impl I64Introspect = primitive_impl::PrimitiveIntrospect<i64, TypeDef::I64, selectors::i64>;
+pub impl I128Introspect = primitive_impl::PrimitiveIntrospect<i128, TypeDef::I128, selectors::i128>;
+pub impl ClassHashIntrospect =
+    primitive_impl::PrimitiveIntrospect<ClassHash, TypeDef::ClassHash, selectors::ClassHash>;
 pub impl ContractAddressIntrospect =
-    primitive_impl::PrimitiveIntrospect<ContractAddress, TypeDef::ContractAddress>;
+    primitive_impl::PrimitiveIntrospect<
+        ContractAddress, TypeDef::ContractAddress, selectors::ContractAddress,
+    >;
 pub impl EthAddressIntrospect =
-    primitive_impl::PrimitiveIntrospect<EthAddress, TypeDef::EthAddress>;
+    primitive_impl::PrimitiveIntrospect<EthAddress, TypeDef::EthAddress, selectors::EthAddress>;
 pub impl StorageAddressIntrospect =
-    primitive_impl::PrimitiveIntrospect<StorageAddress, TypeDef::StorageAddress>;
+    primitive_impl::PrimitiveIntrospect<
+        StorageAddress, TypeDef::StorageAddress, selectors::StorageAddress,
+    >;
 pub impl StorageBaseAddressIntrospect =
-    primitive_impl::PrimitiveIntrospect<StorageBaseAddress, TypeDef::StorageBaseAddress>;
+    primitive_impl::PrimitiveIntrospect<
+        StorageBaseAddress, TypeDef::StorageBaseAddress, selectors::StorageBaseAddress,
+    >;
+pub impl Utf8StringIntrospect =
+    primitive_impl::PrimitiveIntrospect<ByteArray, TypeDef::Utf8String, selectors::Utf8String>;
 
 pub impl Tuple0Introspect = empty_impl::EmptyIntrospect<()>;
-
-pub impl ByteArrayIntrospect of Introspect<ByteArray> {
-    fn type_def() -> TypeDef {
-        TypeDef::ByteArray
-    }
-}
 
 pub impl TArrayIntrospect<T, impl I: Introspect<T>> of Introspect<Array<T>> {
     fn type_def() -> TypeDef {
         TypeDef::Array(BoxTrait::new(I::type_def()))
     }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        I::child_defs()
+
+    fn collect_child_defs(ref defs: ChildDefs) {
+        I::collect_child_defs(ref defs);
     }
 }
 
@@ -109,8 +151,9 @@ pub impl TSpanIntrospect<T, impl I: Introspect<T>> of Introspect<Span<T>> {
     fn type_def() -> TypeDef {
         TypeDef::Array(BoxTrait::new(I::type_def()))
     }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        I::child_defs()
+
+    fn collect_child_defs(ref defs: ChildDefs) {
+        I::collect_child_defs(ref defs);
     }
 }
 
@@ -118,8 +161,9 @@ pub impl FixedArrayIntrospect<T, const SIZE: u32, impl I: Introspect<T>> of Intr
     fn type_def() -> TypeDef {
         TypeDef::FixedArray(BoxTrait::new(FixedArrayDef { type_def: I::type_def(), size: SIZE }))
     }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        I::child_defs()
+
+    fn collect_child_defs(ref defs: ChildDefs) {
+        I::collect_child_defs(ref defs);
     }
 }
 
@@ -128,8 +172,9 @@ pub impl BoxIntrospect<T, impl I: Introspect<T>> of Introspect<Box<T>> {
     fn type_def() -> TypeDef {
         I::type_def()
     }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        I::child_defs()
+
+    fn collect_child_defs(ref defs: ChildDefs) {
+        I::collect_child_defs(ref defs);
     }
 }
 
@@ -138,8 +183,8 @@ pub impl Tuple1Introspect<T0, impl I0: Introspect<T0>> of Introspect<(T0,)> {
     fn type_def() -> TypeDef {
         TypeDef::Tuple([I0::type_def()].span())
     }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        I0::child_defs()
+    fn collect_child_defs(ref defs: ChildDefs) {
+        I0::collect_child_defs(ref defs);
     }
 }
 
@@ -149,8 +194,9 @@ pub impl Tuple2Introspect<
     fn type_def() -> TypeDef {
         TypeDef::Tuple([I0::type_def(), I1::type_def()].span())
     }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        merge_defs(array![I0::child_defs(), I1::child_defs()])
+    fn collect_child_defs(ref defs: ChildDefs) {
+        I0::collect_child_defs(ref defs);
+        I1::collect_child_defs(ref defs);
     }
 }
 
@@ -160,8 +206,10 @@ pub impl Tuple3Introspect<
     fn type_def() -> TypeDef {
         TypeDef::Tuple([I0::type_def(), I1::type_def(), I2::type_def()].span())
     }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        merge_defs(array![I0::child_defs(), I1::child_defs(), I2::child_defs()])
+    fn collect_child_defs(ref defs: ChildDefs) {
+        I0::collect_child_defs(ref defs);
+        I1::collect_child_defs(ref defs);
+        I2::collect_child_defs(ref defs);
     }
 }
 
@@ -178,8 +226,11 @@ pub impl Tuple4Introspect<
     fn type_def() -> TypeDef {
         TypeDef::Tuple([I0::type_def(), I1::type_def(), I2::type_def(), I3::type_def()].span())
     }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        merge_defs(array![I0::child_defs(), I1::child_defs(), I2::child_defs(), I3::child_defs()])
+    fn collect_child_defs(ref defs: ChildDefs) {
+        I0::collect_child_defs(ref defs);
+        I1::collect_child_defs(ref defs);
+        I2::collect_child_defs(ref defs);
+        I3::collect_child_defs(ref defs);
     }
 }
 
@@ -201,13 +252,12 @@ pub impl Tuple5Introspect<
             [I0::type_def(), I1::type_def(), I2::type_def(), I3::type_def(), I4::type_def()].span(),
         )
     }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        merge_defs(
-            array![
-                I0::child_defs(), I1::child_defs(), I2::child_defs(), I3::child_defs(),
-                I4::child_defs(),
-            ],
-        )
+    fn collect_child_defs(ref defs: ChildDefs) {
+        I0::collect_child_defs(ref defs);
+        I1::collect_child_defs(ref defs);
+        I2::collect_child_defs(ref defs);
+        I3::collect_child_defs(ref defs);
+        I4::collect_child_defs(ref defs);
     }
 }
 
@@ -234,13 +284,13 @@ pub impl Tuple6Introspect<
                 .span(),
         )
     }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        merge_defs(
-            array![
-                I0::child_defs(), I1::child_defs(), I2::child_defs(), I3::child_defs(),
-                I4::child_defs(), I5::child_defs(),
-            ],
-        )
+    fn collect_child_defs(ref defs: ChildDefs) {
+        I0::collect_child_defs(ref defs);
+        I1::collect_child_defs(ref defs);
+        I2::collect_child_defs(ref defs);
+        I3::collect_child_defs(ref defs);
+        I4::collect_child_defs(ref defs);
+        I5::collect_child_defs(ref defs);
     }
 }
 
@@ -248,8 +298,9 @@ pub impl OptionTIntrospect<T, impl I: Introspect<T>> of Introspect<Option<T>> {
     fn type_def() -> TypeDef {
         TypeDef::Option(BoxTrait::new(I::type_def()))
     }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        I::child_defs()
+
+    fn collect_child_defs(ref defs: ChildDefs) {
+        I::collect_child_defs(ref defs);
     }
 }
 
@@ -259,8 +310,9 @@ pub impl ResultTEIntrospect<
     fn type_def() -> TypeDef {
         TypeDef::Result(BoxTrait::new(ResultDef { ok: IT::type_def(), err: IE::type_def() }))
     }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        merge_defs(array![IT::child_defs(), IE::child_defs()])
+    fn collect_child_defs(ref defs: ChildDefs) {
+        IT::collect_child_defs(ref defs);
+        IE::collect_child_defs(ref defs);
     }
 }
 
@@ -278,9 +330,6 @@ pub impl CallIntrospect of Introspect<starknet::account::Call> {
                     .span(),
             },
         )
-    }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        array![]
     }
 }
 
@@ -300,9 +349,6 @@ pub impl BlockInfoIntrospect of Introspect<starknet::BlockInfo> {
             },
         )
     }
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        array![]
-    }
 }
 
 pub impl ResourceBoundsIntrospect of Introspect<starknet::ResourcesBounds> {
@@ -319,10 +365,6 @@ pub impl ResourceBoundsIntrospect of Introspect<starknet::ResourcesBounds> {
                     .span(),
             },
         )
-    }
-
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        array![]
     }
 }
 
@@ -353,9 +395,5 @@ pub impl TxInfoV2Introspect of Introspect<starknet::TxInfo> {
                     .span(),
             },
         )
-    }
-
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        array![]
     }
 }

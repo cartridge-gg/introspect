@@ -10,7 +10,7 @@ pub mod serde;
 pub mod type_def;
 pub use attribute::{Attribute, attribute_data, attribute_empty};
 pub use id_data::{IdData, IdDataTrait};
-pub use introspect::{Introspect, merge_defs};
+pub use introspect::{ChildDef, ChildDefs, Introspect, IntrospectRef, add_child_def};
 pub use primary::{PrimaryDef, PrimaryTrait, PrimaryTypeDef};
 pub use schema::{ColumnDef, ColumnDefTrait, RecordPrimary, Schema, column_def};
 pub use serde::{ISerde, iserialize_keyed_type};

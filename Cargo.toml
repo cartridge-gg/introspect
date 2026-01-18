@@ -6,7 +6,7 @@ members = [
     "crates/events",
     "crates/macros",
     "packages/macros",
-    "packages/table_macro",
+    "packages/table_macros",
 ]
 exclude = ["crates/type_library"]
 
@@ -51,7 +51,7 @@ const_format = "0.2.35"
 
 
 introspect_macros = { path = "packages/macros" }
-introspect_table_macros = { path = "packages/table_macro" }
+introspect_table_macros = { path = "packages/table_macros" }
 introspect-events = { path = "crates/events" }
 introspect-types = { path = "crates/types" }
 introspect-rust-macros = { path = "crates/macros" }

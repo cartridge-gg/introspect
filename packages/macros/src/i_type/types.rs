@@ -1,8 +1,8 @@
 pub use super::{IEnum, IExtract, IMember, IStruct, IVariant};
-use crate::type_def::child_defs_tpl;
-use crate::{AsCairo, I_PATH, IntrospectResult, Ty};
+use crate::type_def::collect_child_defs_tpl;
+use crate::{AsCairo, CairoTypeDef, I_PATH, IntrospectResult, Ty};
 use introspect_types::{ItemDefTrait, TypeDef};
-use std::ops::Deref;
+use itertools::Itertools;
 
 #[derive(Clone, Debug, Default)]
 pub enum TypeDefVariant {
@@ -27,12 +27,12 @@ pub trait ExtractTypeDef {
 }
 
 impl TypeDefVariant {
-    pub fn type_def(&self, ty: &Ty) -> String {
+    pub fn type_def(&self, ty: &Ty, i_path: &str) -> String {
         match self {
             TypeDefVariant::Default => {
                 format!("{I_PATH}::type_def::<{}>()", ty.as_cairo())
             }
-            TypeDefVariant::TypeDef(type_def) => type_def.as_cairo(),
+            TypeDefVariant::TypeDef(type_def) => type_def.as_type_def(i_path),
             TypeDefVariant::Fn(call) => call.clone(),
         }
     }
@@ -51,48 +51,43 @@ where
     }
 }
 
-pub trait ToTypeDef {
-    fn to_type_def(&self) -> String;
-}
+// pub trait ToTypeDef {
+//     fn to_type_def(&self) -> String;
+// }
 
-pub trait ToTypeDefs {
-    fn to_type_defs(&self) -> Vec<String>;
-    fn to_type_defs_csv(&self) -> String {
-        self.to_type_defs().join(",")
-    }
-    fn to_type_defs_span(&self) -> String {
-        format!("[{}].span()", self.to_type_defs_csv())
-    }
-    fn to_type_defs_array(&self) -> String {
-        format!("array![{}]", self.to_type_defs_csv())
-    }
-}
+// pub trait ToTypeDefs {
+//     fn to_type_defs(&self) -> Vec<String>;
+//     fn to_type_defs_csv(&self) -> String {
+//         self.to_type_defs().join(",")
+//     }
+//     fn to_type_defs_span(&self) -> String {
+//         format!("[{}].span()", self.to_type_defs_csv())
+//     }
+//     fn to_type_defs_array(&self) -> String {
+//         format!("array![{}]", self.to_type_defs_csv())
+//     }
+// }
 
-impl<T, S> ToTypeDefs for T
-where
-    T: Deref<Target = [S]>,
-    S: ToTypeDef,
-{
-    fn to_type_defs(&self) -> Vec<String> {
-        self.iter().map(S::to_type_def).collect()
-    }
-}
+// impl<T, S> ToTypeDefs for T
+// where
+//     T: Deref<Target = [S]>,
+//     S: ToTypeDef,
+// {
+//     fn to_type_defs(&self) -> Vec<String> {
+//         self.iter().map(S::to_type_def).collect()
+//     }
+// }
 
 pub trait ITys {
-    fn child_defs(&self) -> String;
+    fn collect_child_defs(&self, i_path: &str) -> String;
 }
 
 impl ITys for [&Ty] {
-    fn child_defs(&self) -> String {
-        let mut defs: Vec<_> = self
-            .iter()
+    fn collect_child_defs(&self, i_path: &str) -> String {
+        self.iter()
+            .unique()
             .filter(|t| !t.is_of_base_types())
-            .map(|t| child_defs_tpl(&t.as_cairo()))
-            .collect();
-        match defs.len() {
-            0 => "array![]".to_string(),
-            1 => defs.pop().unwrap(),
-            _ => format!("{I_PATH}::merge_defs(array![{}])", defs.join(", ")),
-        }
+            .map(|t| collect_child_defs_tpl(i_path, &t.as_cairo()))
+            .join("\n")
     }
 }

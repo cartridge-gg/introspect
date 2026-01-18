@@ -2,7 +2,7 @@ use super::IntrospectImpl;
 use crate::i_type::DefaultIExtractor;
 use crate::i_type::extraction::IExtractFromTokenStream;
 use crate::utils::str_to_token_stream;
-use crate::{AttributeCallType, IItem};
+use crate::{AttributeCallType, I_PATH, IItem};
 use cairo_lang_macro::{ProcMacroResult, TokenStream, derive_macro};
 
 #[allow(non_snake_case)]
@@ -10,7 +10,8 @@ use cairo_lang_macro::{ProcMacroResult, TokenStream, derive_macro};
 fn Introspect(token_stream: TokenStream) -> ProcMacroResult {
     let extractor = DefaultIExtractor::new(AttributeCallType::Derive);
     let item: IItem = extractor.iextract_from_token_stream(token_stream).unwrap();
-    ProcMacroResult::new(str_to_token_stream(&item.to_introspect_impl()))
+    let string = item.to_introspect_impl::<false>(I_PATH);
+    ProcMacroResult::new(str_to_token_stream(&string))
 }
 
 #[allow(non_snake_case)]
@@ -18,5 +19,6 @@ fn Introspect(token_stream: TokenStream) -> ProcMacroResult {
 fn IntrospectRef(token_stream: TokenStream) -> ProcMacroResult {
     let extractor = DefaultIExtractor::new(AttributeCallType::Derive);
     let item: IItem = extractor.iextract_from_token_stream(token_stream).unwrap();
-    ProcMacroResult::new(str_to_token_stream(&item.to_introspect_ref_impl()))
+    let string = item.to_introspect_impl::<true>(I_PATH);
+    ProcMacroResult::new(str_to_token_stream(&string))
 }

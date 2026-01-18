@@ -41,21 +41,21 @@ pub enum PrimaryTypeDef {
 impl PrimaryTypeDefSelector of SelectorTrait<PrimaryTypeDef> {
     const fn selector(self: @PrimaryTypeDef) -> felt252 {
         match self {
-            PrimaryTypeDef::Felt252 => selectors::Felt252,
+            PrimaryTypeDef::Felt252 => selectors::felt252,
             PrimaryTypeDef::ShortUtf8 => selectors::ShortUtf8,
-            PrimaryTypeDef::Bytes31 => selectors::Bytes31,
-            PrimaryTypeDef::Bytes31E(_) => selectors::Bytes31E,
-            PrimaryTypeDef::Bool => selectors::Bool,
-            PrimaryTypeDef::U8 => selectors::U8,
-            PrimaryTypeDef::U16 => selectors::U16,
-            PrimaryTypeDef::U32 => selectors::U32,
-            PrimaryTypeDef::U64 => selectors::U64,
-            PrimaryTypeDef::U128 => selectors::U128,
-            PrimaryTypeDef::I8 => selectors::I8,
-            PrimaryTypeDef::I16 => selectors::I16,
-            PrimaryTypeDef::I32 => selectors::I32,
-            PrimaryTypeDef::I64 => selectors::I64,
-            PrimaryTypeDef::I128 => selectors::I128,
+            PrimaryTypeDef::Bytes31 => selectors::bytes31,
+            PrimaryTypeDef::Bytes31E(_) => selectors::bytes31E,
+            PrimaryTypeDef::Bool => selectors::bool,
+            PrimaryTypeDef::U8 => selectors::u8,
+            PrimaryTypeDef::U16 => selectors::u16,
+            PrimaryTypeDef::U32 => selectors::u32,
+            PrimaryTypeDef::U64 => selectors::u64,
+            PrimaryTypeDef::U128 => selectors::u128,
+            PrimaryTypeDef::I8 => selectors::i8,
+            PrimaryTypeDef::I16 => selectors::i16,
+            PrimaryTypeDef::I32 => selectors::i32,
+            PrimaryTypeDef::I64 => selectors::i64,
+            PrimaryTypeDef::I128 => selectors::i128,
             PrimaryTypeDef::ClassHash => selectors::ClassHash,
             PrimaryTypeDef::ContractAddress => selectors::ContractAddress,
             PrimaryTypeDef::EthAddress => selectors::EthAddress,
@@ -74,35 +74,35 @@ impl PrimaryTypeDefSerde of Serde<PrimaryTypeDef> {
     }
     fn deserialize(ref serialized: Span<felt252>) -> Option<PrimaryTypeDef> {
         let tag = *serialized.pop_front()?;
-        if tag == selectors::Felt252 {
+        if tag == selectors::felt252 {
             Option::Some(PrimaryTypeDef::Felt252)
         } else if tag == selectors::ShortUtf8 {
             Option::Some(PrimaryTypeDef::ShortUtf8)
-        } else if tag == selectors::Bytes31 {
+        } else if tag == selectors::bytes31 {
             Option::Some(PrimaryTypeDef::Bytes31)
-        } else if tag == selectors::Bytes31E {
+        } else if tag == selectors::bytes31E {
             Option::Some(PrimaryTypeDef::Bytes31E(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Bool {
+        } else if tag == selectors::bool {
             Option::Some(PrimaryTypeDef::Bool)
-        } else if tag == selectors::U8 {
+        } else if tag == selectors::u8 {
             Option::Some(PrimaryTypeDef::U8)
-        } else if tag == selectors::U16 {
+        } else if tag == selectors::u16 {
             Option::Some(PrimaryTypeDef::U16)
-        } else if tag == selectors::U32 {
+        } else if tag == selectors::u32 {
             Option::Some(PrimaryTypeDef::U32)
-        } else if tag == selectors::U64 {
+        } else if tag == selectors::u64 {
             Option::Some(PrimaryTypeDef::U64)
-        } else if tag == selectors::U128 {
+        } else if tag == selectors::u128 {
             Option::Some(PrimaryTypeDef::U128)
-        } else if tag == selectors::I8 {
+        } else if tag == selectors::i8 {
             Option::Some(PrimaryTypeDef::I8)
-        } else if tag == selectors::I16 {
+        } else if tag == selectors::i16 {
             Option::Some(PrimaryTypeDef::I16)
-        } else if tag == selectors::I32 {
+        } else if tag == selectors::i32 {
             Option::Some(PrimaryTypeDef::I32)
-        } else if tag == selectors::I64 {
+        } else if tag == selectors::i64 {
             Option::Some(PrimaryTypeDef::I64)
-        } else if tag == selectors::I128 {
+        } else if tag == selectors::i128 {
             Option::Some(PrimaryTypeDef::I128)
         } else if tag == selectors::ClassHash {
             Option::Some(PrimaryTypeDef::ClassHash)
@@ -174,35 +174,35 @@ pub impl PrimaryTypeDefISerde of ISerde<PrimaryTypeDef> {
 
     fn ideserialize(ref serialized: Span<felt252>) -> Option<PrimaryTypeDef> {
         let tag = *serialized.pop_front()?;
-        if tag == selectors::Felt252 {
+        if tag == selectors::felt252 {
             Option::Some(PrimaryTypeDef::Felt252)
         } else if tag == selectors::ShortUtf8 {
             Option::Some(PrimaryTypeDef::ShortUtf8)
-        } else if tag == selectors::Bytes31 {
+        } else if tag == selectors::bytes31 {
             Option::Some(PrimaryTypeDef::Bytes31)
-        } else if tag == selectors::Bytes31E {
+        } else if tag == selectors::bytes31E {
             Option::Some(PrimaryTypeDef::Bytes31E(ISerde::ideserialize(ref serialized)?))
-        } else if tag == selectors::Bool {
+        } else if tag == selectors::bool {
             Option::Some(PrimaryTypeDef::Bool)
-        } else if tag == selectors::U8 {
+        } else if tag == selectors::u8 {
             Option::Some(PrimaryTypeDef::U8)
-        } else if tag == selectors::U16 {
+        } else if tag == selectors::u16 {
             Option::Some(PrimaryTypeDef::U16)
-        } else if tag == selectors::U32 {
+        } else if tag == selectors::u32 {
             Option::Some(PrimaryTypeDef::U32)
-        } else if tag == selectors::U64 {
+        } else if tag == selectors::u64 {
             Option::Some(PrimaryTypeDef::U64)
-        } else if tag == selectors::U128 {
+        } else if tag == selectors::u128 {
             Option::Some(PrimaryTypeDef::U128)
-        } else if tag == selectors::I8 {
+        } else if tag == selectors::i8 {
             Option::Some(PrimaryTypeDef::I8)
-        } else if tag == selectors::I16 {
+        } else if tag == selectors::i16 {
             Option::Some(PrimaryTypeDef::I16)
-        } else if tag == selectors::I32 {
+        } else if tag == selectors::i32 {
             Option::Some(PrimaryTypeDef::I32)
-        } else if tag == selectors::I64 {
+        } else if tag == selectors::i64 {
             Option::Some(PrimaryTypeDef::I64)
-        } else if tag == selectors::I128 {
+        } else if tag == selectors::i128 {
             Option::Some(PrimaryTypeDef::I128)
         } else if tag == selectors::ClassHash {
             Option::Some(PrimaryTypeDef::ClassHash)

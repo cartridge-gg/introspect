@@ -1,7 +1,7 @@
 use crate::i_type::TypeDefVariant;
 use crate::i_type::structs::IMember;
 use crate::utils::string_to_keccak_felt;
-use crate::{AsCairo, AsCairoBytes, CollectionsAsCairo, I_PATH, IAttribute, Ty};
+use crate::{AsCairo, AsCairoBytes, CairoElementDef, CairoElementDefs, I_PATH, IAttribute, Ty};
 use starknet_types_core::felt::Felt;
 
 #[derive(Clone, Debug)]
@@ -41,13 +41,13 @@ impl IMember {
     }
 }
 
-impl AsCairo for ColumnDef {
-    fn as_cairo(&self) -> String {
+impl CairoElementDef for ColumnDef {
+    fn as_element_def(&self, i_path: &str) -> String {
         column_def_tpl(
             &self.id.as_cairo(),
             &self.name.as_cairo_byte_array(),
-            &self.attributes.as_cairo_span(),
-            self.type_def.type_def(&self.ty).as_str(),
+            &self.attributes.as_element_defs_span(i_path),
+            &self.type_def.type_def(&self.ty, i_path),
         )
     }
 }

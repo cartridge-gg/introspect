@@ -1,11 +1,6 @@
-use introspect_macros::I_PATH;
-
-use crate::I_TABLE_PATH;
-
 const COLUMN_ID_TPL: &str = "pub const {{member}}: felt252 = {{id}};";
-const META_IMPL_TPL: &str = include_str!("../templates/meta_impl.cairo");
 const SCHEMA_IMPLS_TPL: &str = include_str!("../templates/structure_impls.cairo");
-const TABLE_IMPLS_TPL: &str = include_str!("../templates/table_impls.cairo");
+const TABLE_IMPL_TPL: &str = include_str!("../templates/table_impl.cairo");
 
 const RECORD_ID_IMPL_TPL: &str = include_str!("../templates/record_id_impl.cairo");
 // const RECORD_KEY_IMPL_TPL: &str = include_str!("../templates/record_key_impl.cairo");
@@ -39,6 +34,7 @@ pub fn column_enum_name_tpl(impl_name: &str) -> String {
 }
 
 pub fn structure_impls_tpl(
+    i_path: &str,
     struct_name: &str,
     struct_impl_name: &str,
     primary_ty: &str,
@@ -53,8 +49,7 @@ pub fn structure_impls_tpl(
     serialize_member_calls: &str,
 ) -> String {
     SCHEMA_IMPLS_TPL
-        .replace("{{i_path}}", I_PATH)
-        .replace("{{i_table_path}}", I_TABLE_PATH)
+        .replace("{{i_path}}", i_path)
         .replace("{{struct_name}}", struct_name)
         .replace("{{struct_impl_name}}", struct_impl_name)
         .replace("{{primary_ty}}", primary_ty)
@@ -69,24 +64,21 @@ pub fn structure_impls_tpl(
         .replace("{{serialize_member_calls}}", serialize_member_calls)
 }
 
-pub fn table_meta_tpl(meta_impl_name: &str, id: &str, name: &str, attributes: &str) -> String {
-    META_IMPL_TPL
-        .replace("{{i_path}}", I_PATH)
-        .replace("{{i_table_path}}", I_TABLE_PATH)
-        .replace("{{meta_impl_name}}", meta_impl_name)
-        .replace("{{table_id}}", id)
-        .replace("{{table_name}}", name)
-        .replace("{{attributes}}", attributes)
-}
-
 pub fn column_id_const(name: &str, id: &str) -> String {
     format!("pub const {name}: felt252 = {id};")
 }
 
-pub fn table_impl_tpl(i_table_impl: &str, struct_impl_name: &str, meta_impl_name: &str) -> String {
-    format!(
-        "pub impl {i_table_impl} = {I_TABLE_PATH}::TableImpl<{struct_impl_name}, {meta_impl_name}>;"
-    )
+pub fn table_impl_tpl(
+    i_path: &str,
+    i_table_impl: &str,
+    struct_impl_name: &str,
+    meta_impl_name: &str,
+) -> String {
+    TABLE_IMPL_TPL
+        .replace("{{i_path}}", i_path)
+        .replace("{{i_table_impl}}", i_table_impl)
+        .replace("{{struct_impl_name}}", struct_impl_name)
+        .replace("{{meta_impl_name}}", meta_impl_name)
 }
 
 pub fn member_impl_name_tpl(struct_name: &str, member_name: &str) -> String {
@@ -98,6 +90,7 @@ pub fn serialize_member_call_tpl(member_impl_name: &str, member_name: &str) -> S
 }
 
 pub fn member_impl_tpl(
+    i_path: &str,
     member_impl_name: &str,
     struct_impl_name: &str,
     columns_mod: &str,
@@ -105,17 +98,18 @@ pub fn member_impl_tpl(
     type_str: &str,
 ) -> String {
     format!(
-        "pub impl {member_impl_name} = {I_TABLE_PATH}::TableMemberImpl<{struct_impl_name}, {columns_mod}::{member_name}, {type_str}>;"
+        "pub impl {member_impl_name} = {i_path}::TableMemberImpl<{struct_impl_name}, {columns_mod}::{member_name}, {type_str}>;"
     )
 }
 
 pub fn record_id_impl_tpl(
+    i_path: &str,
     struct_name: &str,
     struct_impl_name: &str,
     primary_member: &str,
 ) -> String {
     RECORD_ID_IMPL_TPL
-        .replace("{{i_table_path}}", I_TABLE_PATH)
+        .replace("{{i_path}}", i_path)
         .replace("{{struct_name}}", struct_name)
         .replace("{{struct_impl_name}}", struct_impl_name)
         .replace("{{primary_member}}", primary_member)

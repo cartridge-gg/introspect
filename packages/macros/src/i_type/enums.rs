@@ -1,6 +1,4 @@
-use super::{
-    DefaultIExtractor, IExtract, IntrospectItemTrait, ToTypeDef, ToTypeDefs, TypeDefVariant,
-};
+use super::{DefaultIExtractor, IExtract, IntrospectItemTrait, TypeDefVariant};
 use crate::i_type::{AttributeParser, TypeModTrait};
 use crate::params::GenericParams;
 use crate::type_def::{
@@ -8,8 +6,8 @@ use crate::type_def::{
 };
 use crate::utils::string_to_keccak_felt;
 use crate::{
-    AsCairo, AsCairoBytes, CollectionsAsCairo, Enum, IAttribute, IntrospectError, ItemTrait,
-    IntrospectResult, Ty, Variant,
+    AsCairo, AsCairoBytes, CairoElementDef, CairoElementDefs, CairoTypeDef, Enum, IAttribute,
+    IntrospectError, IntrospectResult, ItemTrait, Ty, Variant,
 };
 use starknet_types_core::felt::Felt;
 
@@ -28,30 +26,39 @@ pub struct IVariant {
     pub type_def: TypeDefVariant,
 }
 
-impl ToTypeDef for IVariant {
-    fn to_type_def(&self) -> String {
+impl CairoElementDef for IVariant {
+    fn as_element_def(&self, i_path: &str) -> String {
         let selector = &self.selector.as_cairo();
         let name = &self.name.as_cairo_byte_array();
-        let attributes = &self.attributes.as_cairo_span();
+        let attributes = &self.attributes.as_element_defs_span(i_path);
         match (&self.type_def, &self.ty) {
-            (TypeDefVariant::Default, None) => variant_unit_def_tpl(selector, name, attributes),
+            (TypeDefVariant::Default, None) => {
+                variant_unit_def_tpl(i_path, selector, name, attributes)
+            }
             (TypeDefVariant::Default, Some(ty)) => {
-                variant_default_def_tpl(&selector, name, attributes, &ty.as_cairo())
+                variant_default_def_tpl(i_path, &selector, name, attributes, &ty.as_cairo())
             }
-            (TypeDefVariant::TypeDef(type_def), _) => {
-                variant_def_tpl(selector, name, attributes, &type_def.as_cairo())
+            (TypeDefVariant::TypeDef(type_def), _) => variant_def_tpl(
+                i_path,
+                selector,
+                name,
+                attributes,
+                &type_def.as_type_def(i_path),
+            ),
+            (TypeDefVariant::Fn(call), _) => {
+                variant_def_tpl(i_path, selector, name, attributes, &call)
             }
-            (TypeDefVariant::Fn(call), _) => variant_def_tpl(selector, name, attributes, &call),
         }
     }
 }
 
-impl ToTypeDef for IEnum {
-    fn to_type_def(&self) -> String {
+impl CairoElementDef for IEnum {
+    fn as_element_def(&self, i_path: &str) -> String {
         enum_def_tpl(
+            i_path,
             &self.name.as_cairo_byte_array(),
-            &self.attributes.as_cairo_span(),
-            &self.variants.to_type_defs_span(),
+            &self.attributes.as_element_defs_span(i_path),
+            &self.variants.as_element_defs_span(i_path),
         )
     }
 }

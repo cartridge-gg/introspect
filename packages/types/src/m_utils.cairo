@@ -1,10 +1,9 @@
-use crate::PrimaryTypeDef;
+pub use crate::introspect::{add_child_def, hash_type_def};
 pub use crate::serde::iserialize_keyed_type;
 pub use crate::{
-    Attribute, EnumDef, FixedArrayDef, ISerde, Introspect, MemberDef, PrimaryDef, PrimaryTrait,
-    ResultDef, StructDef, TypeDef, VariantDef,
+    Attribute, ChildDefs, ColumnDef, EnumDef, FixedArrayDef, ISerde, Introspect, IntrospectRef,
+    MemberDef, PrimaryDef, PrimaryTrait, PrimaryTypeDef, ResultDef, StructDef, TypeDef, VariantDef,
 };
-
 
 #[inline(always)]
 pub fn member_def(name: ByteArray, attributes: Span<Attribute>, type_def: TypeDef) -> MemberDef {
@@ -68,18 +67,19 @@ pub fn enum_type_def(
 }
 
 #[inline(always)]
-pub fn fixed_array_def(type_def: TypeDef, size: u32) -> FixedArrayDef {
-    FixedArrayDef { type_def, size }
-}
-
-#[inline(always)]
 pub fn fixed_array_type_def(type_def: TypeDef, size: u32) -> TypeDef {
     TypeDef::FixedArray(BoxTrait::new(FixedArrayDef { type_def, size }))
 }
 
+
 #[inline(always)]
-pub fn result_def(ok: TypeDef, err: TypeDef) -> ResultDef {
-    ResultDef { ok, err }
+pub fn array_type_def(type_def: TypeDef) -> TypeDef {
+    TypeDef::Array(BoxTrait::new(type_def))
+}
+
+#[inline(always)]
+pub fn felt252_dict_type_def(type_def: TypeDef) -> TypeDef {
+    TypeDef::Felt252Dict(BoxTrait::new(type_def))
 }
 
 #[inline(always)]
@@ -88,8 +88,19 @@ pub fn result_type_def(ok: TypeDef, err: TypeDef) -> TypeDef {
 }
 
 #[inline(always)]
-pub fn boxed_type_def(type_def: TypeDef) -> Box<TypeDef> {
-    BoxTrait::new(type_def)
+pub fn option_type_def(type_def: TypeDef) -> TypeDef {
+    TypeDef::Option(BoxTrait::new(type_def))
+}
+
+#[inline(always)]
+pub fn nullable_type_def(type_def: TypeDef) -> TypeDef {
+    TypeDef::Nullable(BoxTrait::new(type_def))
+}
+
+
+#[inline(always)]
+pub fn ref_type_def(type_id: felt252) -> TypeDef {
+    TypeDef::Ref(type_id)
 }
 
 #[inline(always)]
@@ -98,6 +109,7 @@ pub fn primary_def(
 ) -> PrimaryDef {
     PrimaryDef { name, attributes, type_def }
 }
+
 
 #[inline]
 pub fn primary_default_def<T, impl P: PrimaryTrait<T>>(
@@ -111,6 +123,20 @@ pub fn primary_type_def<T, impl P: PrimaryTrait<T>>() -> PrimaryTypeDef {
     P::to_type_def()
 }
 
+#[inline(always)]
+pub fn column_def(
+    id: felt252, name: ByteArray, attributes: Span<Attribute>, type_def: TypeDef,
+) -> ColumnDef {
+    ColumnDef { id, name, attributes, type_def }
+}
+
+#[inline]
+pub fn column_default_def<T, impl I: Introspect<T>>(
+    id: felt252, name: ByteArray, attributes: Span<Attribute>,
+) -> ColumnDef {
+    ColumnDef { id, name, attributes, type_def: I::type_def() }
+}
+
 #[inline]
 pub fn iserialize<T, impl I: ISerde<T>>(value: @T, ref output: Array<felt252>) {
     I::iserialize(value, ref output);
@@ -122,6 +148,6 @@ pub fn ideserialize<T, impl I: ISerde<T>>(ref serialized: Span<felt252>) -> Opti
 }
 
 #[inline]
-pub fn child_defs<T, impl I: Introspect<T>>() -> Array<(felt252, TypeDef)> {
-    I::child_defs()
+pub fn collect_child_defs<T, impl I: Introspect<T>>(ref defs: ChildDefs) {
+    I::collect_child_defs(ref defs);
 }

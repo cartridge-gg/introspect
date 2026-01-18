@@ -1,5 +1,5 @@
-use crate::i_type::{IntrospectItemTrait, ToTypeDef};
-use crate::{I_PATH, ItemTrait};
+use crate::i_type::IntrospectItemTrait;
+use crate::{CairoElementDef, ItemTrait};
 // pub mod attribute;
 pub mod derive;
 pub mod item;
@@ -7,17 +7,19 @@ pub mod item;
 const INTROSPECT_IMPL_TPL: &str = include_str!("../../templates/introspect_impl.cairo");
 const INTROSPECT_REF_IMPL_TPL: &str = include_str!("../../templates/introspect_ref_impl.cairo");
 pub trait IntrospectImpl {
-    fn to_introspect_impl(&self) -> String;
-    fn to_introspect_ref_impl(&self) -> String;
+    fn to_introspect_impl<const IS_REF: bool>(&self, i_path: &str) -> String;
 }
 
 impl<T> IntrospectImpl for T
 where
-    T: ToTypeDef + IntrospectItemTrait + ItemTrait,
+    T: CairoElementDef + IntrospectItemTrait + ItemTrait,
 {
-    fn to_introspect_impl(&self) -> String {
-        INTROSPECT_IMPL_TPL
-            .replace("{{i_path}}", I_PATH)
+    fn to_introspect_impl<const IS_REF: bool>(&self, i_path: &str) -> String {
+        let tpl = match IS_REF {
+            true => INTROSPECT_REF_IMPL_TPL,
+            false => INTROSPECT_IMPL_TPL,
+        };
+        tpl.replace("{{i_path}}", i_path)
             .replace("{{kind}}", self.kind())
             .replace("{{name}}", self.name())
             .replace("{{full_name}}", &self.full_name())
@@ -25,22 +27,7 @@ where
                 "{{impl_params}}",
                 &self.generics_with_traits(&["introspect::Introspect"]),
             )
-            .replace("{{type_def}}", &self.to_type_def())
-            .replace("{{child_defs}}", &self.child_defs())
-    }
-
-    fn to_introspect_ref_impl(&self) -> String {
-        INTROSPECT_REF_IMPL_TPL
-            .replace("{{i_path}}", I_PATH)
-            .replace("{{kind}}", self.kind())
-            .replace("{{name}}", self.name())
-            .replace("{{full_name}}", &self.full_name())
-            .replace("{{call_generics}}", &self.generics_call())
-            .replace(
-                "{{impl_params}}",
-                &self.generics_with_traits(&["introspect::Introspect"]),
-            )
-            .replace("{{type_def}}", &self.to_type_def())
-            .replace("{{child_defs}}", &self.child_defs())
+            .replace("{{type_def}}", &self.as_element_def(i_path))
+            .replace("{{collect_child_defs}}", &self.child_defs(i_path))
     }
 }

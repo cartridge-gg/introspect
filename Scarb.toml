@@ -14,6 +14,8 @@ members = [
     "packages/macros",
     "packages/tests",
     "packages/table",
+    "packages/table_macro",
+    "tests/test_contract",
 ]
 
 
@@ -23,6 +25,7 @@ introspect_types = { path = "packages/types" }
 introspect_events = { path = "packages/events" }
 introspect_macros = { path = "packages/macros" }
 introspect_tests = { path = "packages/tests" }
+introspect_table_macros = { path = "packages/table_macros" }
 snforge_std = "0.54.0"
 assert_macros = "2.13.1"
 cairo_execute = "2.13.1"

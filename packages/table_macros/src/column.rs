@@ -7,9 +7,10 @@ use introspect_macros::i_type::{
 use introspect_macros::table::column::column_def_tpl;
 use introspect_macros::type_def::CairoElementDefWith;
 use introspect_macros::utils::string_to_keccak_hex;
-use introspect_macros::{AsCairoBytes, CollectionsAsCairo, IAttribute, Member, Ty};
+use introspect_macros::{AsCairoBytes, CairoElementDefs, IAttribute, Member, Ty};
 use introspect_rust_macros::macro_attributes;
 
+#[derive(Debug, Clone)]
 pub struct Column {
     pub id: IdVariant,
     pub name: String,
@@ -93,13 +94,14 @@ impl Column {
     }
 }
 
-impl CairoElementDefWith<String> for Column {
-    fn as_element_def_with(&self, column_mod_name: &String) -> String {
+impl CairoElementDefWith for Column {
+    type Context = String;
+    fn as_element_def_with(&self, i_path: &str, column_mod_name: &String) -> String {
         column_def_tpl(
             &format!("{column_mod_name}::{}", self.member),
             &self.name.as_cairo_byte_array(),
-            &self.attributes.as_cairo_span(),
-            &self.type_def.type_def(&self.ty),
+            &self.attributes.as_element_defs_span(i_path),
+            &self.type_def.type_def(&self.ty, i_path),
         )
     }
 }

@@ -3,19 +3,49 @@ use cairo_lang_syntax::node::ast::{OptionTypeClause, TypeClause};
 use itertools::Itertools;
 use salsa::Database;
 
-#[derive(Clone, Debug, PartialEq)]
+const CORE_TYPES: &[&str] = &[
+    "felt252",
+    "bool",
+    "u8",
+    "u16",
+    "u32",
+    "u64",
+    "u128",
+    "u256",
+    "u512",
+    "core::integer::u512",
+    "i8",
+    "i16",
+    "i32",
+    "i64",
+    "i128",
+    "bytes31",
+    "ClassHash",
+    "starknet::ClassHash",
+    "ContractAddress",
+    "starknet::ContractAddress",
+    "EthAddress",
+    "starknet::EthAddress",
+    "StorageAddress",
+    "starknet::StorageAddress",
+    "StorageBaseAddress",
+    "starknet::storage_access::StorageBaseAddress",
+    "ByteArray",
+];
+
+#[derive(Clone, Debug, PartialEq, Hash, Eq)]
 pub struct FixedArray {
     pub ty: Ty,
     pub size: String,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Hash, Eq)]
 pub struct TyItem {
     pub name: String,
     pub params: Option<Vec<Ty>>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Hash, Eq)]
 pub enum Ty {
     Item(TyItem),
     Tuple(Vec<Ty>),
@@ -79,7 +109,10 @@ impl TyItem {
         if type_str.ends_with('>') {
             let (name, types) =
                 parse_wrapped_types(type_str).ok_or(IntrospectError::FailedToParseType)?;
-            let params = types.into_iter().map(Ty::parse).collect::<IntrospectResult<_>>()?;
+            let params = types
+                .into_iter()
+                .map(Ty::parse)
+                .collect::<IntrospectResult<_>>()?;
             Ok(Self {
                 name: name.to_string(),
                 params: Some(params),
@@ -94,6 +127,21 @@ impl TyItem {
 
     pub fn parse_ty(type_str: &str) -> IntrospectResult<Ty> {
         Self::parse(type_str).map(Ty::Item)
+    }
+
+    pub fn is_of_base_types(&self) -> bool {
+        match (self.name.as_str(), &self.params) {
+            ("Array" | "Span" | "Nullable" | "Felt252Dict" | "Option", Some(params))
+                if params.len() == 1 =>
+            {
+                params[0].is_of_base_types()
+            }
+            ("Result", Some(params)) if params.len() == 2 => {
+                params.iter().all(Ty::is_of_base_types)
+            }
+            (name, None) => is_base_type(name),
+            _ => false,
+        }
     }
 }
 
@@ -125,7 +173,10 @@ impl Ty {
 
     pub fn parse_list(type_str: &str) -> IntrospectResult<Vec<Self>> {
         match parse_list(type_str) {
-            Some(types) => types.into_iter().map(Ty::parse).collect::<IntrospectResult<Vec<_>>>(),
+            Some(types) => types
+                .into_iter()
+                .map(Ty::parse)
+                .collect::<IntrospectResult<Vec<_>>>(),
             None => Err(IntrospectError::FailedToParseType),
         }
     }
@@ -182,7 +233,7 @@ impl Ty {
 
     pub fn is_of_base_types(&self) -> bool {
         match self {
-            Ty::Item(i) => is_base_type(&i.name),
+            Ty::Item(i) => i.is_of_base_types(),
             Ty::FixedArray(a) => a.ty.is_of_base_types(),
             Ty::Tuple(t) => t.iter().all(Ty::is_of_base_types),
         }
