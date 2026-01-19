@@ -24,7 +24,7 @@ Standards such as ERC20 and ERC721 establish common interfaces for _certain_ onc
 
 A common source of type data for contracts is the ABI (application binary interface), which describes function inputs, outputs, and events declared by the contract. However, ABIs are not secure -- only the hash is verified, and when deployed could be set to anything. We would prefer a _self-documenting_ specification derived from events emitted by deployed contracts -- a type of "write-ahead logging" converting onchain state into offchain representations.
 
-In 2023, the Dojo framework implemented a gaming-specific introspect scheme tightly coupled to its own indexer; this worked well for the use-case but struggled to generalize as the user base expanded. This SNIP proposes a _general_ standard for describing onchain state, splitting the solution into three parts: _types_, _events_, and _data serialisation rules_.
+In 2023, the Dojo framework implemented a gaming-specific introspect scheme tightly coupled to its own indexer; this worked well for the use-case but struggled to generalize as the user base expanded. This SNIP proposes a _general_ standard for describing onchain state, splitting the solution into three parts: _types_, _events_, and _data serialization rules_.
 
 The end goal is for Cairo developers to be able to integrate this functionality trivially, by way of an external framework, as in this example:
 
@@ -122,7 +122,7 @@ enum TypeDef {
 
 ### Key Types
 
-A common database construct is the **primary key** which uniquely identifies a record. Any value used as a primary key MUST be representable using a single `Felt252`.
+A common database construct is the **primary key** which uniquely identifies a row. Any value used as a primary key MUST be representable using a single `Felt252`.
 
 The `PrimaryTypeDef` is a subset of `TypeDef` containing valid primary key types:
 
@@ -242,10 +242,10 @@ struct PrimaryDef {
     type_def: PrimaryTypeDef,
 }
 
-// Defines identifiable data
+// Defines entry composed of a row and associated data
 
-struct IdData {
-    id: felt252,
+struct Entry {
+    row: felt252,
     data: Span<felt252>,
 }
 
@@ -290,7 +290,7 @@ struct DeclareType {
 
 ### Database Events
 
-Events for table, column and record manipulation.
+Events for table, column and row manipulation.
 
 #### Definitions
 
@@ -305,7 +305,7 @@ The following terms are used to describe common database operations.
 
 #### Table Management
 
-Tables are one of the core concepts in Introspect's data model. Tables consist of **records** with data in typed **columns**, corresponding closely to Cairo's notion of **structs** containing typed **members**.
+Tables are one of the core concepts in Introspect's data model. Tables consist of **rows** of **records** with data in typed **columns**, corresponding closely to Cairo's notion of **structs** containing typed **members**.
 
 **Common field meanings:**
 
@@ -478,17 +478,31 @@ struct DropIndex {
 }
 ```
 
+#### Column Set Management
+
+A column set can be used to reference a set of fields and reduce the amount of data needed to reference them.
+
+```rust
+// Create a Column set with specified columns
+
+struct CreateColumnSet {
+    id: felt252,
+    columns: Span<felt252>,
+}
+```
+
 #### Record Manipulation
 
 Stored in tables, **records** are the data of an application, identified by a unique primary key.
 
 **Common field meanings:**
 
-- `record`: Primary key
+- `row`/`rows`: Primary key
 - `table`: Matches `id` from [table events](#Table-Management)
 - `column`: Matches `id` from [column events](#Column-Management)
-
-> TODO: should `record` be `id` here?
+- `set`: Matches `id` from [column set events](#Column-Set-Management)
+- `data`: Raw `felt252` values representing the data being inserted/updated
+- `entries`: Collection of [`Entry`](#table-definitions) structs containing row and data pairs
 
 ```rust
 // Insert or update a record in a table
@@ -503,14 +517,14 @@ struct InsertRecord {
 
 struct InsertRecords {
     table: felt252,
-    records_data: Span<IdData>,
+    rows: Span<Entry>,
 }
 
 // Insert or update a field in a record
 
 struct InsertField {
     table: felt252,
-    record: felt252,
+    row: felt252,
     column: felt252,
     data: Span<felt252>,
 }
@@ -519,7 +533,7 @@ struct InsertField {
 
 struct InsertFields {
     table: felt252,
-    record: felt252,
+    row: felt252,
     columns: Span<felt252>,
     data: Span<felt252>,
 }
@@ -529,7 +543,7 @@ struct InsertFields {
 struct InsertsField {
     table: felt252,
     column: felt252,
-    records_data: Span<IdData>,
+    entries: Span<Entry>,
 }
 
 // Insert or update multiple fields in multiple records
@@ -537,28 +551,62 @@ struct InsertsField {
 struct InsertsFields {
     table: felt252,
     columns: Span<felt252>,
-    records_data: Span<IdData>,
+    entries: Span<Entry>,
 }
 
-// Drop an existing record from a table
+// Insert or update a set of fields in a record
+
+struct InsertFieldSet {
+    table: felt252,
+    row: felt252,
+    set: felt252,
+    data: Span<felt252>,
+}
+
+// Insert or update multiple sets of fields in a record
+
+struct InsertFieldSets {
+    table: felt252,
+    row: felt252,
+    sets: Span<felt252>,
+    data: Span<felt252>,
+}
+
+// Insert or update a set of fields in multiple records
+
+struct InsertsFieldSet {
+    table: felt252,
+    set: felt252,
+    entries: Span<Entry>,
+}
+
+// Insert or update multiple sets of fields in multiple records
+
+struct InsertsFieldSets {
+    table: felt252,
+    sets: Span<felt252>,
+    entries: Span<Entry>,
+}
+
+// Drop an existing row from a table
 
 struct DeleteRecord {
     table: felt252,
-    record: felt252,
+    row: felt252,
 }
 
 // Drop multiple existing records from a table
 
 struct DeleteRecords {
     table: felt252,
-    records: Span<felt252>,
+    rows: Span<felt252>,
 }
 
 // Drop an existing field from a record
 
 struct DeleteField {
     table: felt252,
-    record: felt252,
+    row: felt252,
     column: felt252,
 }
 
@@ -566,7 +614,7 @@ struct DeleteField {
 
 struct DeleteFields {
     table: felt252,
-    record: felt252,
+    row: felt252,
     columns: Span<felt252>,
 }
 
@@ -575,103 +623,49 @@ struct DeleteFields {
 struct DeletesField {
     table: felt252,
     column: felt252,
-    records: Span<felt252>,
+    rows: Span<felt252>,
 }
 
 // Drop multiple existing fields from multiple records
 
 struct DeletesFields {
     table: felt252,
-    records: Span<felt252>,
-    columns: Span<felt252>,
-}
-```
-
-#### Field Group Management
-
-Field groups are identifiable groups of columns, used to facilitate batch operations.
-
-Common field meanings:
-
-- `id`/`group`: Field group identifier
-- `record`: Primary key
-- `table`: Matches `id` from [table events](#Table-Management)
-- `column`: Matches `id` from [column events](#Column-Management)
-
-> TODO: should `group` simply be `id` here?
-
-```rust
-// Create a field group with specified columns
-
-struct CreateFieldGroup {
-    id: felt252,
+    rows: Span<felt252>,
     columns: Span<felt252>,
 }
 
-// Insert or update a group of fields in a record
 
-struct InsertFieldGroup {
+
+// Drop a set of fields from a record
+
+struct DeleteFieldSet {
     table: felt252,
-    record: felt252,
-    group: felt252,
-    data: Span<felt252>,
+    row: felt252,
+    set: felt252,
 }
 
-// Insert or update multiple groups of fields in a record
+// Drop multiple sets of fields from a record
 
-struct InsertFieldGroups {
+struct DeleteFieldSets {
     table: felt252,
-    record: felt252,
-    groups: Span<felt252>,
-    data: Span<felt252>,
+    row: felt252,
+    sets: Span<felt252>,
 }
 
-// Insert or update a group of fields in multiple records
+// Drop a set of fields from multiple records
 
-struct InsertsFieldGroup {
+struct DeletesFieldSet {
     table: felt252,
-    group: felt252,
-    records_data: Span<IdData>,
+    set: felt252,
+    rows: Span<felt252>,
 }
 
-// Insert or update multiple groups of fields in multiple records
+// Drop multiple sets of fields from multiple records
 
-struct InsertsFieldGroups {
+struct DeletesFieldSets {
     table: felt252,
-    groups: Span<felt252>,
-    records_data: Span<IdData>,
-}
-
-// Drop a group of fields from a record
-
-struct DeleteFieldGroup {
-    table: felt252,
-    record: felt252,
-    group: felt252,
-}
-
-// Drop multiple groups of fields from a record
-
-struct DeleteFieldGroups {
-    table: felt252,
-    record: felt252,
-    groups: Span<felt252>,
-}
-
-// Drop a group of fields from multiple records
-
-struct DeletesFieldGroup {
-    table: felt252,
-    group: felt252,
-    records: Span<felt252>,
-}
-
-// Drop multiple groups of fields from multiple records
-
-struct DeletesFieldGroups {
-    table: felt252,
-    records: Span<felt252>,
-    groups: Span<felt252>,
+    rows: Span<felt252>,
+    sets: Span<felt252>,
 }
 ```
 
@@ -733,7 +727,7 @@ CreateTableWithColumns {
     id: 'Player',
     name: "Player",
     attributes: [],
-    primary: PrimaryDef { name: "id", type_def: TypeDef::Felt252, ... },
+    primary: PrimaryDef { name: "id", type_def: PrimaryTypeDef::Felt252, ... },
     columns: [
         ColumnDef { id: 'health', type_def: TypeDef::U32, ... },
         ColumnDef { id: 'strength', type_def: TypeDef::U32, ... },
@@ -746,7 +740,7 @@ CreateTableWithColumns {
 ```rust
 InsertRecord {
     table: 'Player',   // Links to schema via table ID
-    record: 0x123,     // Primary key
+    row: 0x123,        // Primary key
     data: [100, 10]    // Raw values: health=100, strength=10
 }
 ```
