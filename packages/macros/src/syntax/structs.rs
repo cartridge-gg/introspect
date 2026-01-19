@@ -43,7 +43,7 @@ impl<'db> TryFromAst<'db, MemberAst<'db>> for Member {
         Ok(Self {
             visibility: member.visibility(db).into(),
             name: member.name(db).to_string(db),
-            attributes: vec![],
+            attributes: member.attributes(db).ast_into(db),
             ty: member.type_clause(db).ast_try_into(db)?,
         })
     }

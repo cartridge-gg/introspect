@@ -84,14 +84,14 @@ pub fn macro_attributes(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     let field_name_str = field_name.to_string();
 
                     setters.push(quote! {
-                        pub fn #setter_name<E: From<introspect_macros::IntrospectError>>(&mut self, #field_name: #inner_ty) -> Result<(), E> {
+                        pub fn #setter_name<E: From<IntrospectError>>(&mut self, #field_name: #inner_ty) -> Result<(), E> {
                             match &self.#field_name.replace(#field_name) {
                                 None => Ok(()),
-                                Some(_) => Err(introspect_macros::IntrospectError::DuplicateAttribute(#field_name_str.to_string()).into()),
+                                Some(_) => Err(IntrospectError::DuplicateAttribute(#field_name_str.to_string()).into()),
                             }
                         }
 
-                        pub fn #setter_return_empty_name<T, E: From<introspect_macros::IntrospectError>>(&mut self, #field_name: #inner_ty) -> Result<Vec<T>, E> {
+                        pub fn #setter_return_empty_name<T, E: From<IntrospectError>>(&mut self, #field_name: #inner_ty) -> Result<Vec<T>, E> {
                             self.#setter_name(#field_name).map(|_| Vec::new())
                         }
                     });

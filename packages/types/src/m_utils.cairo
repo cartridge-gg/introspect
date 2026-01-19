@@ -5,6 +5,11 @@ pub use crate::{
     MemberDef, PrimaryDef, PrimaryTrait, PrimaryTypeDef, ResultDef, StructDef, TypeDef, VariantDef,
 };
 
+#[inline]
+pub fn type_def_default<T, impl I: Introspect<T>>() -> TypeDef {
+    I::type_def()
+}
+
 #[inline(always)]
 pub fn member_def(name: ByteArray, attributes: Span<Attribute>, type_def: TypeDef) -> MemberDef {
     MemberDef { name, type_def, attributes }

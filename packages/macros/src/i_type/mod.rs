@@ -1,14 +1,14 @@
 pub mod attribute;
-pub mod default;
 pub mod enums;
 pub mod extraction;
 pub mod item;
 pub mod structs;
+pub mod type_mod;
 pub mod types;
-pub use attribute::{AttributeParser, AttributeVariant};
-pub use default::{DefaultIExtractor, TypeModTrait};
+pub use attribute::{AttributeParser, AttributeVariant, ExtractAttributes};
 pub use enums::{IEnum, IVariant};
-pub use extraction::IExtract;
+pub use extraction::{IExtract, IExtractWith, IExtractable};
 pub use item::{IItem, IntrospectItemTrait};
 pub use structs::{IMember, IStruct};
+pub use type_mod::{TypeMod, TypeModAndName, TypeModMemberTrait, TypeModTrait};
 pub use types::{ExtractTypeDef, ITys, ToTypeDefVariant, TypeDefVariant};

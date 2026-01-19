@@ -1,5 +1,5 @@
 use crate::Ty;
-use crate::ty::CairoCoreType;
+use crate::ty::CairoPrimitiveType;
 
 pub mod column;
 pub mod primary;
@@ -8,26 +8,26 @@ pub use primary::{PrimaryDef, PrimaryTypeDefVariant};
 
 impl Ty {
     pub fn is_primary_type(&self) -> bool {
-        match self.get_core_type() {
+        match self.get_primitive_type() {
             Some(
-                CairoCoreType::Felt252
-                | CairoCoreType::Bool
-                | CairoCoreType::U8
-                | CairoCoreType::U16
-                | CairoCoreType::U32
-                | CairoCoreType::U64
-                | CairoCoreType::U128
-                | CairoCoreType::I8
-                | CairoCoreType::I16
-                | CairoCoreType::I32
-                | CairoCoreType::I64
-                | CairoCoreType::I128
-                | CairoCoreType::Bytes31
-                | CairoCoreType::ClassHash
-                | CairoCoreType::ContractAddress
-                | CairoCoreType::EthAddress
-                | CairoCoreType::StorageAddress
-                | CairoCoreType::StorageBaseAddress,
+                CairoPrimitiveType::Felt252
+                | CairoPrimitiveType::Bool
+                | CairoPrimitiveType::U8
+                | CairoPrimitiveType::U16
+                | CairoPrimitiveType::U32
+                | CairoPrimitiveType::U64
+                | CairoPrimitiveType::U128
+                | CairoPrimitiveType::I8
+                | CairoPrimitiveType::I16
+                | CairoPrimitiveType::I32
+                | CairoPrimitiveType::I64
+                | CairoPrimitiveType::I128
+                | CairoPrimitiveType::Bytes31
+                | CairoPrimitiveType::ClassHash
+                | CairoPrimitiveType::ContractAddress
+                | CairoPrimitiveType::EthAddress
+                | CairoPrimitiveType::StorageAddress
+                | CairoPrimitiveType::StorageBaseAddress,
             ) => true,
             _ => false,
         }

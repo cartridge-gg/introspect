@@ -1,18 +1,18 @@
-impl {{impl_name}}RecordKey of {{i_path}}::RecordKey<{{struct_name}}, {{key_types_ss}}, FooTable> {
-    type Key = {{key_type}};
-    fn record_key(self: @{{struct_name}}) -> {{key_types_ss}} {
-        {{self_key_expr}}
+impl {{struct_name}}RecordKey of {{i_table_path}}::RecordKey<{{struct_impl_name}}::Record, ({{key_types_ss}}), {{struct_impl_name}}> {
+    type Key = ({{key_types}});
+    fn record_key(self: @{{struct_impl_name}}::Record) -> ({{key_types_ss}}) {
+        ({{self_key_members}})
     }
 }
 
-impl {{impl_name}}SerialisedKey<
+impl {{struct_name}}SerialisedKey<
     KS,
-    {{ks}}
-    +introspect_table::Snapable<@KS, {{}}>,
-    {{snapables}}
-> of introspect_table::SerialisedKey<{{table_impl}}::Record, KS, {{table_impl}}> {
+    {{generics}},
+    +{{i_table_path}}::Snapable<@KS, ({{generics}})>,
+    {{snappables}}
+> of {{i_table_path}}::SerialisedKey<{{struct_impl_name}}::Record, KS, {{struct_impl_name}}> {
     fn serialize_key(self: @KS, ref data: Array<felt252>) {
-        let {{key_expr}} = self.snapshot();
+        let ({{key_members}}) = self.snapshot();
         {{serialize_calls}}
     }
 }

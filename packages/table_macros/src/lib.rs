@@ -11,8 +11,7 @@ pub mod utils;
 pub use column::Column;
 pub use error::{TableError, TableResult};
 pub use id::IdVariant;
-// pub use interface::TableInterface;
-pub use primary::PrimaryAttribute;
+pub use interface::TableInterface;
 
-pub const I_TABLE_PATH: &str = "introspect_table";
+pub const I_TABLE_PATH: &str = "introspect_table::m_utils";
 pub use introspect_macros::{IntrospectError, IntrospectResult};

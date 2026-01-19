@@ -10,8 +10,8 @@ use crate::{Snapable, Spannable};
 pub trait TableStructure {
     type Primary;
     type Record;
-    fn attributes() -> Span<Attribute> {
-        [].span()
+    fn attributes() -> Array<Attribute> {
+        array![]
     }
     fn primary() -> PrimaryDef {
         introspect_types::PrimaryDef {
@@ -21,26 +21,27 @@ pub trait TableStructure {
         }
     }
     fn columns() -> Span<ColumnDef>;
-    fn collect_child_defs(ref defs: ChildDefs);
+    fn collect_child_defs(ref defs: ChildDefs) {}
 }
+
 
 pub trait KeySpanToPrimary<R, impl Struct: TableStructure> {
     fn key_span_to_primary(self: Span<felt252>) -> Struct::Primary;
 }
 
+// pub impl KeySpanToPrimaryImpl<
+//     impl Struct: TableStructure[Primary: felt252],
+// > of KeySpanToPrimary<Struct::Record, Struct> {
+//     fn key_span_to_primary(self: Span<felt252>) -> Struct::Primary {}
+// }
+
 pub trait KeySpanToId<R, impl Struct: TableStructure> {
     fn key_span_to_id(self: Span<felt252>) -> felt252;
 }
 
-impl KeySpanToIdImpl<
-    K,
-    impl Struct: TableStructure,
-    impl KP: KeySpanToPrimary<Struct::Record, Struct>,
-    +PrimaryTrait<Struct::Primary>,
-    +Drop<Struct::Primary>,
-> of KeySpanToId<K, Struct> {
+impl KeySpanToIdImpl<K, impl Struct: TableStructure> of KeySpanToId<K, Struct> {
     fn key_span_to_id(self: Span<felt252>) -> felt252 {
-        KP::key_span_to_primary(self).to_felt252()
+        core::poseidon::poseidon_hash_span(self)
     }
 }
 
@@ -524,11 +525,14 @@ pub trait ITable {
     impl Struct: TableStructure;
     const ID: felt252;
     fn name() -> ByteArray;
+    fn append_table_attributes(ref attributes: Array<Attribute>) {}
     fn register_table() {
+        let mut attributes = Self::Struct::attributes();
+        Self::append_table_attributes(ref attributes);
         CreateTableWithColumns {
             id: Self::ID,
             name: Self::name(),
-            attributes: Self::Struct::attributes(),
+            attributes: attributes.span(),
             primary: Self::Struct::primary(),
             columns: Self::Struct::columns(),
         }

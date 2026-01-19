@@ -30,6 +30,8 @@ pub enum IntrospectError {
     DeriveCallNotSupported,
     #[error("Duplicate attribute '{0}'.")]
     DuplicateAttribute(String),
+    #[error("Type cannot be use as Primary type.")]
+    UnsupportedPrimaryType,
 }
 
 pub type IntrospectResult<T> = std::result::Result<T, IntrospectError>;

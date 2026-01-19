@@ -1,8 +1,8 @@
 use crate::parser::DefaultParser;
 use crate::utils::felt_to_utf8_string;
 use crate::{
-    Attribute, ElementDef, EncodedBytes, FeltIterator, Primary, PrimaryValue, Record, RecordValues,
-    ToValue, TypeDef, felt_to_bytes31,
+    Attribute, Bytes31EDef, ElementDef, EncodedBytes, FeltIterator, Primary, PrimaryValue, Record,
+    RecordValues, ToValue, TypeDef, felt_to_bytes31,
 };
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
@@ -143,7 +143,7 @@ pub enum PrimaryTypeDef {
     Felt252,
     ShortUtf8,
     Bytes31,
-    Bytes31E(String),
+    Bytes31E(Bytes31EDef),
     Bool,
     U8,
     U16,
@@ -186,6 +186,36 @@ impl<T: AsRef<ColumnDef>> From<T> for ColumnInfo {
     }
 }
 
+impl TryFrom<TypeDef> for PrimaryTypeDef {
+    type Error = ();
+
+    fn try_from(value: TypeDef) -> Result<Self, Self::Error> {
+        match value {
+            TypeDef::Felt252 => Ok(PrimaryTypeDef::Felt252),
+            TypeDef::ShortUtf8 => Ok(PrimaryTypeDef::ShortUtf8),
+            TypeDef::Bytes31 => Ok(PrimaryTypeDef::Bytes31),
+            TypeDef::Bytes31E(encoding) => Ok(PrimaryTypeDef::Bytes31E(encoding)),
+            TypeDef::Bool => Ok(PrimaryTypeDef::Bool),
+            TypeDef::U8 => Ok(PrimaryTypeDef::U8),
+            TypeDef::U16 => Ok(PrimaryTypeDef::U16),
+            TypeDef::U32 => Ok(PrimaryTypeDef::U32),
+            TypeDef::U64 => Ok(PrimaryTypeDef::U64),
+            TypeDef::U128 => Ok(PrimaryTypeDef::U128),
+            TypeDef::I8 => Ok(PrimaryTypeDef::I8),
+            TypeDef::I16 => Ok(PrimaryTypeDef::I16),
+            TypeDef::I32 => Ok(PrimaryTypeDef::I32),
+            TypeDef::I64 => Ok(PrimaryTypeDef::I64),
+            TypeDef::I128 => Ok(PrimaryTypeDef::I128),
+            TypeDef::ClassHash => Ok(PrimaryTypeDef::ClassHash),
+            TypeDef::ContractAddress => Ok(PrimaryTypeDef::ContractAddress),
+            TypeDef::EthAddress => Ok(PrimaryTypeDef::EthAddress),
+            TypeDef::StorageAddress => Ok(PrimaryTypeDef::StorageAddress),
+            TypeDef::StorageBaseAddress => Ok(PrimaryTypeDef::StorageBaseAddress),
+            _ => Err(()),
+        }
+    }
+}
+
 impl PrimaryTypeDef {
     pub fn item_name(&self) -> &str {
         match self {
@@ -217,12 +247,14 @@ impl PrimaryTypeDef {
             PrimaryTypeDef::Felt252 => Some(PrimaryValue::Felt252(felt)),
             PrimaryTypeDef::ShortUtf8 => felt_to_utf8_string(felt).map(PrimaryValue::ShortUtf8),
             PrimaryTypeDef::Bytes31 => felt_to_bytes31(felt).map(PrimaryValue::Bytes31),
-            PrimaryTypeDef::Bytes31E(encoding) => felt_to_bytes31(felt).map(|bytes| {
-                PrimaryValue::Bytes31E(EncodedBytes {
-                    encoding: encoding.clone(),
-                    bytes: bytes.into(),
+            PrimaryTypeDef::Bytes31E(Bytes31EDef { encoding }) => {
+                felt_to_bytes31(felt).map(|bytes| {
+                    PrimaryValue::Bytes31E(EncodedBytes {
+                        encoding: encoding.clone(),
+                        bytes: bytes.to_vec(),
+                    })
                 })
-            }),
+            }
             PrimaryTypeDef::Bool => Some(PrimaryValue::Bool(!felt.is_zero())),
             PrimaryTypeDef::U8 => felt.try_into().ok().map(PrimaryValue::U8),
             PrimaryTypeDef::U16 => felt.try_into().ok().map(PrimaryValue::U16),

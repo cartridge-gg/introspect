@@ -234,3 +234,9 @@ pub impl PrimaryDefISerde of ISerde<PrimaryDef> {
         Some(PrimaryDef { name, attributes, type_def })
     }
 }
+
+
+pub trait RecordPrimary<T> {
+    fn primary_def() -> PrimaryDef;
+    fn record_id(self: @T) -> felt252;
+}

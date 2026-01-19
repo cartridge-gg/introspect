@@ -8,12 +8,15 @@ pub trait IExtractor {
     fn derive_call_error(&self) -> Self::Error;
 }
 
-pub trait IExtract<T> {
+pub trait IExtract
+where
+    Self: Sized,
+{
     type SyntaxType;
     type Error;
-    fn iextract(&self, module: &mut Self::SyntaxType) -> Result<T, Self::Error>;
-    fn iextracts(&self, modules: &mut [Self::SyntaxType]) -> Result<Vec<T>, Self::Error> {
-        modules.iter_mut().map(|m| self.iextract(m)).collect()
+    fn iextract(module: &mut Self::SyntaxType) -> Result<Self, Self::Error>;
+    fn iextracts(modules: &mut [Self::SyntaxType]) -> Result<Vec<Self>, Self::Error> {
+        modules.iter_mut().map(|m| Self::iextract(m)).collect()
     }
 }
 
@@ -21,65 +24,123 @@ pub trait IExtractWithArgs<T> {
     type SyntaxType;
     type Error;
     fn iextract_with_args(
-        &self,
         module: &mut Self::SyntaxType,
         attributes: &Vec<AttributeArg>,
     ) -> Result<T, Self::Error>;
 }
 
-pub trait IExtractWith<T, C> {
+pub trait IExtractWith
+where
+    Self: Sized,
+{
+    type Context;
     type SyntaxType;
     type Error;
-    fn iextract_with(&self, module: &mut Self::SyntaxType, context: &C) -> Result<T, Self::Error>;
+    fn iextract_with(
+        module: &mut Self::SyntaxType,
+        context: &Self::Context,
+    ) -> Result<Self, Self::Error>;
     fn iextracts_with(
-        &self,
-        modules_with: &mut [(Self::SyntaxType, C)],
-    ) -> Result<Vec<T>, Self::Error> {
+        modules: &mut [Self::SyntaxType],
+        context: &Self::Context,
+    ) -> Result<Vec<Self>, Self::Error> {
+        modules
+            .iter_mut()
+            .map(|m| Self::iextract_with(m, context))
+            .collect()
+    }
+    fn iextracts_withs(
+        modules_with: &mut [(Self::SyntaxType, Self::Context)],
+    ) -> Result<Vec<Self>, Self::Error> {
         modules_with
             .iter_mut()
-            .map(|(m, c)| self.iextract_with(m, c))
+            .map(|(m, c)| Self::iextract_with(m, c))
             .collect()
     }
 }
 
-pub trait IExtractFromTokenStream<T> {
+pub trait IExtractable {
+    fn iextract<I: IExtract<SyntaxType = Self>>(&mut self) -> Result<I, I::Error>;
+    fn iextract_with<I: IExtractWith<SyntaxType = Self>>(
+        &mut self,
+        context: &I::Context,
+    ) -> Result<I, I::Error>;
+}
+
+pub trait IExtractables<I>
+where
+    I: IExtract,
+{
+    fn iextracts(&mut self) -> Result<Vec<I>, I::Error>;
+}
+
+pub trait IExtractablesContext<I>
+where
+    I: IExtractWith,
+{
+    fn iextracts_with(&mut self, context: &I::Context) -> Result<Vec<I>, I::Error>;
+}
+
+impl<T, I> IExtractables<I> for [T]
+where
+    I: IExtract<SyntaxType = T>,
+{
+    fn iextracts(&mut self) -> Result<Vec<I>, I::Error> {
+        self.iter_mut().map(|item| I::iextract(item)).collect()
+    }
+}
+
+impl<T, I> IExtractablesContext<I> for [T]
+where
+    I: IExtractWith<SyntaxType = T>,
+{
+    fn iextracts_with(&mut self, context: &I::Context) -> Result<Vec<I>, I::Error> {
+        self.iter_mut()
+            .map(|item| I::iextract_with(item, context))
+            .collect()
+    }
+}
+
+impl<T> IExtractable for T {
+    fn iextract<I: IExtract<SyntaxType = Self>>(&mut self) -> Result<I, I::Error> {
+        I::iextract(self)
+    }
+    fn iextract_with<I: IExtractWith<SyntaxType = Self>>(
+        &mut self,
+        context: &I::Context,
+    ) -> Result<I, I::Error> {
+        I::iextract_with(self, context)
+    }
+}
+
+pub trait IExtractFromTokenStream
+where
+    Self: Sized,
+{
     type Error: From<IntrospectError>;
     fn iextract_from_file_node(
-        &self,
         db: &dyn Database,
         node: cairo_lang_syntax::node::SyntaxNode,
-    ) -> Result<T, Self::Error>;
-    fn iextract_from_token_stream(&self, token_stream: TokenStream) -> Result<T, Self::Error> {
+    ) -> Result<Self, Self::Error>;
+    fn iextract_from_token_stream(token_stream: TokenStream) -> Result<Self, Self::Error> {
         let db = cairo_lang_parser::utils::SimpleParserDatabase::default();
         let (node, _diagnostics) = db.parse_virtual_with_diagnostics(token_stream.clone());
-        self.iextract_from_file_node(&db, node)
+        Self::iextract_from_file_node(&db, node)
     }
 }
 
-impl<E, T> IExtractFromTokenStream<T> for E
+impl<I> IExtractFromTokenStream for I
 where
-    E: IExtract<T>,
-    E::SyntaxType: SyntaxItemTrait,
-    E::Error: From<IntrospectError>,
+    I: IExtract,
+    I::SyntaxType: SyntaxItemTrait,
+    I::Error: From<IntrospectError>,
 {
-    type Error = E::Error;
+    type Error = I::Error;
     fn iextract_from_file_node(
-        &self,
         db: &dyn Database,
         node: cairo_lang_syntax::node::SyntaxNode,
-    ) -> Result<T, Self::Error> {
-        let mut item = E::SyntaxType::from_file_node(db, node)?;
-        self.iextract(&mut item)
-    }
-}
-
-impl<E, T> IExtractWith<T, ()> for E
-where
-    E: IExtract<T>,
-{
-    type Error = E::Error;
-    type SyntaxType = E::SyntaxType;
-    fn iextract_with(&self, module: &mut E::SyntaxType, _context: &()) -> Result<T, Self::Error> {
-        self.iextract(module)
+    ) -> Result<Self, Self::Error> {
+        let mut item = I::SyntaxType::from_file_node(db, node)?;
+        I::iextract(&mut item)
     }
 }

@@ -1495,6 +1495,7 @@ dependencies = [
  "const_format",
  "indent",
  "indoc",
+ "introspect-rust-macros",
  "introspect-types",
  "itertools",
  "salsa",

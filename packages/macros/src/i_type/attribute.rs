@@ -50,25 +50,35 @@ impl<E> From<Attribute> for Result<Vec<AttributeVariant>, E> {
     }
 }
 
-pub trait AttributeParser<T: AttributesTrait, MacroAttribute: Default> {
+pub trait ParseAttribute<T> {
     type Error;
     fn parse_attribute(
-        &self,
-        _item: &mut T,
-        _macro_attributes: &mut MacroAttribute,
+        &mut self,
+        module: &mut T,
         attribute: Attribute,
-    ) -> Result<Vec<AttributeVariant>, Self::Error> {
-        attribute.into()
-    }
+    ) -> Result<Vec<AttributeVariant>, Self::Error>;
+}
+
+pub trait AttributeParser<SyntaxType: AttributesTrait>
+where
+    Self: Default,
+{
+    type Error;
+
+    fn parse_attribute(
+        &mut self,
+        _module: &mut SyntaxType,
+        attribute: Attribute,
+    ) -> Result<Vec<AttributeVariant>, Self::Error>;
+
     fn parse_attributes(
-        &self,
-        item: &mut T,
-    ) -> Result<(MacroAttribute, Vec<IAttribute>), Self::Error> {
-        let mut macro_attrs: MacroAttribute = Default::default();
+        &mut self,
+        module: &mut SyntaxType,
+    ) -> Result<Vec<IAttribute>, Self::Error> {
         let mut intro_attrs: Vec<IAttribute> = Vec::new();
         let mut cairo_attrs: Vec<Attribute> = Vec::new();
-        for attr in item.take_attributes() {
-            let parsed_attrs = self.parse_attribute(item, &mut macro_attrs, attr)?;
+        for attr in module.take_attributes() {
+            let parsed_attrs = self.parse_attribute(module, attr)?;
             for parsed_attr in parsed_attrs {
                 match parsed_attr {
                     AttributeVariant::Cairo(a) => cairo_attrs.push(a),
@@ -76,7 +86,30 @@ pub trait AttributeParser<T: AttributesTrait, MacroAttribute: Default> {
                 }
             }
         }
-        item.update_attributes(cairo_attrs);
-        Ok((macro_attrs, intro_attrs))
+        module.update_attributes(cairo_attrs);
+        Ok(intro_attrs)
+    }
+}
+
+pub trait ExtractAttributes {
+    fn extract_attributes<MacroAttributes>(
+        &mut self,
+    ) -> Result<(MacroAttributes, Vec<IAttribute>), <MacroAttributes as AttributeParser<Self>>::Error>
+    where
+        Self: AttributesTrait + Sized,
+        MacroAttributes: AttributeParser<Self> + Default;
+}
+
+impl<SyntaxType> ExtractAttributes for SyntaxType {
+    fn extract_attributes<MacroAttributes>(
+        &mut self,
+    ) -> Result<(MacroAttributes, Vec<IAttribute>), <MacroAttributes as AttributeParser<Self>>::Error>
+    where
+        Self: AttributesTrait + Sized,
+        MacroAttributes: AttributeParser<Self> + Default,
+    {
+        let mut macro_attributes = MacroAttributes::default();
+        let attributes = macro_attributes.parse_attributes(self)?;
+        Ok((macro_attributes, attributes))
     }
 }

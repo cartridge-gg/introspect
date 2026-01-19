@@ -1,5 +1,6 @@
+use crate::i_type::TypeDefVariant;
 use crate::type_def::CairoElementDef;
-use crate::{AsCairo, AsCairoBytes, IAttribute, Ty};
+use crate::{AsCairo, AsCairoBytes, IAttribute, IntrospectError, Ty};
 use introspect_types::PrimaryTypeDef;
 
 #[derive(Clone, Debug)]
@@ -18,6 +19,22 @@ pub enum PrimaryTypeDefVariant {
     Fn(String),
 }
 
+impl TryFrom<TypeDefVariant> for PrimaryTypeDefVariant {
+    type Error = IntrospectError;
+    fn try_from(value: TypeDefVariant) -> Result<Self, Self::Error> {
+        match value {
+            TypeDefVariant::Default => Ok(PrimaryTypeDefVariant::Default),
+            TypeDefVariant::TypeDef(type_def) => {
+                let primary_type_def = type_def
+                    .try_into()
+                    .map_err(|_| IntrospectError::UnsupportedPrimaryType)?;
+                Ok(PrimaryTypeDefVariant::TypeDef(primary_type_def))
+            }
+            TypeDefVariant::Fn(call) => Ok(PrimaryTypeDefVariant::Fn(call)),
+        }
+    }
+}
+
 impl PrimaryTypeDefVariant {
     pub fn type_def(&self, ty: &Ty, i_path: &str) -> String {
         match self {
@@ -33,10 +50,10 @@ impl PrimaryTypeDefVariant {
 impl CairoElementDef for PrimaryTypeDef {
     fn as_element_def(&self, i_path: &str) -> String {
         match &self {
-            PrimaryTypeDef::Bytes31E(encoding) => format!(
+            PrimaryTypeDef::Bytes31E(e) => format!(
                 "{i_path}::PrimaryTypeDef::{}({})",
                 self.item_name(),
-                encoding.as_cairo_byte_array()
+                e.encoding.as_cairo_byte_array()
             ),
             _ => as_unit_primary_type_def(i_path, self.item_name()),
         }

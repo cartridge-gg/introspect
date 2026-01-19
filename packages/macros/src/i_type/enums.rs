@@ -1,5 +1,6 @@
-use super::{DefaultIExtractor, IExtract, IntrospectItemTrait, TypeDefVariant};
-use crate::i_type::{AttributeParser, TypeModTrait};
+use super::{IExtract, IntrospectItemTrait, TypeDefVariant, TypeMod};
+use crate::i_type::TypeModTrait;
+use crate::i_type::attribute::ExtractAttributes;
 use crate::params::GenericParams;
 use crate::type_def::{
     enum_def_tpl, variant_def_tpl, variant_default_def_tpl, variant_unit_def_tpl,
@@ -82,11 +83,11 @@ impl<'db> IntrospectItemTrait for IEnum {
     }
 }
 
-impl IExtract<IVariant> for DefaultIExtractor {
+impl IExtract for IVariant {
     type SyntaxType = Variant;
     type Error = IntrospectError;
-    fn iextract(&self, variant: &mut Variant) -> IntrospectResult<IVariant> {
-        let (type_mod, attributes) = self.parse_attributes(variant)?;
+    fn iextract(variant: &mut Variant) -> IntrospectResult<IVariant> {
+        let (type_mod, attributes) = variant.extract_attributes::<TypeMod>()?;
         Ok(IVariant {
             selector: string_to_keccak_felt(&variant.name),
             name: variant.name.clone(),
@@ -97,20 +98,15 @@ impl IExtract<IVariant> for DefaultIExtractor {
     }
 }
 
-impl IExtract<IEnum> for DefaultIExtractor {
+impl IExtract for IEnum {
     type SyntaxType = Enum;
     type Error = IntrospectError;
-    fn iextract(&self, item: &mut Enum) -> IntrospectResult<IEnum> {
-        let (_macro_attrs, intro_attrs): ((), _) = self.parse_attributes(item)?;
+    fn iextract(item: &mut Enum) -> IntrospectResult<IEnum> {
         Ok(IEnum {
             name: item.name.clone(),
-            attributes: intro_attrs,
+            attributes: vec![],
             generic_params: item.generic_params.clone(),
-            variants: self.iextracts(&mut item.variants)?,
+            variants: IVariant::iextracts(&mut item.variants)?,
         })
     }
-}
-
-impl AttributeParser<Enum, ()> for DefaultIExtractor {
-    type Error = IntrospectError;
 }

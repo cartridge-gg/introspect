@@ -285,7 +285,7 @@ impl ISerde for PrimaryTypeDef {
             selectors::Felt252 => Some(PrimaryTypeDef::Felt252),
             selectors::ShortUtf8 => Some(PrimaryTypeDef::ShortUtf8),
             selectors::Bytes31 => Some(PrimaryTypeDef::Bytes31),
-            selectors::Bytes31E => Some(PrimaryTypeDef::Bytes31E(ideserialize_utf8_string(data)?)),
+            selectors::Bytes31E => Some(PrimaryTypeDef::Bytes31E(Bytes31EDef::ideserialize(data)?)),
             selectors::Bool => Some(PrimaryTypeDef::Bool),
             selectors::U8 => Some(PrimaryTypeDef::U8),
             selectors::U16 => Some(PrimaryTypeDef::U16),
