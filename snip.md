@@ -497,7 +497,7 @@ Stored in tables, **records** are the data of an application, identified by a un
 
 **Common field meanings:**
 
-- `row`/`rows`: Primary key
+- `row`/`rows`: A felt for corresponding to the Primary key(s)
 - `table`: Matches `id` from [table events](#Table-Management)
 - `column`: Matches `id` from [column events](#Column-Management)
 - `set`: Matches `id` from [column set events](#Column-Set-Management)
@@ -517,7 +517,7 @@ struct InsertRecord {
 
 struct InsertRecords {
     table: felt252,
-    rows: Span<Entry>,
+    entries: Span<Entry>,
 }
 
 // Insert or update a field in a record
