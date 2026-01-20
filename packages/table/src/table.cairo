@@ -568,11 +568,6 @@ pub trait ITable {
         }
             .emit_event();
     }
-    fn insert_fields<R, impl RE: RecordFieldsEvent<R, Self::Struct, Self::ID>, +Drop<R>>(
-        record: R,
-    ) {
-        RE::emit_record_fields(@record);
-    }
     fn inserts_field<
         const ID: felt252,
         RFS,
@@ -584,6 +579,12 @@ pub trait ITable {
         let records_data = RF::records_field_datas(id_fields);
         InsertsField { table: Self::ID, column: ID, records_data }.emit_event();
     }
+    fn insert_fields<R, impl RE: RecordFieldsEvent<R, Self::Struct, Self::ID>, +Drop<R>>(
+        record: R,
+    ) {
+        RE::emit_record_fields(@record);
+    }
+
     fn inserts_fields<RS, impl RE: RecordsFieldsEvent<RS, Self::Struct, Self::ID>, +Drop<RS>>(
         records: RS,
     ) {
