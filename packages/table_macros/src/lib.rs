@@ -1,6 +1,7 @@
 pub mod column;
 mod derive;
 pub mod error;
+pub mod groups;
 pub mod id;
 pub mod interface;
 // pub mod manager;
