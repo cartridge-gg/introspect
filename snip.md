@@ -292,6 +292,8 @@ struct DeclareType {
 
 Events for table, column and row manipulation.
 
+> Events that apply to singular items have members expanded into the events for efficiency.
+
 #### Definitions
 
 The following terms are used to describe common database operations.
