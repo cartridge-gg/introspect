@@ -1,22 +1,21 @@
 [package]
-name = "introspect_table"
+name = "core_ext"
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true
 scarb-version.workspace = true
 repository.workspace = true
-experimental-features = ["associated_item_constraints", "negative_impls"]
+experimental-features = [
+    "associated_item_constraints",
+    "negative_impls",
+    "user_defined_inline_macros",
+]
 
 [dependencies]
 starknet.workspace = true
-core_ext.workspace = true
-introspect_types.workspace = true
-introspect_events.workspace = true
 
 [dev-dependencies]
 snforge_std.workspace = true
-assert_macros.workspace = true
-introspect_tests.workspace = true
 
 [tool]
 fmt.workspace = true

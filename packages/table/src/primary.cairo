@@ -1,5 +1,5 @@
 use crate::TableStructure;
 
-pub trait RecordPrimary<impl Struct: TableStructure, T> {
-    fn record_primary(self: @Struct::Record) -> @Struct::Primary;
+pub trait RecordPrimary<impl Table: TableStructure, T> {
+    fn record_primary(self: @Table::Record) -> @Table::Primary;
 }

@@ -1,3 +1,4 @@
+use core_ext::{Spannable, ToSnapshot};
 use introspect_events::EmitEvent;
 use introspect_events::database::{
     CreateTableWithColumns, DeleteField, DeleteFields, DeleteRecord, DeleteRecords, DeletesField,
@@ -7,51 +8,51 @@ use introspect_types::Attribute;
 use crate::field::RecordsField;
 use crate::record::RecordIds;
 use crate::recordable_events::{Emittable, EmittableBatch, EmittableFields, EmittableFieldsBatch};
-use crate::{Member, RecordId, Spannable, TableStructure, ToSnapshot};
+use crate::{Member, RecordId, TableStructure};
 
 
 pub trait ITable {
-    impl Struct: TableStructure;
+    impl Table: TableStructure;
     const ID: felt252;
     fn name() -> ByteArray;
     fn append_table_attributes(ref attributes: Array<Attribute>) {}
     fn register_table() {
-        let mut attributes = Self::Struct::attributes();
+        let mut attributes = Self::Table::attributes();
         Self::append_table_attributes(ref attributes);
         CreateTableWithColumns {
             id: Self::ID,
             name: Self::name(),
             attributes: attributes.span(),
-            primary: Self::Struct::primary(),
-            columns: Self::Struct::columns(),
+            primary: Self::Table::primary(),
+            columns: Self::Table::columns(),
         }
             .emit_event();
     }
-    fn insert<Entry, impl RE: Emittable<Self::ID, Self::Struct, Entry>, +Drop<Entry>>(
-        record: Entry,
+    fn insert<Item, impl RE: Emittable<Self::ID, Self::Table, Item>, +Drop<Item>>(
+        record: Item,
     ) {
-        RE::emit(@record);
+        RE::emit_item(@record);
     }
-    fn inserts<Entries, impl RE: EmittableBatch<Self::ID, Self::Struct, Entries>, +Drop<Entries>>(
-        records: Entries,
+    fn inserts<Items, impl RE: EmittableBatch<Self::ID, Self::Table, Items>, +Drop<Items>>(
+        records: Items,
     ) {
         RE::emit_batch(records);
     }
     fn insert_field<
         const ID: felt252,
         ToId,
-        F,
-        impl RId: RecordId<Self::Struct, ToId>,
-        impl Member: Member<Self::Struct, ID, Self::Struct::Record>,
-        impl SF: ToSnapshot<F, Member::Type>,
+        ToField,
+        impl RId: RecordId<Self::Table, ToId>,
+        impl Member: Member<Self::Table, ID, Self::Table::Record>,
+        impl SF: ToSnapshot<ToField, Member::Type>,
         +Drop<ToId>,
-        +Drop<F>,
+        +Drop<ToField>,
     >(
-        id: ToId, field: F,
+        id: ToId, field: ToField,
     ) {
         InsertField {
             table: Self::ID,
-            record: RId::record_id(@id),
+            row: RId::record_id(@id),
             column: ID,
             data: Member::serialize_member_inline(SF::to_snapshot(field)),
         }
@@ -59,84 +60,83 @@ pub trait ITable {
     }
     fn inserts_field<
         const ID: felt252,
-        impl Member: Member<Self::Struct, ID, Self::Struct::Record>,
-        Entries,
-        impl Field: RecordsField<ID, Self::Struct, Member, Entries>,
+        impl Member: Member<Self::Table, ID, Self::Table::Record>,
+        Items,
+        impl Field: RecordsField<ID, Self::Table, Member, Items>,
     >(
-        entries: Entries,
+        items: Items,
     ) {
-        let records_data = Field::serialise_to_id_data_span(entries);
-        InsertsField { table: Self::ID, column: ID, records_data }.emit_event();
+        let entries = Field::serialise_to_entries(items);
+        InsertsField { table: Self::ID, column: ID, entries }.emit_event();
     }
-    fn insert_fields<Entry, impl RE: EmittableFields<Self::ID, Self::Struct, Entry>, +Drop<Entry>>(
-        record: Entry,
+    fn insert_fields<Item, impl RE: EmittableFields<Self::ID, Self::Table, Item>, +Drop<Item>>(
+        record: Item,
     ) {
         RE::emit_fields(@record);
     }
 
     fn inserts_fields<
-        Entries, impl RE: EmittableFieldsBatch<Self::ID, Self::Struct, Entries>, +Drop<Entries>,
+        Items, impl RE: EmittableFieldsBatch<Self::ID, Self::Table, Items>, +Drop<Items>,
     >(
-        records: Entries,
+        records: Items,
     ) {
         RE::emit_fields_batch(records);
     }
-    fn delete_record<ToId, impl RID: RecordId<Self::Struct, ToId>, +Drop<ToId>>(
+    fn delete_record<ToId, impl RID: RecordId<Self::Table, ToId>, +Drop<ToId>>(
         id: ToId,
     ) {
-        DeleteRecord { table: Self::ID, record: RID::record_id(@id) }.emit_event();
+        DeleteRecord { table: Self::ID, row: RID::record_id(@id) }.emit_event();
     }
-    fn delete_records<ToIds, impl Ids: RecordIds<Self::Struct, ToIds>, +Drop<ToIds>>(
+    fn delete_records<ToIds, impl Ids: RecordIds<Self::Table, ToIds>, +Drop<ToIds>>(
         ids: ToIds,
     ) {
-        DeleteRecords { table: Self::ID, records: Ids::record_ids(ids) }.emit_event();
+        DeleteRecords { table: Self::ID, rows: Ids::record_ids(ids) }.emit_event();
     }
     fn delete_field<
         const COLUMN_ID: felt252,
         ToId,
-        impl RID: RecordId<Self::Struct, ToId>,
-        impl Member: Member<Self::Struct, COLUMN_ID, Self::Struct::Record>,
+        impl RID: RecordId<Self::Table, ToId>,
+        impl Member: Member<Self::Table, COLUMN_ID, Self::Table::Record>,
         +Drop<ToId>,
     >(
         id: ToId,
     ) {
-        DeleteField { table: Self::ID, record: RID::record_id(@id), column: COLUMN_ID }
-            .emit_event();
+        DeleteField { table: Self::ID, row: RID::record_id(@id), column: COLUMN_ID }.emit_event();
     }
     fn deletes_field<
         const COLUMN_ID: felt252,
         ToIds,
-        impl TID: RecordIds<Self::Struct, ToIds>,
-        impl Member: Member<Self::Struct, COLUMN_ID, Self::Struct::Record>,
+        impl TID: RecordIds<Self::Table, ToIds>,
+        impl Member: Member<Self::Table, COLUMN_ID, Self::Table::Record>,
     >(
         ids: ToIds,
     ) {
-        DeletesField { table: Self::ID, records: TID::record_ids(ids), column: COLUMN_ID }
+        DeletesField { table: Self::ID, rows: TID::record_ids(ids), column: COLUMN_ID }
             .emit_event();
     }
     fn delete_fields<
         ToId,
         ColumnIds,
-        impl Id: RecordId<Self::Struct, ToId>,
+        impl Id: RecordId<Self::Table, ToId>,
         +Spannable<ColumnIds, felt252>,
         +Drop<ToId>,
         +Drop<ColumnIds>,
     >(
         id: ToId, columns: ColumnIds,
     ) {
-        DeleteFields { table: Self::ID, record: Id::record_id(@id), columns: columns.to_span() }
+        DeleteFields { table: Self::ID, row: Id::record_id(@id), columns: columns.to_span() }
             .emit_event();
     }
     fn deletes_fields<
         ToIds,
         ColumnIds,
-        impl Ids: RecordIds<Self::Struct, ToIds>,
+        impl Ids: RecordIds<Self::Table, ToIds>,
         +Spannable<ColumnIds, felt252>,
         +Drop<ColumnIds>,
     >(
         ids: ToIds, columns: ColumnIds,
     ) {
-        DeletesFields { table: Self::ID, records: Ids::record_ids(ids), columns: columns.to_span() }
+        DeletesFields { table: Self::ID, rows: Ids::record_ids(ids), columns: columns.to_span() }
             .emit_event();
     }
 }

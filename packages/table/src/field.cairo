@@ -1,39 +1,41 @@
-use introspect_types::IdData;
-use crate::{Member, RecordId, Spannable, TableStructure, TupleSnappable};
+use core_ext::{Spannable, TupleSnappable};
+use introspect_types::Entry;
+use crate::{Member, RecordId, TableStructure};
 
 pub trait RecordField<
     const ID: felt252,
-    impl Struct: TableStructure,
-    impl Member: Member<Struct, ID, Struct::Record>,
-    Entry,
+    impl Table: TableStructure,
+    impl Member: Member<Table, ID, Table::Record>,
+    Item,
 > {
-    fn serialize_to_tuple(self: @Entry) -> (felt252, Span<felt252>);
-    fn serialize_to_id_data(self: @Entry) -> IdData {
+    fn serialize_to_tuple(self: @Item) -> (felt252, Span<felt252>);
+    #[inline(always)]
+    fn serialize_to_entry(self: @Item) -> Entry {
         Self::serialize_to_tuple(self).into()
     }
 }
 
 pub trait RecordsField<
     const ID: felt252,
-    impl Struct: TableStructure,
-    impl Member: Member<Struct, ID, Struct::Record>,
-    Entries,
+    impl Table: TableStructure,
+    impl Member: Member<Table, ID, Table::Record>,
+    Items,
 > {
-    fn serialise_to_id_data_span(self: Entries) -> Span<IdData>;
+    fn serialise_to_entries(self: Items) -> Span<Entry>;
 }
 
 pub impl RecordFieldImpl<
     const ID: felt252,
-    impl Struct: TableStructure,
-    impl Member: Member<Struct, ID, Struct::Record>,
-    Entry,
-    ToId,
-    impl RID: RecordId<Struct, ToId>,
-    impl TS: TupleSnappable<Entry, (@ToId, @Member::Type)>,
-> of RecordField<ID, Struct, Member, Entry> {
-    fn serialize_to_tuple(self: @Entry) -> (felt252, Span<felt252>) {
-        let (key, field): (@ToId, @Member::Type) = TS::snap_tuple(self);
-        let record_id = RID::record_id(key);
+    impl Table: TableStructure,
+    impl Member: Member<Table, ID, Table::Record>,
+    Tuple,
+    AsId,
+    impl Id: RecordId<Table, AsId>,
+    impl TS: TupleSnappable<Tuple, (@AsId, @Member::Type)>,
+> of RecordField<ID, Table, Member, Tuple> {
+    fn serialize_to_tuple(self: @Tuple) -> (felt252, Span<felt252>) {
+        let (key, field): (@AsId, @Member::Type) = TS::snap_tuple(self);
+        let record_id = Id::record_id(key);
         let data = Member::serialize_member_inline(field);
         (record_id, data)
     }
@@ -42,14 +44,14 @@ pub impl RecordFieldImpl<
 
 impl RecordsFieldImpl<
     const ID: felt252,
-    impl Struct: TableStructure,
-    impl Member: Member<Struct, ID, Struct::Record>,
-    Entries,
-    Entry,
-    impl IM: RecordField<ID, Struct, Member, Entry>,
-    +Spannable<Entries, Entry>,
-> of RecordsField<ID, Struct, Member, Entries> {
-    fn serialise_to_id_data_span(self: Entries) -> Span<IdData> {
-        self.to_span().into_iter().map(|M| IM::serialize_to_id_data(M)).collect::<Array<_>>().span()
+    impl Table: TableStructure,
+    impl Member: Member<Table, ID, Table::Record>,
+    Tuples,
+    Tuple,
+    impl IM: RecordField<ID, Table, Member, Tuple>,
+    +Spannable<Tuples, Tuple>,
+> of RecordsField<ID, Table, Member, Tuples> {
+    fn serialise_to_entries(self: Tuples) -> Span<Entry> {
+        self.to_span().into_iter().map(|M| IM::serialize_to_entry(M)).collect::<Array<_>>().span()
     }
 }

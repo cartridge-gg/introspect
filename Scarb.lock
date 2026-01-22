@@ -2,6 +2,13 @@
 version = 1
 
 [[package]]
+name = "core_ext"
+version = "0.1.2"
+dependencies = [
+ "snforge_std",
+]
+
+[[package]]
 name = "introspect"
 version = "0.1.2"
 dependencies = [
@@ -16,7 +23,6 @@ dependencies = [
 name = "introspect_events"
 version = "0.1.2"
 dependencies = [
- "introspect_macros",
  "introspect_tests",
  "introspect_types",
  "snforge_std",
@@ -30,6 +36,7 @@ version = "0.1.0"
 name = "introspect_table"
 version = "0.1.2"
 dependencies = [
+ "core_ext",
  "introspect_events",
  "introspect_tests",
  "introspect_types",
@@ -49,6 +56,7 @@ dependencies = [
 name = "introspect_types"
 version = "0.1.2"
 dependencies = [
+ "core_ext",
  "introspect_tests",
  "snforge_std",
 ]
