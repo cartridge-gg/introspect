@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CreateFieldGroup {
+pub struct CreateColumnSet {
     pub id: Felt,
     pub columns: Vec<Felt>,
 }
@@ -116,7 +116,7 @@ pub struct DropColumns {
 pub struct CreateIndex {
     pub table: Felt,
     pub id: Felt,
-    pub name: Felt,
+    pub name: String,
     pub columns: Vec<Felt>,
 }
 
@@ -129,28 +129,28 @@ pub struct DropIndex {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct InsertRecord {
     pub table: Felt,
-    pub record: Felt,
+    pub row: Felt,
     pub data: Vec<Felt>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct InsertRecords {
     pub table: Felt,
-    pub records_data: Vec<IdData>,
+    pub entries: Vec<Entry>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct InsertField {
     pub table: Felt,
+    pub row: Felt,
     pub column: Felt,
-    pub record: Felt,
     pub data: Vec<Felt>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct InsertFields {
     pub table: Felt,
-    pub record: Felt,
+    pub row: Felt,
     pub columns: Vec<Felt>,
     pub data: Vec<Felt>,
 }
@@ -159,113 +159,112 @@ pub struct InsertFields {
 pub struct InsertsField {
     pub table: Felt,
     pub column: Felt,
-    pub records_data: Vec<IdData>,
+    pub entries: Vec<Entry>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct InsertsFields {
     pub table: Felt,
     pub columns: Vec<Felt>,
-    pub records_data: Vec<IdData>,
+    pub entries: Vec<Entry>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct InsertFieldGroup {
+pub struct InsertFieldSet {
     pub table: Felt,
-    pub record: Felt,
-    pub group: Felt,
+    pub row: Felt,
+    pub set: Felt,
     pub data: Vec<Felt>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct InsertFieldGroups {
+pub struct InsertFieldSets {
     pub table: Felt,
-    pub record: Felt,
-    pub groups: Vec<Felt>,
+    pub row: Felt,
+    pub sets: Vec<Felt>,
     pub data: Vec<Felt>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct InsertsFieldGroup {
+pub struct InsertsFieldSet {
     pub table: Felt,
-    pub group: Felt,
-    pub records_data: Vec<IdData>,
+    pub set: Felt,
+    pub entries: Vec<Entry>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct InsertsFieldGroups {
+pub struct InsertsFieldSets {
     pub table: Felt,
-    pub record: Felt,
-    pub groups: Vec<Felt>,
-    pub records_data: Vec<IdData>,
+    pub sets: Vec<Felt>,
+    pub entries: Vec<Entry>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DeleteRecord {
     pub table: Felt,
-    pub record: Felt,
+    pub row: Felt,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DeleteRecords {
     pub table: Felt,
-    pub records: Vec<Felt>,
+    pub rows: Vec<Felt>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DeleteField {
     pub table: Felt,
-    pub record: Felt,
+    pub row: Felt,
     pub column: Felt,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DeleteFields {
     pub table: Felt,
-    pub record: Felt,
+    pub row: Felt,
     pub columns: Vec<Felt>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DeletesField {
     pub table: Felt,
+    pub rows: Vec<Felt>,
     pub column: Felt,
-    pub records: Vec<Felt>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DeletesFields {
     pub table: Felt,
-    pub records: Vec<Felt>,
+    pub rows: Vec<Felt>,
     pub columns: Vec<Felt>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct DeleteFieldGroup {
+pub struct DeleteFieldSet {
     pub table: Felt,
-    pub record: Felt,
-    pub group: Felt,
+    pub row: Felt,
+    pub set: Felt,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct DeleteFieldGroups {
+pub struct DeleteFieldSets {
     pub table: Felt,
-    pub record: Felt,
-    pub groups: Vec<Felt>,
+    pub row: Felt,
+    pub sets: Vec<Felt>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct DeletesFieldGroup {
+pub struct DeletesFieldSet {
     pub table: Felt,
-    pub group: Felt,
-    pub records: Vec<Felt>,
+    pub rows: Vec<Felt>,
+    pub set: Felt,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct DeletesFieldGroups {
+pub struct DeletesFieldSets {
     pub table: Felt,
-    pub records: Vec<Felt>,
-    pub groups: Vec<Felt>,
+    pub rows: Vec<Felt>,
+    pub sets: Vec<Felt>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -282,8 +281,8 @@ pub struct IdTypeDef {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct IdData {
-    pub id: Felt,
+pub struct Entry {
+    pub row: Felt,
     pub data: Vec<Felt>,
 }
 
@@ -305,10 +304,10 @@ impl ISerde for IdTypeDef {
     }
 }
 
-impl ISerde for IdData {
+impl ISerde for Entry {
     fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
-        Some(IdData {
-            id: data.next()?,
+        Some(Entry {
+            row: data.next()?,
             data: Vec::<Felt>::ideserialize(data)?,
         })
     }

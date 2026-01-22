@@ -1,7 +1,7 @@
 use core_ext::Spannable;
 use introspect_events::EmitEvent;
 use introspect_events::database::{
-    InsertFieldGroup, InsertFields, InsertRecord, InsertRecords, InsertsFieldGroup, InsertsFields,
+    InsertFieldSet, InsertFields, InsertRecord, InsertRecords, InsertsFieldSet, InsertsFields,
 };
 use crate::TableStructure;
 use crate::record::{RecordTrait, RecordsTrait};
@@ -58,7 +58,7 @@ pub impl EmittableColumnSet<
 > of Emittable<TABLE_ID, Struct, Item> {
     fn emit_item(item: @Item) {
         let (row, data) = Set::set_tuple(item);
-        InsertFieldGroup { table: TABLE_ID, group: Set::GROUP_ID, row, data }.emit_event();
+        InsertFieldSet { table: TABLE_ID, group: Set::GROUP_ID, row, data }.emit_event();
     }
 }
 
@@ -73,7 +73,7 @@ pub impl EmittableColumnSetBatch<
 > of EmittableBatch<TABLE_ID, Struct, Items> {
     fn emit_batch(items: Items) {
         let entries = Set::serialise_rows_set(items);
-        InsertsFieldGroup { table: TABLE_ID, group: Set::GROUP_ID, entries }.emit_event();
+        InsertsFieldSet { table: TABLE_ID, group: Set::GROUP_ID, entries }.emit_event();
     }
 }
 

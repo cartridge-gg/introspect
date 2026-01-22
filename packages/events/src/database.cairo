@@ -47,7 +47,7 @@ pub mod selectors {
 
 #[derive(Drop, starknet::Event, PartialEq, Debug)]
 pub enum DatabaseEvents {
-    CreateFieldGroup: CreateFieldGroup,
+    CreateFieldGroup: CreateColumnSet,
     CreateTable: CreateTable,
     CreateTableWithColumns: CreateTableWithColumns,
     CreateTableFromClassHash: CreateTableFromClassHash,
@@ -71,28 +71,28 @@ pub enum DatabaseEvents {
     InsertFields: InsertFields,
     InsertsField: InsertsField,
     InsertsFields: InsertsFields,
-    InsertFieldGroup: InsertFieldGroup,
-    InsertFieldGroups: InsertFieldGroups,
-    InsertsFieldGroup: InsertsFieldGroup,
-    InsertsFieldGroups: InsertsFieldGroups,
+    InsertFieldGroup: InsertFieldSet,
+    InsertFieldGroups: InsertFieldSets,
+    InsertsFieldGroup: InsertsFieldSet,
+    InsertsFieldGroups: InsertsFieldSets,
     DeleteRecord: DeleteRecord,
     DeleteRecords: DeleteRecords,
     DeleteField: DeleteField,
     DeleteFields: DeleteFields,
     DeletesField: DeletesField,
     DeletesFields: DeletesFields,
-    DeleteFieldGroup: DeleteFieldGroup,
-    DeleteFieldGroups: DeleteFieldGroups,
-    DeletesFieldGroup: DeletesFieldGroup,
-    DeletesFieldGroups: DeletesFieldGroups,
+    DeleteFieldGroup: DeleteFieldSet,
+    DeleteFieldGroups: DeleteFieldSets,
+    DeletesFieldGroup: DeletesFieldSet,
+    DeletesFieldGroups: DeletesFieldSets,
 }
 
 
-/// Emitted when a new field group (schema) is created.
-/// - id: felt252 - Unique identifier for the field group.
-/// - columns: Span<felt252> - List of column IDs included in the field group
+/// Emitted when a new column set (schema) is created.
+/// - id: felt252 - Unique identifier for the column set.
+/// - columns: Span<felt252> - List of column IDs included in the column set
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
-pub struct CreateFieldGroup {
+pub struct CreateColumnSet {
     pub id: felt252,
     pub columns: Span<felt252>,
 }
@@ -314,37 +314,37 @@ pub struct InsertsFields {
 
 /// Insert a schema into a row.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
-pub struct InsertFieldGroup {
+pub struct InsertFieldSet {
     pub table: felt252,
     pub row: felt252,
-    pub group: felt252,
+    pub set: felt252,
     pub data: Span<felt252>,
 }
 
 
 /// Insert multiple groups of columns into a row.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
-pub struct InsertFieldGroups {
+pub struct InsertFieldSets {
     pub table: felt252,
     pub row: felt252,
-    pub groups: Span<felt252>,
+    pub sets: Span<felt252>,
     pub data: Span<felt252>,
 }
 
 /// Insert multiple rows into a table using a schema.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
-pub struct InsertsFieldGroup {
+pub struct InsertsFieldSet {
     pub table: felt252,
-    pub group: felt252,
+    pub set: felt252,
     pub entries: Span<Entry>,
 }
 
 
 /// Insert multiple groups of fields into multiple rows.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
-pub struct InsertsFieldGroups {
+pub struct InsertsFieldSets {
     pub table: felt252,
-    pub groups: Span<felt252>,
+    pub sets: Span<felt252>,
     pub entries: Span<Entry>,
 }
 
@@ -385,8 +385,8 @@ pub struct DeleteFields {
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct DeletesField {
     pub table: felt252,
-    pub column: felt252,
     pub rows: Span<felt252>,
+    pub column: felt252,
 }
 
 /// Remove multiple fields from multiple rows.
@@ -400,33 +400,33 @@ pub struct DeletesFields {
 
 /// Remove a schema from a row.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
-pub struct DeleteFieldGroup {
+pub struct DeleteFieldSet {
     pub table: felt252,
     pub row: felt252,
-    pub group: felt252,
+    pub set: felt252,
 }
 /// Remove multiple groups from a row.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
-pub struct DeleteFieldGroups {
+pub struct DeleteFieldSets {
     pub table: felt252,
     pub row: felt252,
-    pub groups: Span<felt252>,
+    pub sets: Span<felt252>,
 }
 
 /// Remove a group from multiple rows.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
-pub struct DeletesFieldGroup {
+pub struct DeletesFieldSet {
     pub table: felt252,
-    pub group: felt252,
     pub rows: Span<felt252>,
+    pub set: felt252,
 }
 
 /// Remove multiple groups from multiple rows.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
-pub struct DeletesFieldGroups {
+pub struct DeletesFieldSets {
     pub table: felt252,
     pub rows: Span<felt252>,
-    pub groups: Span<felt252>,
+    pub sets: Span<felt252>,
 }
 
 
@@ -474,16 +474,16 @@ impl IdTypeAttributesISerde of ISerde<IdTypeDef> {
 }
 
 
-impl CreateFieldGroupEvent of Event<CreateFieldGroup> {
+impl CreateFieldGroupEvent of Event<CreateColumnSet> {
     fn append_keys_and_data(
-        self: @CreateFieldGroup, ref keys: Array<felt252>, ref data: Array<felt252>,
+        self: @CreateColumnSet, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         data.append(*self.id);
         data.append_span(*self.columns)
     }
 
-    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<CreateFieldGroup> {
-        CreateFieldGroup { id: *data.pop_front()?, columns: data.drain() }.verify_keys(ref keys)
+    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<CreateColumnSet> {
+        CreateColumnSet { id: *data.pop_front()?, columns: data.drain() }.verify_keys(ref keys)
     }
 }
 
@@ -880,80 +880,80 @@ impl InsertsFieldsEvent of Event<InsertsFields> {
 }
 
 
-impl InsertFieldGroupEvent of Event<InsertFieldGroup> {
+impl InsertFieldGroupEvent of Event<InsertFieldSet> {
     fn append_keys_and_data(
-        self: @InsertFieldGroup, ref keys: Array<felt252>, ref data: Array<felt252>,
+        self: @InsertFieldSet, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         data.append(*self.table);
         data.append(*self.row);
-        data.append(*self.group);
+        data.append(*self.set);
         data.append_span(*self.data)
     }
 
-    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertFieldGroup> {
-        InsertFieldGroup {
+    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertFieldSet> {
+        InsertFieldSet {
             table: *data.pop_front()?,
             row: *data.pop_front()?,
-            group: *data.pop_front()?,
+            set: *data.pop_front()?,
             data: data.drain(),
         }
             .verify_keys(ref keys)
     }
 }
 
-impl InsertFieldGroupsEvent of Event<InsertFieldGroups> {
+impl InsertFieldGroupsEvent of Event<InsertFieldSets> {
     fn append_keys_and_data(
-        self: @InsertFieldGroups, ref keys: Array<felt252>, ref data: Array<felt252>,
+        self: @InsertFieldSets, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         data.append(*self.table);
         data.append(*self.row);
-        self.groups.iserialize(ref data);
+        self.sets.iserialize(ref data);
         data.append_span(*self.data)
     }
 
-    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertFieldGroups> {
-        InsertFieldGroups {
+    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertFieldSets> {
+        InsertFieldSets {
             table: *data.pop_front()?,
             row: *data.pop_front()?,
-            groups: ISerde::ideserialize(ref data)?,
+            sets: ISerde::ideserialize(ref data)?,
             data: data.drain(),
         }
             .verify_keys(ref keys)
     }
 }
 
-impl InsertsFieldGroupEvent of Event<InsertsFieldGroup> {
+impl InsertsFieldGroupEvent of Event<InsertsFieldSet> {
     fn append_keys_and_data(
-        self: @InsertsFieldGroup, ref keys: Array<felt252>, ref data: Array<felt252>,
+        self: @InsertsFieldSet, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         data.append(*self.table);
-        data.append(*self.group);
+        data.append(*self.set);
         self.entries.iserialize_end(ref data);
     }
 
-    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertsFieldGroup> {
-        InsertsFieldGroup {
+    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertsFieldSet> {
+        InsertsFieldSet {
             table: *data.pop_front()?,
-            group: *data.pop_front()?,
+            set: *data.pop_front()?,
             entries: ISerdeEnd::ideserialize_end(ref data)?,
         }
             .verify_keys(ref keys)
     }
 }
 
-impl InsertsFieldGroupsEvent of Event<InsertsFieldGroups> {
+impl InsertsFieldGroupsEvent of Event<InsertsFieldSets> {
     fn append_keys_and_data(
-        self: @InsertsFieldGroups, ref keys: Array<felt252>, ref data: Array<felt252>,
+        self: @InsertsFieldSets, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         data.append(*self.table);
-        self.groups.iserialize(ref data);
+        self.sets.iserialize(ref data);
         self.entries.iserialize_end(ref data);
     }
 
-    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertsFieldGroups> {
-        InsertsFieldGroups {
+    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertsFieldSets> {
+        InsertsFieldSets {
             table: *data.pop_front()?,
-            groups: ISerde::ideserialize(ref data)?,
+            sets: ISerde::ideserialize(ref data)?,
             entries: ISerdeEnd::ideserialize_end(ref data)?,
         }
             .verify_keys(ref keys)
@@ -1045,77 +1045,73 @@ impl DeletesFieldsEvent of Event<DeletesFields> {
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeletesFields> {
         DeletesFields {
-            table: *data.pop_front()?, rows: Serde::deserialize(ref data)?, columns: data.drain(),
+            table: *data.pop_front()?, rows: ISerde::ideserialize(ref data)?, columns: data.drain(),
         }
             .verify(ref keys, ref data)
     }
 }
 
-impl DeleteFieldGroupEvent of Event<DeleteFieldGroup> {
+impl DeleteFieldGroupEvent of Event<DeleteFieldSet> {
     fn append_keys_and_data(
-        self: @DeleteFieldGroup, ref keys: Array<felt252>, ref data: Array<felt252>,
+        self: @DeleteFieldSet, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         data.append(*self.table);
         data.append(*self.row);
-        data.append(*self.group);
+        data.append(*self.set);
     }
 
-    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeleteFieldGroup> {
-        DeleteFieldGroup {
-            table: *data.pop_front()?, row: *data.pop_front()?, group: *data.pop_front()?,
+    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeleteFieldSet> {
+        DeleteFieldSet {
+            table: *data.pop_front()?, row: *data.pop_front()?, set: *data.pop_front()?,
         }
             .verify(ref keys, ref data)
     }
 }
 
 
-impl DeleteFieldGroupsEvent of Event<DeleteFieldGroups> {
+impl DeleteFieldGroupsEvent of Event<DeleteFieldSets> {
     fn append_keys_and_data(
-        self: @DeleteFieldGroups, ref keys: Array<felt252>, ref data: Array<felt252>,
+        self: @DeleteFieldSets, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         data.append(*self.table);
         data.append(*self.row);
-        data.append_span(*self.groups)
+        data.append_span(*self.sets)
     }
 
-    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeleteFieldGroups> {
-        DeleteFieldGroups {
-            table: *data.pop_front()?, row: *data.pop_front()?, groups: data.drain(),
-        }
+    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeleteFieldSets> {
+        DeleteFieldSets { table: *data.pop_front()?, row: *data.pop_front()?, sets: data.drain() }
             .verify_keys(ref keys)
     }
 }
 
-impl DeletesFieldGroupEvent of Event<DeletesFieldGroup> {
+impl DeletesFieldGroupEvent of Event<DeletesFieldSet> {
     fn append_keys_and_data(
-        self: @DeletesFieldGroup, ref keys: Array<felt252>, ref data: Array<felt252>,
+        self: @DeletesFieldSet, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         data.append(*self.table);
-        data.append(*self.group);
+        data.append(*self.set);
         data.append_span(*self.rows)
     }
 
-    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeletesFieldGroup> {
-        DeletesFieldGroup {
-            table: *data.pop_front()?, group: *data.pop_front()?, rows: data.drain(),
-        }
+    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeletesFieldSet> {
+        DeletesFieldSet { table: *data.pop_front()?, set: *data.pop_front()?, rows: data.drain() }
             .verify_keys(ref keys)
     }
 }
 
 
-impl DeletesFieldGroupsEvent of Event<DeletesFieldGroups> {
+impl DeletesFieldGroupsEvent of Event<DeletesFieldSets> {
     fn append_keys_and_data(
-        self: @DeletesFieldGroups, ref keys: Array<felt252>, ref data: Array<felt252>,
+        self: @DeletesFieldSets, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         data.append(*self.table);
         self.rows.iserialize(ref data);
-        data.append_span(*self.groups)
+        data.append_span(*self.sets)
     }
 
-    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeletesFieldGroups> {
-        DeletesFieldGroups {
-            table: *data.pop_front()?, rows: ISerde::ideserialize(ref data)?, groups: data.drain(),
+    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeletesFieldSets> {
+        DeletesFieldSets {
+            table: *data.pop_front()?, rows: ISerde::ideserialize(ref data)?, sets: data.drain(),
         }
             .verify(ref keys, ref data)
     }
@@ -1123,7 +1119,7 @@ impl DeletesFieldGroupsEvent of Event<DeletesFieldGroups> {
 
 
 impl EmitCreateFieldGroup =
-    emit_event_impl::EmitEventImpl<CreateFieldGroup, selectors::CreateFieldGroup>;
+    emit_event_impl::EmitEventImpl<CreateColumnSet, selectors::CreateFieldGroup>;
 impl EmitCreateTable = emit_event_impl::EmitEventImpl<CreateTable, selectors::CreateTable>;
 impl EmitCreateTableWithColumns =
     emit_event_impl::EmitEventImpl<CreateTableWithColumns, selectors::CreateTableWithColumns>;
@@ -1150,13 +1146,13 @@ impl EmitInsertFields = emit_event_impl::EmitEventImpl<InsertFields, selectors::
 impl EmitInsertsField = emit_event_impl::EmitEventImpl<InsertsField, selectors::InsertsField>;
 impl EmitInsertsFields = emit_event_impl::EmitEventImpl<InsertsFields, selectors::InsertsFields>;
 impl EmitInsertFieldGroup =
-    emit_event_impl::EmitEventImpl<InsertFieldGroup, selectors::InsertFieldGroup>;
+    emit_event_impl::EmitEventImpl<InsertFieldSet, selectors::InsertFieldGroup>;
 impl EmitInsertFieldGroups =
-    emit_event_impl::EmitEventImpl<InsertFieldGroups, selectors::InsertFieldGroups>;
+    emit_event_impl::EmitEventImpl<InsertFieldSets, selectors::InsertFieldGroups>;
 impl EmitInsertsFieldGroup =
-    emit_event_impl::EmitEventImpl<InsertsFieldGroup, selectors::InsertsFieldGroup>;
+    emit_event_impl::EmitEventImpl<InsertsFieldSet, selectors::InsertsFieldGroup>;
 impl EmitInsertsFieldGroups =
-    emit_event_impl::EmitEventImpl<InsertsFieldGroups, selectors::InsertsFieldGroups>;
+    emit_event_impl::EmitEventImpl<InsertsFieldSets, selectors::InsertsFieldGroups>;
 impl EmitDeleteRecord = emit_event_impl::EmitEventImpl<DeleteRecord, selectors::DeleteRecord>;
 impl EmitDeleteRecords = emit_event_impl::EmitEventImpl<DeleteRecords, selectors::DeleteRecords>;
 impl EmitDeleteField = emit_event_impl::EmitEventImpl<DeleteField, selectors::DeleteField>;
@@ -1164,10 +1160,10 @@ impl EmitDeleteFields = emit_event_impl::EmitEventImpl<DeleteFields, selectors::
 impl EmitDeletesField = emit_event_impl::EmitEventImpl<DeletesField, selectors::DeletesField>;
 impl EmitDeletesFields = emit_event_impl::EmitEventImpl<DeletesFields, selectors::DeletesFields>;
 impl EmitDeleteFieldGroup =
-    emit_event_impl::EmitEventImpl<DeleteFieldGroup, selectors::DeleteFieldGroup>;
+    emit_event_impl::EmitEventImpl<DeleteFieldSet, selectors::DeleteFieldGroup>;
 impl EmitDeleteFieldGroups =
-    emit_event_impl::EmitEventImpl<DeleteFieldGroups, selectors::DeleteFieldGroups>;
+    emit_event_impl::EmitEventImpl<DeleteFieldSets, selectors::DeleteFieldGroups>;
 impl EmitDeletesFieldGroup =
-    emit_event_impl::EmitEventImpl<DeletesFieldGroup, selectors::DeletesFieldGroup>;
+    emit_event_impl::EmitEventImpl<DeletesFieldSet, selectors::DeletesFieldGroup>;
 impl EmitDeletesFieldGroups =
-    emit_event_impl::EmitEventImpl<DeletesFieldGroups, selectors::DeletesFieldGroups>;
+    emit_event_impl::EmitEventImpl<DeletesFieldSets, selectors::DeletesFieldGroups>;

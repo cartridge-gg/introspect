@@ -1,10 +1,10 @@
 use introspect::events::database::{
-    AddColumn, AddColumns, CreateFieldGroup, CreateIndex, CreateTable, CreateTableFromClassHash,
-    CreateTableWithColumns, DeleteField, DeleteFieldGroup, DeleteFieldGroups, DeleteFields,
-    DeleteRecord, DeleteRecords, DeletesField, DeletesFieldGroup, DeletesFieldGroups, DeletesFields,
-    DropColumn, DropColumns, DropIndex, DropTable, IdName, IdTypeDef, InsertField, InsertFieldGroup,
-    InsertFieldGroups, InsertFields, InsertRecord, InsertRecords, InsertsField, InsertsFieldGroup,
-    InsertsFieldGroups, InsertsFields, RenameColumn, RenameColumns, RenamePrimary, RenameTable,
+    AddColumn, AddColumns, CreateColumnSet, CreateIndex, CreateTable, CreateTableFromClassHash,
+    CreateTableWithColumns, DeleteField, DeleteFieldSet, DeleteFieldSets, DeleteFields,
+    DeleteRecord, DeleteRecords, DeletesField, DeletesFieldSet, DeletesFieldSets, DeletesFields,
+    DropColumn, DropColumns, DropIndex, DropTable, IdName, IdTypeDef, InsertField, InsertFieldSet,
+    InsertFieldSets, InsertFields, InsertRecord, InsertRecords, InsertsField, InsertsFieldSet,
+    InsertsFieldSets, InsertsFields, RenameColumn, RenameColumns, RenamePrimary, RenameTable,
     RetypeColumn, RetypeColumns, RetypePrimary,
 };
 use crate::{ByteArrayExt, random_pascal_string, random_snake_string};
@@ -33,13 +33,13 @@ pub impl IdTypeAttributesFuzzy<const MAX_DEPTH: u32> of Fuzzy<IdTypeDef> {
     }
 }
 
-pub impl CreateFieldGroupFuzzable of Fuzzable<CreateFieldGroup> {
-    fn blank() -> CreateFieldGroup {
+pub impl CreateFieldGroupFuzzable of Fuzzable<CreateColumnSet> {
+    fn blank() -> CreateColumnSet {
         Default::default()
     }
 
-    fn generate() -> CreateFieldGroup {
-        CreateFieldGroup { id: Fuzzable::generate(), columns: Fuzzy::generate_span(300) }
+    fn generate() -> CreateColumnSet {
+        CreateColumnSet { id: Fuzzable::generate(), columns: Fuzzy::generate_span(300) }
     }
 }
 
@@ -271,7 +271,7 @@ pub impl InsertRecordFuzzable of Fuzzable<InsertRecord> {
     fn generate() -> InsertRecord {
         InsertRecord {
             table: Fuzzable::generate(),
-            record: Fuzzable::generate(),
+            row: Fuzzable::generate(),
             data: Fuzzy::generate_span_lt(300),
         }
     }
@@ -281,7 +281,7 @@ pub impl InsertRecordsFuzzable of Fuzzable<InsertRecords> {
         Default::default()
     }
     fn generate() -> InsertRecords {
-        InsertRecords { table: Fuzzable::generate(), records_data: Fuzzy::generate_span_lt(10) }
+        InsertRecords { table: Fuzzable::generate(), entries: Fuzzy::generate_span_lt(10) }
     }
 }
 pub impl InsertFieldFuzzable of Fuzzable<InsertField> {
@@ -291,7 +291,7 @@ pub impl InsertFieldFuzzable of Fuzzable<InsertField> {
     fn generate() -> InsertField {
         InsertField {
             table: Fuzzable::generate(),
-            record: Fuzzable::generate(),
+            row: Fuzzable::generate(),
             column: Fuzzable::generate(),
             data: Fuzzy::generate_span_lt(300),
         }
@@ -304,7 +304,7 @@ pub impl InsertFieldsFuzzable of Fuzzable<InsertFields> {
     fn generate() -> InsertFields {
         InsertFields {
             table: Fuzzable::generate(),
-            record: Fuzzable::generate(),
+            row: Fuzzable::generate(),
             columns: Fuzzy::generate_span_lt(200),
             data: Fuzzy::generate_span_lt(200),
         }
@@ -318,7 +318,7 @@ pub impl InsertsFieldFuzzable of Fuzzable<InsertsField> {
         InsertsField {
             table: Fuzzable::generate(),
             column: Fuzzable::generate(),
-            records_data: Fuzzy::generate_span_lt(10),
+            entries: Fuzzy::generate_span_lt(10),
         }
     }
 }
@@ -330,57 +330,57 @@ pub impl InsertsFieldsFuzzable of Fuzzable<InsertsFields> {
         InsertsFields {
             table: Fuzzable::generate(),
             columns: Fuzzy::generate_span_lt(10),
-            records_data: Fuzzy::generate_span_lt(10),
+            entries: Fuzzy::generate_span_lt(10),
         }
     }
 }
-pub impl InsertFieldGroupFuzzable of Fuzzable<InsertFieldGroup> {
-    fn blank() -> InsertFieldGroup {
+pub impl InsertFieldGroupFuzzable of Fuzzable<InsertFieldSet> {
+    fn blank() -> InsertFieldSet {
         Default::default()
     }
-    fn generate() -> InsertFieldGroup {
-        InsertFieldGroup {
+    fn generate() -> InsertFieldSet {
+        InsertFieldSet {
             table: Fuzzable::generate(),
-            record: Fuzzable::generate(),
-            group: Fuzzable::generate(),
+            row: Fuzzable::generate(),
+            set: Fuzzable::generate(),
             data: Fuzzy::generate_span_lt(300),
         }
     }
 }
-pub impl InsertFieldGroupsFuzzable of Fuzzable<InsertFieldGroups> {
-    fn blank() -> InsertFieldGroups {
+pub impl InsertFieldGroupsFuzzable of Fuzzable<InsertFieldSets> {
+    fn blank() -> InsertFieldSets {
         Default::default()
     }
-    fn generate() -> InsertFieldGroups {
-        InsertFieldGroups {
+    fn generate() -> InsertFieldSets {
+        InsertFieldSets {
             table: Fuzzable::generate(),
-            record: Fuzzable::generate(),
-            groups: Fuzzy::generate_span_lt(100),
+            row: Fuzzable::generate(),
+            sets: Fuzzy::generate_span_lt(100),
             data: Fuzzy::generate_span_lt(200),
         }
     }
 }
-pub impl InsertsFieldGroupFuzzable of Fuzzable<InsertsFieldGroup> {
-    fn blank() -> InsertsFieldGroup {
+pub impl InsertsFieldGroupFuzzable of Fuzzable<InsertsFieldSet> {
+    fn blank() -> InsertsFieldSet {
         Default::default()
     }
-    fn generate() -> InsertsFieldGroup {
-        InsertsFieldGroup {
+    fn generate() -> InsertsFieldSet {
+        InsertsFieldSet {
             table: Fuzzable::generate(),
-            group: Fuzzable::generate(),
-            records_data: Fuzzy::generate_span_lt(10),
+            set: Fuzzable::generate(),
+            entries: Fuzzy::generate_span_lt(10),
         }
     }
 }
-pub impl InsertsFieldGroupsFuzzable of Fuzzable<InsertsFieldGroups> {
-    fn blank() -> InsertsFieldGroups {
+pub impl InsertsFieldGroupsFuzzable of Fuzzable<InsertsFieldSets> {
+    fn blank() -> InsertsFieldSets {
         Default::default()
     }
-    fn generate() -> InsertsFieldGroups {
-        InsertsFieldGroups {
+    fn generate() -> InsertsFieldSets {
+        InsertsFieldSets {
             table: Fuzzable::generate(),
-            groups: Fuzzy::generate_span_lt(10),
-            records_data: Fuzzy::generate_span_lt(10),
+            sets: Fuzzy::generate_span_lt(10),
+            entries: Fuzzy::generate_span_lt(10),
         }
     }
 }
@@ -391,7 +391,7 @@ pub impl DeleteRecordFuzzable of Fuzzable<DeleteRecord> {
         Default::default()
     }
     fn generate() -> DeleteRecord {
-        DeleteRecord { table: Fuzzable::generate(), record: Fuzzable::generate() }
+        DeleteRecord { table: Fuzzable::generate(), row: Fuzzable::generate() }
     }
 }
 pub impl DeleteRecordsFuzzable of Fuzzable<DeleteRecords> {
@@ -399,7 +399,7 @@ pub impl DeleteRecordsFuzzable of Fuzzable<DeleteRecords> {
         Default::default()
     }
     fn generate() -> DeleteRecords {
-        DeleteRecords { table: Fuzzable::generate(), records: Fuzzy::generate_span_lt(10) }
+        DeleteRecords { table: Fuzzable::generate(), rows: Fuzzy::generate_span_lt(10) }
     }
 }
 pub impl DeleteFieldFuzzable of Fuzzable<DeleteField> {
@@ -408,7 +408,7 @@ pub impl DeleteFieldFuzzable of Fuzzable<DeleteField> {
     }
     fn generate() -> DeleteField {
         DeleteField {
-            table: Fuzzable::generate(), record: Fuzzable::generate(), column: Fuzzable::generate(),
+            table: Fuzzable::generate(), row: Fuzzable::generate(), column: Fuzzable::generate(),
         }
     }
 }
@@ -419,7 +419,7 @@ pub impl DeleteFieldsFuzzable of Fuzzable<DeleteFields> {
     fn generate() -> DeleteFields {
         DeleteFields {
             table: Fuzzable::generate(),
-            record: Fuzzable::generate(),
+            row: Fuzzable::generate(),
             columns: Fuzzy::generate_span_lt(10),
         }
     }
@@ -432,7 +432,7 @@ pub impl DeletesFieldFuzzable of Fuzzable<DeletesField> {
         DeletesField {
             table: Fuzzable::generate(),
             column: Fuzzable::generate(),
-            records: Fuzzy::generate_span_lt(10),
+            rows: Fuzzy::generate_span_lt(10),
         }
     }
 }
@@ -443,54 +443,54 @@ pub impl DeletesFieldsFuzzable of Fuzzable<DeletesFields> {
     fn generate() -> DeletesFields {
         DeletesFields {
             table: Fuzzable::generate(),
-            records: Fuzzy::generate_span_lt(10),
+            rows: Fuzzy::generate_span_lt(10),
             columns: Fuzzy::generate_span_lt(10),
         }
     }
 }
-pub impl DeleteFieldGroupFuzzable of Fuzzable<DeleteFieldGroup> {
-    fn blank() -> DeleteFieldGroup {
+pub impl DeleteFieldGroupFuzzable of Fuzzable<DeleteFieldSet> {
+    fn blank() -> DeleteFieldSet {
         Default::default()
     }
-    fn generate() -> DeleteFieldGroup {
-        DeleteFieldGroup {
-            table: Fuzzable::generate(), record: Fuzzable::generate(), group: Fuzzable::generate(),
+    fn generate() -> DeleteFieldSet {
+        DeleteFieldSet {
+            table: Fuzzable::generate(), row: Fuzzable::generate(), set: Fuzzable::generate(),
         }
     }
 }
-pub impl DeleteFieldGroupsFuzzable of Fuzzable<DeleteFieldGroups> {
-    fn blank() -> DeleteFieldGroups {
+pub impl DeleteFieldGroupsFuzzable of Fuzzable<DeleteFieldSets> {
+    fn blank() -> DeleteFieldSets {
         Default::default()
     }
-    fn generate() -> DeleteFieldGroups {
-        DeleteFieldGroups {
+    fn generate() -> DeleteFieldSets {
+        DeleteFieldSets {
             table: Fuzzable::generate(),
-            record: Fuzzable::generate(),
-            groups: Fuzzy::generate_span_lt(10),
+            row: Fuzzable::generate(),
+            sets: Fuzzy::generate_span_lt(10),
         }
     }
 }
-pub impl DeletesFieldGroupFuzzable of Fuzzable<DeletesFieldGroup> {
-    fn blank() -> DeletesFieldGroup {
+pub impl DeletesFieldGroupFuzzable of Fuzzable<DeletesFieldSet> {
+    fn blank() -> DeletesFieldSet {
         Default::default()
     }
-    fn generate() -> DeletesFieldGroup {
-        DeletesFieldGroup {
+    fn generate() -> DeletesFieldSet {
+        DeletesFieldSet {
             table: Fuzzable::generate(),
-            group: Fuzzable::generate(),
-            records: Fuzzy::generate_span_lt(10),
+            set: Fuzzable::generate(),
+            rows: Fuzzy::generate_span_lt(10),
         }
     }
 }
-pub impl DeletesFieldGroupsFuzzable of Fuzzable<DeletesFieldGroups> {
-    fn blank() -> DeletesFieldGroups {
+pub impl DeletesFieldGroupsFuzzable of Fuzzable<DeletesFieldSets> {
+    fn blank() -> DeletesFieldSets {
         Default::default()
     }
-    fn generate() -> DeletesFieldGroups {
-        DeletesFieldGroups {
+    fn generate() -> DeletesFieldSets {
+        DeletesFieldSets {
             table: Fuzzable::generate(),
-            records: Fuzzy::generate_span_lt(10),
-            groups: Fuzzy::generate_span_lt(10),
+            rows: Fuzzy::generate_span_lt(10),
+            sets: Fuzzy::generate_span_lt(10),
         }
     }
 }
