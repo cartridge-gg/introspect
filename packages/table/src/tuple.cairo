@@ -1,16 +1,16 @@
-use crate::Snapable;
+use crate::ToSnapshot;
 
 pub trait TupleSnappable<T, S> {
     #[inline(always)]
     const fn snap_tuple(self: @T) -> S nopanic;
 }
 
-impl TupleSnappableEw<T> of TupleSnappable<T, @T> {
-    #[inline(always)]
-    const fn snap_tuple(self: @T) -> @T nopanic {
-        self
-    }
-}
+// impl TupleSnappableEw<T> of TupleSnappable<T, @T> {
+//     #[inline(always)]
+//     const fn snap_tuple(self: @T) -> @T nopanic {
+//         self
+//     }
+// }
 
 impl TupleSnappableSS<T, S, impl TS: TupleSnappable<T, S>> of TupleSnappable<@T, S> {
     #[inline(always)]
@@ -26,31 +26,31 @@ impl TupleSnappableTupleSize0 of TupleSnappable<(), ()> {
     }
 }
 
-impl TupleSnappableTupleSize1<E0, S0, +Snapable<@E0, S0>> of TupleSnappable<(E0,), (@S0,)> {
+impl TupleSnappableTupleSize1<E0, S0, +ToSnapshot<@E0, S0>> of TupleSnappable<(E0,), (@S0,)> {
     #[inline(always)]
     const fn snap_tuple(self: @(E0,)) -> (@S0,) nopanic {
         let (e0,) = self;
-        (e0.snapshot(),)
+        (e0.to_snapshot(),)
     }
 }
 
 impl TupleSnappableTupleSize2<
-    E0, E1, S0, S1, +Snapable<@E0, S0>, +Snapable<@E1, S1>,
+    E0, E1, S0, S1, +ToSnapshot<@E0, S0>, +ToSnapshot<@E1, S1>,
 > of TupleSnappable<(E0, E1), (@S0, @S1)> {
     #[inline(always)]
     const fn snap_tuple(self: @(E0, E1)) -> (@S0, @S1) nopanic {
         let (e0, e1) = self;
-        (e0.snapshot(), e1.snapshot())
+        (e0.to_snapshot(), e1.to_snapshot())
     }
 }
 
 impl TupleSnappableTupleSize3<
-    E0, E1, E2, S0, S1, S2, +Snapable<@E0, S0>, +Snapable<@E1, S1>, +Snapable<@E2, S2>,
+    E0, E1, E2, S0, S1, S2, +ToSnapshot<@E0, S0>, +ToSnapshot<@E1, S1>, +ToSnapshot<@E2, S2>,
 > of TupleSnappable<(E0, E1, E2), (@S0, @S1, @S2)> {
     #[inline(always)]
     const fn snap_tuple(self: @(E0, E1, E2)) -> (@S0, @S1, @S2) nopanic {
         let (e0, e1, e2) = self;
-        (e0.snapshot(), e1.snapshot(), e2.snapshot())
+        (e0.to_snapshot(), e1.to_snapshot(), e2.to_snapshot())
     }
 }
 
@@ -63,15 +63,15 @@ impl TupleSnappableTupleSize4<
     S1,
     S2,
     S3,
-    +Snapable<@E0, S0>,
-    +Snapable<@E1, S1>,
-    +Snapable<@E2, S2>,
-    +Snapable<@E3, S3>,
+    +ToSnapshot<@E0, S0>,
+    +ToSnapshot<@E1, S1>,
+    +ToSnapshot<@E2, S2>,
+    +ToSnapshot<@E3, S3>,
 > of TupleSnappable<(E0, E1, E2, E3), (@S0, @S1, @S2, @S3)> {
     #[inline(always)]
     const fn snap_tuple(self: @(E0, E1, E2, E3)) -> (@S0, @S1, @S2, @S3) nopanic {
         let (e0, e1, e2, e3) = self;
-        (e0.snapshot(), e1.snapshot(), e2.snapshot(), e3.snapshot())
+        (e0.to_snapshot(), e1.to_snapshot(), e2.to_snapshot(), e3.to_snapshot())
     }
 }
 
@@ -86,16 +86,16 @@ impl TupleSnappableTupleSize5<
     S2,
     S3,
     S4,
-    +Snapable<@E0, S0>,
-    +Snapable<@E1, S1>,
-    +Snapable<@E2, S2>,
-    +Snapable<@E3, S3>,
-    +Snapable<@E4, S4>,
+    +ToSnapshot<@E0, S0>,
+    +ToSnapshot<@E1, S1>,
+    +ToSnapshot<@E2, S2>,
+    +ToSnapshot<@E3, S3>,
+    +ToSnapshot<@E4, S4>,
 > of TupleSnappable<(E0, E1, E2, E3, E4), (@S0, @S1, @S2, @S3, @S4)> {
     #[inline(always)]
     const fn snap_tuple(self: @(E0, E1, E2, E3, E4)) -> (@S0, @S1, @S2, @S3, @S4) nopanic {
         let (e0, e1, e2, e3, e4) = self;
-        (e0.snapshot(), e1.snapshot(), e2.snapshot(), e3.snapshot(), e4.snapshot())
+        (e0.to_snapshot(), e1.to_snapshot(), e2.to_snapshot(), e3.to_snapshot(), e4.to_snapshot())
     }
 }
 
@@ -112,17 +112,24 @@ impl TupleSnappableTupleSize6<
     S3,
     S4,
     S5,
-    +Snapable<@E0, S0>,
-    +Snapable<@E1, S1>,
-    +Snapable<@E2, S2>,
-    +Snapable<@E3, S3>,
-    +Snapable<@E4, S4>,
-    +Snapable<@E5, S5>,
+    +ToSnapshot<@E0, S0>,
+    +ToSnapshot<@E1, S1>,
+    +ToSnapshot<@E2, S2>,
+    +ToSnapshot<@E3, S3>,
+    +ToSnapshot<@E4, S4>,
+    +ToSnapshot<@E5, S5>,
 > of TupleSnappable<(E0, E1, E2, E3, E4, E5), (@S0, @S1, @S2, @S3, @S4, @S5)> {
     #[inline(always)]
     const fn snap_tuple(self: @(E0, E1, E2, E3, E4, E5)) -> (@S0, @S1, @S2, @S3, @S4, @S5) nopanic {
         let (e0, e1, e2, e3, e4, e5) = self;
-        (e0.snapshot(), e1.snapshot(), e2.snapshot(), e3.snapshot(), e4.snapshot(), e5.snapshot())
+        (
+            e0.to_snapshot(),
+            e1.to_snapshot(),
+            e2.to_snapshot(),
+            e3.to_snapshot(),
+            e4.to_snapshot(),
+            e5.to_snapshot(),
+        )
     }
 }
 
@@ -141,13 +148,13 @@ impl TupleSnappableTupleSize7<
     S4,
     S5,
     S6,
-    +Snapable<@E0, S0>,
-    +Snapable<@E1, S1>,
-    +Snapable<@E2, S2>,
-    +Snapable<@E3, S3>,
-    +Snapable<@E4, S4>,
-    +Snapable<@E5, S5>,
-    +Snapable<@E6, S6>,
+    +ToSnapshot<@E0, S0>,
+    +ToSnapshot<@E1, S1>,
+    +ToSnapshot<@E2, S2>,
+    +ToSnapshot<@E3, S3>,
+    +ToSnapshot<@E4, S4>,
+    +ToSnapshot<@E5, S5>,
+    +ToSnapshot<@E6, S6>,
 > of TupleSnappable<(E0, E1, E2, E3, E4, E5, E6), (@S0, @S1, @S2, @S3, @S4, @S5, @S6)> {
     #[inline(always)]
     const fn snap_tuple(
@@ -155,13 +162,13 @@ impl TupleSnappableTupleSize7<
     ) -> (@S0, @S1, @S2, @S3, @S4, @S5, @S6) nopanic {
         let (e0, e1, e2, e3, e4, e5, e6) = self;
         (
-            e0.snapshot(),
-            e1.snapshot(),
-            e2.snapshot(),
-            e3.snapshot(),
-            e4.snapshot(),
-            e5.snapshot(),
-            e6.snapshot(),
+            e0.to_snapshot(),
+            e1.to_snapshot(),
+            e2.to_snapshot(),
+            e3.to_snapshot(),
+            e4.to_snapshot(),
+            e5.to_snapshot(),
+            e6.to_snapshot(),
         )
     }
 }
@@ -183,14 +190,14 @@ impl TupleSnappableTupleSize8<
     S5,
     S6,
     S7,
-    +Snapable<@E0, S0>,
-    +Snapable<@E1, S1>,
-    +Snapable<@E2, S2>,
-    +Snapable<@E3, S3>,
-    +Snapable<@E4, S4>,
-    +Snapable<@E5, S5>,
-    +Snapable<@E6, S6>,
-    +Snapable<@E7, S7>,
+    +ToSnapshot<@E0, S0>,
+    +ToSnapshot<@E1, S1>,
+    +ToSnapshot<@E2, S2>,
+    +ToSnapshot<@E3, S3>,
+    +ToSnapshot<@E4, S4>,
+    +ToSnapshot<@E5, S5>,
+    +ToSnapshot<@E6, S6>,
+    +ToSnapshot<@E7, S7>,
 > of TupleSnappable<(E0, E1, E2, E3, E4, E5, E6, E7), (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7)> {
     #[inline(always)]
     const fn snap_tuple(
@@ -198,14 +205,14 @@ impl TupleSnappableTupleSize8<
     ) -> (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7) nopanic {
         let (e0, e1, e2, e3, e4, e5, e6, e7) = self;
         (
-            e0.snapshot(),
-            e1.snapshot(),
-            e2.snapshot(),
-            e3.snapshot(),
-            e4.snapshot(),
-            e5.snapshot(),
-            e6.snapshot(),
-            e7.snapshot(),
+            e0.to_snapshot(),
+            e1.to_snapshot(),
+            e2.to_snapshot(),
+            e3.to_snapshot(),
+            e4.to_snapshot(),
+            e5.to_snapshot(),
+            e6.to_snapshot(),
+            e7.to_snapshot(),
         )
     }
 }
@@ -229,15 +236,15 @@ impl TupleSnappableTupleSize9<
     S6,
     S7,
     S8,
-    +Snapable<@E0, S0>,
-    +Snapable<@E1, S1>,
-    +Snapable<@E2, S2>,
-    +Snapable<@E3, S3>,
-    +Snapable<@E4, S4>,
-    +Snapable<@E5, S5>,
-    +Snapable<@E6, S6>,
-    +Snapable<@E7, S7>,
-    +Snapable<@E8, S8>,
+    +ToSnapshot<@E0, S0>,
+    +ToSnapshot<@E1, S1>,
+    +ToSnapshot<@E2, S2>,
+    +ToSnapshot<@E3, S3>,
+    +ToSnapshot<@E4, S4>,
+    +ToSnapshot<@E5, S5>,
+    +ToSnapshot<@E6, S6>,
+    +ToSnapshot<@E7, S7>,
+    +ToSnapshot<@E8, S8>,
 > of TupleSnappable<
     (E0, E1, E2, E3, E4, E5, E6, E7, E8), (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8),
 > {
@@ -247,15 +254,15 @@ impl TupleSnappableTupleSize9<
     ) -> (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8) nopanic {
         let (e0, e1, e2, e3, e4, e5, e6, e7, e8) = self;
         (
-            e0.snapshot(),
-            e1.snapshot(),
-            e2.snapshot(),
-            e3.snapshot(),
-            e4.snapshot(),
-            e5.snapshot(),
-            e6.snapshot(),
-            e7.snapshot(),
-            e8.snapshot(),
+            e0.to_snapshot(),
+            e1.to_snapshot(),
+            e2.to_snapshot(),
+            e3.to_snapshot(),
+            e4.to_snapshot(),
+            e5.to_snapshot(),
+            e6.to_snapshot(),
+            e7.to_snapshot(),
+            e8.to_snapshot(),
         )
     }
 }
@@ -281,16 +288,16 @@ impl TupleSnappableTupleSize10<
     S7,
     S8,
     S9,
-    +Snapable<@E0, S0>,
-    +Snapable<@E1, S1>,
-    +Snapable<@E2, S2>,
-    +Snapable<@E3, S3>,
-    +Snapable<@E4, S4>,
-    +Snapable<@E5, S5>,
-    +Snapable<@E6, S6>,
-    +Snapable<@E7, S7>,
-    +Snapable<@E8, S8>,
-    +Snapable<@E9, S9>,
+    +ToSnapshot<@E0, S0>,
+    +ToSnapshot<@E1, S1>,
+    +ToSnapshot<@E2, S2>,
+    +ToSnapshot<@E3, S3>,
+    +ToSnapshot<@E4, S4>,
+    +ToSnapshot<@E5, S5>,
+    +ToSnapshot<@E6, S6>,
+    +ToSnapshot<@E7, S7>,
+    +ToSnapshot<@E8, S8>,
+    +ToSnapshot<@E9, S9>,
 > of TupleSnappable<
     (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9), (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8, @S9),
 > {
@@ -300,16 +307,16 @@ impl TupleSnappableTupleSize10<
     ) -> (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8, @S9) nopanic {
         let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9) = self;
         (
-            e0.snapshot(),
-            e1.snapshot(),
-            e2.snapshot(),
-            e3.snapshot(),
-            e4.snapshot(),
-            e5.snapshot(),
-            e6.snapshot(),
-            e7.snapshot(),
-            e8.snapshot(),
-            e9.snapshot(),
+            e0.to_snapshot(),
+            e1.to_snapshot(),
+            e2.to_snapshot(),
+            e3.to_snapshot(),
+            e4.to_snapshot(),
+            e5.to_snapshot(),
+            e6.to_snapshot(),
+            e7.to_snapshot(),
+            e8.to_snapshot(),
+            e9.to_snapshot(),
         )
     }
 }
@@ -337,17 +344,17 @@ impl TupleSnappableTupleSize11<
     S8,
     S9,
     S10,
-    +Snapable<@E0, S0>,
-    +Snapable<@E1, S1>,
-    +Snapable<@E2, S2>,
-    +Snapable<@E3, S3>,
-    +Snapable<@E4, S4>,
-    +Snapable<@E5, S5>,
-    +Snapable<@E6, S6>,
-    +Snapable<@E7, S7>,
-    +Snapable<@E8, S8>,
-    +Snapable<@E9, S9>,
-    +Snapable<@E10, S10>,
+    +ToSnapshot<@E0, S0>,
+    +ToSnapshot<@E1, S1>,
+    +ToSnapshot<@E2, S2>,
+    +ToSnapshot<@E3, S3>,
+    +ToSnapshot<@E4, S4>,
+    +ToSnapshot<@E5, S5>,
+    +ToSnapshot<@E6, S6>,
+    +ToSnapshot<@E7, S7>,
+    +ToSnapshot<@E8, S8>,
+    +ToSnapshot<@E9, S9>,
+    +ToSnapshot<@E10, S10>,
 > of TupleSnappable<
     (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10),
     (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8, @S9, @S10),
@@ -358,17 +365,17 @@ impl TupleSnappableTupleSize11<
     ) -> (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8, @S9, @S10) nopanic {
         let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10) = self;
         (
-            e0.snapshot(),
-            e1.snapshot(),
-            e2.snapshot(),
-            e3.snapshot(),
-            e4.snapshot(),
-            e5.snapshot(),
-            e6.snapshot(),
-            e7.snapshot(),
-            e8.snapshot(),
-            e9.snapshot(),
-            e10.snapshot(),
+            e0.to_snapshot(),
+            e1.to_snapshot(),
+            e2.to_snapshot(),
+            e3.to_snapshot(),
+            e4.to_snapshot(),
+            e5.to_snapshot(),
+            e6.to_snapshot(),
+            e7.to_snapshot(),
+            e8.to_snapshot(),
+            e9.to_snapshot(),
+            e10.to_snapshot(),
         )
     }
 }
@@ -398,18 +405,18 @@ impl TupleSnappableTupleSize12<
     S9,
     S10,
     S11,
-    +Snapable<@E0, S0>,
-    +Snapable<@E1, S1>,
-    +Snapable<@E2, S2>,
-    +Snapable<@E3, S3>,
-    +Snapable<@E4, S4>,
-    +Snapable<@E5, S5>,
-    +Snapable<@E6, S6>,
-    +Snapable<@E7, S7>,
-    +Snapable<@E8, S8>,
-    +Snapable<@E9, S9>,
-    +Snapable<@E10, S10>,
-    +Snapable<@E11, S11>,
+    +ToSnapshot<@E0, S0>,
+    +ToSnapshot<@E1, S1>,
+    +ToSnapshot<@E2, S2>,
+    +ToSnapshot<@E3, S3>,
+    +ToSnapshot<@E4, S4>,
+    +ToSnapshot<@E5, S5>,
+    +ToSnapshot<@E6, S6>,
+    +ToSnapshot<@E7, S7>,
+    +ToSnapshot<@E8, S8>,
+    +ToSnapshot<@E9, S9>,
+    +ToSnapshot<@E10, S10>,
+    +ToSnapshot<@E11, S11>,
 > of TupleSnappable<
     (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11),
     (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8, @S9, @S10, @S11),
@@ -420,18 +427,18 @@ impl TupleSnappableTupleSize12<
     ) -> (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8, @S9, @S10, @S11) nopanic {
         let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11) = self;
         (
-            e0.snapshot(),
-            e1.snapshot(),
-            e2.snapshot(),
-            e3.snapshot(),
-            e4.snapshot(),
-            e5.snapshot(),
-            e6.snapshot(),
-            e7.snapshot(),
-            e8.snapshot(),
-            e9.snapshot(),
-            e10.snapshot(),
-            e11.snapshot(),
+            e0.to_snapshot(),
+            e1.to_snapshot(),
+            e2.to_snapshot(),
+            e3.to_snapshot(),
+            e4.to_snapshot(),
+            e5.to_snapshot(),
+            e6.to_snapshot(),
+            e7.to_snapshot(),
+            e8.to_snapshot(),
+            e9.to_snapshot(),
+            e10.to_snapshot(),
+            e11.to_snapshot(),
         )
     }
 }
@@ -463,19 +470,19 @@ impl TupleSnappableTupleSize13<
     S10,
     S11,
     S12,
-    +Snapable<@E0, S0>,
-    +Snapable<@E1, S1>,
-    +Snapable<@E2, S2>,
-    +Snapable<@E3, S3>,
-    +Snapable<@E4, S4>,
-    +Snapable<@E5, S5>,
-    +Snapable<@E6, S6>,
-    +Snapable<@E7, S7>,
-    +Snapable<@E8, S8>,
-    +Snapable<@E9, S9>,
-    +Snapable<@E10, S10>,
-    +Snapable<@E11, S11>,
-    +Snapable<@E12, S12>,
+    +ToSnapshot<@E0, S0>,
+    +ToSnapshot<@E1, S1>,
+    +ToSnapshot<@E2, S2>,
+    +ToSnapshot<@E3, S3>,
+    +ToSnapshot<@E4, S4>,
+    +ToSnapshot<@E5, S5>,
+    +ToSnapshot<@E6, S6>,
+    +ToSnapshot<@E7, S7>,
+    +ToSnapshot<@E8, S8>,
+    +ToSnapshot<@E9, S9>,
+    +ToSnapshot<@E10, S10>,
+    +ToSnapshot<@E11, S11>,
+    +ToSnapshot<@E12, S12>,
 > of TupleSnappable<
     (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12),
     (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8, @S9, @S10, @S11, @S12),
@@ -486,19 +493,19 @@ impl TupleSnappableTupleSize13<
     ) -> (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8, @S9, @S10, @S11, @S12) nopanic {
         let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12) = self;
         (
-            e0.snapshot(),
-            e1.snapshot(),
-            e2.snapshot(),
-            e3.snapshot(),
-            e4.snapshot(),
-            e5.snapshot(),
-            e6.snapshot(),
-            e7.snapshot(),
-            e8.snapshot(),
-            e9.snapshot(),
-            e10.snapshot(),
-            e11.snapshot(),
-            e12.snapshot(),
+            e0.to_snapshot(),
+            e1.to_snapshot(),
+            e2.to_snapshot(),
+            e3.to_snapshot(),
+            e4.to_snapshot(),
+            e5.to_snapshot(),
+            e6.to_snapshot(),
+            e7.to_snapshot(),
+            e8.to_snapshot(),
+            e9.to_snapshot(),
+            e10.to_snapshot(),
+            e11.to_snapshot(),
+            e12.to_snapshot(),
         )
     }
 }
@@ -532,20 +539,20 @@ impl TupleSnappableTupleSize14<
     S11,
     S12,
     S13,
-    +Snapable<@E0, S0>,
-    +Snapable<@E1, S1>,
-    +Snapable<@E2, S2>,
-    +Snapable<@E3, S3>,
-    +Snapable<@E4, S4>,
-    +Snapable<@E5, S5>,
-    +Snapable<@E6, S6>,
-    +Snapable<@E7, S7>,
-    +Snapable<@E8, S8>,
-    +Snapable<@E9, S9>,
-    +Snapable<@E10, S10>,
-    +Snapable<@E11, S11>,
-    +Snapable<@E12, S12>,
-    +Snapable<@E13, S13>,
+    +ToSnapshot<@E0, S0>,
+    +ToSnapshot<@E1, S1>,
+    +ToSnapshot<@E2, S2>,
+    +ToSnapshot<@E3, S3>,
+    +ToSnapshot<@E4, S4>,
+    +ToSnapshot<@E5, S5>,
+    +ToSnapshot<@E6, S6>,
+    +ToSnapshot<@E7, S7>,
+    +ToSnapshot<@E8, S8>,
+    +ToSnapshot<@E9, S9>,
+    +ToSnapshot<@E10, S10>,
+    +ToSnapshot<@E11, S11>,
+    +ToSnapshot<@E12, S12>,
+    +ToSnapshot<@E13, S13>,
 > of TupleSnappable<
     (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13),
     (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8, @S9, @S10, @S11, @S12, @S13),
@@ -556,20 +563,20 @@ impl TupleSnappableTupleSize14<
     ) -> (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8, @S9, @S10, @S11, @S12, @S13) nopanic {
         let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13) = self;
         (
-            e0.snapshot(),
-            e1.snapshot(),
-            e2.snapshot(),
-            e3.snapshot(),
-            e4.snapshot(),
-            e5.snapshot(),
-            e6.snapshot(),
-            e7.snapshot(),
-            e8.snapshot(),
-            e9.snapshot(),
-            e10.snapshot(),
-            e11.snapshot(),
-            e12.snapshot(),
-            e13.snapshot(),
+            e0.to_snapshot(),
+            e1.to_snapshot(),
+            e2.to_snapshot(),
+            e3.to_snapshot(),
+            e4.to_snapshot(),
+            e5.to_snapshot(),
+            e6.to_snapshot(),
+            e7.to_snapshot(),
+            e8.to_snapshot(),
+            e9.to_snapshot(),
+            e10.to_snapshot(),
+            e11.to_snapshot(),
+            e12.to_snapshot(),
+            e13.to_snapshot(),
         )
     }
 }
@@ -605,21 +612,21 @@ impl TupleSnappableTupleSize15<
     S12,
     S13,
     S14,
-    +Snapable<@E0, S0>,
-    +Snapable<@E1, S1>,
-    +Snapable<@E2, S2>,
-    +Snapable<@E3, S3>,
-    +Snapable<@E4, S4>,
-    +Snapable<@E5, S5>,
-    +Snapable<@E6, S6>,
-    +Snapable<@E7, S7>,
-    +Snapable<@E8, S8>,
-    +Snapable<@E9, S9>,
-    +Snapable<@E10, S10>,
-    +Snapable<@E11, S11>,
-    +Snapable<@E12, S12>,
-    +Snapable<@E13, S13>,
-    +Snapable<@E14, S14>,
+    +ToSnapshot<@E0, S0>,
+    +ToSnapshot<@E1, S1>,
+    +ToSnapshot<@E2, S2>,
+    +ToSnapshot<@E3, S3>,
+    +ToSnapshot<@E4, S4>,
+    +ToSnapshot<@E5, S5>,
+    +ToSnapshot<@E6, S6>,
+    +ToSnapshot<@E7, S7>,
+    +ToSnapshot<@E8, S8>,
+    +ToSnapshot<@E9, S9>,
+    +ToSnapshot<@E10, S10>,
+    +ToSnapshot<@E11, S11>,
+    +ToSnapshot<@E12, S12>,
+    +ToSnapshot<@E13, S13>,
+    +ToSnapshot<@E14, S14>,
 > of TupleSnappable<
     (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14),
     (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8, @S9, @S10, @S11, @S12, @S13, @S14),
@@ -630,21 +637,21 @@ impl TupleSnappableTupleSize15<
     ) -> (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8, @S9, @S10, @S11, @S12, @S13, @S14) nopanic {
         let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14) = self;
         (
-            e0.snapshot(),
-            e1.snapshot(),
-            e2.snapshot(),
-            e3.snapshot(),
-            e4.snapshot(),
-            e5.snapshot(),
-            e6.snapshot(),
-            e7.snapshot(),
-            e8.snapshot(),
-            e9.snapshot(),
-            e10.snapshot(),
-            e11.snapshot(),
-            e12.snapshot(),
-            e13.snapshot(),
-            e14.snapshot(),
+            e0.to_snapshot(),
+            e1.to_snapshot(),
+            e2.to_snapshot(),
+            e3.to_snapshot(),
+            e4.to_snapshot(),
+            e5.to_snapshot(),
+            e6.to_snapshot(),
+            e7.to_snapshot(),
+            e8.to_snapshot(),
+            e9.to_snapshot(),
+            e10.to_snapshot(),
+            e11.to_snapshot(),
+            e12.to_snapshot(),
+            e13.to_snapshot(),
+            e14.to_snapshot(),
         )
     }
 }
@@ -682,22 +689,22 @@ impl TupleSnappableTupleSize16<
     S13,
     S14,
     S15,
-    +Snapable<@E0, S0>,
-    +Snapable<@E1, S1>,
-    +Snapable<@E2, S2>,
-    +Snapable<@E3, S3>,
-    +Snapable<@E4, S4>,
-    +Snapable<@E5, S5>,
-    +Snapable<@E6, S6>,
-    +Snapable<@E7, S7>,
-    +Snapable<@E8, S8>,
-    +Snapable<@E9, S9>,
-    +Snapable<@E10, S10>,
-    +Snapable<@E11, S11>,
-    +Snapable<@E12, S12>,
-    +Snapable<@E13, S13>,
-    +Snapable<@E14, S14>,
-    +Snapable<@E15, S15>,
+    +ToSnapshot<@E0, S0>,
+    +ToSnapshot<@E1, S1>,
+    +ToSnapshot<@E2, S2>,
+    +ToSnapshot<@E3, S3>,
+    +ToSnapshot<@E4, S4>,
+    +ToSnapshot<@E5, S5>,
+    +ToSnapshot<@E6, S6>,
+    +ToSnapshot<@E7, S7>,
+    +ToSnapshot<@E8, S8>,
+    +ToSnapshot<@E9, S9>,
+    +ToSnapshot<@E10, S10>,
+    +ToSnapshot<@E11, S11>,
+    +ToSnapshot<@E12, S12>,
+    +ToSnapshot<@E13, S13>,
+    +ToSnapshot<@E14, S14>,
+    +ToSnapshot<@E15, S15>,
 > of TupleSnappable<
     (E0, E1, E2, E3, E4, E5, E6, E7, E8, E9, E10, E11, E12, E13, E14, E15),
     (@S0, @S1, @S2, @S3, @S4, @S5, @S6, @S7, @S8, @S9, @S10, @S11, @S12, @S13, @S14, @S15),
@@ -710,22 +717,22 @@ impl TupleSnappableTupleSize16<
     ) nopanic {
         let (e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, e13, e14, e15) = self;
         (
-            e0.snapshot(),
-            e1.snapshot(),
-            e2.snapshot(),
-            e3.snapshot(),
-            e4.snapshot(),
-            e5.snapshot(),
-            e6.snapshot(),
-            e7.snapshot(),
-            e8.snapshot(),
-            e9.snapshot(),
-            e10.snapshot(),
-            e11.snapshot(),
-            e12.snapshot(),
-            e13.snapshot(),
-            e14.snapshot(),
-            e15.snapshot(),
+            e0.to_snapshot(),
+            e1.to_snapshot(),
+            e2.to_snapshot(),
+            e3.to_snapshot(),
+            e4.to_snapshot(),
+            e5.to_snapshot(),
+            e6.to_snapshot(),
+            e7.to_snapshot(),
+            e8.to_snapshot(),
+            e9.to_snapshot(),
+            e10.to_snapshot(),
+            e11.to_snapshot(),
+            e12.to_snapshot(),
+            e13.to_snapshot(),
+            e14.to_snapshot(),
+            e15.to_snapshot(),
         )
     }
 }

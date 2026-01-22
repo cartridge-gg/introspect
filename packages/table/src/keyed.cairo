@@ -16,7 +16,7 @@ pub trait RecordKeySerialized<impl Struct: TableStructure> {
     fn serialised_key_id(self: Span<felt252>) -> felt252;
 }
 
-pub trait RecordKey<impl Struct: TableStructure> {
+pub trait RecordKey<impl Struct: TableStructure, T> {
     type Value;
     type Snapped;
     fn key_id(self: Self::Snapped) -> felt252;
@@ -34,7 +34,7 @@ pub trait RecordKey<impl Struct: TableStructure> {
 
 pub impl KeySerializedIdEntry<
     impl Struct: TableStructure, impl Key: RecordKeySerialized<Struct>, +Drop<Key::Snapped>,
-> of RecordKey<Struct> {
+> of RecordKey<Struct, Struct::Record> {
     type Value = Key::Value;
     type Snapped = Key::Snapped;
     fn serialize_key_id(self: Key::Snapped, ref data: Array<felt252>) -> felt252 {
@@ -58,7 +58,7 @@ impl KeyIdEntry<
     impl Key: RecordKeyValue<Struct>,
     +Copy<Key::Snapped>,
     +Drop<Key::Snapped>,
-> of RecordKey<Struct> {
+> of RecordKey<Struct, Struct::Record> {
     type Value = Key::Value;
     type Snapped = Key::Snapped;
     fn serialize_key_id(self: Key::Snapped, ref data: Array<felt252>) -> felt252 {

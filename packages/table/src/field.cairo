@@ -1,8 +1,11 @@
 use introspect_types::IdData;
-use crate::{MemberTrait, RecordId, Spannable, TableStructure, TupleSnappable};
+use crate::{Member, RecordId, Spannable, TableStructure, TupleSnappable};
 
 pub trait RecordField<
-    const ID: felt252, impl Struct: TableStructure, impl Member: MemberTrait<Struct, ID>, Entry,
+    const ID: felt252,
+    impl Struct: TableStructure,
+    impl Member: Member<Struct, ID, Struct::Record>,
+    Entry,
 > {
     fn serialize_to_tuple(self: @Entry) -> (felt252, Span<felt252>);
     fn serialize_to_id_data(self: @Entry) -> IdData {
@@ -11,7 +14,10 @@ pub trait RecordField<
 }
 
 pub trait RecordsField<
-    const ID: felt252, impl Struct: TableStructure, impl Member: MemberTrait<Struct, ID>, Entries,
+    const ID: felt252,
+    impl Struct: TableStructure,
+    impl Member: Member<Struct, ID, Struct::Record>,
+    Entries,
 > {
     fn serialise_to_id_data_span(self: Entries) -> Span<IdData>;
 }
@@ -19,10 +25,10 @@ pub trait RecordsField<
 pub impl RecordFieldImpl<
     const ID: felt252,
     impl Struct: TableStructure,
-    impl Member: MemberTrait<Struct, ID>,
+    impl Member: Member<Struct, ID, Struct::Record>,
     Entry,
     ToId,
-    impl RID: RecordId<ToId, Struct>,
+    impl RID: RecordId<Struct, ToId>,
     impl TS: TupleSnappable<Entry, (@ToId, @Member::Type)>,
 > of RecordField<ID, Struct, Member, Entry> {
     fn serialize_to_tuple(self: @Entry) -> (felt252, Span<felt252>) {
@@ -37,7 +43,7 @@ pub impl RecordFieldImpl<
 impl RecordsFieldImpl<
     const ID: felt252,
     impl Struct: TableStructure,
-    impl Member: MemberTrait<Struct, ID>,
+    impl Member: Member<Struct, ID, Struct::Record>,
     Entries,
     Entry,
     impl IM: RecordField<ID, Struct, Member, Entry>,
