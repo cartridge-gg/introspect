@@ -1,13 +1,13 @@
 use crate::type_def::{
-    ByteArrayDeserialization, ByteArrayEDef, FixedArrayDef, MemberDef, StructDef, TypeDef,
+    ByteArrayDeserialization, ByteArrayEncodedDef, FixedArrayDef, MemberDef, StructDef, TypeDef,
 };
 use crate::utils::ideserialize_byte_array;
 use crate::value::{Enum, Nullable, Value};
 use crate::{
-    ArrayDef, Bytes31EDef, CairoOption, CairoResult, ColumnDef, Custom, CustomDef, EncodedBytes,
-    EnumDef, FeltIterator, Field, ISerde, Member, NullableDef, OptionDef, ResultDef, Struct,
-    TupleDef, deserialize_byte_array, pop_bytes31, pop_primitive, pop_short_utf8, pop_u256,
-    pop_u512,
+    ArrayDef, Bytes31EncodedDef, CairoOption, CairoResult, ColumnDef, Custom, CustomDef,
+    Encoded31Bytes, EncodedBytes, EnumDef, FeltIterator, Field, ISerde, Member, NullableDef,
+    OptionDef, ResultDef, Struct, TupleDef, deserialize_byte_array, felt_to_bytes31, pop_bytes31,
+    pop_primitive, pop_short_utf8, pop_u256, pop_u512,
 };
 use num_traits::Zero;
 use starknet_types_core::felt::Felt;
@@ -108,7 +108,7 @@ impl ToValue<TypeDef> for DefaultParser {
             TypeDef::Felt252 => pop_primitive(data).map(Value::Felt252),
             TypeDef::ShortUtf8 => pop_short_utf8(data).map(Value::ShortUtf8),
             TypeDef::Bytes31 => pop_bytes31(data).map(Value::Bytes31),
-            TypeDef::Bytes31E(b) => self.to_value(b, data).map(Value::Bytes31E),
+            TypeDef::Bytes31Encoded(b) => self.to_value(b, data).map(Value::Bytes31Encoded),
             TypeDef::Bool => data.next().map(|v| Value::Bool(!v.is_zero())),
             TypeDef::U8 => pop_primitive(data).map(Value::U8),
             TypeDef::U16 => pop_primitive(data).map(Value::U16),
@@ -129,7 +129,7 @@ impl ToValue<TypeDef> for DefaultParser {
             TypeDef::StorageBaseAddress => pop_primitive(data).map(Value::StorageBaseAddress),
             TypeDef::ByteArray => self.read_byte_array(data).map(Value::ByteArray),
             TypeDef::Utf8String => self.read_utf8_array(data).map(Value::Utf8String),
-            TypeDef::ByteArrayE(bae) => self.to_value(bae, data).map(Value::ByteArrayE),
+            TypeDef::ByteArrayEncoded(bae) => self.to_value(bae, data).map(Value::ByteArrayEncoded),
             TypeDef::Tuple(tuple) => self.to_value(tuple, data).map(Value::Tuple),
             TypeDef::Array(a) => self.to_value(a, data).map(Value::Array),
             TypeDef::FixedArray(fa) => self.to_value(fa, data).map(Value::FixedArray),
@@ -268,9 +268,9 @@ impl ToValue<ColumnDef> for DefaultParser {
     }
 }
 
-impl ToValue<ByteArrayEDef> for DefaultParser {
+impl ToValue<ByteArrayEncodedDef> for DefaultParser {
     type Value = EncodedBytes;
-    fn to_value(&self, item: &ByteArrayEDef, data: &mut FeltIterator) -> Option<Self::Value> {
+    fn to_value(&self, item: &ByteArrayEncodedDef, data: &mut FeltIterator) -> Option<Self::Value> {
         self.read_byte_array(data).map(|bytes| EncodedBytes {
             encoding: item.encoding.clone(),
             bytes,
@@ -278,18 +278,20 @@ impl ToValue<ByteArrayEDef> for DefaultParser {
     }
 }
 
-impl ToValue<Bytes31EDef> for DefaultParser {
-    type Value = EncodedBytes;
-    fn to_value(&self, item: &Bytes31EDef, data: &mut FeltIterator) -> Option<Self::Value> {
-        pop_bytes31_encoded(item.encoding.clone(), data)
+impl ToValue<Bytes31EncodedDef> for DefaultParser {
+    type Value = Encoded31Bytes;
+    fn to_value(&self, item: &Bytes31EncodedDef, data: &mut FeltIterator) -> Option<Self::Value> {
+        item.to_encoded_bytes_31(data.next()?)
     }
 }
 
-pub fn pop_bytes31_encoded(encoding: String, data: &mut FeltIterator) -> Option<EncodedBytes> {
-    Some(EncodedBytes {
-        bytes: pop_bytes31(data)?.into(),
-        encoding,
-    })
+impl Bytes31EncodedDef {
+    pub fn to_encoded_bytes_31(&self, felt: Felt) -> Option<Encoded31Bytes> {
+        Some(Encoded31Bytes {
+            encoding: self.encoding.clone(),
+            bytes: felt_to_bytes31(felt)?,
+        })
+    }
 }
 
 pub fn read_byte_array(mode: ByteArrayDeserialization, data: &mut FeltIterator) -> Option<Vec<u8>> {

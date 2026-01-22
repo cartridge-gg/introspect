@@ -33,7 +33,7 @@ pub impl IdTypeAttributesFuzzy<const MAX_DEPTH: u32> of Fuzzy<IdTypeDef> {
     }
 }
 
-pub impl CreateFieldGroupFuzzable of Fuzzable<CreateColumnSet> {
+pub impl CreateFieldSetFuzzable of Fuzzable<CreateColumnSet> {
     fn blank() -> CreateColumnSet {
         Default::default()
     }
@@ -334,7 +334,7 @@ pub impl InsertsFieldsFuzzable of Fuzzable<InsertsFields> {
         }
     }
 }
-pub impl InsertFieldGroupFuzzable of Fuzzable<InsertFieldSet> {
+pub impl InsertFieldSetFuzzable of Fuzzable<InsertFieldSet> {
     fn blank() -> InsertFieldSet {
         Default::default()
     }
@@ -347,7 +347,7 @@ pub impl InsertFieldGroupFuzzable of Fuzzable<InsertFieldSet> {
         }
     }
 }
-pub impl InsertFieldGroupsFuzzable of Fuzzable<InsertFieldSets> {
+pub impl InsertFieldSetsFuzzable of Fuzzable<InsertFieldSets> {
     fn blank() -> InsertFieldSets {
         Default::default()
     }
@@ -360,7 +360,7 @@ pub impl InsertFieldGroupsFuzzable of Fuzzable<InsertFieldSets> {
         }
     }
 }
-pub impl InsertsFieldGroupFuzzable of Fuzzable<InsertsFieldSet> {
+pub impl InsertsFieldSetFuzzable of Fuzzable<InsertsFieldSet> {
     fn blank() -> InsertsFieldSet {
         Default::default()
     }
@@ -372,7 +372,7 @@ pub impl InsertsFieldGroupFuzzable of Fuzzable<InsertsFieldSet> {
         }
     }
 }
-pub impl InsertsFieldGroupsFuzzable of Fuzzable<InsertsFieldSets> {
+pub impl InsertsFieldSetsFuzzable of Fuzzable<InsertsFieldSets> {
     fn blank() -> InsertsFieldSets {
         Default::default()
     }
@@ -448,7 +448,7 @@ pub impl DeletesFieldsFuzzable of Fuzzable<DeletesFields> {
         }
     }
 }
-pub impl DeleteFieldGroupFuzzable of Fuzzable<DeleteFieldSet> {
+pub impl DeleteFieldSetFuzzable of Fuzzable<DeleteFieldSet> {
     fn blank() -> DeleteFieldSet {
         Default::default()
     }
@@ -458,7 +458,7 @@ pub impl DeleteFieldGroupFuzzable of Fuzzable<DeleteFieldSet> {
         }
     }
 }
-pub impl DeleteFieldGroupsFuzzable of Fuzzable<DeleteFieldSets> {
+pub impl DeleteFieldSetsFuzzable of Fuzzable<DeleteFieldSets> {
     fn blank() -> DeleteFieldSets {
         Default::default()
     }
@@ -470,7 +470,7 @@ pub impl DeleteFieldGroupsFuzzable of Fuzzable<DeleteFieldSets> {
         }
     }
 }
-pub impl DeletesFieldGroupFuzzable of Fuzzable<DeletesFieldSet> {
+pub impl DeletesFieldSetFuzzable of Fuzzable<DeletesFieldSet> {
     fn blank() -> DeletesFieldSet {
         Default::default()
     }
@@ -482,7 +482,7 @@ pub impl DeletesFieldGroupFuzzable of Fuzzable<DeletesFieldSet> {
         }
     }
 }
-pub impl DeletesFieldGroupsFuzzable of Fuzzable<DeletesFieldSets> {
+pub impl DeletesFieldSetsFuzzable of Fuzzable<DeletesFieldSets> {
     fn blank() -> DeletesFieldSets {
         Default::default()
     }

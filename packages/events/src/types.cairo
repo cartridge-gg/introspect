@@ -1,6 +1,7 @@
 use introspect_types::{ChildDef, ISerde, TypeDef};
 use starknet::Event;
-use crate::utils::VerifyEventDeserializeTrait;
+use crate::emit_event_impl;
+use crate::utils::{DrainSpanTrait, VerifyEventDeserializeTrait};
 
 pub mod selectors {
     pub const DeclareType: felt252 = selector!("DeclareType");
@@ -19,11 +20,6 @@ pub struct DeclareType {
 }
 
 
-pub struct DeclareTypeSerialized {
-    pub id: felt252,
-    pub type_def_span: Span<felt252>,
-}
-
 impl DeclareTypeEvent of Event<DeclareType> {
     fn append_keys_and_data(
         self: @DeclareType, ref keys: Array<felt252>, ref data: Array<felt252>,
@@ -40,10 +36,14 @@ impl DeclareTypeEvent of Event<DeclareType> {
 
 impl DeclareTypeEventSerialized of Event<ChildDef> {
     fn append_keys_and_data(self: @ChildDef, ref keys: Array<felt252>, ref data: Array<felt252>) {
-        self.iserialize(ref data);
+        data.append(*self.id);
+        data.append_span(*self.type_def)
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<ChildDef> {
-        ISerde::ideserialize(ref data)?.verify(ref keys, ref data)
+        ChildDef { id: *data.pop_front()?, type_def: data.drain() }.verify(ref keys, ref data)
     }
 }
+
+impl EmitDeclareType = emit_event_impl::EmitEventImpl<DeclareType, selectors::DeclareType>;
+impl EmitDeclareTypeSerialized = emit_event_impl::EmitEventImpl<ChildDef, selectors::DeclareType>;

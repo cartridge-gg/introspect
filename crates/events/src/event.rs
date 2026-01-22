@@ -7,17 +7,20 @@ where
 {
     const SELECTOR_RAW: [u64; 4];
     const SELECTOR: Felt = Felt::from_raw(Self::SELECTOR_RAW);
-    fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self>;
+    fn deserialize_event(
+        event_keys: &mut FeltIterator,
+        event_data: &mut FeltIterator,
+    ) -> Option<Self>;
 
-    fn verify(self, keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
-        match (keys.next(), data.next()) {
+    fn verify(self, event_keys: &mut FeltIterator, event_data: &mut FeltIterator) -> Option<Self> {
+        match (event_keys.next(), event_data.next()) {
             (None, None) => Some(self),
             _ => None,
         }
     }
 
-    fn verify_keys(self, keys: &mut FeltIterator) -> Option<Self> {
-        match keys.next() {
+    fn verify_keys(self, event_keys: &mut FeltIterator) -> Option<Self> {
+        match event_keys.next() {
             None => Some(self),
             _ => None,
         }

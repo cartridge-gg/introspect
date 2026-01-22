@@ -50,10 +50,3 @@ pub trait Schema<T> {
 // }
 // fn _field_data(self: @T, field: felt252, ref data: Array<felt252>);
 }
-
-
-pub fn column_def(
-    id: felt252, name: ByteArray, attributes: Span<Attribute>, type_def: TypeDef,
-) -> ColumnDef {
-    ColumnDef { id, name, attributes, type_def }
-}

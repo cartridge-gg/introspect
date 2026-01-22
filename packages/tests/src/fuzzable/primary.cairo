@@ -13,7 +13,7 @@ pub impl PrimaryTypeDefFuzzable of Fuzzable<PrimaryTypeDef> {
             0 => PrimaryTypeDef::Felt252,
             1 => PrimaryTypeDef::ShortUtf8,
             2 => PrimaryTypeDef::Bytes31,
-            3 => PrimaryTypeDef::Bytes31E("ascii"),
+            3 => PrimaryTypeDef::Bytes31Encoded("ascii"),
             4 => PrimaryTypeDef::Bool,
             5 => PrimaryTypeDef::U8,
             6 => PrimaryTypeDef::U16,

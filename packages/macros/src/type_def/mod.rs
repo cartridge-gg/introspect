@@ -2,8 +2,9 @@ use std::collections::HashMap;
 
 use crate::{AsCairo, AsCairoBytes, IAttribute};
 use introspect_types::{
-    ArrayDef, ByteArrayEDef, Bytes31EDef, CustomDef, EnumDef, Felt252DictDef, FixedArrayDef,
-    MemberDef, NullableDef, OptionDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
+    ArrayDef, ByteArrayEncodedDef, Bytes31EncodedDef, CustomDef, EnumDef, Felt252DictDef,
+    FixedArrayDef, MemberDef, NullableDef, OptionDef, RefDef, ResultDef, StructDef, TupleDef,
+    TypeDef, VariantDef,
 };
 use starknet_types_core::felt::Felt;
 
@@ -119,8 +120,8 @@ impl CairoElementDef for TypeDef {
             | TypeDef::StorageBaseAddress
             | TypeDef::ByteArray
             | TypeDef::Utf8String => as_unit_type_def(i_path, self.item_name()),
-            TypeDef::Bytes31E(Bytes31EDef { encoding })
-            | TypeDef::ByteArrayE(ByteArrayEDef { encoding })
+            TypeDef::Bytes31Encoded(Bytes31EncodedDef { encoding })
+            | TypeDef::ByteArrayEncoded(ByteArrayEncodedDef { encoding })
             | TypeDef::Custom(CustomDef { encoding }) => {
                 as_type_def(i_path, self.item_name(), encoding.as_cairo_byte_array())
             }

@@ -58,7 +58,7 @@ pub impl EmittableColumnSet<
 > of Emittable<TABLE_ID, Struct, Item> {
     fn emit_item(item: @Item) {
         let (row, data) = Set::set_tuple(item);
-        InsertFieldSet { table: TABLE_ID, group: Set::GROUP_ID, row, data }.emit_event();
+        InsertFieldSet { table: TABLE_ID, set: Set::GROUP_ID, row, data }.emit_event();
     }
 }
 
@@ -73,7 +73,7 @@ pub impl EmittableColumnSetBatch<
 > of EmittableBatch<TABLE_ID, Struct, Items> {
     fn emit_batch(items: Items) {
         let entries = Set::serialise_rows_set(items);
-        InsertsFieldSet { table: TABLE_ID, group: Set::GROUP_ID, entries }.emit_event();
+        InsertsFieldSet { table: TABLE_ID, set: Set::GROUP_ID, entries }.emit_event();
     }
 }
 

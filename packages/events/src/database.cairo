@@ -4,7 +4,7 @@ use starknet::Event;
 use crate::utils::{DrainSpanTrait, ISerdeEnd, VerifyEventDeserializeTrait};
 use super::emit_event_impl;
 pub mod selectors {
-    pub const CreateFieldGroup: felt252 = selector!("CreateFieldGroup");
+    pub const CreateFieldSet: felt252 = selector!("CreateFieldSet");
     pub const CreateTable: felt252 = selector!("CreateTable");
     pub const CreateTableWithColumns: felt252 = selector!("CreateTableWithColumns");
     pub const CreateTableFromClassHash: felt252 = selector!("CreateTableFromClassHash");
@@ -28,26 +28,26 @@ pub mod selectors {
     pub const InsertFields: felt252 = selector!("InsertFields");
     pub const InsertsField: felt252 = selector!("InsertsField");
     pub const InsertsFields: felt252 = selector!("InsertsFields");
-    pub const InsertFieldGroup: felt252 = selector!("InsertFieldGroup");
-    pub const InsertFieldGroups: felt252 = selector!("InsertFieldGroups");
-    pub const InsertsFieldGroup: felt252 = selector!("InsertsFieldGroup");
-    pub const InsertsFieldGroups: felt252 = selector!("InsertsFieldGroups");
+    pub const InsertFieldSet: felt252 = selector!("InsertFieldSet");
+    pub const InsertFieldSets: felt252 = selector!("InsertFieldSets");
+    pub const InsertsFieldSet: felt252 = selector!("InsertsFieldSet");
+    pub const InsertsFieldSets: felt252 = selector!("InsertsFieldSets");
     pub const DeleteRecord: felt252 = selector!("DeleteRecord");
     pub const DeleteRecords: felt252 = selector!("DeleteRecords");
     pub const DeleteField: felt252 = selector!("DeleteField");
     pub const DeleteFields: felt252 = selector!("DeleteFields");
     pub const DeletesField: felt252 = selector!("DeletesField");
     pub const DeletesFields: felt252 = selector!("DeletesFields");
-    pub const DeleteFieldGroup: felt252 = selector!("DeleteFieldGroup");
-    pub const DeleteFieldGroups: felt252 = selector!("DeleteFieldGroups");
-    pub const DeletesFieldGroup: felt252 = selector!("DeletesFieldGroup");
-    pub const DeletesFieldGroups: felt252 = selector!("DeletesFieldGroups");
+    pub const DeleteFieldSet: felt252 = selector!("DeleteFieldSet");
+    pub const DeleteFieldSets: felt252 = selector!("DeleteFieldSets");
+    pub const DeletesFieldSet: felt252 = selector!("DeletesFieldSet");
+    pub const DeletesFieldSets: felt252 = selector!("DeletesFieldSets");
 }
 
 
 #[derive(Drop, starknet::Event, PartialEq, Debug)]
 pub enum DatabaseEvents {
-    CreateFieldGroup: CreateColumnSet,
+    CreateFieldSet: CreateColumnSet,
     CreateTable: CreateTable,
     CreateTableWithColumns: CreateTableWithColumns,
     CreateTableFromClassHash: CreateTableFromClassHash,
@@ -71,20 +71,20 @@ pub enum DatabaseEvents {
     InsertFields: InsertFields,
     InsertsField: InsertsField,
     InsertsFields: InsertsFields,
-    InsertFieldGroup: InsertFieldSet,
-    InsertFieldGroups: InsertFieldSets,
-    InsertsFieldGroup: InsertsFieldSet,
-    InsertsFieldGroups: InsertsFieldSets,
+    InsertFieldSet: InsertFieldSet,
+    InsertFieldSets: InsertFieldSets,
+    InsertsFieldSet: InsertsFieldSet,
+    InsertsFieldSets: InsertsFieldSets,
     DeleteRecord: DeleteRecord,
     DeleteRecords: DeleteRecords,
     DeleteField: DeleteField,
     DeleteFields: DeleteFields,
     DeletesField: DeletesField,
     DeletesFields: DeletesFields,
-    DeleteFieldGroup: DeleteFieldSet,
-    DeleteFieldGroups: DeleteFieldSets,
-    DeletesFieldGroup: DeletesFieldSet,
-    DeletesFieldGroups: DeletesFieldSets,
+    DeleteFieldSet: DeleteFieldSet,
+    DeleteFieldSets: DeleteFieldSets,
+    DeletesFieldSet: DeletesFieldSet,
+    DeletesFieldSets: DeletesFieldSets,
 }
 
 
@@ -177,8 +177,8 @@ pub struct RenamePrimary {
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct RetypePrimary {
     pub table: felt252,
-    pub type_def: PrimaryTypeDef,
     pub attributes: Span<Attribute>,
+    pub type_def: PrimaryTypeDef,
 }
 
 /// Column management events
@@ -474,7 +474,7 @@ impl IdTypeAttributesISerde of ISerde<IdTypeDef> {
 }
 
 
-impl CreateFieldGroupEvent of Event<CreateColumnSet> {
+impl CreateFieldSetEvent of Event<CreateColumnSet> {
     fn append_keys_and_data(
         self: @CreateColumnSet, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
@@ -483,7 +483,9 @@ impl CreateFieldGroupEvent of Event<CreateColumnSet> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<CreateColumnSet> {
-        CreateColumnSet { id: *data.pop_front()?, columns: data.drain() }.verify_keys(ref keys)
+        let id = *data.pop_front()?;
+        let columns = data.drain();
+        CreateColumnSet { id, columns }.verify_keys(ref keys)
     }
 }
 
@@ -498,13 +500,11 @@ impl CreateTableEvent of Event<CreateTable> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<CreateTable> {
-        CreateTable {
-            id: *data.pop_front()?,
-            name: ISerde::ideserialize(ref data)?,
-            primary: ISerde::ideserialize(ref data)?,
-            attributes: ISerdeEnd::ideserialize_end(ref data)?,
-        }
-            .verify_keys(ref keys)
+        let id = *data.pop_front()?;
+        let name = ISerde::ideserialize(ref data)?;
+        let primary = ISerde::ideserialize(ref data)?;
+        let attributes = ISerdeEnd::ideserialize_end(ref data)?;
+        CreateTable { id, name, primary, attributes }.verify_keys(ref keys)
     }
 }
 
@@ -522,14 +522,12 @@ impl CreateTableWithColumnsEvent of Event<CreateTableWithColumns> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<CreateTableWithColumns> {
-        CreateTableWithColumns {
-            id: *data.pop_front()?,
-            name: ISerde::ideserialize(ref data)?,
-            attributes: ISerde::ideserialize(ref data)?,
-            primary: ISerde::ideserialize(ref data)?,
-            columns: ISerdeEnd::ideserialize_end(ref data)?,
-        }
-            .verify_keys(ref keys)
+        let id = *data.pop_front()?;
+        let name = ISerde::ideserialize(ref data)?;
+        let attributes = ISerde::ideserialize(ref data)?;
+        let primary = ISerde::ideserialize(ref data)?;
+        let columns = ISerdeEnd::ideserialize_end(ref data)?;
+        CreateTableWithColumns { id, name, attributes, primary, columns }.verify_keys(ref keys)
     }
 }
 
@@ -546,12 +544,10 @@ impl CreateTableFromClassHashEvent of Event<CreateTableFromClassHash> {
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
     ) -> Option<CreateTableFromClassHash> {
-        CreateTableFromClassHash {
-            id: *data.pop_front()?,
-            name: ISerde::ideserialize(ref data)?,
-            class_hash: *data.pop_front()?,
-        }
-            .verify(ref keys, ref data)
+        let id = *data.pop_front()?;
+        let name = ISerde::ideserialize(ref data)?;
+        let class_hash = *data.pop_front()?;
+        CreateTableFromClassHash { id, name, class_hash }.verify(ref keys, ref data)
     }
 }
 
@@ -564,8 +560,9 @@ impl RenameTableEvent of Event<RenameTable> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RenameTable> {
-        RenameTable { id: *data.pop_front()?, name: ISerde::ideserialize(ref data)? }
-            .verify(ref keys, ref data)
+        let id = *data.pop_front()?;
+        let name = ISerde::ideserialize(ref data)?;
+        RenameTable { id, name }.verify(ref keys, ref data)
     }
 }
 
@@ -575,7 +572,8 @@ impl DropTableEvent of Event<DropTable> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DropTable> {
-        DropTable { id: *data.pop_front()? }.verify(ref keys, ref data)
+        let id = *data.pop_front()?;
+        DropTable { id }.verify(ref keys, ref data)
     }
 }
 
@@ -590,13 +588,11 @@ impl CreateIndexEvent of Event<CreateIndex> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<CreateIndex> {
-        CreateIndex {
-            table: *data.pop_front()?,
-            id: *data.pop_front()?,
-            name: ISerde::ideserialize(ref data)?,
-            columns: ISerdeEnd::ideserialize_end(ref data)?,
-        }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let id = *data.pop_front()?;
+        let name = ISerde::ideserialize(ref data)?;
+        let columns = ISerdeEnd::ideserialize_end(ref data)?;
+        CreateIndex { table, id, name, columns }.verify_keys(ref keys)
     }
 }
 
@@ -607,7 +603,9 @@ impl DropIndexEvent of Event<DropIndex> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DropIndex> {
-        DropIndex { table: *data.pop_front()?, id: *data.pop_front()? }.verify(ref keys, ref data)
+        let table = *data.pop_front()?;
+        let id = *data.pop_front()?;
+        DropIndex { table, id }.verify(ref keys, ref data)
     }
 }
 
@@ -620,8 +618,9 @@ impl RenamePrimaryEvent of Event<RenamePrimary> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RenamePrimary> {
-        RenamePrimary { table: *data.pop_front()?, name: ISerde::ideserialize(ref data)? }
-            .verify(ref keys, ref data)
+        let table = *data.pop_front()?;
+        let name = ISerde::ideserialize(ref data)?;
+        RenamePrimary { table, name }.verify(ref keys, ref data)
     }
 }
 
@@ -635,12 +634,10 @@ impl RetypePrimaryEvent of Event<RetypePrimary> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RetypePrimary> {
-        RetypePrimary {
-            table: *data.pop_front()?,
-            type_def: ISerde::ideserialize(ref data)?,
-            attributes: ISerdeEnd::ideserialize_end(ref data)?,
-        }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let type_def = ISerde::ideserialize(ref data)?;
+        let attributes = ISerdeEnd::ideserialize_end(ref data)?;
+        RetypePrimary { table, attributes, type_def }.verify_keys(ref keys)
     }
 }
 
@@ -654,14 +651,12 @@ impl AddColumnEvent of Event<AddColumn> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<AddColumn> {
-        AddColumn {
-            table: *data.pop_front()?,
-            id: *data.pop_front()?,
-            name: ISerde::ideserialize(ref data)?,
-            type_def: ISerde::ideserialize(ref data)?,
-            attributes: ISerdeEnd::ideserialize_end(ref data)?,
-        }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let id = *data.pop_front()?;
+        let name = ISerde::ideserialize(ref data)?;
+        let type_def = ISerde::ideserialize(ref data)?;
+        let attributes = ISerdeEnd::ideserialize_end(ref data)?;
+        AddColumn { table, id, name, type_def, attributes }.verify_keys(ref keys)
     }
 }
 
@@ -673,8 +668,9 @@ impl AddColumnsEvent of Event<AddColumns> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<AddColumns> {
-        AddColumns { table: *data.pop_front()?, columns: ISerdeEnd::ideserialize_end(ref data)? }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let columns = ISerdeEnd::ideserialize_end(ref data)?;
+        AddColumns { table, columns }.verify_keys(ref keys)
     }
 }
 
@@ -688,12 +684,10 @@ impl RenameColumnEvent of Event<RenameColumn> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RenameColumn> {
-        RenameColumn {
-            table: *data.pop_front()?,
-            id: *data.pop_front()?,
-            name: ISerde::ideserialize(ref data)?,
-        }
-            .verify(ref keys, ref data)
+        let table = *data.pop_front()?;
+        let id = *data.pop_front()?;
+        let name = ISerde::ideserialize(ref data)?;
+        RenameColumn { table, id, name }.verify(ref keys, ref data)
     }
 }
 
@@ -706,8 +700,9 @@ impl RenameColumnsEvent of Event<RenameColumns> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RenameColumns> {
-        RenameColumns { table: *data.pop_front()?, columns: ISerdeEnd::ideserialize_end(ref data)? }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let columns = ISerdeEnd::ideserialize_end(ref data)?;
+        RenameColumns { table, columns }.verify_keys(ref keys)
     }
 }
 
@@ -722,13 +717,11 @@ impl RetypeColumnEvent of Event<RetypeColumn> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RetypeColumn> {
-        RetypeColumn {
-            table: *data.pop_front()?,
-            id: *data.pop_front()?,
-            type_def: ISerde::ideserialize(ref data)?,
-            attributes: ISerdeEnd::ideserialize_end(ref data)?,
-        }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let id = *data.pop_front()?;
+        let type_def = ISerde::ideserialize(ref data)?;
+        let attributes = ISerdeEnd::ideserialize_end(ref data)?;
+        RetypeColumn { table, id, type_def, attributes }.verify_keys(ref keys)
     }
 }
 
@@ -742,8 +735,9 @@ impl RetypeColumnsEvent of Event<RetypeColumns> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<RetypeColumns> {
-        RetypeColumns { table: *data.pop_front()?, columns: ISerdeEnd::ideserialize_end(ref data)? }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let columns = ISerdeEnd::ideserialize_end(ref data)?;
+        RetypeColumns { table, columns }.verify_keys(ref keys)
     }
 }
 
@@ -754,7 +748,9 @@ impl DropColumnEvent of Event<DropColumn> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DropColumn> {
-        DropColumn { table: *data.pop_front()?, id: *data.pop_front()? }.verify(ref keys, ref data)
+        let table = *data.pop_front()?;
+        let id = *data.pop_front()?;
+        DropColumn { table, id }.verify(ref keys, ref data)
     }
 }
 
@@ -768,7 +764,9 @@ impl DropColumnsEvent of Event<DropColumns> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DropColumns> {
-        DropColumns { table: *data.pop_front()?, ids: data.drain() }.verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let ids = data.drain();
+        DropColumns { table, ids }.verify_keys(ref keys)
     }
 }
 
@@ -782,8 +780,10 @@ impl InsertRecordEvent of Event<InsertRecord> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertRecord> {
-        InsertRecord { table: *data.pop_front()?, row: *data.pop_front()?, data: data.drain() }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let row = *data.pop_front()?;
+        let data = data.drain();
+        InsertRecord { table, row, data }.verify_keys(ref keys)
     }
 }
 
@@ -796,8 +796,9 @@ impl InsertRecordsEvent of Event<InsertRecords> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertRecords> {
-        InsertRecords { table: *data.pop_front()?, entries: ISerdeEnd::ideserialize_end(ref data)? }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let entries = ISerdeEnd::ideserialize_end(ref data)?;
+        InsertRecords { table, entries }.verify_keys(ref keys)
     }
 }
 
@@ -811,13 +812,11 @@ impl InsertFieldEvent of Event<InsertField> {
         data.append_span(*self.data)
     }
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertField> {
-        InsertField {
-            table: *data.pop_front()?,
-            row: *data.pop_front()?,
-            column: *data.pop_front()?,
-            data: data.drain(),
-        }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let row = *data.pop_front()?;
+        let column = *data.pop_front()?;
+        let data = data.drain();
+        InsertField { table, row, column, data }.verify_keys(ref keys)
     }
 }
 
@@ -832,13 +831,11 @@ impl InsertFieldsEvent of Event<InsertFields> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertFields> {
-        InsertFields {
-            table: *data.pop_front()?,
-            row: *data.pop_front()?,
-            columns: ISerde::ideserialize(ref data)?,
-            data: data.drain(),
-        }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let row = *data.pop_front()?;
+        let columns = ISerde::ideserialize(ref data)?;
+        let data = data.drain();
+        InsertFields { table, row, columns, data }.verify_keys(ref keys)
     }
 }
 
@@ -851,12 +848,10 @@ impl InsertsFieldEvent of Event<InsertsField> {
         self.entries.iserialize_end(ref data);
     }
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertsField> {
-        InsertsField {
-            table: *data.pop_front()?,
-            column: *data.pop_front()?,
-            entries: ISerdeEnd::ideserialize_end(ref data)?,
-        }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let column = *data.pop_front()?;
+        let entries = ISerdeEnd::ideserialize_end(ref data)?;
+        InsertsField { table, column, entries }.verify_keys(ref keys)
     }
 }
 
@@ -870,17 +865,15 @@ impl InsertsFieldsEvent of Event<InsertsFields> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertsFields> {
-        InsertsFields {
-            table: *data.pop_front()?,
-            columns: ISerde::ideserialize(ref data)?,
-            entries: ISerdeEnd::ideserialize_end(ref data)?,
-        }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let columns = ISerde::ideserialize(ref data)?;
+        let entries = ISerdeEnd::ideserialize_end(ref data)?;
+        InsertsFields { table, columns, entries }.verify_keys(ref keys)
     }
 }
 
 
-impl InsertFieldGroupEvent of Event<InsertFieldSet> {
+impl InsertFieldSetEvent of Event<InsertFieldSet> {
     fn append_keys_and_data(
         self: @InsertFieldSet, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
@@ -891,17 +884,15 @@ impl InsertFieldGroupEvent of Event<InsertFieldSet> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertFieldSet> {
-        InsertFieldSet {
-            table: *data.pop_front()?,
-            row: *data.pop_front()?,
-            set: *data.pop_front()?,
-            data: data.drain(),
-        }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let row = *data.pop_front()?;
+        let set = *data.pop_front()?;
+        let data = data.drain();
+        InsertFieldSet { table, row, set, data }.verify_keys(ref keys)
     }
 }
 
-impl InsertFieldGroupsEvent of Event<InsertFieldSets> {
+impl InsertFieldSetsEvent of Event<InsertFieldSets> {
     fn append_keys_and_data(
         self: @InsertFieldSets, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
@@ -912,17 +903,15 @@ impl InsertFieldGroupsEvent of Event<InsertFieldSets> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertFieldSets> {
-        InsertFieldSets {
-            table: *data.pop_front()?,
-            row: *data.pop_front()?,
-            sets: ISerde::ideserialize(ref data)?,
-            data: data.drain(),
-        }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let row = *data.pop_front()?;
+        let sets = ISerde::ideserialize(ref data)?;
+        let data = data.drain();
+        InsertFieldSets { table, row, sets, data }.verify_keys(ref keys)
     }
 }
 
-impl InsertsFieldGroupEvent of Event<InsertsFieldSet> {
+impl InsertsFieldSetEvent of Event<InsertsFieldSet> {
     fn append_keys_and_data(
         self: @InsertsFieldSet, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
@@ -932,16 +921,14 @@ impl InsertsFieldGroupEvent of Event<InsertsFieldSet> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertsFieldSet> {
-        InsertsFieldSet {
-            table: *data.pop_front()?,
-            set: *data.pop_front()?,
-            entries: ISerdeEnd::ideserialize_end(ref data)?,
-        }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let set = *data.pop_front()?;
+        let entries = ISerdeEnd::ideserialize_end(ref data)?;
+        InsertsFieldSet { table, set, entries }.verify_keys(ref keys)
     }
 }
 
-impl InsertsFieldGroupsEvent of Event<InsertsFieldSets> {
+impl InsertsFieldSetsEvent of Event<InsertsFieldSets> {
     fn append_keys_and_data(
         self: @InsertsFieldSets, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
@@ -951,12 +938,10 @@ impl InsertsFieldGroupsEvent of Event<InsertsFieldSets> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<InsertsFieldSets> {
-        InsertsFieldSets {
-            table: *data.pop_front()?,
-            sets: ISerde::ideserialize(ref data)?,
-            entries: ISerdeEnd::ideserialize_end(ref data)?,
-        }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let sets = ISerde::ideserialize(ref data)?;
+        let entries = ISerdeEnd::ideserialize_end(ref data)?;
+        InsertsFieldSets { table, sets, entries }.verify_keys(ref keys)
     }
 }
 
@@ -969,8 +954,9 @@ impl DeleteRecordEvent of Event<DeleteRecord> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeleteRecord> {
-        DeleteRecord { table: *data.pop_front()?, row: *data.pop_front()? }
-            .verify(ref keys, ref data)
+        let table = *data.pop_front()?;
+        let row = *data.pop_front()?;
+        DeleteRecord { table, row }.verify(ref keys, ref data)
     }
 }
 
@@ -983,7 +969,9 @@ impl DeleteRecordsEvent of Event<DeleteRecords> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeleteRecords> {
-        DeleteRecords { table: *data.pop_front()?, rows: data.drain() }.verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let rows = data.drain();
+        DeleteRecords { table, rows }.verify_keys(ref keys)
     }
 }
 
@@ -997,10 +985,10 @@ impl DeleteFieldEvent of Event<DeleteField> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeleteField> {
-        DeleteField {
-            table: *data.pop_front()?, row: *data.pop_front()?, column: *data.pop_front()?,
-        }
-            .verify(ref keys, ref data)
+        let table = *data.pop_front()?;
+        let row = *data.pop_front()?;
+        let column = *data.pop_front()?;
+        DeleteField { table, row, column }.verify(ref keys, ref data)
     }
 }
 
@@ -1014,8 +1002,10 @@ impl DeleteFieldsEvent of Event<DeleteFields> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeleteFields> {
-        DeleteFields { table: *data.pop_front()?, row: *data.pop_front()?, columns: data.drain() }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let row = *data.pop_front()?;
+        let columns = data.drain();
+        DeleteFields { table, row, columns }.verify_keys(ref keys)
     }
 }
 
@@ -1029,8 +1019,10 @@ impl DeletesFieldEvent of Event<DeletesField> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeletesField> {
-        DeletesField { table: *data.pop_front()?, column: *data.pop_front()?, rows: data.drain() }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let column = *data.pop_front()?;
+        let rows = data.drain();
+        DeletesField { table, rows, column }.verify_keys(ref keys)
     }
 }
 
@@ -1044,14 +1036,14 @@ impl DeletesFieldsEvent of Event<DeletesFields> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeletesFields> {
-        DeletesFields {
-            table: *data.pop_front()?, rows: ISerde::ideserialize(ref data)?, columns: data.drain(),
-        }
-            .verify(ref keys, ref data)
+        let table = *data.pop_front()?;
+        let rows = ISerde::ideserialize(ref data)?;
+        let columns = data.drain();
+        DeletesFields { table, rows, columns }.verify(ref keys, ref data)
     }
 }
 
-impl DeleteFieldGroupEvent of Event<DeleteFieldSet> {
+impl DeleteFieldSetEvent of Event<DeleteFieldSet> {
     fn append_keys_and_data(
         self: @DeleteFieldSet, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
@@ -1061,15 +1053,15 @@ impl DeleteFieldGroupEvent of Event<DeleteFieldSet> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeleteFieldSet> {
-        DeleteFieldSet {
-            table: *data.pop_front()?, row: *data.pop_front()?, set: *data.pop_front()?,
-        }
-            .verify(ref keys, ref data)
+        let table = *data.pop_front()?;
+        let row = *data.pop_front()?;
+        let set = *data.pop_front()?;
+        DeleteFieldSet { table, row, set }.verify(ref keys, ref data)
     }
 }
 
 
-impl DeleteFieldGroupsEvent of Event<DeleteFieldSets> {
+impl DeleteFieldSetsEvent of Event<DeleteFieldSets> {
     fn append_keys_and_data(
         self: @DeleteFieldSets, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
@@ -1079,12 +1071,14 @@ impl DeleteFieldGroupsEvent of Event<DeleteFieldSets> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeleteFieldSets> {
-        DeleteFieldSets { table: *data.pop_front()?, row: *data.pop_front()?, sets: data.drain() }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let row = *data.pop_front()?;
+        let sets = data.drain();
+        DeleteFieldSets { table, row, sets }.verify_keys(ref keys)
     }
 }
 
-impl DeletesFieldGroupEvent of Event<DeletesFieldSet> {
+impl DeletesFieldSetEvent of Event<DeletesFieldSet> {
     fn append_keys_and_data(
         self: @DeletesFieldSet, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
@@ -1094,13 +1088,15 @@ impl DeletesFieldGroupEvent of Event<DeletesFieldSet> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeletesFieldSet> {
-        DeletesFieldSet { table: *data.pop_front()?, set: *data.pop_front()?, rows: data.drain() }
-            .verify_keys(ref keys)
+        let table = *data.pop_front()?;
+        let set = *data.pop_front()?;
+        let rows = data.drain();
+        DeletesFieldSet { table, rows, set }.verify_keys(ref keys)
     }
 }
 
 
-impl DeletesFieldGroupsEvent of Event<DeletesFieldSets> {
+impl DeletesFieldSetsEvent of Event<DeletesFieldSets> {
     fn append_keys_and_data(
         self: @DeletesFieldSets, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
@@ -1110,16 +1106,16 @@ impl DeletesFieldGroupsEvent of Event<DeletesFieldSets> {
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<DeletesFieldSets> {
-        DeletesFieldSets {
-            table: *data.pop_front()?, rows: ISerde::ideserialize(ref data)?, sets: data.drain(),
-        }
-            .verify(ref keys, ref data)
+        let table = *data.pop_front()?;
+        let rows = ISerde::ideserialize(ref data)?;
+        let sets = data.drain();
+        DeletesFieldSets { table, rows, sets }.verify(ref keys, ref data)
     }
 }
 
 
-impl EmitCreateFieldGroup =
-    emit_event_impl::EmitEventImpl<CreateColumnSet, selectors::CreateFieldGroup>;
+impl EmitCreateFieldSet =
+    emit_event_impl::EmitEventImpl<CreateColumnSet, selectors::CreateFieldSet>;
 impl EmitCreateTable = emit_event_impl::EmitEventImpl<CreateTable, selectors::CreateTable>;
 impl EmitCreateTableWithColumns =
     emit_event_impl::EmitEventImpl<CreateTableWithColumns, selectors::CreateTableWithColumns>;
@@ -1145,25 +1141,23 @@ impl EmitInsertField = emit_event_impl::EmitEventImpl<InsertField, selectors::In
 impl EmitInsertFields = emit_event_impl::EmitEventImpl<InsertFields, selectors::InsertFields>;
 impl EmitInsertsField = emit_event_impl::EmitEventImpl<InsertsField, selectors::InsertsField>;
 impl EmitInsertsFields = emit_event_impl::EmitEventImpl<InsertsFields, selectors::InsertsFields>;
-impl EmitInsertFieldGroup =
-    emit_event_impl::EmitEventImpl<InsertFieldSet, selectors::InsertFieldGroup>;
-impl EmitInsertFieldGroups =
-    emit_event_impl::EmitEventImpl<InsertFieldSets, selectors::InsertFieldGroups>;
-impl EmitInsertsFieldGroup =
-    emit_event_impl::EmitEventImpl<InsertsFieldSet, selectors::InsertsFieldGroup>;
-impl EmitInsertsFieldGroups =
-    emit_event_impl::EmitEventImpl<InsertsFieldSets, selectors::InsertsFieldGroups>;
+impl EmitInsertFieldSet = emit_event_impl::EmitEventImpl<InsertFieldSet, selectors::InsertFieldSet>;
+impl EmitInsertFieldSets =
+    emit_event_impl::EmitEventImpl<InsertFieldSets, selectors::InsertFieldSets>;
+impl EmitInsertsFieldSet =
+    emit_event_impl::EmitEventImpl<InsertsFieldSet, selectors::InsertsFieldSet>;
+impl EmitInsertsFieldSets =
+    emit_event_impl::EmitEventImpl<InsertsFieldSets, selectors::InsertsFieldSets>;
 impl EmitDeleteRecord = emit_event_impl::EmitEventImpl<DeleteRecord, selectors::DeleteRecord>;
 impl EmitDeleteRecords = emit_event_impl::EmitEventImpl<DeleteRecords, selectors::DeleteRecords>;
 impl EmitDeleteField = emit_event_impl::EmitEventImpl<DeleteField, selectors::DeleteField>;
 impl EmitDeleteFields = emit_event_impl::EmitEventImpl<DeleteFields, selectors::DeleteFields>;
 impl EmitDeletesField = emit_event_impl::EmitEventImpl<DeletesField, selectors::DeletesField>;
 impl EmitDeletesFields = emit_event_impl::EmitEventImpl<DeletesFields, selectors::DeletesFields>;
-impl EmitDeleteFieldGroup =
-    emit_event_impl::EmitEventImpl<DeleteFieldSet, selectors::DeleteFieldGroup>;
-impl EmitDeleteFieldGroups =
-    emit_event_impl::EmitEventImpl<DeleteFieldSets, selectors::DeleteFieldGroups>;
-impl EmitDeletesFieldGroup =
-    emit_event_impl::EmitEventImpl<DeletesFieldSet, selectors::DeletesFieldGroup>;
-impl EmitDeletesFieldGroups =
-    emit_event_impl::EmitEventImpl<DeletesFieldSets, selectors::DeletesFieldGroups>;
+impl EmitDeleteFieldSet = emit_event_impl::EmitEventImpl<DeleteFieldSet, selectors::DeleteFieldSet>;
+impl EmitDeleteFieldSets =
+    emit_event_impl::EmitEventImpl<DeleteFieldSets, selectors::DeleteFieldSets>;
+impl EmitDeletesFieldSet =
+    emit_event_impl::EmitEventImpl<DeletesFieldSet, selectors::DeletesFieldSet>;
+impl EmitDeletesFieldSets =
+    emit_event_impl::EmitEventImpl<DeletesFieldSets, selectors::DeletesFieldSets>;

@@ -1,4 +1,4 @@
-use introspect_types::{ByteArrayEDef, Bytes31EDef, TypeDef};
+use introspect_types::{ByteArrayEncodedDef, Bytes31EncodedDef, TypeDef};
 
 use super::ToTypeDefVariant;
 use crate::i_type::{AttributeParser, AttributeVariant, TypeDefVariant};
@@ -55,10 +55,10 @@ pub trait TypeModTrait: Sized {
             },
             Some(TypeMod::Encoded(encoded)) => match ty.get_core_type() {
                 Some(CairoPrimitiveType::ByteArray) => {
-                    Ok(ByteArrayEDef::new(encoded).to_type_def_variant())
+                    Ok(ByteArrayEncodedDef::new(encoded).to_type_def_variant())
                 }
                 Some(CairoPrimitiveType::Bytes31) => {
-                    Ok(Bytes31EDef::new(encoded).to_type_def_variant())
+                    Ok(Bytes31EncodedDef::new(encoded).to_type_def_variant())
                 }
                 _ => Err(IntrospectError::UnsupportedEncodedType),
             },

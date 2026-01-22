@@ -13,8 +13,5 @@ pub use entry::Entry;
 pub use introspect::{ChildDef, ChildDefs, Introspect, IntrospectRef, add_child_def};
 pub use primary::{PrimaryDef, PrimaryTrait, PrimaryTypeDef};
 pub use serde::{ISerde, iserialize_keyed_type};
-pub use type_def::{
-    EnumDef, FixedArrayDef, MemberDef, ResultDef, StructDef, TypeDef, TypeWithAttributes,
-    VariantDef,
-};
+pub use type_def::{EnumDef, FixedArrayDef, MemberDef, ResultDef, StructDef, TypeDef, VariantDef};
 pub mod utils;

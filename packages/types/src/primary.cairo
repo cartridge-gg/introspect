@@ -18,7 +18,7 @@ pub enum PrimaryTypeDef {
     Felt252,
     ShortUtf8,
     Bytes31,
-    Bytes31E: ByteArray,
+    Bytes31Encoded: ByteArray,
     Bool,
     U8,
     U16,
@@ -39,12 +39,12 @@ pub enum PrimaryTypeDef {
 
 
 impl PrimaryTypeDefSelector of SelectorTrait<PrimaryTypeDef> {
-    const fn selector(self: @PrimaryTypeDef) -> felt252 {
+    const fn selector(self: @PrimaryTypeDef) -> felt252 nopanic {
         match self {
             PrimaryTypeDef::Felt252 => selectors::felt252,
             PrimaryTypeDef::ShortUtf8 => selectors::ShortUtf8,
             PrimaryTypeDef::Bytes31 => selectors::bytes31,
-            PrimaryTypeDef::Bytes31E(_) => selectors::bytes31E,
+            PrimaryTypeDef::Bytes31Encoded(_) => selectors::bytes31Encoded,
             PrimaryTypeDef::Bool => selectors::bool,
             PrimaryTypeDef::U8 => selectors::u8,
             PrimaryTypeDef::U16 => selectors::u16,
@@ -68,7 +68,7 @@ impl PrimaryTypeDefSelector of SelectorTrait<PrimaryTypeDef> {
 impl PrimaryTypeDefSerde of Serde<PrimaryTypeDef> {
     fn serialize(self: @PrimaryTypeDef, ref output: Array<felt252>) {
         output.append(self.selector());
-        if let PrimaryTypeDef::Bytes31E(encoding) = self {
+        if let PrimaryTypeDef::Bytes31Encoded(encoding) = self {
             encoding.serialize(ref output);
         }
     }
@@ -80,8 +80,8 @@ impl PrimaryTypeDefSerde of Serde<PrimaryTypeDef> {
             Option::Some(PrimaryTypeDef::ShortUtf8)
         } else if tag == selectors::bytes31 {
             Option::Some(PrimaryTypeDef::Bytes31)
-        } else if tag == selectors::bytes31E {
-            Option::Some(PrimaryTypeDef::Bytes31E(Serde::deserialize(ref serialized)?))
+        } else if tag == selectors::bytes31Encoded {
+            Option::Some(PrimaryTypeDef::Bytes31Encoded(Serde::deserialize(ref serialized)?))
         } else if tag == selectors::bool {
             Option::Some(PrimaryTypeDef::Bool)
         } else if tag == selectors::u8 {
@@ -125,7 +125,7 @@ pub trait PrimaryTrait<T> {
     fn to_type_def() -> PrimaryTypeDef;
     fn to_felt252(self: @T) -> felt252;
 }
-pub mod tmp_impl {
+pub mod primary_unit_impl {
     use super::{PrimaryTrait, PrimaryTypeDef};
 
     pub impl IPrimaryImpl<
@@ -142,32 +142,33 @@ pub mod tmp_impl {
     }
 }
 
-impl Felt252PrimaryImpl = tmp_impl::IPrimaryImpl<felt252, PrimaryTypeDef::Felt252>;
-impl Bytes31PrimaryImpl = tmp_impl::IPrimaryImpl<bytes31, PrimaryTypeDef::ShortUtf8>;
-impl BoolPrimaryImpl = tmp_impl::IPrimaryImpl<bool, PrimaryTypeDef::Bool>;
-impl U8PrimaryImpl = tmp_impl::IPrimaryImpl<u8, PrimaryTypeDef::U8>;
-impl U16PrimaryImpl = tmp_impl::IPrimaryImpl<u16, PrimaryTypeDef::U16>;
-impl U32PrimaryImpl = tmp_impl::IPrimaryImpl<u32, PrimaryTypeDef::U32>;
-impl U64PrimaryImpl = tmp_impl::IPrimaryImpl<u64, PrimaryTypeDef::U64>;
-impl U128PrimaryImpl = tmp_impl::IPrimaryImpl<u128, PrimaryTypeDef::U128>;
-impl I8PrimaryImpl = tmp_impl::IPrimaryImpl<i8, PrimaryTypeDef::I8>;
-impl I16PrimaryImpl = tmp_impl::IPrimaryImpl<i16, PrimaryTypeDef::I16>;
-impl I32PrimaryImpl = tmp_impl::IPrimaryImpl<i32, PrimaryTypeDef::I32>;
-impl I64PrimaryImpl = tmp_impl::IPrimaryImpl<i64, PrimaryTypeDef::I64>;
-impl I128PrimaryImpl = tmp_impl::IPrimaryImpl<i128, PrimaryTypeDef::I128>;
-impl ClassHashPrimaryImpl = tmp_impl::IPrimaryImpl<ClassHash, PrimaryTypeDef::ClassHash>;
+impl Felt252PrimaryImpl = primary_unit_impl::IPrimaryImpl<felt252, PrimaryTypeDef::Felt252>;
+impl Bytes31PrimaryImpl = primary_unit_impl::IPrimaryImpl<bytes31, PrimaryTypeDef::ShortUtf8>;
+impl BoolPrimaryImpl = primary_unit_impl::IPrimaryImpl<bool, PrimaryTypeDef::Bool>;
+impl U8PrimaryImpl = primary_unit_impl::IPrimaryImpl<u8, PrimaryTypeDef::U8>;
+impl U16PrimaryImpl = primary_unit_impl::IPrimaryImpl<u16, PrimaryTypeDef::U16>;
+impl U32PrimaryImpl = primary_unit_impl::IPrimaryImpl<u32, PrimaryTypeDef::U32>;
+impl U64PrimaryImpl = primary_unit_impl::IPrimaryImpl<u64, PrimaryTypeDef::U64>;
+impl U128PrimaryImpl = primary_unit_impl::IPrimaryImpl<u128, PrimaryTypeDef::U128>;
+impl I8PrimaryImpl = primary_unit_impl::IPrimaryImpl<i8, PrimaryTypeDef::I8>;
+impl I16PrimaryImpl = primary_unit_impl::IPrimaryImpl<i16, PrimaryTypeDef::I16>;
+impl I32PrimaryImpl = primary_unit_impl::IPrimaryImpl<i32, PrimaryTypeDef::I32>;
+impl I64PrimaryImpl = primary_unit_impl::IPrimaryImpl<i64, PrimaryTypeDef::I64>;
+impl I128PrimaryImpl = primary_unit_impl::IPrimaryImpl<i128, PrimaryTypeDef::I128>;
+impl ClassHashPrimaryImpl = primary_unit_impl::IPrimaryImpl<ClassHash, PrimaryTypeDef::ClassHash>;
 impl ContractAddressPrimaryImpl =
-    tmp_impl::IPrimaryImpl<ContractAddress, PrimaryTypeDef::ContractAddress>;
-impl EthAddressPrimaryImpl = tmp_impl::IPrimaryImpl<EthAddress, PrimaryTypeDef::EthAddress>;
+    primary_unit_impl::IPrimaryImpl<ContractAddress, PrimaryTypeDef::ContractAddress>;
+impl EthAddressPrimaryImpl =
+    primary_unit_impl::IPrimaryImpl<EthAddress, PrimaryTypeDef::EthAddress>;
 impl StorageAddressPrimaryImpl =
-    tmp_impl::IPrimaryImpl<StorageAddress, PrimaryTypeDef::StorageAddress>;
+    primary_unit_impl::IPrimaryImpl<StorageAddress, PrimaryTypeDef::StorageAddress>;
 impl StorageBaseAddressPrimaryImpl =
-    tmp_impl::IPrimaryImpl<StorageBaseAddress, PrimaryTypeDef::StorageBaseAddress>;
+    primary_unit_impl::IPrimaryImpl<StorageBaseAddress, PrimaryTypeDef::StorageBaseAddress>;
 
 pub impl PrimaryTypeDefISerde of ISerde<PrimaryTypeDef> {
     fn iserialize(self: @PrimaryTypeDef, ref output: Array<felt252>) {
         output.append(self.selector());
-        if let PrimaryTypeDef::Bytes31E(encoding) = self {
+        if let PrimaryTypeDef::Bytes31Encoded(encoding) = self {
             encoding.iserialize(ref output);
         }
     }
@@ -180,8 +181,8 @@ pub impl PrimaryTypeDefISerde of ISerde<PrimaryTypeDef> {
             Option::Some(PrimaryTypeDef::ShortUtf8)
         } else if tag == selectors::bytes31 {
             Option::Some(PrimaryTypeDef::Bytes31)
-        } else if tag == selectors::bytes31E {
-            Option::Some(PrimaryTypeDef::Bytes31E(ISerde::ideserialize(ref serialized)?))
+        } else if tag == selectors::bytes31Encoded {
+            Option::Some(PrimaryTypeDef::Bytes31Encoded(ISerde::ideserialize(ref serialized)?))
         } else if tag == selectors::bool {
             Option::Some(PrimaryTypeDef::Bool)
         } else if tag == selectors::u8 {

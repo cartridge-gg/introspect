@@ -3,9 +3,9 @@ use crate::utils::{
     ideserialize_byte_array, ideserialize_byte_array_with_last, ideserialize_utf8_string,
 };
 use crate::{
-    ArrayDef, Attribute, ByteArrayEDef, Bytes31EDef, ColumnDef, CustomDef, EnumDef, Felt252DictDef,
-    FeltIterator, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef, OptionDef, PrimaryDef,
-    PrimaryTypeDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
+    ArrayDef, Attribute, ByteArrayEncodedDef, Bytes31EncodedDef, ColumnDef, CustomDef, EnumDef,
+    Felt252DictDef, FeltIterator, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef, OptionDef,
+    PrimaryDef, PrimaryTypeDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
     deserialize_byte_array_string, pop_primitive,
 };
 use starknet_types_core::felt::Felt;
@@ -86,7 +86,7 @@ impl ISerde for TypeDef {
             selectors::Felt252 => Some(TypeDef::Felt252),
             selectors::ShortUtf8 => Some(TypeDef::ShortUtf8),
             selectors::Bytes31 => Some(TypeDef::Bytes31),
-            selectors::Bytes31E => Bytes31EDef::ideserialize_item(data),
+            selectors::Bytes31Encoded => Bytes31EncodedDef::ideserialize_item(data),
             selectors::Bool => Some(TypeDef::Bool),
             selectors::U8 => Some(TypeDef::U8),
             selectors::U16 => Some(TypeDef::U16),
@@ -107,7 +107,7 @@ impl ISerde for TypeDef {
             selectors::StorageBaseAddress => Some(TypeDef::StorageBaseAddress),
             selectors::ByteArray => Some(TypeDef::ByteArray),
             selectors::Utf8String => Some(TypeDef::Utf8String),
-            selectors::ByteArrayE => ByteArrayEDef::ideserialize_item(data),
+            selectors::ByteArrayEncoded => ByteArrayEncodedDef::ideserialize_item(data),
             selectors::Tuple => TupleDef::ideserialize_item(data),
             selectors::Array => ArrayDef::ideserialize_item(data),
             selectors::FixedArray => FixedArrayDef::ideserialize_item(data),
@@ -159,17 +159,17 @@ impl ISerde for EnumDef {
     }
 }
 
-impl ISerde for Bytes31EDef {
+impl ISerde for Bytes31EncodedDef {
     fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
-        Some(Bytes31EDef {
+        Some(Bytes31EncodedDef {
             encoding: ideserialize_utf8_string(data)?,
         })
     }
 }
 
-impl ISerde for ByteArrayEDef {
+impl ISerde for ByteArrayEncodedDef {
     fn ideserialize(data: &mut FeltIterator) -> Option<Self> {
-        Some(ByteArrayEDef {
+        Some(ByteArrayEncodedDef {
             encoding: ideserialize_utf8_string(data)?,
         })
     }
@@ -285,7 +285,9 @@ impl ISerde for PrimaryTypeDef {
             selectors::Felt252 => Some(PrimaryTypeDef::Felt252),
             selectors::ShortUtf8 => Some(PrimaryTypeDef::ShortUtf8),
             selectors::Bytes31 => Some(PrimaryTypeDef::Bytes31),
-            selectors::Bytes31E => Some(PrimaryTypeDef::Bytes31E(Bytes31EDef::ideserialize(data)?)),
+            selectors::Bytes31Encoded => Some(PrimaryTypeDef::Bytes31Encoded(
+                Bytes31EncodedDef::ideserialize(data)?,
+            )),
             selectors::Bool => Some(PrimaryTypeDef::Bool),
             selectors::U8 => Some(PrimaryTypeDef::U8),
             selectors::U16 => Some(PrimaryTypeDef::U16),

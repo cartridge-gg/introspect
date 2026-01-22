@@ -2,8 +2,8 @@ use core::integer::u512;
 use core::metaprogramming::TypeEqual;
 use core::nullable::{FromNullableResult, match_nullable};
 use core::num::traits::{Pow, Zero};
+use core_ext::{CollectionSnapForward, CollectionSplit};
 use starknet::{ClassHash, ContractAddress};
-use crate::collections::{CollectionSnapForward, CollectionSplit};
 
 pub const SHIFT_31B: felt252 = 256_u256.pow(31).try_into().unwrap();
 ///                         b76543210

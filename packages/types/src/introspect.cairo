@@ -26,18 +26,18 @@ pub struct ChildDef {
     pub type_def: Span<felt252>,
 }
 
-impl ChildDefISerde of ISerde<ChildDef> {
-    fn iserialize(self: @ChildDef, ref output: Array<felt252>) {
-        output.append(*self.id);
-        output.append_span(*self.type_def);
-    }
+// impl ChildDefISerde of ISerde<ChildDef> {
+//     fn iserialize(self: @ChildDef, ref output: Array<felt252>) {
+//         output.append(*self.id);
+//         output.append_span(*self.type_def);
+//     }
 
-    fn ideserialize(ref serialized: Span<felt252>) -> Option<ChildDef> {
-        let id = *serialized.pop_front()?;
-        let type_def = ISerde::ideserialize(ref serialized)?;
-        Some(ChildDef { id, type_def })
-    }
-}
+//     fn ideserialize(ref serialized: Span<felt252>) -> Option<ChildDef> {
+//         let id = *serialized.pop_front()?;
+//         let type_def = ISerde::ideserialize(ref serialized)?;
+//         Some(ChildDef { id, type_def })
+//     }
+// }
 
 pub impl IntrospectRefImpl<T, impl IR: IntrospectRef<T>> of Introspect<T> {
     fn type_def() -> TypeDef {

@@ -76,9 +76,9 @@ macro_rules! define_type_variants {
 
 define_type_variants! (
         Felt252 => "felt252",
-        ShortUtf8 => "ShortUtf8",
+        ShortUtf8 => "short_utf8",
         Bytes31 => "bytes31",
-        Bytes31E(Bytes31EDef) => "bytes31e",
+        Bytes31Encoded(Bytes31EncodedDef) => "bytes31_encoded",
         Bool => "bool",
         U8 => "u8",
         U16 => "u16",
@@ -92,25 +92,25 @@ define_type_variants! (
         I32 => "i32",
         I64 => "i64",
         I128 => "i128",
-        ClassHash => "ClassHash",
-        ContractAddress => "ContractAddress",
-        EthAddress => "EthAddress",
-        StorageAddress => "StorageAddress",
-        StorageBaseAddress => "StorageBaseAddress",
-        ByteArray => "ByteArray",
-        Utf8String => "Utf8String",
-        ByteArrayE(ByteArrayEDef) => "ByteArrayE",
-        Tuple(TupleDef) => "Tuple",
-        Array(Box<ArrayDef>) => "Array",
-        FixedArray(Box<FixedArrayDef>) => "FixedArray",
-        Felt252Dict(Box<Felt252DictDef>) => "Felt252Dict",
+        ClassHash => "class_hash",
+        ContractAddress => "contract_address",
+        EthAddress => "eth_address",
+        StorageAddress => "storage_address",
+        StorageBaseAddress => "storage_base_address",
+        ByteArray => "byte_array",
+        Utf8String => "utf8_string",
+        ByteArrayEncoded(ByteArrayEncodedDef) => "byte_array_encoded",
+        Tuple(TupleDef) => "tuple",
+        Array(Box<ArrayDef>) => "array",
+        FixedArray(Box<FixedArrayDef>) => "fixed_array",
+        Felt252Dict(Box<Felt252DictDef>) => "felt252_dict",
         Struct(StructDef) => "struct",
         Enum(EnumDef) => "enum",
-        Option(Box<OptionDef>) => "Option",
-        Result(Box<ResultDef>) => "Result",
-        Nullable(Box<NullableDef>) => "Nullable",
-        Ref(RefDef) => "Ref",
-        Custom(CustomDef) => "Custom",
+        Option(Box<OptionDef>) => "option",
+        Result(Box<ResultDef>) => "result",
+        Nullable(Box<NullableDef>) => "nullable",
+        Ref(RefDef) => "ref",
+        Custom(CustomDef) => "custom",
 );
 
 pub trait TypeName {
@@ -120,7 +120,7 @@ pub trait TypeName {
 impl TypeName for TypeDef {
     fn type_name(&self) -> String {
         match self {
-            TypeDef::ByteArrayE(inner) => format!("ByteArrayE: {}", inner.encoding),
+            TypeDef::ByteArrayEncoded(inner) => format!("ByteArrayEncoded: {}", inner.encoding),
             TypeDef::Tuple(inner) => format!(
                 "({})",
                 inner
@@ -257,8 +257,8 @@ item_def_constructors!(Felt252DictDef, Felt252Dict);
 item_def_constructors!(StructDef, Struct, [name: String, attributes: Vec<Attribute>, members: Vec<MemberDef>]);
 item_def_constructors!(RefDef, Ref, [id: Felt]);
 item_def_constructors!(CustomDef, Custom, [encoding: String]);
-item_def_constructors!(ByteArrayEDef, ByteArrayE, [encoding: String]);
-item_def_constructors!(Bytes31EDef, Bytes31E, [encoding: String]);
+item_def_constructors!(ByteArrayEncodedDef, ByteArrayEncoded, [encoding: String]);
+item_def_constructors!(Bytes31EncodedDef, Bytes31Encoded, [encoding: String]);
 item_def_constructors!(FixedArrayDef, FixedArray,  [type_def: TypeDef, size: u32], Box);
 item_def_constructors!(ResultDef, Result,  [ok: TypeDef, err: TypeDef], Box);
 

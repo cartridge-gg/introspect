@@ -12,7 +12,7 @@ pub fn type_def_default<T, impl I: Introspect<T>>() -> TypeDef {
 
 #[inline(always)]
 pub fn member_def(name: ByteArray, attributes: Span<Attribute>, type_def: TypeDef) -> MemberDef {
-    MemberDef { name, type_def, attributes }
+    MemberDef { name, attributes, type_def }
 }
 
 #[inline]

@@ -900,7 +900,7 @@ The following data structures are used to describe the types and schemas of cair
 |`None`| None type e.g. `()` or an empty enum.| 0
 |`Felt252`| Base [field element](https://docs.starknet.io/build/corelib/core-felt252) in cairo | 'felt252'
 |`Bytes31`| 31 bytes packed into a felt252.| 'bytes31'
-|`Bytes31E`| 31 bytes packed into a felt252 with encoding.| 'bytes31e'
+|`Bytes31Encoded`| 31 bytes packed into a felt252 with encoding.| 'bytes31e'
 |`ShortUtf8`| A 31 byte UTF-8 string.| 'ShortUtf8'
 |`Bool`| A boolean value (true or false).| 'bool'
 |`U8`| An unsigned 8-bit integer.| 'u8'
@@ -922,7 +922,7 @@ The following data structures are used to describe the types and schemas of cair
 |`StorageBaseAddress`| An address of a storage base location of a contract.| 'StorageBaseAddress'
 |`ByteArray`| A byte array (An array of bytes31 with a pending word).| 'ByteArray'
 |`Utf8String`| A UTF-8 string.| 'Utf8String'
-|`ByteArrayE`| A byte array with encoding (An array of bytes31 with a pending word).| 'ByteArrayE'
+|`ByteArrayEncoded`| A byte array with encoding (An array of bytes31 with a pending word).| 'ByteArrayEncoded'
 |`Tuple`| A tuple | 'Tuple'
 |`Array`| Variable sized array | 'Array'
 |`FixedArray`| Compile-time sized array| 'FixedArray'
@@ -942,7 +942,7 @@ enum TypeDef {
     Felt252,
     ShortUtf8,
     Bytes31,
-    Bytes31E: ByteArray,
+    Bytes31Encoded: ByteArray,
     Bool,
     U8,
     U16,
@@ -963,7 +963,7 @@ enum TypeDef {
     StorageBaseAddress,
     ByteArray,
     Utf8String,
-    ByteArrayE: ByteArray,
+    ByteArrayEncoded: ByteArray,
     Tuple: Span<TypeDef>,
     Array: Box<TypeDef>,
     FixedArray: Box<FixedArrayDef>,
@@ -988,7 +988,7 @@ enum PrimaryTypeDef {
     Felt252,
     ShortUtf8,
     Bytes31,
-    Bytes31E: ByteArray,
+    Bytes31Encoded: ByteArray,
     Bool,
     U8,
     U16,

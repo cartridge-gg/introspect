@@ -10,7 +10,7 @@ pub enum Value {
     Felt252(Felt),
     ShortUtf8(String),
     Bytes31([u8; 31]),
-    Bytes31E(EncodedBytes),
+    Bytes31Encoded(Encoded31Bytes),
     Bool(bool),
     U8(u8),
     U16(u16),
@@ -31,7 +31,7 @@ pub enum Value {
     StorageBaseAddress(Felt),
     ByteArray(Vec<u8>),
     Utf8String(String),
-    ByteArrayE(EncodedBytes),
+    ByteArrayEncoded(EncodedBytes),
     Tuple(Vec<Value>),
     Array(Vec<Value>),
     FixedArray(Vec<Value>),
@@ -49,7 +49,7 @@ pub enum PrimaryValue {
     Felt252(Felt),
     ShortUtf8(String),
     Bytes31([u8; 31]),
-    Bytes31E(EncodedBytes),
+    Bytes31Encoded(Encoded31Bytes),
     Bool(bool),
     U8(u8),
     U16(u16),
@@ -116,6 +116,12 @@ pub struct Custom {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct Encoded31Bytes {
+    pub encoding: String,
+    pub bytes: [u8; 31],
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct EncodedBytes {
     pub encoding: String,
     pub bytes: Vec<u8>,
@@ -145,7 +151,7 @@ impl ToString for PrimaryValue {
             | PrimaryValue::StorageAddress(value)
             | PrimaryValue::StorageBaseAddress(value) => felt_to_hex_string(value),
             PrimaryValue::Bytes31(value) => bytes31_to_hex_string(value),
-            PrimaryValue::Bytes31E(value) => bytes31_to_hex_string(&value.bytes),
+            PrimaryValue::Bytes31Encoded(value) => bytes31_to_hex_string(&value.bytes),
             PrimaryValue::ShortUtf8(value) => value.clone(),
             PrimaryValue::Bool(value) => value.to_string(),
             PrimaryValue::U8(value) => value.to_string(),

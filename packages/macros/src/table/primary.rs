@@ -50,7 +50,7 @@ impl PrimaryTypeDefVariant {
 impl CairoElementDef for PrimaryTypeDef {
     fn as_element_def(&self, i_path: &str) -> String {
         match &self {
-            PrimaryTypeDef::Bytes31E(e) => format!(
+            PrimaryTypeDef::Bytes31Encoded(e) => format!(
                 "{i_path}::PrimaryTypeDef::{}({})",
                 self.item_name(),
                 e.encoding.as_cairo_byte_array()

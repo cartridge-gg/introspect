@@ -1,6 +1,6 @@
 pub use introspect_types::{
     Attribute, ColumnDef, Entry, EnumDef, FixedArrayDef, ISerde, Introspect, MemberDef, PrimaryDef,
-    PrimaryTrait, PrimaryTypeDef, ResultDef, StructDef, TypeDef, TypeWithAttributes, VariantDef,
+    PrimaryTrait, PrimaryTypeDef, ResultDef, StructDef, TypeDef, VariantDef,
 };
 pub mod m_utils {
     pub use introspect_types::m_utils::*;

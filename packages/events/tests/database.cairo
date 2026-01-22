@@ -10,16 +10,16 @@ use introspect_events::database::{
 };
 use introspect_tests::fuzzable::database;
 use introspect_tests::fuzzable::database::{
-    AddColumnFuzzable, AddColumnsFuzzable, CreateFieldGroupFuzzable, CreateIndexFuzzable,
+    AddColumnFuzzable, AddColumnsFuzzable, CreateFieldSetFuzzable, CreateIndexFuzzable,
     CreateTableFromClassHashFuzzable, CreateTableFuzzable, DeleteFieldFuzzable,
-    DeleteFieldGroupFuzzable, DeleteFieldGroupsFuzzable, DeleteFieldsFuzzable, DeleteRecordFuzzable,
-    DeleteRecordsFuzzable, DeletesFieldFuzzable, DeletesFieldGroupFuzzable,
-    DeletesFieldGroupsFuzzable, DeletesFieldsFuzzable, DropColumnFuzzable, DropColumnsFuzzable,
-    DropIndexFuzzable, DropTableFuzzable, IdNameFuzzable, InsertFieldFuzzable,
-    InsertFieldGroupFuzzable, InsertFieldGroupsFuzzable, InsertFieldsFuzzable, InsertRecordFuzzable,
-    InsertRecordsFuzzable, InsertsFieldFuzzable, InsertsFieldGroupFuzzable,
-    InsertsFieldGroupsFuzzable, InsertsFieldsFuzzable, RenameColumnFuzzable, RenameColumnsFuzzable,
-    RenamePrimaryFuzzable, RenameTableFuzzable, RetypeColumnFuzzable, RetypePrimaryFuzzable,
+    DeleteFieldSetFuzzable, DeleteFieldSetsFuzzable, DeleteFieldsFuzzable, DeleteRecordFuzzable,
+    DeleteRecordsFuzzable, DeletesFieldFuzzable, DeletesFieldSetFuzzable, DeletesFieldSetsFuzzable,
+    DeletesFieldsFuzzable, DropColumnFuzzable, DropColumnsFuzzable, DropIndexFuzzable,
+    DropTableFuzzable, IdNameFuzzable, InsertFieldFuzzable, InsertFieldSetFuzzable,
+    InsertFieldSetsFuzzable, InsertFieldsFuzzable, InsertRecordFuzzable, InsertRecordsFuzzable,
+    InsertsFieldFuzzable, InsertsFieldSetFuzzable, InsertsFieldSetsFuzzable, InsertsFieldsFuzzable,
+    RenameColumnFuzzable, RenameColumnsFuzzable, RenamePrimaryFuzzable, RenameTableFuzzable,
+    RetypeColumnFuzzable, RetypePrimaryFuzzable,
 };
 use starknet::Event;
 
@@ -37,7 +37,7 @@ fn verify_event<E, +Event<E>, +PartialEq<E>, +Drop<E>, +Debug<E>>(event: @E) {
 #[fuzzer]
 fn test_create_field_group_event(event: CreateColumnSet) {
     verify_event(@event);
-    verify_event(@DatabaseEvents::CreateFieldGroup(event));
+    verify_event(@DatabaseEvents::CreateFieldSet(event));
 }
 
 #[test]
@@ -211,28 +211,28 @@ fn test_inserts_fields_event(event: InsertsFields) {
 #[fuzzer]
 fn test_insert_field_group_event(event: InsertFieldSet) {
     verify_event(@event);
-    verify_event(@DatabaseEvents::InsertFieldGroup(event));
+    verify_event(@DatabaseEvents::InsertFieldSet(event));
 }
 
 #[test]
 #[fuzzer]
 fn test_insert_field_groups_event(event: InsertFieldSets) {
     verify_event(@event);
-    verify_event(@DatabaseEvents::InsertFieldGroups(event));
+    verify_event(@DatabaseEvents::InsertFieldSets(event));
 }
 
 #[test]
 #[fuzzer]
 fn test_inserts_field_group_event(event: InsertsFieldSet) {
     verify_event(@event);
-    verify_event(@DatabaseEvents::InsertsFieldGroup(event));
+    verify_event(@DatabaseEvents::InsertsFieldSet(event));
 }
 
 #[test]
 #[fuzzer]
 fn test_inserts_field_groups_event(event: InsertsFieldSets) {
     verify_event(@event);
-    verify_event(@DatabaseEvents::InsertsFieldGroups(event));
+    verify_event(@DatabaseEvents::InsertsFieldSets(event));
 }
 
 #[test]
@@ -281,27 +281,27 @@ fn test_deletes_fields_event(event: DeletesFields) {
 #[fuzzer]
 fn test_delete_field_group_event(event: DeleteFieldSet) {
     verify_event(@event);
-    verify_event(@DatabaseEvents::DeleteFieldGroup(event));
+    verify_event(@DatabaseEvents::DeleteFieldSet(event));
 }
 
 #[test]
 #[fuzzer]
 fn test_delete_field_groups_event(event: DeleteFieldSets) {
     verify_event(@event);
-    verify_event(@DatabaseEvents::DeleteFieldGroups(event));
+    verify_event(@DatabaseEvents::DeleteFieldSets(event));
 }
 
 #[test]
 #[fuzzer]
 fn test_deletes_field_group_event(event: DeletesFieldSet) {
     verify_event(@event);
-    verify_event(@DatabaseEvents::DeletesFieldGroup(event));
+    verify_event(@DatabaseEvents::DeletesFieldSet(event));
 }
 
 #[test]
 #[fuzzer]
 fn test_deletes_field_groups_event(event: DeletesFieldSets) {
     verify_event(@event);
-    verify_event(@DatabaseEvents::DeletesFieldGroups(event));
+    verify_event(@DatabaseEvents::DeletesFieldSets(event));
 }
 

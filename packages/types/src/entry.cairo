@@ -41,6 +41,8 @@ impl EntryISerde of ISerde<Entry> {
     }
 
     fn ideserialize(ref serialized: Span<felt252>) -> Option<Entry> {
-        Some(Entry { row: *serialized.pop_front()?, data: ISerde::ideserialize(ref serialized)? })
+        let row = *serialized.pop_front()?;
+        let data = ISerde::ideserialize(ref serialized)?;
+        Some(Entry { row, data })
     }
 }

@@ -3,7 +3,7 @@ use crate::i_type::{AttributeParser, AttributeVariant, TypeDefVariant};
 use crate::ty::CairoPrimitiveType;
 use crate::{Attribute, AttributesTrait, IntrospectError, IntrospectResult, Ty};
 use introspect_rust_macros::macro_attributes;
-use introspect_types::{ByteArrayEDef, Bytes31EDef, TypeDef};
+use introspect_types::{ByteArrayEncodedDef, Bytes31EncodedDef, TypeDef};
 use std::mem;
 
 #[derive(Clone, Debug, Default)]
@@ -58,10 +58,10 @@ pub trait TypeModTrait: Sized {
             },
             TypeMod::Encoded(encoded) => match ty.get_primitive_type() {
                 Some(CairoPrimitiveType::ByteArray) => {
-                    Ok(ByteArrayEDef::new(encoded).to_type_def_variant())
+                    Ok(ByteArrayEncodedDef::new(encoded).to_type_def_variant())
                 }
                 Some(CairoPrimitiveType::Bytes31) => {
-                    Ok(Bytes31EDef::new(encoded).to_type_def_variant())
+                    Ok(Bytes31EncodedDef::new(encoded).to_type_def_variant())
                 }
                 _ => Err(IntrospectError::UnsupportedEncodedType),
             },

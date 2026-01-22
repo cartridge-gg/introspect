@@ -2,7 +2,7 @@ use core::poseidon::hades_permutation;
 
 pub impl SpanDefault<T, +Drop<T>> of Default<Span<T>> {
     fn default() -> Span<T> {
-        array![].span()
+        ArrayTrait::new().span()
     }
 }
 

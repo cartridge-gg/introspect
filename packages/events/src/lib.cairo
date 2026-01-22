@@ -1,20 +1,8 @@
 pub mod database;
-// pub mod multipart;
-pub mod types {
-    // pub mod emitters;
-    pub mod events;
-    // pub use emitters::*;
-    pub use events::{*, selectors};
-}
-pub mod variable {
-    pub mod emitters;
-    pub mod events;
-    pub use emitters::*;
-    pub use events::*;
-}
+pub mod types;
 pub mod utils;
+pub mod variable;
 pub use database::*;
-// pub use multipart::*;
 pub use types::*;
 pub use variable::*;
 

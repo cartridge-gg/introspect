@@ -1,7 +1,7 @@
 use crate::parser::DefaultParser;
 use crate::utils::felt_to_utf8_string;
 use crate::{
-    Attribute, Bytes31EDef, ElementDef, EncodedBytes, FeltIterator, Primary, PrimaryValue, Record,
+    Attribute, Bytes31EncodedDef, ElementDef, FeltIterator, Primary, PrimaryValue, Record,
     RecordValues, ToValue, TypeDef, felt_to_bytes31,
 };
 use num_traits::Zero;
@@ -143,7 +143,7 @@ pub enum PrimaryTypeDef {
     Felt252,
     ShortUtf8,
     Bytes31,
-    Bytes31E(Bytes31EDef),
+    Bytes31Encoded(Bytes31EncodedDef),
     Bool,
     U8,
     U16,
@@ -194,7 +194,7 @@ impl TryFrom<TypeDef> for PrimaryTypeDef {
             TypeDef::Felt252 => Ok(PrimaryTypeDef::Felt252),
             TypeDef::ShortUtf8 => Ok(PrimaryTypeDef::ShortUtf8),
             TypeDef::Bytes31 => Ok(PrimaryTypeDef::Bytes31),
-            TypeDef::Bytes31E(encoding) => Ok(PrimaryTypeDef::Bytes31E(encoding)),
+            TypeDef::Bytes31Encoded(encoding) => Ok(PrimaryTypeDef::Bytes31Encoded(encoding)),
             TypeDef::Bool => Ok(PrimaryTypeDef::Bool),
             TypeDef::U8 => Ok(PrimaryTypeDef::U8),
             TypeDef::U16 => Ok(PrimaryTypeDef::U16),
@@ -222,7 +222,7 @@ impl PrimaryTypeDef {
             PrimaryTypeDef::Felt252 => "Felt252",
             PrimaryTypeDef::ShortUtf8 => "ShortUtf8",
             PrimaryTypeDef::Bytes31 => "Bytes31",
-            PrimaryTypeDef::Bytes31E(_) => "Bytes31E",
+            PrimaryTypeDef::Bytes31Encoded(_) => "Bytes31Encoded",
             PrimaryTypeDef::Bool => "Bool",
             PrimaryTypeDef::U8 => "U8",
             PrimaryTypeDef::U16 => "U16",
@@ -247,14 +247,9 @@ impl PrimaryTypeDef {
             PrimaryTypeDef::Felt252 => Some(PrimaryValue::Felt252(felt)),
             PrimaryTypeDef::ShortUtf8 => felt_to_utf8_string(felt).map(PrimaryValue::ShortUtf8),
             PrimaryTypeDef::Bytes31 => felt_to_bytes31(felt).map(PrimaryValue::Bytes31),
-            PrimaryTypeDef::Bytes31E(Bytes31EDef { encoding }) => {
-                felt_to_bytes31(felt).map(|bytes| {
-                    PrimaryValue::Bytes31E(EncodedBytes {
-                        encoding: encoding.clone(),
-                        bytes: bytes.to_vec(),
-                    })
-                })
-            }
+            PrimaryTypeDef::Bytes31Encoded(e) => e
+                .to_encoded_bytes_31(felt)
+                .map(PrimaryValue::Bytes31Encoded),
             PrimaryTypeDef::Bool => Some(PrimaryValue::Bool(!felt.is_zero())),
             PrimaryTypeDef::U8 => felt.try_into().ok().map(PrimaryValue::U8),
             PrimaryTypeDef::U16 => felt.try_into().ok().map(PrimaryValue::U16),
