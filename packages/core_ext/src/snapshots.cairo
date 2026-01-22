@@ -43,6 +43,33 @@ impl BaseTypeMultiImpl<T, impl BT: BaseType<T>> of BaseType<@T> {
     type Base = BT::Base;
 }
 
+pub trait ToSingleSnapShot<T> {
+    type Base;
+    const fn as_single_snapshot(self: T) -> @Self::Base nopanic;
+}
+
+impl ToSingleSnapShotOwned<T, +Drop<T>, +Owned<T>> of ToSingleSnapShot<T> {
+    type Base = T;
+    const fn as_single_snapshot(self: T) -> @T nopanic {
+        @self
+    }
+}
+
+impl ToSingleSnapShotSnapshot<T, +Owned<T>> of ToSingleSnapShot<@T> {
+    type Base = T;
+    const fn as_single_snapshot(self: @T) -> @T nopanic {
+        self
+    }
+}
+
+impl ToSingleSnapShotNested<
+    T, impl SS: ToSingleSnapShot<@T>, +Owned<SS::Base>,
+> of ToSingleSnapShot<@@T> {
+    type Base = SS::Base;
+    const fn as_single_snapshot(self: @@T) -> @SS::Base nopanic {
+        SS::as_single_snapshot(*self)
+    }
+}
 
 impl AsSnapshotOwnedImpl<T, +Owned<T>, +Drop<T>> of AsSnapshot<T, @T> {
     const fn as_snapshot(self: T) -> @T nopanic {
@@ -65,22 +92,44 @@ impl AsSnapshotMultiImpl<
     }
 }
 
-
-impl ToSnapshotOwnedImpl<T, +Drop<T>, +Owned<T>> of ToSnapshot<T, T> {
+impl ToSnapshotOwned<T, +Drop<T>, +Owned<T>> of ToSnapshot<T, T> {
     const fn to_snapshot(self: T) -> @T nopanic {
         @self
     }
 }
 
-impl ToSnapshotSnapshotImpl<T, +Owned<T>> of ToSnapshot<@T, T> {
+impl ToSnapshotSnapshot<T, +Owned<T>> of ToSnapshot<@T, T> {
     const fn to_snapshot(self: @T) -> @T nopanic {
         self
     }
 }
 
-impl ToSnapshotDoubleImpl<T> of ToSnapshot<@@T, T> {
+
+impl ToSnapshot2Impl<T> of ToSnapshot<@@T, T> {
     const fn to_snapshot(self: @@T) -> @T nopanic {
         *self
+    }
+}
+
+impl ToSnapshot3Impl<T> of ToSnapshot<@@@T, T> {
+    const fn to_snapshot(self: @@@T) -> @T nopanic {
+        **self
+    }
+}
+
+// impl ToSnapshotNestedImpl<T, impl SS: ToSingleSnapShot<T>> of ToSnapshot<T, SS::Base> {
+//     const fn to_snapshot(self: T) -> @SS::Base nopanic {
+//         SS::as_single_snapshot(self)
+//     }
+// }
+
+mod test_mod {
+    use super::{ToSingleSnapShot, ToSnapshot};
+    fn test() {
+        let a = ToSnapshot::to_snapshot(1);
+        let b = ToSnapshot::to_snapshot(@1);
+        let c = ToSnapshot::to_snapshot(@@1);
+        let d = ToSingleSnapShot::as_single_snapshot(@@@@@@1);
     }
 }
 

@@ -1,4 +1,4 @@
-use core_ext::{Spannable, ToSnapshot};
+use core_ext::{ToSnapshot, ToSpan};
 use introspect_events::EmitEvent;
 use introspect_events::database::{
     CreateTableWithColumns, DeleteField, DeleteFields, DeleteRecord, DeleteRecords, DeletesField,
@@ -118,7 +118,7 @@ pub trait ITable {
         ToId,
         ColumnIds,
         impl Id: RecordId<Self::Table, ToId>,
-        +Spannable<ColumnIds, felt252>,
+        +ToSpan<ColumnIds, felt252>,
         +Drop<ToId>,
         +Drop<ColumnIds>,
     >(
@@ -131,7 +131,7 @@ pub trait ITable {
         ToIds,
         ColumnIds,
         impl Ids: RecordIds<Self::Table, ToIds>,
-        +Spannable<ColumnIds, felt252>,
+        +ToSpan<ColumnIds, felt252>,
         +Drop<ColumnIds>,
     >(
         ids: ToIds, columns: ColumnIds,

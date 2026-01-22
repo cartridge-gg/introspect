@@ -1,4 +1,4 @@
-pub use core_ext::{Spannable, ToSnapshot};
+pub use core_ext::{ToSnapshot, ToSpan};
 pub use introspect_types::m_utils::*;
 pub use crate::member::impls::Impl as TableMemberImpl;
 pub use crate::set::{ColumnSet, ItemColumnSet, ValueColumnSet};

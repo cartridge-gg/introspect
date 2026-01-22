@@ -7,6 +7,6 @@ pub use snapshots::{
     AsSnapshot, BaseType, EquivalentType, NestedSnapshot, Owned, SingleSnapshot, Snapshot,
     SnapshotOf, ToSnapshot,
 };
-pub use span::Spannable;
+pub use span::ToSpan;
 pub use tuple::{TupleSnapForward, TupleSnappable};
 

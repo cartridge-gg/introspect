@@ -1,4 +1,4 @@
-use core_ext::{AsSnapshot, Spannable, ToSnapshot, TupleSnappable};
+use core_ext::{AsSnapshot, ToSnapshot, ToSpan, TupleSnappable};
 use introspect_types::{Entry, PrimaryTrait};
 use crate::keyed::RecordKey;
 use crate::{RecordPrimary, TableStructure};
@@ -16,7 +16,7 @@ pub trait RecordTrait<impl Table: TableStructure, AsRecord> {
         (id, data.span())
     }
     #[inline(always)]
-    fn record_id_data(self: @AsRecord) -> Entry {
+    fn record_entry(self: @AsRecord) -> Entry {
         Self::record_tuple(self).into()
     }
 }
@@ -122,11 +122,7 @@ impl KeyedRecordIdImpl<
 
 
 impl RecordIdsImpl<
-    ToIds,
-    ToId,
-    impl Table: TableStructure,
-    impl Id: RecordId<Table, ToId>,
-    +Spannable<ToIds, ToId>,
+    ToIds, ToId, impl Table: TableStructure, impl Id: RecordId<Table, ToId>, +ToSpan<ToIds, ToId>,
 > of RecordIds<Table, ToIds> {
     fn record_ids(self: ToIds) -> Span<felt252> {
         self.to_span().into_iter().map(|id| Id::record_id(id)).collect::<Array<_>>().span()
@@ -155,9 +151,8 @@ impl PrimaryRecord<
     impl Primary: RecordPrimary<Table, Table::Record>,
     impl Values: RecordValues<Table, Table::Record>,
     AsRecord,
-    impl SR: ToSnapshot<@AsRecord, Table::Record>,
-    -RecordKey<Table, Table::Record>,
     +PrimaryTrait<Table::Primary>,
+    impl SR: ToSnapshot<@AsRecord, Table::Record>,
 > of RecordTrait<Table, AsRecord> {
     fn serialize_record(self: @AsRecord, ref data: Array<felt252>) -> felt252 {
         let record = SR::to_snapshot(self);
@@ -167,12 +162,12 @@ impl PrimaryRecord<
 }
 
 pub impl TupleRecordTrait<
+    Tuple,
     impl Table: TableStructure,
+    // -RecordId<Table, Table::Record>,
+    impl TS: TupleSnappable<Tuple, (@Table::Primary, @Table::Record)>,
     impl Primary: PrimaryTrait<Table::Primary>,
     impl Values: RecordValues<Table, Table::Record>,
-    Tuple,
-    impl TS: TupleSnappable<Tuple, (@Table::Primary, @Table::Record)>,
-    -RecordId<Table, Table::Record>,
 > of RecordTrait<Table, Tuple> {
     fn serialize_record(self: @Tuple, ref data: Array<felt252>) -> felt252 {
         let (key, record) = TS::snap_tuple(self);
@@ -186,10 +181,10 @@ pub impl RecordsTraitImpl<
     impl Table: TableStructure,
     ToRecords,
     ToRecord,
-    +Spannable<ToRecords, ToRecord>,
+    impl TS: ToSpan<ToRecords, ToRecord>,
     impl IM: RecordTrait<Table, ToRecord>,
 > of RecordsTrait<Table, ToRecords> {
     fn serialize_records(self: ToRecords) -> Span<Entry> {
-        self.to_span().into_iter().map(|M| IM::record_id_data(M)).collect::<Array<_>>().span()
+        self.to_span().into_iter().map(|M| IM::record_entry(M)).collect::<Array<_>>().span()
     }
 }

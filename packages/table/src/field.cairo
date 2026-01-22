@@ -1,4 +1,4 @@
-use core_ext::{Spannable, TupleSnappable};
+use core_ext::{ToSpan, TupleSnappable};
 use introspect_types::Entry;
 use crate::{Member, RecordId, TableStructure};
 
@@ -49,7 +49,7 @@ impl RecordsFieldImpl<
     Tuples,
     Tuple,
     impl IM: RecordField<ID, Table, Member, Tuple>,
-    +Spannable<Tuples, Tuple>,
+    +ToSpan<Tuples, Tuple>,
 > of RecordsField<ID, Table, Member, Tuples> {
     fn serialise_to_entries(self: Tuples) -> Span<Entry> {
         self.to_span().into_iter().map(|M| IM::serialize_to_entry(M)).collect::<Array<_>>().span()

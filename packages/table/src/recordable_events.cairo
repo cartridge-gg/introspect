@@ -1,4 +1,4 @@
-use core_ext::Spannable;
+use core_ext::ToSpan;
 use introspect_events::EmitEvent;
 use introspect_events::database::{
     InsertFieldSet, InsertFields, InsertRecord, InsertRecords, InsertsFieldSet, InsertsFields,
@@ -51,9 +51,9 @@ pub impl EmittableRecordBatch<
 
 pub impl EmittableColumnSet<
     const TABLE_ID: felt252,
+    Item,
     impl Struct: TableStructure,
     const SIZE: usize,
-    Item,
     impl Set: ColumnSet<Struct, Item, SIZE>,
 > of Emittable<TABLE_ID, Struct, Item> {
     fn emit_item(item: @Item) {
@@ -69,7 +69,7 @@ pub impl EmittableColumnSetBatch<
     Items,
     Item,
     impl Set: ColumnSet<Struct, Item, SIZE>,
-    +Spannable<Items, Item>,
+    +ToSpan<Items, Item>,
 > of EmittableBatch<TABLE_ID, Struct, Items> {
     fn emit_batch(items: Items) {
         let entries = Set::serialise_rows_set(items);
@@ -82,8 +82,8 @@ pub impl EmittableFieldsImpl<
     impl Struct: TableStructure,
     const SIZE: usize,
     Item,
-    impl Set: ColumnSet<Struct, Item, SIZE>,
     impl ToSpan: ToSpanTrait<[felt252; SIZE], felt252>,
+    impl Set: ColumnSet<Struct, Item, SIZE>,
 > of EmittableFields<TABLE_ID, Struct, Item> {
     fn emit_fields(item: @Item) {
         let (row, data) = Set::set_tuple(item);
@@ -99,7 +99,7 @@ pub impl EmittableFieldsBatchImpl<
     Items,
     Item,
     impl Set: ColumnSet<Struct, Item, SIZE>,
-    +Spannable<Items, Item>,
+    +ToSpan<Items, Item>,
     impl ToSpan: ToSpanTrait<[felt252; SIZE], felt252>,
 > of EmittableFieldsBatch<TABLE_ID, Struct, Items> {
     fn emit_fields_batch(items: Items) {
