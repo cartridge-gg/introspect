@@ -5,8 +5,8 @@ pub mod tuple;
 pub use collections::{CollectionSnapForward, CollectionSplit};
 pub use snapshots::{
     AsSnapshot, BaseType, EquivalentType, NestedSnapshot, Owned, SingleSnapshot, Snapshot,
-    SnapshotOf, ToSnapshot,
+    SnapshotOf, ToSnapshotBase, ToSnapshotOf,
 };
 pub use span::ToSpan;
-pub use tuple::{TupleSnapForward, TupleSnappable};
+pub use tuple::{TupleSnapForward, TupleSnapForwardTo};
 

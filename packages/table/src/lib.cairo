@@ -15,9 +15,4 @@ pub use record::{RecordId, RecordIdSerialized, RecordTrait, RecordValues};
 pub use set::{ColumnSet, ItemColumnSet, ValueColumnSet};
 pub use structure::TableStructure;
 pub use table::ITable;
-// pub use table::{
-//     ColumnId, FieldOnlyColumnGroup, ITable, IdColumnGroup, KeySpanToId, KeySpanToPrimary,
-//     MemberTrait, RecordId, RecordKey, RecordValuesSpanTrait, SerialisedKey,
-// };
-
 

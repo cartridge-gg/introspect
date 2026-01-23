@@ -1,4 +1,5 @@
-use core_ext::{AsSnapshot, ToSnapshot, ToSpan, TupleSnappable};
+use core_ext::snapshots::ToSnapshotOf;
+use core_ext::{AsSnapshot, ToSpan, TupleSnapForwardTo};
 use introspect_types::{Entry, PrimaryTrait};
 use crate::keyed::RecordKey;
 use crate::{RecordPrimary, TableStructure};
@@ -62,7 +63,7 @@ impl PrimaryRecordIdSerializedImpl<
 impl PrimaryId<
     AsId,
     impl Table: TableStructure,
-    impl S: ToSnapshot<@AsId, Table::Primary>,
+    impl S: ToSnapshotOf<@AsId, Table::Primary>,
     +PrimaryTrait<Table::Primary>,
 > of RecordId<Table, AsId> {
     fn record_id(self: @AsId) -> felt252 {
@@ -74,11 +75,11 @@ impl PrimaryRecordId<
     AsRecord,
     impl Table: TableStructure,
     impl Primary: RecordPrimary<Table, Table::Record>,
-    impl SR: ToSnapshot<@AsRecord, Table::Record>,
+    impl TR: ToSnapshotOf<@AsRecord, Table::Record>,
     +PrimaryTrait<Table::Primary>,
 > of RecordId<Table, AsRecord> {
     fn record_id(self: @AsRecord) -> felt252 {
-        let record = SR::to_snapshot(self);
+        let record = TR::to_snapshot(self);
         Primary::record_primary(record).to_felt252()
     }
 }
@@ -87,10 +88,10 @@ impl KeyId<
     AsId,
     impl Table: TableStructure,
     impl Key: RecordKey<Table, Table::Record>,
-    impl SK: TupleSnappable<AsId, Key::Snapped>,
+    impl SK: TupleSnapForwardTo<AsId, Key::Snapped>,
 > of RecordId<Table, AsId> {
     fn record_id(self: @AsId) -> felt252 {
-        let snapped_key = SK::snap_tuple(self);
+        let snapped_key = SK::snap_forward(self);
         Key::key_id(snapped_key)
     }
 }
@@ -111,7 +112,7 @@ impl KeyedRecordIdImpl<
     AsId,
     impl Table: TableStructure,
     impl Key: RecordKey<Table, Table::Record>,
-    impl SK: ToSnapshot<@AsId, Table::Record>,
+    impl SK: ToSnapshotOf<@AsId, Table::Record>,
     +Drop<Key::Snapped>,
 > of RecordId<Table, AsId> {
     fn record_id(self: @AsId) -> felt252 {
@@ -135,7 +136,7 @@ impl KeyedRecord<
     impl Key: RecordKey<Table, Table::Record>,
     impl Values: RecordValues<Table, Table::Record>,
     AsRecord,
-    impl SR: ToSnapshot<@AsRecord, Table::Record>,
+    impl SR: ToSnapshotOf<@AsRecord, Table::Record>,
     +Drop<Key::Snapped>,
 > of RecordTrait<Table, AsRecord> {
     fn serialize_record(self: @AsRecord, ref data: Array<felt252>) -> felt252 {
@@ -152,7 +153,7 @@ impl PrimaryRecord<
     impl Values: RecordValues<Table, Table::Record>,
     AsRecord,
     +PrimaryTrait<Table::Primary>,
-    impl SR: ToSnapshot<@AsRecord, Table::Record>,
+    impl SR: ToSnapshotOf<@AsRecord, Table::Record>,
 > of RecordTrait<Table, AsRecord> {
     fn serialize_record(self: @AsRecord, ref data: Array<felt252>) -> felt252 {
         let record = SR::to_snapshot(self);
@@ -165,12 +166,12 @@ pub impl TupleRecordTrait<
     Tuple,
     impl Table: TableStructure,
     // -RecordId<Table, Table::Record>,
-    impl TS: TupleSnappable<Tuple, (@Table::Primary, @Table::Record)>,
     impl Primary: PrimaryTrait<Table::Primary>,
     impl Values: RecordValues<Table, Table::Record>,
+    impl TS: TupleSnapForwardTo<Tuple, (@Table::Primary, @Table::Record)>,
 > of RecordTrait<Table, Tuple> {
     fn serialize_record(self: @Tuple, ref data: Array<felt252>) -> felt252 {
-        let (key, record) = TS::snap_tuple(self);
+        let (key, record) = TS::snap_forward(self);
         Values::serialize_values(record, ref data);
         Primary::to_felt252(key)
     }

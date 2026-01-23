@@ -9,14 +9,6 @@ pub trait BaseType<T> {
     type Base;
 }
 
-pub trait AsSnapshot<From, Snapshot> {
-    const fn as_snapshot(self: From) -> Snapshot nopanic;
-}
-
-pub trait ToSnapshot<From, Snapshot> {
-    const fn to_snapshot(self: From) -> @Snapshot nopanic;
-}
-
 
 impl SnapshotImpl<T> of Snapshot<@T> {}
 impl OwnedImpl<T, -Snapshot<T>> of Owned<T> {}
@@ -43,33 +35,19 @@ impl BaseTypeMultiImpl<T, impl BT: BaseType<T>> of BaseType<@T> {
     type Base = BT::Base;
 }
 
-pub trait ToSingleSnapShot<T> {
+pub trait AsSnapshot<From, Snapshot> {
+    const fn as_snapshot(self: From) -> Snapshot nopanic;
+}
+
+pub trait ToSnapshotOf<From, Snapshot> {
+    const fn to_snapshot(self: From) -> @Snapshot nopanic;
+}
+
+pub trait ToSnapshotBase<T> {
     type Base;
-    const fn as_single_snapshot(self: T) -> @Self::Base nopanic;
+    const fn to_snapshot(self: T) -> @Self::Base nopanic;
 }
 
-impl ToSingleSnapShotOwned<T, +Drop<T>, +Owned<T>> of ToSingleSnapShot<T> {
-    type Base = T;
-    const fn as_single_snapshot(self: T) -> @T nopanic {
-        @self
-    }
-}
-
-impl ToSingleSnapShotSnapshot<T, +Owned<T>> of ToSingleSnapShot<@T> {
-    type Base = T;
-    const fn as_single_snapshot(self: @T) -> @T nopanic {
-        self
-    }
-}
-
-impl ToSingleSnapShotNested<
-    T, impl SS: ToSingleSnapShot<@T>, +Owned<SS::Base>,
-> of ToSingleSnapShot<@@T> {
-    type Base = SS::Base;
-    const fn as_single_snapshot(self: @@T) -> @SS::Base nopanic {
-        SS::as_single_snapshot(*self)
-    }
-}
 
 impl AsSnapshotOwnedImpl<T, +Owned<T>, +Drop<T>> of AsSnapshot<T, @T> {
     const fn as_snapshot(self: T) -> @T nopanic {
@@ -83,53 +61,94 @@ impl AsSnapshotSnapShotImpl<T, +Owned<T>> of AsSnapshot<@T, @T> {
     }
 }
 
-
-impl AsSnapshotMultiImpl<
-    T, impl BT: BaseType<T>, impl SS: AsSnapshot<@T, @BT::Base>, +Owned<BT::Base>,
-> of AsSnapshot<@@T, @BT::Base> {
-    const fn as_snapshot(self: @@T) -> @BT::Base nopanic {
-        SS::as_snapshot(*self)
+impl AsSnapshot2Impl<T, +Owned<T>> of AsSnapshot<@@T, @T> {
+    const fn as_snapshot(self: @@T) -> @T nopanic {
+        *self
     }
 }
 
-impl ToSnapshotOwned<T, +Drop<T>, +Owned<T>> of ToSnapshot<T, T> {
+impl AsSnapshot3Impl<T, +Owned<T>> of AsSnapshot<@@@T, @T> {
+    const fn as_snapshot(self: @@@T) -> @T nopanic {
+        **self
+    }
+}
+
+
+// impl AsSnapshotMultiImpl<
+//     T, impl BT: BaseType<T>, impl SS: AsSnapshot<@T, @BT::Base>, +Owned<BT::Base>,
+// > of AsSnapshot<@@T, @BT::Base> {
+//     const fn as_snapshot(self: @@T) -> @BT::Base nopanic {
+//         SS::as_snapshot(*self)
+//     }
+// }
+
+impl ToSnapShotBaseOwned<T, +Drop<T>, +Owned<T>> of ToSnapshotBase<T> {
+    type Base = T;
     const fn to_snapshot(self: T) -> @T nopanic {
         @self
     }
 }
 
-impl ToSnapshotSnapshot<T, +Owned<T>> of ToSnapshot<@T, T> {
+impl ToSnapshotBaseSnapshot<T, +Owned<T>> of ToSnapshotBase<@T> {
+    type Base = T;
     const fn to_snapshot(self: @T) -> @T nopanic {
         self
     }
 }
 
-
-impl ToSnapshot2Impl<T> of ToSnapshot<@@T, T> {
-    const fn to_snapshot(self: @@T) -> @T nopanic {
-        *self
+impl ToSnapshotBaseNested<T, impl SS: ToSnapshotBase<@T>, +Owned<SS::Base>> of ToSnapshotBase<@@T> {
+    type Base = SS::Base;
+    const fn to_snapshot(self: @@T) -> @SS::Base nopanic {
+        SS::to_snapshot(*self)
     }
 }
 
-impl ToSnapshot3Impl<T> of ToSnapshot<@@@T, T> {
-    const fn to_snapshot(self: @@@T) -> @T nopanic {
-        **self
+impl ToSnapshotOfOwned<T, +Drop<T>, +Owned<T>> of ToSnapshotOf<T, T> {
+    const fn to_snapshot(self: T) -> @T nopanic {
+        @self
     }
 }
 
-// impl ToSnapshotNestedImpl<T, impl SS: ToSingleSnapShot<T>> of ToSnapshot<T, SS::Base> {
-//     const fn to_snapshot(self: T) -> @SS::Base nopanic {
-//         SS::as_single_snapshot(self)
+impl ToSnapshotOfSnapshot<T, +Owned<T>> of ToSnapshotOf<@T, T> {
+    const fn to_snapshot(self: @T) -> @T nopanic {
+        self
+    }
+}
+
+// impl ToSnapshot2Impl<T, +Owned<T>> of ToSnapshotOf<@@T, T> {
+//     const fn to_snapshot(self: @@T) -> @T nopanic {
+//         *self
 //     }
 // }
 
+// impl ToSnapshot3Impl<T, +Owned<T>> of ToSnapshotOf<@@@T, T> {
+//     const fn to_snapshot(self: @@@T) -> @T nopanic {
+//         **self
+//     }
+// }
+
+impl ToSnapshotNestedImpl<T, impl TS: ToSnapshotBase<T>> of ToSnapshotOf<@T, TS::Base> {
+    const fn to_snapshot(self: @T) -> @TS::Base nopanic {
+        TS::to_snapshot(*self)
+    }
+}
+// impl ToSnapshotNestedImpl<T, S, impl SS: ToSnapshotOf<@T, S>, +Owned<S>> of ToSnapshotOf<@@T, S>
+// {
+//     const fn to_snapshot(self: @@T) -> @S nopanic {
+//         SS::to_snapshot(*self)
+//     }
+// }
 mod test_mod {
-    use super::{ToSingleSnapShot, ToSnapshot};
+    use super::{ToSnapshotBase, ToSnapshotOf};
     fn test() {
-        let a = ToSnapshot::to_snapshot(1);
-        let b = ToSnapshot::to_snapshot(@1);
-        let c = ToSnapshot::to_snapshot(@@1);
-        let d = ToSingleSnapShot::as_single_snapshot(@@@@@@1);
+        let a = ToSnapshotBase::to_snapshot(1);
+        let b = ToSnapshotBase::to_snapshot(@1);
+        let c = ToSnapshotBase::to_snapshot(@@1);
+        let d = ToSnapshotBase::to_snapshot(@@@@@@1);
+        let a = ToSnapshotOf::to_snapshot(1);
+        let b = ToSnapshotOf::to_snapshot(@1);
+        let c = ToSnapshotOf::to_snapshot(@@@@@@1);
+        // let d = ToSnapshotOf::to_snapshot(@@@@@@1);
     }
 }
 

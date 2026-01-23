@@ -1,4 +1,4 @@
-use core_ext::{ToSnapshot, ToSpan, TupleSnappable};
+use core_ext::{ToSnapshotBase, ToSnapshotOf, ToSpan, TupleSnapForwardTo};
 use introspect_types::Entry;
 use crate::{RecordId, TableStructure};
 
@@ -44,15 +44,14 @@ pub trait ColumnSet<impl Table: TableStructure, Item, const SIZE: usize> {
 pub impl ItemColumnSetImpl<
     const SIZE: usize,
     AsSet,
-    Set,
-    impl SS: ToSnapshot<@AsSet, Set>,
+    impl TS: ToSnapshotBase<@AsSet>,
     impl Table: TableStructure,
-    impl SetTrait: ItemColumnSet<Table, SIZE, Set>,
+    impl SetTrait: ItemColumnSet<Table, SIZE, TS::Base>,
 > of ColumnSet<Table, AsSet, SIZE> {
     const GROUP_ID: felt252 = SetTrait::GROUP_ID;
     const COLUMN_IDS: [felt252; SIZE] = SetTrait::COLUMN_IDS;
     fn serialise_set(self: @AsSet, ref data: Array<felt252>) -> felt252 {
-        let set = SS::to_snapshot(self);
+        let set = TS::to_snapshot(self);
         SetTrait::serialize_set_item(set, ref data)
     }
 }
@@ -66,12 +65,12 @@ impl TupleColumnSetImpl<
     impl Table: TableStructure,
     impl Id: RecordId<Table, AsId>,
     impl SetTrait: ValueColumnSet<Table, SIZE, Value>,
-    impl TS: TupleSnappable<Tuple, (@AsId, @Value)>,
+    impl TS: TupleSnapForwardTo<Tuple, (@AsId, @Value)>,
 > of ColumnSet<Table, Tuple, SIZE> {
     const GROUP_ID: felt252 = SetTrait::GROUP_ID;
     const COLUMN_IDS: [felt252; SIZE] = SetTrait::COLUMN_IDS;
     fn serialise_set(self: @Tuple, ref data: Array<felt252>) -> felt252 {
-        let (to_id, field) = TS::snap_tuple(self);
+        let (to_id, field) = TS::snap_forward(self);
         SetTrait::serialize_set_value(field, ref data);
         Id::record_id(to_id)
     }

@@ -1,4 +1,4 @@
-use core_ext::{ToSpan, TupleSnappable};
+use core_ext::{ToSpan, TupleSnapForwardTo};
 use introspect_types::Entry;
 use crate::{Member, RecordId, TableStructure};
 
@@ -31,10 +31,10 @@ pub impl RecordFieldImpl<
     Tuple,
     AsId,
     impl Id: RecordId<Table, AsId>,
-    impl TS: TupleSnappable<Tuple, (@AsId, @Member::Type)>,
+    impl TS: TupleSnapForwardTo<Tuple, (@AsId, @Member::Type)>,
 > of RecordField<ID, Table, Member, Tuple> {
     fn serialize_to_tuple(self: @Tuple) -> (felt252, Span<felt252>) {
-        let (key, field): (@AsId, @Member::Type) = TS::snap_tuple(self);
+        let (key, field): (@AsId, @Member::Type) = TS::snap_forward(self);
         let record_id = Id::record_id(key);
         let data = Member::serialize_member_inline(field);
         (record_id, data)
