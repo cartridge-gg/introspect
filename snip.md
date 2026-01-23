@@ -483,8 +483,8 @@ struct DropIndex {
 ```
 
 Indexes can also be made using attributes on columns and tables.
-To crate an index for a single column with the same name an attribute with the name `create_index` `create_unique_index` and empty attributes can be used.
-If a column has an attribute with the name `create_index` and no data an index
+To crate an index for a single column an empty attribute with the name `create_index` `create_unique_index`can be used.
+For multiple columns, a table attribute with the name `create_index` or `create_unique_index` and data containing the column IDs can be used.
 
 #### Column Set Management
 
