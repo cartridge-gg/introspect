@@ -1,7 +1,8 @@
 use core_ext::snapshots::ToSnapshotOf;
-use core_ext::{AsSnapshot, ToSpan, TupleSnapForwardTo};
+use core_ext::{AsSnapshot, SnapForwardTo, ToSpan};
 use introspect_types::{Entry, PrimaryTrait};
 use crate::keyed::RecordKey;
+use crate::set::SetRecordId;
 use crate::{RecordPrimary, TableStructure};
 
 pub trait RecordTrait<impl Table: TableStructure, AsRecord> {
@@ -74,8 +75,8 @@ impl PrimaryId<
 impl PrimaryRecordId<
     AsRecord,
     impl Table: TableStructure,
-    impl Primary: RecordPrimary<Table, Table::Record>,
     impl TR: ToSnapshotOf<@AsRecord, Table::Record>,
+    impl Primary: RecordPrimary<Table, Table::Record>,
     +PrimaryTrait<Table::Primary>,
 > of RecordId<Table, AsRecord> {
     fn record_id(self: @AsRecord) -> felt252 {
@@ -88,7 +89,7 @@ impl KeyId<
     AsId,
     impl Table: TableStructure,
     impl Key: RecordKey<Table, Table::Record>,
-    impl SK: TupleSnapForwardTo<AsId, Key::Snapped>,
+    impl SK: SnapForwardTo<AsId, Key::Snapped>,
 > of RecordId<Table, AsId> {
     fn record_id(self: @AsId) -> felt252 {
         let snapped_key = SK::snap_forward(self);
@@ -123,10 +124,14 @@ impl KeyedRecordIdImpl<
 
 
 impl RecordIdsImpl<
-    ToIds, ToId, impl Table: TableStructure, impl Id: RecordId<Table, ToId>, +ToSpan<ToIds, ToId>,
+    ToIds,
+    ToId,
+    impl Table: TableStructure,
+    impl Id: RecordId<Table, ToId>,
+    impl ST: ToSpan<ToIds, ToId>,
 > of RecordIds<Table, ToIds> {
     fn record_ids(self: ToIds) -> Span<felt252> {
-        self.to_span().into_iter().map(|id| Id::record_id(id)).collect::<Array<_>>().span()
+        ST::to_span(self).into_iter().map(|id| Id::record_id(id)).collect::<Array<_>>().span()
     }
 }
 
@@ -168,7 +173,7 @@ pub impl TupleRecordTrait<
     // -RecordId<Table, Table::Record>,
     impl Primary: PrimaryTrait<Table::Primary>,
     impl Values: RecordValues<Table, Table::Record>,
-    impl TS: TupleSnapForwardTo<Tuple, (@Table::Primary, @Table::Record)>,
+    impl TS: SnapForwardTo<Tuple, (@Table::Primary, @Table::Record)>,
 > of RecordTrait<Table, Tuple> {
     fn serialize_record(self: @Tuple, ref data: Array<felt252>) -> felt252 {
         let (key, record) = TS::snap_forward(self);

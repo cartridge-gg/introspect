@@ -13,6 +13,7 @@ snforge_std.workspace = true
 assert_macros.workspace = true
 introspect = { path = "../.." }
 introspect_macros.workspace = true
+core_ext.workspace = true
 
 [dev-dependencies]
 

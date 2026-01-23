@@ -21,6 +21,7 @@ pub struct IEnum {
 
 pub struct IVariant {
     pub selector: Felt,
+    pub field: String,
     pub name: String,
     pub attributes: Vec<IAttribute>,
     pub ty: Option<Ty>,
@@ -91,6 +92,7 @@ impl IExtract for IVariant {
         Ok(IVariant {
             selector: string_to_keccak_felt(&variant.name),
             name: variant.name.clone(),
+            field: variant.name.clone(),
             attributes,
             ty: variant.ty.clone(),
             type_def: type_mod.get_type_def_option(&variant.ty)?,

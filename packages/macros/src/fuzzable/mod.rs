@@ -16,7 +16,6 @@ fn Fuzzable(token_stream: TokenStream) -> ProcMacroResult {
     let item = Item::from_token_stream(token_stream).unwrap();
     let fuzzable_string = item.as_fuzzable_impl();
     let string = format!("{}", fuzzable_string);
-    println!("{}", string);
     ProcMacroResult::new(str_to_token_stream(&string))
 }
 

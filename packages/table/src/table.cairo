@@ -1,7 +1,7 @@
 use core_ext::{ToSnapshotOf, ToSpan};
 use introspect_events::EmitEvent;
 use introspect_events::database::{
-    CreateTableWithColumns, DeleteField, DeleteFields, DeleteRecord, DeleteRecords, DeletesField,
+    CreateTable, DeleteField, DeleteFields, DeleteRecord, DeleteRecords, DeletesField,
     DeletesFields, InsertField, InsertsField,
 };
 use introspect_types::Attribute;
@@ -19,7 +19,7 @@ pub trait ITable {
     fn register_table() {
         let mut attributes = Self::Table::attributes();
         Self::append_table_attributes(ref attributes);
-        CreateTableWithColumns {
+        CreateTable {
             id: Self::ID,
             name: Self::name(),
             attributes: attributes.span(),
@@ -27,6 +27,11 @@ pub trait ITable {
             columns: Self::Table::columns(),
         }
             .emit_event();
+    }
+    fn collect_child_defs(
+        ref defs: introspect_types::ChildDefs,
+    ) {
+        Self::Table::collect_child_defs(ref defs);
     }
     fn insert<Item, impl RE: Emittable<Self::ID, Self::Table, Item>, +Drop<Item>>(
         record: Item,

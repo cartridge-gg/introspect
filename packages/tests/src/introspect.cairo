@@ -1,7 +1,5 @@
-use core::fmt::Debug;
-
 const TEST: felt252 = 42;
-
+use core::serde
 #[derive(Debug, Default, Introspect)]
 pub struct TestStruct<T, S> {
     #[key]

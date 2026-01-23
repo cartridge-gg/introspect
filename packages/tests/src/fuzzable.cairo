@@ -1,5 +1,5 @@
 use core::fmt::Debug;
-use core::metaprogramming::TypeEqual;
+use core_ext::CollectionSplit;
 pub use snforge_std::fuzzable::{Fuzzable, generate_arg};
 
 pub trait Fuzzy<T, +Debug<T>, +Drop<T>> {
@@ -73,8 +73,65 @@ pub trait FuzzableMaxDepth<T, +Drop<T>> {
     ) -> Span<T> {
         Self::generate_array_lt(depth_rem, max_length).span()
     }
+}
 
-    
+impl FuzzableCollectionImpl<T, +Debug<T>, +FuzzableCollection<T>> of Fuzzable<T> {
+    fn generate() -> T {
+        FuzzableCollection::<T>::generate_collection()
+    }
+    fn blank() -> T {
+        FuzzableCollection::<T>::blank_collection()
+    }
+}
+
+pub trait FuzzableCollection<T> {
+    fn generate_collection() -> T;
+    fn blank_collection() -> T;
+}
+
+
+impl FuzzableTupleSize1Impl<
+    T, impl DB: Debug<T>, impl FuzzyElem: Fuzzable<T, DB>, +Drop<T>,
+> of FuzzableCollection<(T,)> {
+    fn generate_collection() -> (T,) {
+        (FuzzyElem::generate(),)
+    }
+    fn blank_collection() -> (T,) {
+        (FuzzyElem::generate(),)
+    }
+}
+
+impl FuzzableFixedArraySize1Impl<
+    T, impl DB: Debug<T>, impl FuzzyElem: Fuzzable<T, DB>, +Drop<T>,
+> of FuzzableCollection<[T; 1]> {
+    fn generate_collection() -> [T; 1] {
+        [FuzzyElem::generate()]
+    }
+    fn blank_collection() -> [T; 1] {
+        [FuzzyElem::generate()]
+    }
+}
+
+
+impl _FuzzableCollectionImpl<
+    T,
+    impl CS: CollectionSplit<T>,
+    impl DH: Debug<CS::Head>,
+    +Drop<CS::Head>,
+    +Drop<CS::Rest>,
+    impl FuzzyHead: Fuzzable<CS::Head, DH>,
+    impl FuzzyRest: FuzzableCollection<CS::Rest>,
+> of FuzzableCollection<T> {
+    fn generate_collection() -> T {
+        let head = FuzzyHead::generate();
+        let rest = FuzzyRest::generate_collection();
+        CS::reconstruct(head, rest)
+    }
+    fn blank_collection() -> T {
+        let head = FuzzyHead::blank();
+        let rest = FuzzyRest::blank_collection();
+        CS::reconstruct(head, rest)
+    }
 }
 
 pub trait FuzzableMaxDepthNode<T> {
@@ -92,6 +149,7 @@ pub impl FuzzableMaxDepthNodeImpl<
         }
     }
 }
+
 
 pub mod attribute;
 pub mod database;

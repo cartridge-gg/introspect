@@ -1,7 +1,7 @@
 use core::fmt::Debug;
 use introspect_events::database::{
-    AddColumn, AddColumns, CreateColumnSet, CreateIndex, CreateTable, CreateTableFromClassHash,
-    CreateTableWithColumns, DatabaseEvents, DeleteField, DeleteFieldSet, DeleteFieldSets,
+    AddColumn, AddColumns, CreateColumnSet, CreateIndex, CreateTable, CreateTableFromClass,
+    CreateTableFromContract, DatabaseEvents, DeleteField, DeleteFieldSet, DeleteFieldSets,
     DeleteFields, DeleteRecord, DeleteRecords, DeletesField, DeletesFieldSet, DeletesFieldSets,
     DeletesFields, DropColumn, DropColumns, DropIndex, DropTable, InsertField, InsertFieldSet,
     InsertFieldSets, InsertFields, InsertRecord, InsertRecords, InsertsField, InsertsFieldSet,
@@ -11,15 +11,14 @@ use introspect_events::database::{
 use introspect_tests::fuzzable::database;
 use introspect_tests::fuzzable::database::{
     AddColumnFuzzable, AddColumnsFuzzable, CreateFieldSetFuzzable, CreateIndexFuzzable,
-    CreateTableFromClassHashFuzzable, CreateTableFuzzable, DeleteFieldFuzzable,
-    DeleteFieldSetFuzzable, DeleteFieldSetsFuzzable, DeleteFieldsFuzzable, DeleteRecordFuzzable,
-    DeleteRecordsFuzzable, DeletesFieldFuzzable, DeletesFieldSetFuzzable, DeletesFieldSetsFuzzable,
-    DeletesFieldsFuzzable, DropColumnFuzzable, DropColumnsFuzzable, DropIndexFuzzable,
-    DropTableFuzzable, IdNameFuzzable, InsertFieldFuzzable, InsertFieldSetFuzzable,
-    InsertFieldSetsFuzzable, InsertFieldsFuzzable, InsertRecordFuzzable, InsertRecordsFuzzable,
-    InsertsFieldFuzzable, InsertsFieldSetFuzzable, InsertsFieldSetsFuzzable, InsertsFieldsFuzzable,
-    RenameColumnFuzzable, RenameColumnsFuzzable, RenamePrimaryFuzzable, RenameTableFuzzable,
-    RetypeColumnFuzzable, RetypePrimaryFuzzable,
+    CreateTableFromClassFuzzable, CreateTableFuzzable, DeleteFieldFuzzable, DeleteFieldSetFuzzable,
+    DeleteFieldSetsFuzzable, DeleteFieldsFuzzable, DeleteRecordFuzzable, DeleteRecordsFuzzable,
+    DeletesFieldFuzzable, DeletesFieldSetFuzzable, DeletesFieldSetsFuzzable, DeletesFieldsFuzzable,
+    DropColumnFuzzable, DropColumnsFuzzable, DropIndexFuzzable, DropTableFuzzable, IdNameFuzzable,
+    InsertFieldFuzzable, InsertFieldSetFuzzable, InsertFieldSetsFuzzable, InsertFieldsFuzzable,
+    InsertRecordFuzzable, InsertRecordsFuzzable, InsertsFieldFuzzable, InsertsFieldSetFuzzable,
+    InsertsFieldSetsFuzzable, InsertsFieldsFuzzable, RenameColumnFuzzable, RenameColumnsFuzzable,
+    RenamePrimaryFuzzable, RenameTableFuzzable, RetypeColumnFuzzable, RetypePrimaryFuzzable,
 };
 use starknet::Event;
 
@@ -48,20 +47,20 @@ fn test_create_table_event(event: CreateTable) {
 }
 
 
-impl CreateTableWithColumnsFuzzableImpl = database::CreateTableWithColumnsFuzzable<8, 8>;
+impl CreateTableFuzzableImpl = database::CreateTableFuzzable<8, 8>;
 
 #[test]
 #[fuzzer]
-fn test_create_table_with_columns_event(event: CreateTableWithColumns) {
+fn test_create_table_from_contract_event(event: CreateTableFromContract) {
     verify_event(@event);
-    verify_event(@DatabaseEvents::CreateTableWithColumns(event));
+    verify_event(@DatabaseEvents::CreateTableFromContract(event));
 }
 
 #[test]
 #[fuzzer]
-fn test_create_table_from_class_hash_event(event: CreateTableFromClassHash) {
+fn test_create_table_from_class_event(event: CreateTableFromClass) {
     verify_event(@event);
-    verify_event(@DatabaseEvents::CreateTableFromClassHash(event));
+    verify_event(@DatabaseEvents::CreateTableFromClass(event));
 }
 
 #[test]

@@ -1,6 +1,6 @@
 use super::{
-    AddColumn, AddColumns, CreateColumnSet, CreateIndex, CreateTable, CreateTableFromClassHash,
-    CreateTableWithColumns, DeleteField, DeleteFieldSet, DeleteFieldSets, DeleteFields,
+    AddColumn, AddColumns, CreateColumnSet, CreateIndex, CreateTable, CreateTableFromClass,
+    CreateTableFromContract, DeleteField, DeleteFieldSet, DeleteFieldSets, DeleteFields,
     DeleteRecord, DeleteRecords, DeletesField, DeletesFieldSet, DeletesFieldSets, DeletesFields,
     DropColumn, DropColumns, DropIndex, DropTable, Entry, IdName, IdTypeDef, InsertField,
     InsertFieldSet, InsertFieldSets, InsertFields, InsertRecord, InsertRecords, InsertsField,
@@ -35,30 +35,10 @@ impl EventTrait for CreateTable {
     ) -> Option<Self> {
         let id = event_data.next()?;
         let name = ideserialize_utf8_string(event_data)?;
-        let primary = PrimaryDef::ideserialize(event_data)?;
-        let attributes = Attribute::ideserialize_end(event_data)?;
-        CreateTable {
-            id,
-            name,
-            attributes,
-            primary,
-        }
-        .verify(event_keys, event_data)
-    }
-}
-
-impl EventTrait for CreateTableWithColumns {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateTableWithColumns");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let id = event_data.next()?;
-        let name = ideserialize_utf8_string(event_data)?;
         let attributes = Vec::<Attribute>::ideserialize(event_data)?;
         let primary = PrimaryDef::ideserialize(event_data)?;
         let columns = ColumnDef::ideserialize_end(event_data)?;
-        CreateTableWithColumns {
+        CreateTable {
             id,
             name,
             attributes,
@@ -69,8 +49,8 @@ impl EventTrait for CreateTableWithColumns {
     }
 }
 
-impl EventTrait for CreateTableFromClassHash {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateTableFromClassHash");
+impl EventTrait for CreateTableFromClass {
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateTableFromClass");
     fn deserialize_event(
         event_keys: &mut FeltIterator,
         event_data: &mut FeltIterator,
@@ -78,10 +58,28 @@ impl EventTrait for CreateTableFromClassHash {
         let id = event_data.next()?;
         let name = ideserialize_utf8_string(event_data)?;
         let class_hash = event_data.next()?;
-        CreateTableFromClassHash {
+        CreateTableFromClass {
             id,
             name,
             class_hash,
+        }
+        .verify(event_keys, event_data)
+    }
+}
+
+impl EventTrait for CreateTableFromContract {
+    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateTableFromContract");
+    fn deserialize_event(
+        event_keys: &mut FeltIterator,
+        event_data: &mut FeltIterator,
+    ) -> Option<Self> {
+        let id = event_data.next()?;
+        let name = ideserialize_utf8_string(event_data)?;
+        let contract_address = event_data.next()?;
+        CreateTableFromContract {
+            id,
+            name,
+            contract_address,
         }
         .verify(event_keys, event_data)
     }

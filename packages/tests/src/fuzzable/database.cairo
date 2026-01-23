@@ -1,6 +1,6 @@
 use introspect::events::database::{
-    AddColumn, AddColumns, CreateColumnSet, CreateIndex, CreateTable, CreateTableFromClassHash,
-    CreateTableWithColumns, DeleteField, DeleteFieldSet, DeleteFieldSets, DeleteFields,
+    AddColumn, AddColumns, CreateColumnSet, CreateIndex, CreateTable, CreateTableFromClass,
+    CreateTableFromContract, DeleteField, DeleteFieldSet, DeleteFieldSets, DeleteFields,
     DeleteRecord, DeleteRecords, DeletesField, DeletesFieldSet, DeletesFieldSets, DeletesFields,
     DropColumn, DropColumns, DropIndex, DropTable, IdName, IdTypeDef, InsertField, InsertFieldSet,
     InsertFieldSets, InsertFields, InsertRecord, InsertRecords, InsertsField, InsertsFieldSet,
@@ -43,7 +43,9 @@ pub impl CreateFieldSetFuzzable of Fuzzable<CreateColumnSet> {
     }
 }
 
-pub impl CreateTableFuzzable of Fuzzable<CreateTable> {
+pub impl CreateTableFuzzable<
+    const MAX_COLUMNS: u32, const MAX_DEPTH: u32,
+> of Fuzzable<CreateTable> {
     fn blank() -> CreateTable {
         Default::default()
     }
@@ -55,37 +57,32 @@ pub impl CreateTableFuzzable of Fuzzable<CreateTable> {
             name,
             attributes: Fuzzy::generate_span_lt(10),
             primary: Fuzzy::generate(),
-        }
-    }
-}
-
-pub impl CreateTableWithColumnsFuzzable<
-    const MAX_COLUMNS: u32, const MAX_DEPTH: u32,
-> of Fuzzable<CreateTableWithColumns> {
-    fn blank() -> CreateTableWithColumns {
-        Default::default()
-    }
-
-    fn generate() -> CreateTableWithColumns {
-        let name = random_pascal_string(64, 4);
-        CreateTableWithColumns {
-            id: name.selector(),
-            name,
-            attributes: Fuzzy::generate_span_lt(10),
-            primary: Fuzzy::generate(),
             columns: FuzzableExtColumnDef::<MAX_DEPTH>::generate_span(MAX_COLUMNS),
         }
     }
 }
 
-pub impl CreateTableFromClassHashFuzzable of Fuzzable<CreateTableFromClassHash> {
-    fn blank() -> CreateTableFromClassHash {
+pub impl CreateTableFromClassFuzzable of Fuzzable<CreateTableFromClass> {
+    fn blank() -> CreateTableFromClass {
         Default::default()
     }
 
-    fn generate() -> CreateTableFromClassHash {
+    fn generate() -> CreateTableFromClass {
         let name = random_pascal_string(64, 4);
-        CreateTableFromClassHash { class_hash: Fuzzable::generate(), id: name.selector(), name }
+        CreateTableFromClass { class_hash: Fuzzable::generate(), id: name.selector(), name }
+    }
+}
+
+pub impl CreateTableFromContractFuzzable of Fuzzable<CreateTableFromContract> {
+    fn blank() -> CreateTableFromContract {
+        Default::default()
+    }
+
+    fn generate() -> CreateTableFromContract {
+        let name = random_pascal_string(64, 4);
+        CreateTableFromContract {
+            contract_address: Fuzzable::generate(), id: name.selector(), name,
+        }
     }
 }
 

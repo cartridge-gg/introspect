@@ -1,4 +1,5 @@
 pub mod database;
+pub mod multipart;
 pub mod types;
 pub mod utils;
 pub mod variable;

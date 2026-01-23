@@ -51,33 +51,6 @@ where
     }
 }
 
-// pub trait ToTypeDef {
-//     fn to_type_def(&self) -> String;
-// }
-
-// pub trait ToTypeDefs {
-//     fn to_type_defs(&self) -> Vec<String>;
-//     fn to_type_defs_csv(&self) -> String {
-//         self.to_type_defs().join(",")
-//     }
-//     fn to_type_defs_span(&self) -> String {
-//         format!("[{}].span()", self.to_type_defs_csv())
-//     }
-//     fn to_type_defs_array(&self) -> String {
-//         format!("array![{}]", self.to_type_defs_csv())
-//     }
-// }
-
-// impl<T, S> ToTypeDefs for T
-// where
-//     T: Deref<Target = [S]>,
-//     S: ToTypeDef,
-// {
-//     fn to_type_defs(&self) -> Vec<String> {
-//         self.iter().map(S::to_type_def).collect()
-//     }
-// }
-
 pub trait ITys {
     fn collect_child_defs(&self, i_path: &str) -> String;
 }

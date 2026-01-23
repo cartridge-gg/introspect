@@ -115,40 +115,40 @@ impl ToSnapshotOfSnapshot<T, +Owned<T>> of ToSnapshotOf<@T, T> {
     }
 }
 
-// impl ToSnapshot2Impl<T, +Owned<T>> of ToSnapshotOf<@@T, T> {
-//     const fn to_snapshot(self: @@T) -> @T nopanic {
-//         *self
-//     }
-// }
-
-// impl ToSnapshot3Impl<T, +Owned<T>> of ToSnapshotOf<@@@T, T> {
-//     const fn to_snapshot(self: @@@T) -> @T nopanic {
-//         **self
-//     }
-// }
-
-impl ToSnapshotNestedImpl<T, impl TS: ToSnapshotBase<T>> of ToSnapshotOf<@T, TS::Base> {
-    const fn to_snapshot(self: @T) -> @TS::Base nopanic {
-        TS::to_snapshot(*self)
+impl ToSnapshot2Impl<T, +Owned<T>> of ToSnapshotOf<@@T, T> {
+    const fn to_snapshot(self: @@T) -> @T nopanic {
+        *self
     }
 }
+
+impl ToSnapshot3Impl<T, +Owned<T>> of ToSnapshotOf<@@@T, T> {
+    const fn to_snapshot(self: @@@T) -> @T nopanic {
+        **self
+    }
+}
+// impl ToSnapshotNestedImpl<T, impl TS: ToSnapshotBase<@T>> of ToSnapshotOf<@@T, TS::Base> {
+//     const fn to_snapshot(self: @@T) -> @TS::Base nopanic {
+//         TS::to_snapshot(*self)
+//     }
+// }
 // impl ToSnapshotNestedImpl<T, S, impl SS: ToSnapshotOf<@T, S>, +Owned<S>> of ToSnapshotOf<@@T, S>
 // {
 //     const fn to_snapshot(self: @@T) -> @S nopanic {
 //         SS::to_snapshot(*self)
 //     }
 // }
-mod test_mod {
-    use super::{ToSnapshotBase, ToSnapshotOf};
-    fn test() {
-        let a = ToSnapshotBase::to_snapshot(1);
-        let b = ToSnapshotBase::to_snapshot(@1);
-        let c = ToSnapshotBase::to_snapshot(@@1);
-        let d = ToSnapshotBase::to_snapshot(@@@@@@1);
-        let a = ToSnapshotOf::to_snapshot(1);
-        let b = ToSnapshotOf::to_snapshot(@1);
-        let c = ToSnapshotOf::to_snapshot(@@@@@@1);
-        // let d = ToSnapshotOf::to_snapshot(@@@@@@1);
-    }
-}
+// mod test_mod {
+//     use super::{ToSnapshotBase, ToSnapshotOf};
+//     fn test() {
+//         let a = ToSnapshotBase::to_snapshot(1);
+//         let b = ToSnapshotBase::to_snapshot(@1);
+//         let c = ToSnapshotBase::to_snapshot(@@1);
+//         let d = ToSnapshotBase::to_snapshot(@@@@@@1);
+//         let a = ToSnapshotOf::to_snapshot(1);
+//         let b = ToSnapshotOf::to_snapshot(@1);
+//         let c = ToSnapshotOf::to_snapshot(@@@@@@1);
+//         // let d = ToSnapshotOf::to_snapshot(@@@@@@1);
+//     }
+// }
+
 

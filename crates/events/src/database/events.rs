@@ -16,22 +16,21 @@ pub struct CreateTable {
     pub name: String,
     pub attributes: Vec<Attribute>,
     pub primary: PrimaryDef,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CreateTableWithColumns {
-    pub id: Felt,
-    pub name: String,
-    pub attributes: Vec<Attribute>,
-    pub primary: PrimaryDef,
     pub columns: Vec<ColumnDef>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct CreateTableFromClassHash {
+pub struct CreateTableFromClass {
     pub id: Felt,
     pub name: String,
     pub class_hash: Felt,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CreateTableFromContract {
+    pub id: Felt,
+    pub name: String,
+    pub contract_address: Felt,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]

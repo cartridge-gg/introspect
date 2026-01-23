@@ -26,7 +26,7 @@ impl ToISerdeImpl for IEnum {
 impl IVariant {
     pub fn serialize_variant(&self, enum_name: &str) -> String {
         let selector = &self.selector;
-        let variant_name = &self.name;
+        let variant_name = &self.field;
         match self.ty {
             None => format!("{enum_name}::{variant_name} => output.append({selector}),"),
             Some(_) => format!(
@@ -37,11 +37,11 @@ impl IVariant {
 
     pub fn deserialize_variant(&self, enum_name: &str) -> String {
         let selector = self.selector.as_cairo();
+        let field = &self.field;
         match &self.ty {
-            None => format!("{selector} => Some({enum_name}::{}),", self.name),
+            None => format!("{selector} => Some({enum_name}::{field}),"),
             Some(_) => format!(
-                "{selector} => Some({enum_name}::{}({I_PATH}::ideserialize(ref serialized)?)),",
-                self.name
+                "{selector} => Some({enum_name}::{field}({I_PATH}::ideserialize(ref serialized)?)),",
             ),
         }
     }

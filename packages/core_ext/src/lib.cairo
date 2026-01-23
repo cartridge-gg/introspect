@@ -1,12 +1,14 @@
-pub mod collections;
+pub mod collection_extend;
+pub mod collection_split;
+pub mod snap_forward;
 pub mod snapshots;
 pub mod span;
-pub mod tuple;
-pub use collections::{CollectionSnapForward, CollectionSplit};
+pub use collection_extend::CollectionExtendFront;
+pub use collection_split::CollectionSplit;
+pub use snap_forward::{SnapForward, SnapForwardTo};
 pub use snapshots::{
     AsSnapshot, BaseType, EquivalentType, NestedSnapshot, Owned, SingleSnapshot, Snapshot,
     SnapshotOf, ToSnapshotBase, ToSnapshotOf,
 };
 pub use span::ToSpan;
-pub use tuple::{TupleSnapForward, TupleSnapForwardTo};
 

@@ -6,8 +6,8 @@ use super::emit_event_impl;
 pub mod selectors {
     pub const CreateFieldSet: felt252 = selector!("CreateFieldSet");
     pub const CreateTable: felt252 = selector!("CreateTable");
-    pub const CreateTableWithColumns: felt252 = selector!("CreateTableWithColumns");
-    pub const CreateTableFromClassHash: felt252 = selector!("CreateTableFromClassHash");
+    pub const CreateTableFromClass: felt252 = selector!("CreateTableFromClass");
+    pub const CreateTableFromContract: felt252 = selector!("CreateTableFromContract");
     pub const RenameTable: felt252 = selector!("RenameTable");
     pub const DropTable: felt252 = selector!("DropTable");
     pub const CreateIndex: felt252 = selector!("CreateIndex");
@@ -49,8 +49,8 @@ pub mod selectors {
 pub enum DatabaseEvents {
     CreateFieldSet: CreateColumnSet,
     CreateTable: CreateTable,
-    CreateTableWithColumns: CreateTableWithColumns,
-    CreateTableFromClassHash: CreateTableFromClassHash,
+    CreateTableFromClass: CreateTableFromClass,
+    CreateTableFromContract: CreateTableFromContract,
     RenameTable: RenameTable,
     DropTable: DropTable,
     CreateIndex: CreateIndex,
@@ -112,21 +112,20 @@ pub struct CreateTable {
     pub name: ByteArray,
     pub attributes: Span<Attribute>,
     pub primary: PrimaryDef,
-}
-
-/// Emitted when a new table is created with specified columns.
-#[derive(Drop, Serde, PartialEq, Debug, Default)]
-pub struct CreateTableWithColumns {
-    pub id: felt252,
-    pub name: ByteArray,
-    pub attributes: Span<Attribute>,
-    pub primary: PrimaryDef,
     pub columns: Span<ColumnDef>,
 }
 
 /// Emitted when a new table is created from a class hash.
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
-pub struct CreateTableFromClassHash {
+pub struct CreateTableFromContract {
+    pub id: felt252,
+    pub name: ByteArray,
+    pub contract_address: felt252,
+}
+
+/// Emitted when a new table is created from a class hash.
+#[derive(Drop, Serde, PartialEq, Debug, Default)]
+pub struct CreateTableFromClass {
     pub id: felt252,
     pub name: ByteArray,
     pub class_hash: felt252,
@@ -495,46 +494,43 @@ impl CreateTableEvent of Event<CreateTable> {
     ) {
         data.append(*self.id);
         self.name.iserialize(ref data);
-        self.primary.iserialize(ref data);
-        self.attributes.iserialize_end(ref data);
-    }
-
-    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<CreateTable> {
-        let id = *data.pop_front()?;
-        let name = ISerde::ideserialize(ref data)?;
-        let primary = ISerde::ideserialize(ref data)?;
-        let attributes = ISerdeEnd::ideserialize_end(ref data)?;
-        CreateTable { id, name, primary, attributes }.verify_keys(ref keys)
-    }
-}
-
-impl CreateTableWithColumnsEvent of Event<CreateTableWithColumns> {
-    fn append_keys_and_data(
-        self: @CreateTableWithColumns, ref keys: Array<felt252>, ref data: Array<felt252>,
-    ) {
-        data.append(*self.id);
-        self.name.iserialize(ref data);
         self.attributes.iserialize(ref data);
         self.primary.iserialize(ref data);
         self.columns.iserialize_end(ref data);
     }
 
-    fn deserialize(
-        ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<CreateTableWithColumns> {
+    fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<CreateTable> {
         let id = *data.pop_front()?;
         let name = ISerde::ideserialize(ref data)?;
         let attributes = ISerde::ideserialize(ref data)?;
         let primary = ISerde::ideserialize(ref data)?;
         let columns = ISerdeEnd::ideserialize_end(ref data)?;
-        CreateTableWithColumns { id, name, attributes, primary, columns }.verify_keys(ref keys)
+        CreateTable { id, name, primary, attributes, columns }.verify_keys(ref keys)
     }
 }
 
-
-impl CreateTableFromClassHashEvent of Event<CreateTableFromClassHash> {
+impl CreateTableFromContractEvent of Event<CreateTableFromContract> {
     fn append_keys_and_data(
-        self: @CreateTableFromClassHash, ref keys: Array<felt252>, ref data: Array<felt252>,
+        self: @CreateTableFromContract, ref keys: Array<felt252>, ref data: Array<felt252>,
+    ) {
+        data.append(*self.id);
+        self.name.iserialize(ref data);
+        data.append(*self.contract_address);
+    }
+
+    fn deserialize(
+        ref keys: Span<felt252>, ref data: Span<felt252>,
+    ) -> Option<CreateTableFromContract> {
+        let id = *data.pop_front()?;
+        let name = ISerde::ideserialize(ref data)?;
+        let contract_address = *data.pop_front()?;
+        CreateTableFromContract { id, name, contract_address }.verify(ref keys, ref data)
+    }
+}
+
+impl CreateTableFromClassEvent of Event<CreateTableFromClass> {
+    fn append_keys_and_data(
+        self: @CreateTableFromClass, ref keys: Array<felt252>, ref data: Array<felt252>,
     ) {
         data.append(*self.id);
         self.name.iserialize(ref data);
@@ -543,11 +539,11 @@ impl CreateTableFromClassHashEvent of Event<CreateTableFromClassHash> {
 
     fn deserialize(
         ref keys: Span<felt252>, ref data: Span<felt252>,
-    ) -> Option<CreateTableFromClassHash> {
+    ) -> Option<CreateTableFromClass> {
         let id = *data.pop_front()?;
         let name = ISerde::ideserialize(ref data)?;
         let class_hash = *data.pop_front()?;
-        CreateTableFromClassHash { id, name, class_hash }.verify(ref keys, ref data)
+        CreateTableFromClass { id, name, class_hash }.verify(ref keys, ref data)
     }
 }
 
@@ -1117,10 +1113,10 @@ impl DeletesFieldSetsEvent of Event<DeletesFieldSets> {
 impl EmitCreateFieldSet =
     emit_event_impl::EmitEventImpl<CreateColumnSet, selectors::CreateFieldSet>;
 impl EmitCreateTable = emit_event_impl::EmitEventImpl<CreateTable, selectors::CreateTable>;
-impl EmitCreateTableWithColumns =
-    emit_event_impl::EmitEventImpl<CreateTableWithColumns, selectors::CreateTableWithColumns>;
-impl EmitCreateTableFromClassHash =
-    emit_event_impl::EmitEventImpl<CreateTableFromClassHash, selectors::CreateTableFromClassHash>;
+impl EmitCreateTableFromContract =
+    emit_event_impl::EmitEventImpl<CreateTableFromContract, selectors::CreateTableFromContract>;
+impl EmitCreateTableFromClass =
+    emit_event_impl::EmitEventImpl<CreateTableFromClass, selectors::CreateTableFromClass>;
 impl EmitRenameTable = emit_event_impl::EmitEventImpl<RenameTable, selectors::RenameTable>;
 impl EmitDropTable = emit_event_impl::EmitEventImpl<DropTable, selectors::DropTable>;
 impl EmitCreateIndex = emit_event_impl::EmitEventImpl<CreateIndex, selectors::CreateIndex>;

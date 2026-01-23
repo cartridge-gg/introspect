@@ -47,6 +47,7 @@ dependencies = [
 name = "introspect_tests"
 version = "0.1.2"
 dependencies = [
+ "core_ext",
  "introspect",
  "introspect_macros",
  "snforge_std",
