@@ -50,7 +50,7 @@ The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL 
 
 Introspect defines several core types used to communicate onchain state changes. These include enumerations of primitive types, structs used for generic metadata, complex core types, custom core types used for application-specific data, and table definitions for defining columns and records. Some of these types mirror core Cairo types, in a struct format amenable to standard serialization.
 
-The `TypeDef` enum describes all data types supported by Introspect. Each variant represents either a primitive type or a composite type with associated structure.
+The `TypeDef` enum describes all data types initially supported by Introspect. Each variant represents either a primitive type or a composite type with associated structure.
 
 All indexers implementing Introspect MUST support the following types:
 
@@ -461,6 +461,8 @@ Indices are supplemental data structures enabling fast querying of specific colu
 
 - `id`: Unique index identifier
 - `table`: Matches `id` from [table events](#Table-Management)
+- `attributes`: Attributes associated with the index, eg a boolean flag for uniqueness
+- `columns`: Ordered list of column IDs included in the index
 
 ```rust
 // Create a new index on a table
@@ -468,7 +470,7 @@ Indices are supplemental data structures enabling fast querying of specific colu
 struct CreateIndex {
     table: felt252,
     id: felt252,
-    name: ByteArray,
+    attributes: Span<Attribute>,
     columns: Span<felt252>,
 }
 
@@ -479,6 +481,10 @@ struct DropIndex {
     id: felt252,
 }
 ```
+
+Indexes can also be made using attributes on columns and tables.
+To crate an index for a single column with the same name an attribute with the name `create_index` `create_unique_index` and empty attributes can be used.
+If a column has an attribute with the name `create_index` and no data an index
 
 #### Column Set Management
 
