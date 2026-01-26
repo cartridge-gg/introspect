@@ -1,20 +1,19 @@
 const TEST: felt252 = 42;
-use core::serde
-#[derive(Debug, Default, Introspect)]
+#[derive(Debug, Default, ISerde, Introspect)]
 pub struct TestStruct<T, S> {
     #[key]
     pub value: Span<T>,
     pub value2: (felt252, S),
 }
 
-#[derive(Debug, Default, Introspect)]
+#[derive(Debug, Default, ISerde, Introspect)]
 pub enum TestEnum<T> {
     #[default]
     Variant1,
     Variant2: TestStruct<T, felt252>,
 }
 
-#[derive(Copy, Drop, Serde, IntrospectRef, Debug, PartialEq, Default, Fuzzable)]
+#[derive(Copy, Drop, Serde, ISerde, IntrospectRef, Debug, PartialEq, Default, Fuzzable)]
 pub struct Foo {
     #[key]
     k1: u8,
@@ -23,7 +22,7 @@ pub struct Foo {
     v1: u128,
     v2: u32,
 }
-#[derive(Copy, Drop, Serde, Debug, Introspect, Default, Fuzzable)]
+#[derive(Copy, Drop, Serde, Debug, ISerde, Introspect, Default, Fuzzable)]
 pub struct Foo2 {
     #[key]
     k1: u8,
@@ -33,7 +32,7 @@ pub struct Foo2 {
     v2: u32,
 }
 
-#[derive(Copy, Drop, Serde, Debug, Introspect, Default, Fuzzable)]
+#[derive(Copy, Drop, Serde, Debug, ISerde, Introspect, Default, Fuzzable)]
 pub struct Foo3 {
     #[key]
     k1: u256,
@@ -43,7 +42,7 @@ pub struct Foo3 {
     v2: u32,
 }
 
-#[derive(Copy, Drop, Serde, Debug, IntrospectRef, Default, Fuzzable)]
+#[derive(Copy, Drop, Serde, Debug, ISerde, IntrospectRef, Default, Fuzzable)]
 pub struct AStruct {
     a: u8,
     b: u8,
@@ -51,7 +50,7 @@ pub struct AStruct {
     d: u8,
 }
 
-#[derive(Copy, Drop, Serde, Debug, Introspect, Default, Fuzzable)]
+#[derive(Copy, Drop, Serde, Debug, ISerde, Introspect, Default, Fuzzable)]
 pub struct Foo4 {
     #[key]
     id: felt252,
@@ -60,27 +59,27 @@ pub struct Foo4 {
     v2: u128,
     v3: AStruct,
 }
-#[derive(Copy, Drop, Serde, Debug, Introspect, Default, Fuzzable)]
+#[derive(Copy, Drop, Serde, Debug, ISerde, Introspect, Default, Fuzzable)]
 pub struct FooSchema {
     v0: u256,
     v3: AStruct,
 }
 // to test the issue https://github.com/dojoengine/dojo/issues/3199
-#[derive(Copy, Drop, Serde, Debug, Introspect)]
+#[derive(Copy, Drop, Serde, Debug, ISerde, Introspect)]
 pub struct ModelWithCommentOnLastFied {
     #[key]
     k1: u8,
     v1: Span<u32> // a comment without a comma
 }
 
-#[derive(Copy, Drop, Serde, Debug, Introspect, Default, PartialEq)]
+#[derive(Copy, Drop, Serde, Debug, ISerde, Introspect, Default, PartialEq)]
 pub enum EnumWithCommentOnLastVariant {
     #[default]
     X: u8,
     Y: Span<u32> // a comment without a comma
 }
 
-#[derive(Copy, Drop, Serde, Debug, Introspect, Default, PartialEq)]
+#[derive(Copy, Drop, Serde, Debug, ISerde, Introspect, Default, PartialEq)]
 pub enum MyEnumLegacy<T> {
     X: Option<u32>,
     Y: (T, u32),
@@ -88,7 +87,7 @@ pub enum MyEnumLegacy<T> {
     Z,
 }
 
-#[derive(Copy, Drop, Serde, Debug, Introspect, PartialEq)]
+#[derive(Copy, Drop, Serde, Debug, ISerde, Introspect, PartialEq)]
 pub struct LegacyModel<T> {
     #[key]
     a: u8,
@@ -96,8 +95,7 @@ pub struct LegacyModel<T> {
     c: Option<u32>,
     d: MyEnumLegacy<T>,
 }
-
-#[derive(Copy, Drop, Serde, Debug, Introspect, Default, PartialEq)]
+#[derive(Copy, Drop, Serde, Debug, ISerde, Introspect, Default, PartialEq)]
 pub enum MyEnum {
     X: Option<u32>,
     Y: (u8, u32),
@@ -105,7 +103,7 @@ pub enum MyEnum {
     Z,
 }
 
-#[derive(Copy, Drop, Serde, Debug, Introspect, PartialEq)]
+#[derive(Copy, Drop, Serde, Debug, ISerde, Introspect, PartialEq)]
 pub struct DojoStoreModel {
     #[key]
     a: u8,
@@ -114,7 +112,7 @@ pub struct DojoStoreModel {
     d: MyEnum,
 }
 
-#[derive(Copy, Drop, Serde, Introspect, Default, Debug, PartialEq, Fuzzable)]
+#[derive(Copy, Drop, Serde, ISerde, Introspect, Default, Debug, PartialEq, Fuzzable)]
 pub enum EnumKey {
     #[default]
     KEY_1,
@@ -122,7 +120,7 @@ pub enum EnumKey {
     KEY_3,
 }
 
-#[derive(Copy, Drop, Debug, Introspect, PartialEq)]
+#[derive(Copy, Drop, Debug, ISerde, Introspect, PartialEq)]
 pub struct LegacyModelWithEnumKey<T> {
     #[key]
     k1: u8,
@@ -133,13 +131,13 @@ pub struct LegacyModelWithEnumKey<T> {
     v3: MyEnumLegacy<T>,
 }
 
-#[derive(Copy, Drop, Serde, Introspect, Debug, PartialEq)]
+#[derive(Copy, Drop, Serde, ISerde, Introspect, Debug, PartialEq)]
 pub struct LegacyModelSubset<T> {
     v2: Option<u32>,
     v3: MyEnumLegacy<T>,
 }
 
-#[derive(Copy, Drop, Debug, Introspect, PartialEq)]
+#[derive(Copy, Drop, Debug, ISerde, Introspect, PartialEq)]
 pub struct DojoStoreModelWithEnumKey {
     #[key]
     k1: u8,
@@ -150,14 +148,14 @@ pub struct DojoStoreModelWithEnumKey {
     v3: MyEnum,
 }
 
-#[derive(Copy, Drop, Serde, Introspect, Debug, PartialEq)]
+#[derive(Copy, Drop, Serde, ISerde, Introspect, Debug, PartialEq)]
 pub struct DojoStoreModelSubset {
     v2: Option<u32>,
     v3: MyEnum,
 }
 
 // to test with unit types
-#[derive(Copy, Drop, Introspect, Debug, Serde, PartialEq, Default)]
+#[derive(Copy, Drop, ISerde, Introspect, Debug, Serde, PartialEq, Default)]
 pub enum EnumWithUnitType {
     #[default]
     X: u8,
@@ -165,12 +163,12 @@ pub enum EnumWithUnitType {
     Z: (),
 }
 
-#[derive(Copy, Drop, Introspect, Debug, Serde, PartialEq)]
+#[derive(Copy, Drop, ISerde, Introspect, Debug, Serde, PartialEq)]
 pub struct StructWithUnitType {
     x: (),
 }
 
-#[derive(Copy, Drop, Introspect, Debug, Serde, PartialEq)]
+#[derive(Copy, Drop, ISerde, Introspect, Debug, Serde, PartialEq)]
 pub struct ModelWithUnitType {
     #[key]
     k: u8,
@@ -179,27 +177,27 @@ pub struct ModelWithUnitType {
     z: (),
     a: ((), (u8, ())),
 }
-#[derive(Introspect, Serde, Drop, Default)]
+#[derive(ISerde, Introspect, Serde, Drop, Default)]
 pub struct StructWithTuples {
     x: (u8, u16, u32),
     y: Array<(u128, u128)>,
     z: (u8, (u16, Option<u32>), (), u32),
 }
 
-#[derive(Introspect, Serde, Drop, Default)]
+#[derive(ISerde, Introspect, Serde, Drop, Default)]
 pub enum EnumWithTuples {
     #[default]
     A: (u8, u16, u32),
     B: Array<(u128, u128)>,
     C: (u8, (u16, Option<u32>), (), u32),
 }
-#[derive(Introspect, Serde, Drop, Default)]
+#[derive(ISerde, Introspect, Serde, Drop, Default)]
 pub struct StructPackedWithTuples {
     x: (u8, u16, u32),
     y: (u8, (u16, u32), (), u32),
 }
 
-#[derive(Introspect, Serde, Drop, Default)]
+#[derive(ISerde, Introspect, Serde, Drop, Default)]
 pub enum EnumPackedWithTuples {
     #[default]
     A: (u8, (u16, u32), (), u32),
@@ -207,29 +205,29 @@ pub enum EnumPackedWithTuples {
 }
 
 // To test Option with tuple
-#[derive(Introspect, Serde, Drop, Default)]
+#[derive(ISerde, Introspect, Serde, Drop, Default)]
 pub struct StructWithOptionWithTuple {
     #[key]
     k: u8,
     x: Option<(u8, u16)>,
     y: Option<u32>,
 }
-#[derive(Introspect, Serde, Drop, Default)]
+#[derive(ISerde, Introspect, Serde, Drop, Default)]
 pub struct ModelWithFixedArray {
     #[key]
     // test a comment, here
     k1: u8,
     v1: [u16; 3],
 }
-#[derive(Introspect, Serde, Drop, Default)]
+#[derive(ISerde, Introspect, Serde, Drop, Default)]
 pub struct AStructWithNone {}
 
-#[derive(Introspect, Serde, Drop, Default)]
+#[derive(ISerde, Introspect, Serde, Drop, Default)]
 pub struct AStructWithOne {
     a: u8,
 }
 
-#[derive(Drop, Introspect, starknet::Store)]
+#[derive(Drop, ISerde, Introspect, starknet::Store)]
 pub enum Element {
     #[default]
     None,
@@ -239,7 +237,7 @@ pub enum Element {
     Water: u8,
 }
 
-#[derive(Drop, Introspect, starknet::Store)]
+#[derive(Drop, ISerde, Introspect, starknet::Store)]
 pub enum Material {
     #[default]
     Cloth,
@@ -250,21 +248,21 @@ pub enum Material {
     Elemental: Element,
 }
 
-#[derive(Drop, Introspect, starknet::Store)]
+#[derive(Drop, ISerde, Introspect, starknet::Store)]
 pub struct ArmourPiece {
     experience: u32,
     wear: u8,
     material: Material,
 }
 
-#[derive(Drop, Introspect)]
+#[derive(Drop, ISerde, Introspect)]
 pub enum WeaponType {
     Sword,
     Axe,
     Bow,
 }
 
-#[derive(Drop, Introspect)]
+#[derive(Drop, ISerde, Introspect)]
 pub struct Weapon {
     name: ByteArray,
     level: u16,
@@ -272,7 +270,7 @@ pub struct Weapon {
     weapon_type: WeaponType,
 }
 
-#[derive(Drop, Introspect)]
+#[derive(Drop, ISerde, Introspect)]
 pub struct ArmourSet {
     head: ArmourPiece,
     chest: ArmourPiece,
@@ -281,13 +279,13 @@ pub struct ArmourSet {
     boots: ArmourPiece,
 }
 
-#[derive(Drop, Introspect)]
+#[derive(Drop, ISerde, Introspect)]
 pub struct WeaponHit {
     damage: u16,
     element: Element,
 }
 
-#[derive(Drop, Introspect)]
+#[derive(Drop, ISerde, Introspect)]
 pub struct ArmourSetIds {
     head: felt252,
     chest: felt252,
@@ -296,7 +294,7 @@ pub struct ArmourSetIds {
     boots: felt252,
 }
 
-#[derive(Drop, Introspect)]
+#[derive(Drop, ISerde, Introspect)]
 pub struct WarriorTable {
     name: ByteArray,
     level: u8,
@@ -307,20 +305,20 @@ pub struct WarriorTable {
     alive: bool,
 }
 
-#[derive(Drop, Introspect)]
+#[derive(Drop, ISerde, Introspect)]
 pub struct Water {
     depth: u8,
     current_speed: u8,
     fish: bool,
 }
 
-#[derive(Drop, Introspect)]
+#[derive(Drop, ISerde, Introspect)]
 pub struct Mountain {
     height: u32,
     trolls: u8,
 }
 
-#[derive(Drop, Introspect)]
+#[derive(Drop, ISerde, Introspect)]
 pub enum Terrain {
     Grass,
     Water: Water,
@@ -328,7 +326,7 @@ pub enum Terrain {
     Desert,
 }
 
-#[derive(Drop, Introspect)]
+#[derive(Drop, ISerde, Introspect)]
 pub struct MapPosition {
     x: u8,
     y: u8,
@@ -336,9 +334,8 @@ pub struct MapPosition {
     warrior: Option<felt252>,
 }
 
-#[derive(Drop, Introspect)]
+#[derive(Drop, ISerde, Introspect)]
 pub struct Weather {
     wind: u8,
     temperature: i8,
 }
-

@@ -1,4 +1,4 @@
-use introspect_tests::fuzzable;
+use introspect_test_utils::fuzzable;
 use introspect_types::TypeDef;
 use super::iserde_test;
 

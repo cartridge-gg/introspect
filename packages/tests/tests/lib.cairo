@@ -1,4 +1,4 @@
-use introspect_tests::{BytesIntoByteArray, ascii};
+use introspect_test_utils::{BytesIntoByteArray, ascii};
 
 
 #[test]

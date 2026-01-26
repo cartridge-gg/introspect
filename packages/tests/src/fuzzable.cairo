@@ -75,7 +75,7 @@ pub trait FuzzableMaxDepth<T, +Drop<T>> {
     }
 }
 
-impl FuzzableCollectionImpl<T, +Debug<T>, +FuzzableCollection<T>> of Fuzzable<T> {
+pub impl FuzzableCollectionImpl<T, +Debug<T>, +FuzzableCollection<T>> of Fuzzable<T> {
     fn generate() -> T {
         FuzzableCollection::<T>::generate_collection()
     }

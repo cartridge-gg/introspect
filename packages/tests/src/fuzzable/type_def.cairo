@@ -1,5 +1,5 @@
 use introspect::{EnumDef, FixedArrayDef, MemberDef, ResultDef, StructDef, TypeDef, VariantDef};
-use introspect_tests::{
+use introspect_test_utils::{
     ByteArrayExt, FuzzableMaxDepth, FuzzableMaxDepthNode, FuzzableMaxDepthNodeImpl, Fuzzy,
     random_pascal_string, random_snake_string,
 };

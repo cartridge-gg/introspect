@@ -2,7 +2,7 @@ use core::integer::u512;
 use core::metaprogramming::TypeEqual;
 use core::nullable::{FromNullableResult, match_nullable};
 use core::num::traits::{Pow, Zero};
-use core_ext::{CollectionSnapForward, CollectionSplit};
+use core_ext::{CollectionSplit, SnapForward};
 use starknet::{ClassHash, ContractAddress};
 
 pub const SHIFT_31B: felt252 = 256_u256.pow(31).try_into().unwrap();
@@ -372,7 +372,7 @@ pub impl IDeserializeTuple2<
 impl ISerdeTupleNext<
     T,
     impl CS: CollectionSplit<T>,
-    +CollectionSnapForward<T>,
+    +SnapForward<T>,
     +ISerializeTuple<CS::Head>,
     +ISerializeTuple<CS::Rest>,
     +Drop<CS::Rest>,
@@ -429,7 +429,7 @@ impl IDeserializeFixedArrayNext<
 
 impl TupleISerde<
     T,
-    impl SF: CollectionSnapForward<T>,
+    impl SF: SnapForward<T>,
     impl S: ISerializeTuple<SF::SnapForward>,
     impl D: IDeserializeTuple<T>,
 > of ISerde<T> {

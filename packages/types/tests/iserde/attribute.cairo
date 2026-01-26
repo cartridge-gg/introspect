@@ -1,4 +1,4 @@
-use introspect_tests::fuzzable::attribute::FuzzableAttribute;
+use introspect_test_utils::fuzzable::attribute::FuzzableAttribute;
 use introspect_types::attribute::B31_4;
 use introspect_types::serde::{B31_2, B31_3, SHIFT_30B};
 use introspect_types::{Attribute, ISerde};

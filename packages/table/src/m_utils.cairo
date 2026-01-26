@@ -1,3 +1,4 @@
+pub use core_ext::poseidon_hash_fixed_array;
 pub use introspect_types::m_utils::*;
 pub use crate::member::impls::Impl as TableMemberImpl;
 pub use crate::set::{ColumnSet, ItemColumnSet, ValueColumnSet};

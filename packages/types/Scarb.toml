@@ -18,7 +18,7 @@ core_ext.workspace = true
 [dev-dependencies]
 snforge_std.workspace = true
 assert_macros.workspace = true
-introspect_tests.workspace = true
+introspect_test_utils.workspace = true
 
 [tool]
 fmt.workspace = true

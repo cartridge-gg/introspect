@@ -1,5 +1,5 @@
 [package]
-name = "introspect_tests"
+name = "introspect_test_utils"
 version.workspace = true
 edition.workspace = true
 cairo-version.workspace = true

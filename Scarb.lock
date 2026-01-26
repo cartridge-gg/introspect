@@ -14,7 +14,7 @@ version = "0.1.2"
 dependencies = [
  "introspect_events",
  "introspect_macros",
- "introspect_tests",
+ "introspect_test_utils",
  "introspect_types",
  "snforge_std",
 ]
@@ -23,7 +23,7 @@ dependencies = [
 name = "introspect_events"
 version = "0.1.2"
 dependencies = [
- "introspect_tests",
+ "introspect_test_utils",
  "introspect_types",
  "snforge_std",
 ]
@@ -38,13 +38,13 @@ version = "0.1.2"
 dependencies = [
  "core_ext",
  "introspect_events",
- "introspect_tests",
+ "introspect_test_utils",
  "introspect_types",
  "snforge_std",
 ]
 
 [[package]]
-name = "introspect_tests"
+name = "introspect_test_utils"
 version = "0.1.2"
 dependencies = [
  "core_ext",
@@ -58,7 +58,7 @@ name = "introspect_types"
 version = "0.1.2"
 dependencies = [
  "core_ext",
- "introspect_tests",
+ "introspect_test_utils",
  "snforge_std",
 ]
 

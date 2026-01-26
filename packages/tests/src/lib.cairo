@@ -11,3 +11,6 @@ pub use byte_array::{
 pub use fuzzable::{FuzzableMaxDepth, FuzzableMaxDepthNode, FuzzableMaxDepthNodeImpl, Fuzzy};
 pub mod events;
 pub mod introspect;
+pub mod introspect_fuzzable {
+    pub use super::introspect::{AStruct, EnumKey, Foo, Foo2, Foo3, Foo4, FooSchema};
+}

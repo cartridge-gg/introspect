@@ -25,7 +25,7 @@ starknet = "2.13.1"
 introspect_types = { path = "packages/types" }
 introspect_events = { path = "packages/events" }
 introspect_macros = { path = "packages/macros" }
-introspect_tests = { path = "packages/tests" }
+introspect_test_utils = { path = "packages/tests" }
 introspect_table_macros = { path = "packages/table_macros" }
 core_ext = { path = "packages/core_ext" }
 snforge_std = "0.54.0"
@@ -53,7 +53,7 @@ introspect_macros.workspace = true
 
 [dev-dependencies]
 snforge_std.workspace = true
-introspect_tests.workspace = true
+introspect_test_utils.workspace = true
 
 [scripts]
 test = "snforge test"

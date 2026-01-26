@@ -18,7 +18,7 @@ impl {{struct_impl_name}} of {{i_table_path}}::TableStructure {
 
 {{member_impls}}
 
-impl {{struct_name}}RecordValuesSpan of {{i_table_path}}::RecordValuesSpanTrait<{{struct_impl_name}}, {{struct_name}}> {
+impl {{struct_name}}RecordValues of {{i_table_path}}::RecordValues<{{struct_impl_name}}, {{struct_name}}> {
     fn serialize_values(self: @{{struct_name}}, ref data: Array<felt252>) {
         {{serialize_member_calls}}
     }

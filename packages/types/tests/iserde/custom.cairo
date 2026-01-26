@@ -1,4 +1,4 @@
-use introspect_tests::introspect::{
+use introspect_test_utils::introspect::{
     AStruct, AStructWithNone, AStructWithOne, ArmourPiece, ArmourSet, ArmourSetIds, DojoStoreModel,
     DojoStoreModelSubset, DojoStoreModelWithEnumKey, Element, EnumKey, EnumPackedWithTuples,
     EnumWithCommentOnLastVariant, EnumWithTuples, EnumWithUnitType, Foo, Foo2, Foo3, Foo4,
