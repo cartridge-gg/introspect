@@ -82,13 +82,11 @@ pub impl EmittableFieldsImpl<
     impl Struct: TableStructure,
     const SIZE: usize,
     Item,
-    impl ToSpan: ToSpanTrait<[felt252; SIZE], felt252>,
     impl Set: ColumnSet<Struct, Item, SIZE>,
 > of EmittableFields<TABLE_ID, Struct, Item> {
     fn emit_fields(item: @Item) {
         let (row, data) = Set::set_tuple(item);
-        InsertFields { table: TABLE_ID, columns: ToSpan::span(@Set::COLUMN_IDS), row, data }
-            .emit_event();
+        InsertFields { table: TABLE_ID, columns: Set::column_ids(), row, data }.emit_event();
     }
 }
 
@@ -100,12 +98,10 @@ pub impl EmittableFieldsBatchImpl<
     Item,
     impl Set: ColumnSet<Struct, Item, SIZE>,
     +ToSpan<Items, Item>,
-    impl ToSpan: ToSpanTrait<[felt252; SIZE], felt252>,
 > of EmittableFieldsBatch<TABLE_ID, Struct, Items> {
     fn emit_fields_batch(items: Items) {
         let entries = Set::serialise_rows_set(items);
-        InsertsFields { table: TABLE_ID, columns: ToSpan::span(@Set::COLUMN_IDS), entries }
-            .emit_event();
+        InsertsFields { table: TABLE_ID, columns: Set::column_ids(), entries }.emit_event();
     }
 }
 

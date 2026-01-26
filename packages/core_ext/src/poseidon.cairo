@@ -747,18 +747,18 @@ const fn poseidon_hash_pair(state: [felt252; 3], first: felt252, second: felt252
     hades_permutation_const(s0 + first, s1 + second, s2)
 }
 
-trait PoseidonHashConst<T> {
+pub trait PoseidonFixedArray<T> {
     const fn poseidon_hash_fixed_array(self: [felt252; 3], inputs: T) -> felt252;
 }
 
-impl PoseidonHashConst0 of PoseidonHashConst<[felt252; 0]> {
+impl PoseidonHashConst0 of PoseidonFixedArray<[felt252; 0]> {
     const fn poseidon_hash_fixed_array(self: [felt252; 3], inputs: [felt252; 0]) -> felt252 {
         let [s0, s1, s2] = self;
         poseidon_hash_finalize_even(s0, s1, s2)
     }
 }
 
-impl PoseidonHashConst1 of PoseidonHashConst<[felt252; 1]> {
+impl PoseidonHashConst1 of PoseidonFixedArray<[felt252; 1]> {
     const fn poseidon_hash_fixed_array(self: [felt252; 3], inputs: [felt252; 1]) -> felt252 {
         let [value] = inputs;
         let [s0, s1, s2] = self;
@@ -766,13 +766,13 @@ impl PoseidonHashConst1 of PoseidonHashConst<[felt252; 1]> {
     }
 }
 
-impl PoseidonHashConstN<
+impl PoseidonFixedArrayImpl<
     const SIZE: usize,
     impl S0: CollectionSplit<[felt252; SIZE]>[Head: felt252],
     impl S1: CollectionSplit<S0::Rest>[Head: felt252],
-    impl Pos: PoseidonHashConst<S1::Rest>,
+    impl Pos: PoseidonFixedArray<S1::Rest>,
     +Drop<S1::Rest>,
-> of PoseidonHashConst<[felt252; SIZE]> {
+> of PoseidonFixedArray<[felt252; SIZE]> {
     const fn poseidon_hash_fixed_array(self: [felt252; 3], inputs: [felt252; SIZE]) -> felt252 {
         let (value1, rest) = inputs.split_head();
         let (value2, rest) = rest.split_head();
@@ -784,7 +784,7 @@ impl PoseidonHashConstN<
 
 
 pub const fn poseidon_hash_fixed_array<
-    const SIZE: usize, impl Hash: PoseidonHashConst<[felt252; SIZE]>,
+    const SIZE: usize, impl Hash: PoseidonFixedArray<[felt252; SIZE]>,
 >(
     inputs: [felt252; SIZE],
 ) -> felt252 {
@@ -798,14 +798,14 @@ mod tests {
     use core::fmt::Debug;
     use core::poseidon::poseidon_hash_span;
     use snforge_std::fuzzable::Fuzzable;
-    use super::{PoseidonHashConst, poseidon_hash_fixed_array};
+    use super::{PoseidonFixedArray, poseidon_hash_fixed_array};
 
 
     const VALUES_1: [felt252; 1] = ['hello'];
     const HASH_1: felt252 = poseidon_hash_fixed_array(VALUES_1);
     const VALUES_2: [felt252; 2] = ['foo', 'bar'];
     const HASH_2: felt252 = poseidon_hash_fixed_array(VALUES_2);
-    const VALUES_3: [felt252; 3] = ['remember', 'the', 'cant'];
+    const VALUES_3: [felt252; 3] = ['make', 'it', 'so'];
     const HASH_3: felt252 = poseidon_hash_fixed_array(VALUES_3);
     const VALUES_4: [felt252; 4] = ['Ubiquitous', 'Mendacious', 'Polyglottal', 'Donkey Balls'];
     const HASH_4: felt252 = poseidon_hash_fixed_array(VALUES_4);
@@ -836,7 +836,7 @@ mod tests {
     }
     fn test_poseidon_hash_fixed_array<
         const SIZE: usize,
-        +PoseidonHashConst<[felt252; SIZE]>,
+        +PoseidonFixedArray<[felt252; SIZE]>,
         impl ToSpan: ToSpanTrait<[felt252; SIZE], felt252>,
     >(
         values: [felt252; SIZE],
@@ -847,7 +847,7 @@ mod tests {
 
     fn test_hash_against_poseidon_hash_span<
         const SIZE: usize,
-        +PoseidonHashConst<[felt252; SIZE]>,
+        +PoseidonFixedArray<[felt252; SIZE]>,
         impl ToSpan: ToSpanTrait<[felt252; SIZE], felt252>,
     >(
         hash: felt252, values: [felt252; SIZE],

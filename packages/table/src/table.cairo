@@ -1,14 +1,14 @@
 use core_ext::{ToSnapshotOf, ToSpan};
 use introspect_events::EmitEvent;
 use introspect_events::database::{
-    CreateTable, DeleteField, DeleteFields, DeleteRecord, DeleteRecords, DeletesField,
-    DeletesFields, InsertField, InsertsField,
+    CreateColumnSet, CreateTable, DeleteField, DeleteFields, DeleteRecord, DeleteRecords,
+    DeletesField, DeletesFields, InsertField, InsertsField,
 };
 use introspect_types::Attribute;
 use crate::field::RecordsField;
 use crate::record::RecordIds;
 use crate::recordable_events::{Emittable, EmittableBatch, EmittableFields, EmittableFieldsBatch};
-use crate::{Member, RecordId, TableStructure};
+use crate::{ColumnSet, Member, RecordId, TableStructure};
 
 
 pub trait ITable {
@@ -27,6 +27,11 @@ pub trait ITable {
             columns: Self::Table::columns(),
         }
             .emit_event();
+    }
+    fn crate_column_set<
+        Set, const SIZE: usize, impl ColumnSet: ColumnSet<Self::Table, Set, SIZE>,
+    >() {
+        CreateColumnSet { id: ColumnSet::GROUP_ID, columns: ColumnSet::column_ids() }.emit_event()
     }
     fn collect_child_defs(
         ref defs: introspect_types::ChildDefs,
@@ -48,7 +53,7 @@ pub trait ITable {
         ToId,
         ToField,
         impl RId: RecordId<Self::Table, ToId>,
-        impl Member: Member<Self::Table, ID, Self::Table::Record>,
+        impl Member: Member<Self::Table, Self::Table::Record, ID>,
         impl SF: ToSnapshotOf<ToField, Member::Type>,
         +Drop<ToId>,
         +Drop<ToField>,
@@ -65,9 +70,9 @@ pub trait ITable {
     }
     fn inserts_field<
         const ID: felt252,
-        impl Member: Member<Self::Table, ID, Self::Table::Record>,
+        impl Member: Member<Self::Table, Self::Table::Record, ID>,
         Items,
-        impl Field: RecordsField<ID, Self::Table, Member, Items>,
+        impl Field: RecordsField<Self::Table, ID, Member, Items>,
     >(
         items: Items,
     ) {
@@ -101,7 +106,7 @@ pub trait ITable {
         const COLUMN_ID: felt252,
         ToId,
         impl RID: RecordId<Self::Table, ToId>,
-        impl Member: Member<Self::Table, COLUMN_ID, Self::Table::Record>,
+        impl Member: Member<Self::Table, Self::Table::Record, COLUMN_ID>,
         +Drop<ToId>,
     >(
         id: ToId,
@@ -112,7 +117,7 @@ pub trait ITable {
         const COLUMN_ID: felt252,
         ToIds,
         impl TID: RecordIds<Self::Table, ToIds>,
-        impl Member: Member<Self::Table, COLUMN_ID, Self::Table::Record>,
+        impl Member: Member<Self::Table, Self::Table::Record, COLUMN_ID>,
     >(
         ids: ToIds,
     ) {

@@ -1,8 +1,9 @@
+use crate::id::id_string_to_felt;
 use crate::templates::{
     column_id_const, column_mod_name_tpl, member_impl_name_tpl, member_impl_tpl,
     serialize_member_call_tpl, serialize_struct_member_call_tpl,
 };
-use crate::{IdVariant, TableError, TableResult};
+use crate::{TableError, TableResult};
 use introspect_macros::i_type::attribute::ExtractAttributes;
 use introspect_macros::i_type::extraction::IExtractWith;
 use introspect_macros::i_type::{
@@ -18,10 +19,11 @@ use introspect_macros::{
 use introspect_rust_macros::macro_attributes;
 #[derive(Debug, Clone)]
 pub struct Column {
-    pub id: IdVariant,
+    pub id: String,
     pub key: bool,
     pub name: String,
     pub member: String,
+    pub selector: String,
     pub attributes: Vec<IAttribute>,
     pub ty: Ty,
     pub type_def: TypeDefVariant,
@@ -39,7 +41,7 @@ pub struct ColumnAttributes {
     #[skip]
     type_mod: TypeMod,
     name: String,
-    id: IdVariant,
+    id: String,
 }
 
 impl ColumnAttributes {}
@@ -62,7 +64,7 @@ impl AttributeParser<Member> for ColumnAttributes {
         }
         match attribute.name.as_str() {
             "name" => self.set_name_return_empty(attribute.single_unnamed_arg()?),
-            "id" => self.set_id_return_empty(attribute.single_unnamed_arg()?.try_into()?),
+            "id" => self.set_id_return_empty(id_string_to_felt(attribute.single_unnamed_arg()?)),
             "index" => AttributeVariant::lazy_empty_i_attribute("index".to_string()),
             _ => attribute.into(),
         }
@@ -76,8 +78,9 @@ impl IExtractWith for Column {
     fn iextract_with(member: &mut Member, struct_name: &String) -> TableResult<Column> {
         let (ColumnAttributes { name, id, type_mod }, attributes) = member.extract_attributes()?;
         let member_impl_name = member_impl_name_tpl(struct_name, &member.name);
+        let selector = string_to_keccak_hex(&member.name);
         Ok(Column {
-            id: id.unwrap_or_else(|| IdVariant::Felt(string_to_keccak_hex(&member.name))),
+            id: id.unwrap_or_else(|| selector.clone()),
             name: name.unwrap_or_else(|| member.name.clone()),
             member: member.name.clone(),
             key: member.has_name_only_attribute("key"),
@@ -85,17 +88,14 @@ impl IExtractWith for Column {
             attributes,
             type_def: type_mod.get_type_def(&member.ty)?,
             member_impl_name,
+            selector,
         })
     }
 }
 
 impl Column {
     pub fn id_const(&self) -> String {
-        let id = match &self.id {
-            IdVariant::Felt(felt_str) => felt_str,
-            IdVariant::Const(const_str) => &format!("super::{const_str}"),
-        };
-        column_id_const(&self.name, id)
+        column_id_const(&self.name, &self.member_impl_name)
     }
     pub fn member_impl_name(&self, struct_name: &str) -> String {
         member_impl_name_tpl(struct_name, &self.member)
@@ -107,19 +107,13 @@ impl Column {
         }
     }
 
-    pub fn member_impl(
-        &self,
-        i_table_path: &str,
-        struct_impl_name: &str,
-        columns_mod: &str,
-    ) -> String {
+    pub fn member_impl(&self, i_table_path: &str, struct_impl_name: &str) -> String {
         member_impl_tpl(
             i_table_path,
             &self.member_impl_name,
             struct_impl_name,
-            columns_mod,
-            &self.member,
             &self.ty.as_cairo(),
+            &self.id,
         )
     }
 }

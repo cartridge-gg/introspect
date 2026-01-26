@@ -1,8 +1,12 @@
 const SCHEMA_IMPLS_TPL: &str = include_str!("../templates/structure_impls.cairo");
 const TABLE_IMPL_TPL: &str = include_str!("../templates/table_impl.cairo");
 
-const RECORD_ID_IMPL_TPL: &str = include_str!("../templates/record_id_impl.cairo");
+const RECORD_PRIMARY_IMPL_TPL: &str = include_str!("../templates/record_primary_impl.cairo");
 const RECORD_KEY_IMPL_TPL: &str = include_str!("../templates/record_key_impls.cairo");
+const RECORD_SINGLE_KEY_IMPL_TPL: &str = include_str!("../templates/record_single_key_impls.cairo");
+
+const COLUMN_SET_ITEM_TPL: &str = include_str!("../templates/column_set_item_impl.cairo");
+const COLUMN_SET_VALUE_TPL: &str = include_str!("../templates/column_set_value_impl.cairo");
 
 pub fn table_impl_name_tpl(impl_name: &str) -> String {
     format!("{impl_name}Table")
@@ -65,8 +69,8 @@ pub fn structure_impls_tpl(
         .replace("{{serialize_member_calls}}", serialize_member_calls)
 }
 
-pub fn column_id_const(name: &str, id: &str) -> String {
-    format!("pub const {name}: felt252 = {id};")
+pub fn column_id_const(name: &str, member_impl_name: &str) -> String {
+    format!("pub const {name}: felt252 = super::{member_impl_name}::ID;")
 }
 
 pub fn append_table_attribute_tpl(attribute: &str) -> String {
@@ -93,7 +97,7 @@ pub fn table_impl_tpl(
 }
 
 pub fn member_impl_name_tpl(struct_name: &str, member_name: &str) -> String {
-    format!("{struct_name}_{member_name}_MemberImpl")
+    format!("{struct_name}_{member_name}_member")
 }
 
 pub fn serialize_struct_member_call_tpl(member_impl_name: &str, member_name: &str) -> String {
@@ -108,28 +112,25 @@ pub fn member_impl_tpl(
     i_table_path: &str,
     member_impl_name: &str,
     struct_impl_name: &str,
-    columns_mod: &str,
-    member_name: &str,
     type_str: &str,
+    id: &str,
 ) -> String {
     format!(
-        "pub impl {member_impl_name} = {i_table_path}::TableMemberImpl<{struct_impl_name}, {columns_mod}::{member_name}, {type_str}>;"
+        "pub impl {member_impl_name} = {i_table_path}::TableMemberImpl<{struct_impl_name}, {type_str}, {id}>;"
     )
 }
 
-pub fn record_id_impl_tpl(
-    i_path: &str,
+pub fn record_primary_impl_tpl(
     i_table_path: &str,
     struct_name: &str,
     struct_impl_name: &str,
-    primary_member: &str,
+    primary_member_name: &str,
 ) -> String {
-    RECORD_ID_IMPL_TPL
-        .replace("{{i_path}}", i_path)
+    RECORD_PRIMARY_IMPL_TPL
         .replace("{{i_table_path}}", i_table_path)
         .replace("{{struct_name}}", struct_name)
         .replace("{{struct_impl_name}}", struct_impl_name)
-        .replace("{{primary_member}}", primary_member)
+        .replace("{{primary_member_name}}", primary_member_name)
 }
 
 pub fn snappable_key_tpl(i_table_path: &str, n: usize, ty: &str) -> String {
@@ -141,24 +142,20 @@ pub fn keyed_impls_tpl(
     struct_name: &str,
     struct_impl_name: &str,
     key_types: &str,
-    key_types_ss: &str,
+    snapped_key_types: &str,
     serialize_calls: &str,
     key_members: &str,
     self_key_members: &str,
-    generics: &str,
-    snappables: &str,
 ) -> String {
     RECORD_KEY_IMPL_TPL
         .replace("{{i_table_path}}", i_table_path)
         .replace("{{struct_name}}", struct_name)
         .replace("{{struct_impl_name}}", struct_impl_name)
         .replace("{{key_types}}", key_types)
-        .replace("{{key_types_ss}}", key_types_ss)
+        .replace("{{snapped_key_types}}", snapped_key_types)
         .replace("{{serialize_calls}}", serialize_calls)
         .replace("{{key_members}}", key_members)
         .replace("{{self_key_members}}", self_key_members)
-        .replace("{{generics}}", generics)
-        .replace("{{snappables}}", snappables)
 }
 
 pub fn single_key_impls_tpl(
@@ -169,11 +166,68 @@ pub fn single_key_impls_tpl(
     key_member: &str,
     member_impl_name: &str,
 ) -> String {
-    RECORD_KEY_IMPL_TPL
+    RECORD_SINGLE_KEY_IMPL_TPL
         .replace("{{i_table_path}}", i_table_path)
         .replace("{{struct_name}}", struct_name)
         .replace("{{struct_impl_name}}", struct_impl_name)
         .replace("{{ty}}", ty)
         .replace("{{key_member}}", key_member)
         .replace("{{member_impl_name}}", member_impl_name)
+}
+
+pub fn column_set_impl_name_tpl(struct_name: &str) -> String {
+    format!("__{struct_name}ColumnSet")
+}
+
+pub fn column_set_member_impl_tpl(
+    i_table_path: &str,
+    member_impl_name: &str,
+    id: &str,
+    ty: &str,
+) -> String {
+    format!(
+        "impl {member_impl_name}: {i_table_path}::Member<Table, Table::Record, {id}>[Type: {ty}]"
+    )
+}
+
+pub fn column_set_value_impl_tpl(
+    i_table_path: &str,
+    struct_name: &str,
+    impl_name: &str,
+    size: &str,
+    member_impls: &str,
+    column_ids: &str,
+    serialize_member_calls: &str,
+) -> String {
+    COLUMN_SET_VALUE_TPL
+        .replace("{{i_table_path}}", i_table_path)
+        .replace("{{struct_name}}", struct_name)
+        .replace("{{impl_name}}", impl_name)
+        .replace("{{size}}", size)
+        .replace("{{column_ids}}", column_ids)
+        .replace("{{member_impls}}", member_impls)
+        .replace("{{serialize_member_calls}}", serialize_member_calls)
+}
+
+pub fn column_set_item_impl_tpl(
+    i_table_path: &str,
+    struct_name: &str,
+    impl_name: &str,
+    size: &str,
+    member_impls: &str,
+    column_ids: &str,
+    self_keys: &str,
+    snapped_key: &str,
+    serialize_member_calls: &str,
+) -> String {
+    COLUMN_SET_ITEM_TPL
+        .replace("{{i_table_path}}", i_table_path)
+        .replace("{{struct_name}}", struct_name)
+        .replace("{{impl_name}}", impl_name)
+        .replace("{{size}}", size)
+        .replace("{{member_impls}}", member_impls)
+        .replace("{{column_ids}}", column_ids)
+        .replace("{{snapped_key}}", snapped_key)
+        .replace("{{serialize_member_calls}}", serialize_member_calls)
+        .replace("{{self_keys}}", self_keys)
 }

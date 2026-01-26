@@ -1,7 +1,9 @@
 use crate::TableStructure;
 
-pub trait Member<impl Table: TableStructure, const ID: felt252, T> {
+pub trait Member<impl Table: TableStructure, T, const ID: felt252> {
+    const ID: felt252;
     type Type;
+
     #[inline(always)]
     fn serialize_member(self: @Self::Type, ref data: Array<felt252>);
     fn serialize_member_inline(
@@ -19,8 +21,9 @@ pub trait Member<impl Table: TableStructure, const ID: felt252, T> {
 pub mod impls {
     use introspect_types::ISerde;
     pub impl Impl<
-        impl Table: super::TableStructure, const ID: felt252, T, +ISerde<T>,
-    > of super::Member<Table, ID, Table::Record> {
+        impl Table: super::TableStructure, T, const SELECTOR: felt252, +ISerde<T>,
+    > of super::Member<Table, Table::Record, SELECTOR> {
+        const ID: felt252 = SELECTOR;
         type Type = T;
         #[inline(always)]
         fn serialize_member(self: @Self::Type, ref data: Array<felt252>) {

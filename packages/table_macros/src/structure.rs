@@ -1,7 +1,7 @@
 use crate::primary::Primary;
 use crate::templates::{
-    columns_mod_name_tpl, keyed_impls_tpl, record_id_impl_tpl, single_key_impls_tpl,
-    snappable_key_tpl, struct_impl_name_tpl, structure_impls_tpl,
+    columns_mod_name_tpl, keyed_impls_tpl, record_primary_impl_tpl, single_key_impls_tpl,
+    struct_impl_name_tpl, structure_impls_tpl,
 };
 use crate::{Column, TableError, TableResult};
 use introspect_macros::i_type::extraction::IExtractablesContext;
@@ -99,11 +99,7 @@ impl TableStructure {
             column_id_consts.push(column.id_const());
             tys.push(&column.ty);
             column_defs.push(column.as_element_def_with(i_path, &self.columns_mod_name));
-            member_impls.push(column.member_impl(
-                i_table_path,
-                &self.impl_name,
-                &self.columns_mod_name,
-            ));
+            member_impls.push(column.member_impl(i_table_path, &self.impl_name));
             if !column.key {
                 serialize_member_calls.push(column.serialize_member_call::<true>());
             }
@@ -111,7 +107,7 @@ impl TableStructure {
         let (primary, key_impls) = match &self.key {
             KeyType::Primary(p) => (
                 p,
-                record_id_impl_tpl(i_path, i_table_path, &self.name, &self.impl_name, &p.member),
+                record_primary_impl_tpl(i_table_path, &self.name, &self.impl_name, &p.member),
             ),
             KeyType::Custom(k) => {
                 let key_impls = match *k {
@@ -143,30 +139,22 @@ impl TableStructure {
     pub fn get_keyed_impls(&self, i_table_path: &str) -> String {
         let keys = self.columns.iter().filter(|c| c.key).collect::<Vec<_>>();
         let key_types: Vec<_> = keys.iter().map(|c| c.ty.as_cairo()).collect();
-        let key_types_ss = key_types.iter().map(|k| format!("@{k}")).join(",");
+        let snapped_key_types = key_types.iter().map(|k| format!("@{k}")).join(",");
         let serialize_calls = keys
             .iter()
             .map(|c| c.serialize_member_call::<false>())
             .join("\n");
         let key_members = keys.iter().map(|c| &c.member).join(",");
         let self_key_members = keys.iter().map(|c| format!("self.{}", c.member)).join(",");
-        let generics = (0..keys.len()).map(|i| format!("K{i}")).join(", ");
-        let snappables = key_types
-            .iter()
-            .enumerate()
-            .map(|(i, c)| snappable_key_tpl(i_table_path, i, c))
-            .join(",");
         keyed_impls_tpl(
             i_table_path,
             &self.name,
             &self.impl_name,
             &key_types.join(","),
-            &key_types_ss,
+            &snapped_key_types,
             &serialize_calls,
             &key_members,
             &self_key_members,
-            &generics,
-            &snappables,
         )
     }
 

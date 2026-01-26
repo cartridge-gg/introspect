@@ -26,6 +26,14 @@ impl TryFrom<String> for IdVariant {
     }
 }
 
+pub fn id_string_to_felt(id: String) -> String {
+    if id.starts_with("\"") && id.ends_with("\"") {
+        string_to_keccak_hex(&id[1..id.len() - 1])
+    } else {
+        id
+    }
+}
+
 impl ToString for IdVariant {
     fn to_string(&self) -> String {
         match self {

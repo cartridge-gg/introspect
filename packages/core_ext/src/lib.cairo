@@ -12,5 +12,5 @@ pub use snapshots::{
 };
 pub use span::ToSpan;
 pub mod poseidon;
-pub use poseidon::poseidon_hash_fixed_array;
+pub use poseidon::{PoseidonFixedArray, poseidon_hash_fixed_array};
 

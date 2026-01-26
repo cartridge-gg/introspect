@@ -14,7 +14,11 @@ pub trait RecordKeySerialized<impl Table: TableStructure> {
     type Snapped;
     fn record_key(self: @Table::Record) -> Self::Snapped;
     fn serialize_key(self: Self::Snapped, ref data: Array<felt252>);
-    fn serialised_key_id(self: Span<felt252>) -> felt252;
+    fn serialised_key_id(
+        self: Span<felt252>,
+    ) -> felt252 {
+        core::poseidon::poseidon_hash_span(self)
+    }
 }
 
 pub trait RecordKey<impl Table: TableStructure, T> {

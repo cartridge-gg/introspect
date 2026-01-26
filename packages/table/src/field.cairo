@@ -3,9 +3,9 @@ use introspect_types::Entry;
 use crate::{Member, RecordId, TableStructure};
 
 pub trait RecordField<
-    const ID: felt252,
     impl Table: TableStructure,
-    impl Member: Member<Table, ID, Table::Record>,
+    const ID: felt252,
+    impl Member: Member<Table, Table::Record, ID>,
     Item,
 > {
     fn serialize_to_tuple(self: @Item) -> (felt252, Span<felt252>);
@@ -16,23 +16,23 @@ pub trait RecordField<
 }
 
 pub trait RecordsField<
-    const ID: felt252,
     impl Table: TableStructure,
-    impl Member: Member<Table, ID, Table::Record>,
+    const ID: felt252,
+    impl Member: Member<Table, Table::Record, ID>,
     Items,
 > {
     fn serialise_to_entries(self: Items) -> Span<Entry>;
 }
 
 pub impl RecordFieldImpl<
-    const ID: felt252,
     impl Table: TableStructure,
-    impl Member: Member<Table, ID, Table::Record>,
+    const ID: felt252,
+    impl Member: Member<Table, Table::Record, ID>,
     Tuple,
     AsId,
     impl Id: RecordId<Table, AsId>,
     impl TS: SnapForwardTo<Tuple, (@AsId, @Member::Type)>,
-> of RecordField<ID, Table, Member, Tuple> {
+> of RecordField<Table, ID, Member, Tuple> {
     fn serialize_to_tuple(self: @Tuple) -> (felt252, Span<felt252>) {
         let (key, field): (@AsId, @Member::Type) = TS::snap_forward(self);
         let record_id = Id::record_id(key);
@@ -45,12 +45,12 @@ pub impl RecordFieldImpl<
 impl RecordsFieldImpl<
     const ID: felt252,
     impl Table: TableStructure,
-    impl Member: Member<Table, ID, Table::Record>,
+    impl Member: Member<Table, Table::Record, ID>,
     Tuples,
     Tuple,
-    impl IM: RecordField<ID, Table, Member, Tuple>,
+    impl IM: RecordField<Table, ID, Member, Tuple>,
     +ToSpan<Tuples, Tuple>,
-> of RecordsField<ID, Table, Member, Tuples> {
+> of RecordsField<Table, ID, Member, Tuples> {
     fn serialise_to_entries(self: Tuples) -> Span<Entry> {
         self.to_span().into_iter().map(|M| IM::serialize_to_entry(M)).collect::<Array<_>>().span()
     }
