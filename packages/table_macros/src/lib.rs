@@ -1,3 +1,4 @@
+pub mod attribute;
 pub mod column;
 mod derive;
 pub mod error;

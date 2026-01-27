@@ -5,7 +5,6 @@ use crate::TableInterface;
 use crate::structure::TableStructure;
 
 pub struct TableManager<T> {
-    pub macro_mode: AttributeCallType,
     pub structure: TableStructure,
     pub interfaces: Vec<TableInterface>,
     pub extractor: T,

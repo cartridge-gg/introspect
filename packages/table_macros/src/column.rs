@@ -11,7 +11,7 @@ use introspect_macros::i_type::{
 };
 use introspect_macros::table::column::column_def_tpl;
 use introspect_macros::type_def::CairoElementDefWith;
-use introspect_macros::utils::string_to_keccak_hex;
+use introspect_macros::utils::{Quoted, string_to_keccak_hex};
 use introspect_macros::{
     AsCairo, AsCairoBytes, AttributesTrait, CairoElementDefs, IAttribute, IntrospectError, Member,
     Ty,
@@ -79,9 +79,10 @@ impl IExtractWith for Column {
         let (ColumnAttributes { name, id, type_mod }, attributes) = member.extract_attributes()?;
         let member_impl_name = member_impl_name_tpl(struct_name, &member.name);
         let selector = string_to_keccak_hex(&member.name);
+        // println!("Column Member: {:?}", name);
         Ok(Column {
             id: id.unwrap_or_else(|| selector.clone()),
-            name: name.unwrap_or_else(|| member.name.clone()),
+            name: name.unwrap_or_else(|| member.name.quoted()),
             member: member.name.clone(),
             key: member.has_name_only_attribute("key"),
             ty: member.ty.clone(),
@@ -95,7 +96,7 @@ impl IExtractWith for Column {
 
 impl Column {
     pub fn id_const(&self) -> String {
-        column_id_const(&self.name, &self.member_impl_name)
+        column_id_const(&self.member, &self.member_impl_name)
     }
     pub fn member_impl_name(&self, struct_name: &str) -> String {
         member_impl_name_tpl(struct_name, &self.member)
@@ -124,7 +125,7 @@ impl CairoElementDefWith for Column {
         column_def_tpl(
             i_path,
             &column_mod_name_tpl(column_mod_name, &self.member),
-            &self.name.as_cairo_byte_array(),
+            &self.name,
             &self.attributes.as_element_defs_span(i_path),
             &self.type_def.type_def(&self.ty, i_path),
         )
