@@ -1,4 +1,6 @@
-use crate::{Enum, GenericParams, IntrospectError, ItemTrait, IntrospectResult, Struct, TryFromAst};
+use crate::{
+    Enum, GenericParams, IntrospectError, IntrospectResult, ItemTrait, Struct, TryFromAst,
+};
 use cairo_lang_macro::TokenStream;
 use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_syntax::node::SyntaxNode;
@@ -19,6 +21,13 @@ where
         let db = SimpleParserDatabase::default();
         let (node, _diagnostics) = db.parse_virtual_with_diagnostics(token_stream.clone());
         Self::from_file_node(&db, node)
+    }
+    fn from_token_stream_with_db(
+        db: &SimpleParserDatabase,
+        token_stream: TokenStream,
+    ) -> IntrospectResult<Self> {
+        let (node, _diagnostics) = db.parse_virtual_with_diagnostics(token_stream.clone());
+        Self::from_file_node(db, node)
     }
 }
 

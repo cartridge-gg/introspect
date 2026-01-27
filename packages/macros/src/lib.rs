@@ -1,5 +1,6 @@
 pub mod as_cairo;
 pub mod ast;
+pub mod ast_macros;
 pub mod byte_array;
 pub mod error;
 pub mod fuzzable;
@@ -22,14 +23,14 @@ pub use i_type::{IEnum, IItem, IMember, IStruct, IVariant};
 pub use item::ItemTrait;
 pub use params::GenericParams;
 pub use syntax::{
-    Attribute, AttributeArg, AttributeArgClause, AttributeArgNamed, AttributesTrait, Derives, Enum,
-    Item, Member, Struct, SyntaxItemTrait, Variant,
+    Arg, ArgClause, ArgNamed, Attribute, AttributesTrait, Derives, Enum, Item, Member, Modifier,
+    Struct, SyntaxItemTrait, Variant, Visibility,
 };
 pub use ty::Ty;
 pub use type_def::{
     CairoElementDef, CairoElementDefWith, CairoElementDefs, CairoElementDefsWith, CairoTypeDef,
 };
-pub use utils::{AttributeCallType, Modifier, Visibility};
+pub use utils::AttributeCallType;
 
 pub const I_PATH: &str = "introspect::m_utils";
 pub type IAttribute = introspect_types::Attribute;

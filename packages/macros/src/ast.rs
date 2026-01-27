@@ -1,5 +1,5 @@
-use crate::IntrospectResult;
-use cairo_lang_syntax::node::{SyntaxNode, Terminal, TypedSyntaxNode};
+use crate::{IntrospectResult, terminal_to_string, typed_syntax_node_to_string_without_trivia};
+use cairo_lang_syntax::node::{SyntaxNode, TypedSyntaxNode};
 use salsa::Database;
 
 pub trait FromAst<'db, T>
@@ -74,55 +74,18 @@ where
     }
 }
 
-#[macro_export]
-macro_rules! terminal_to_string {
-
-    ($($terminal:ident $(. $($methods:ident).+)?),* $(,)?) => {
-        $(
-            impl<'db> AstToString<'db> for cairo_lang_syntax::node::ast::$terminal<'db> {
-                fn to_string(&self, db: &'db dyn Database) -> String {
-                    self$(.$($methods(db)).+)?.text(db).to_string(db)
-                }
-            }
-        )*
-    };
+impl<'db, T, S> FromAst<'db, T> for Box<S>
+where
+    S: FromAst<'db, T>,
+    T: TypedSyntaxNode<'db>,
+{
+    fn from_ast(ast: T, db: &'db dyn salsa::Database) -> Self {
+        Box::new(S::from_ast(ast, db))
+    }
 }
 
-#[macro_export]
-macro_rules! typed_syntax_node_to_string_without_trivia {
-    ($typed_syntax_node:ident $(. $($methods:ident).+)?) => {
-        impl<'db> AstToString<'db> for cairo_lang_syntax::node::ast::$typed_syntax_node<'db> {
-            fn to_string(&self, db: &'db dyn Database) -> String {
-                self$(.$($methods(db)).+)?.as_syntax_node().get_text_without_trivia(db).to_string(db)
-            }
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! vec_from_element_list {
-    ($list:ident $(. $($methods:ident).+)?, $element:ident) => {
-        impl<'db> FromAst<'db, cairo_lang_syntax::node::ast::$list<'db>> for Vec<$element> {
-            fn from_ast(ast: cairo_lang_syntax::node::ast::$list<'db>, db: &'db dyn Database) -> Vec<$element> {
-                ast$(.$($methods(db)).+)?.elements(db).into_iter().map(|e| e.ast_into(db)).collect()
-            }
-        }
-    };
-}
-
-#[macro_export]
-macro_rules! vec_try_from_element_list {
-    ($list:ident $(. $($methods:ident).+)?, $element:ident) => {
-        impl<'db> TryFromAst<'db, cairo_lang_syntax::node::ast::$list<'db>> for Vec<$element> {
-            fn try_from_ast(ast: cairo_lang_syntax::node::ast::$list<'db>, db: &'db dyn Database) -> IntrospectResult<Vec<$element>> {
-                ast$(.$($methods(db)).+)?.elements(db).into_iter().map(|e| e.ast_try_into(db)).collect()
-            }
-        }
-    };
-}
-
-typed_syntax_node_to_string_without_trivia!(Expr);
-typed_syntax_node_to_string_without_trivia!(TypeClause.ty);
+typed_syntax_node_to_string_without_trivia! { Expr }
+typed_syntax_node_to_string_without_trivia! { TypeClause.ty }
 
 terminal_to_string! {
     TerminalIdentifier,

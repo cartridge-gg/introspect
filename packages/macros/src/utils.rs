@@ -2,10 +2,7 @@ use cairo_lang_macro::{ProcMacroResult, TextSpan, Token, TokenStream, TokenTree,
 use cairo_lang_parser::printer::print_tree;
 use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_starknet_classes::keccak::starknet_keccak;
-use cairo_lang_syntax::node::ast::{Modifier as AstModifier, Visibility as AstVisibility};
 use starknet_types_core::felt::Felt;
-
-use crate::AsCairo;
 
 pub fn str_to_token_stream(s: &str) -> TokenStream {
     TokenStream::new(vec![TokenTree::Ident(Token::new(s, TextSpan::call_site()))])
@@ -18,59 +15,6 @@ pub enum AttributeCallType {
     Attribute,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum Visibility {
-    Default,
-    Pub,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub enum Modifier {
-    Ref,
-    Mut,
-}
-
-impl AsCairo for Visibility {
-    fn as_cairo(&self) -> String {
-        match self {
-            Visibility::Default => "".to_string(),
-            Visibility::Pub => "pub ".to_string(),
-        }
-    }
-}
-
-impl AsCairo for Modifier {
-    fn as_cairo(&self) -> String {
-        match self {
-            Modifier::Ref => "ref".to_string(),
-            Modifier::Mut => "mut ".to_string(),
-        }
-    }
-}
-
-impl AsCairo for Vec<Modifier> {
-    fn as_cairo(&self) -> String {
-        self.into_iter().map(|m| m.as_cairo_suffixed(" ")).collect()
-    }
-}
-
-impl<'db> From<AstVisibility<'db>> for Visibility {
-    fn from(visibility: AstVisibility<'db>) -> Self {
-        match visibility {
-            AstVisibility::Default(_) => Visibility::Default,
-            AstVisibility::Pub(_) => Visibility::Pub,
-        }
-    }
-}
-
-impl<'db> From<AstModifier<'db>> for Modifier {
-    fn from(modifier: AstModifier<'db>) -> Self {
-        match modifier {
-            AstModifier::Ref(_) => Modifier::Ref,
-            AstModifier::Mut(_) => Modifier::Mut,
-        }
-    }
-}
 #[allow(non_snake_case)]
 #[derive_macro]
 pub fn PrintAll(token_stream: TokenStream) -> ProcMacroResult {
@@ -102,4 +46,8 @@ impl Quoted for &str {
     fn quoted(&self) -> String {
         format!("\"{}\"", self)
     }
+}
+
+pub fn create_single_token(content: impl AsRef<str>) -> TokenTree {
+    TokenTree::Ident(Token::new(content, TextSpan::call_site()))
 }

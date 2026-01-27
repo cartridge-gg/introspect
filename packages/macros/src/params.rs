@@ -1,10 +1,9 @@
 use std::ops::Deref;
 
 use crate::{
-    AsCairo, AstInto, AstToString, CollectionsAsCairo, FromAst,
-    typed_syntax_node_to_string_without_trivia, vec_from_element_list,
+    AsCairo, AstInto, CollectionsAsCairo, FromAst, typed_syntax_node_to_string_without_trivia,
+    vec_from_element_list,
 };
-use cairo_lang_syntax::node::TypedSyntaxNode;
 use cairo_lang_syntax::node::ast::OptionWrappedGenericParamList;
 use salsa::Database;
 
@@ -12,7 +11,7 @@ vec_from_element_list!(WrappedGenericParamList.generic_params, String);
 
 typed_syntax_node_to_string_without_trivia!(GenericParam);
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct GenericParams(pub Vec<String>);
 
 impl GenericParams {

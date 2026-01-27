@@ -1,4 +1,4 @@
-use crate::{AsCairo, Attribute, AttributeArg, IntrospectError, IntrospectResult};
+use crate::{Arg, AsCairo, Attribute, IntrospectError, IntrospectResult};
 use std::ops::Deref;
 
 const DERIVE_MACRO_NAME: &str = "derive";
@@ -8,7 +8,7 @@ impl Attribute {
         self.args
             .ok_or(IntrospectError::DeriveMacroMissingArgs)?
             .into_iter()
-            .map(AttributeArg::to_unnamed)
+            .map(Arg::to_unnamed)
             .collect::<Option<Vec<String>>>()
             .ok_or(IntrospectError::InvalidDerivesArgumentFormat)
     }
@@ -18,7 +18,7 @@ impl Attribute {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Derives(pub Vec<String>);
 
 impl Deref for Derives {

@@ -1,14 +1,14 @@
 use crate::params::GenericParams;
 use crate::{
     AsCairo, AstInto, AstToString, AstTryInto, Attribute, AttributesTrait, CollectionsAsCairo,
-    Derives, IntrospectError, IntrospectResult, ItemTrait, SyntaxItemTrait, TryFromAst, Ty,
-    Visibility, impl_attributes_trait, vec_try_from_element_list,
+    Derives, FromAst, IntrospectError, IntrospectResult, ItemTrait, SyntaxItemTrait, TryFromAst,
+    Ty, Visibility, impl_attributes_trait, vec_try_from_element_list,
 };
 use cairo_lang_syntax::node::ast::{ItemStruct, Member as MemberAst};
 use cairo_lang_syntax::node::kind::SyntaxKind;
 use salsa::Database;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Struct {
     pub visibility: Visibility,
     pub attributes: Vec<Attribute>,
@@ -18,7 +18,7 @@ pub struct Struct {
     pub members: Vec<Member>,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Member {
     pub visibility: Visibility,
     pub name: String,
@@ -63,6 +63,12 @@ impl<'db> TryFromAst<'db, ItemStruct<'db>> for Struct {
             generic_params: item.generic_params(db).ast_into(db),
             members: item.members(db).ast_try_into(db)?,
         })
+    }
+}
+
+impl<'db> FromAst<'db, ItemStruct<'db>> for Struct {
+    fn from_ast(item: ItemStruct<'db>, db: &'db dyn Database) -> Self {
+        Self::try_from_ast(item, db).unwrap()
     }
 }
 
