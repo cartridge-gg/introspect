@@ -3,7 +3,6 @@ use crate::{
     TryFromAst,
 };
 use cairo_lang_syntax::node::ast::{OptionTypeClause, TypeClause};
-use itertools::Itertools;
 use salsa::Database;
 
 const PRIMITIVE_TYPES: &[&str] = &[
@@ -271,23 +270,6 @@ impl CairoFormat for FixedArray {
         buf.push(']');
     }
 }
-
-// impl AsCairo for Ty {
-//     fn as_cairo(&self) -> String {
-//         match self {
-//             Ty::Item(item) => match &item.params {
-//                 Some(params) => format!("{}<{}>", item.name, tys_to_list_string(params)),
-//                 None => item.name.clone(),
-//             },
-//             Ty::Tuple(types) => {
-//                 format!("({})", tys_to_list_string(types))
-//             }
-//             Ty::FixedArray(fixed_array) => {
-//                 format!("[{}; {}]", fixed_array.ty.as_cairo(), fixed_array.size)
-//             }
-//         }
-//     }
-// }
 
 pub fn parse_wrapped_types(type_name: &str) -> Option<(&str, Vec<&str>)> {
     let start = type_name.find('<').unwrap();

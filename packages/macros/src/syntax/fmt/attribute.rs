@@ -15,8 +15,7 @@ impl CairoFormat for Attribute {
 impl CairoFormat for Vec<Attribute> {
     fn cfmt(&self, buf: &mut String) {
         if !self.is_empty() {
-            buf.push('\n');
-            self.cfmt_block(buf);
+            self.cfmt_terminated(buf, '\n');
         }
     }
 }

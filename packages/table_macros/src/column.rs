@@ -13,8 +13,7 @@ use introspect_macros::table::column::column_def_tpl;
 use introspect_macros::type_def::CairoElementDefWith;
 use introspect_macros::utils::{Quoted, string_to_keccak_hex};
 use introspect_macros::{
-    AsCairo, AsCairoBytes, AttributesTrait, CairoElementDefs, IAttribute, IntrospectError, Member,
-    Ty,
+    AttributesTrait, CairoElementDefs, CairoFormat, IAttribute, IntrospectError, Member, Ty,
 };
 use introspect_rust_macros::macro_attributes;
 #[derive(Debug, Clone)]
@@ -62,7 +61,7 @@ impl AttributeParser<Member> for ColumnAttributes {
         if let Some(r) = self.extract_type_mod_return_empty(&attribute) {
             return r.map_err(From::from);
         }
-        match attribute.path.as_str() {
+        match attribute.path_str() {
             "name" => self.set_name_return_empty(attribute.single_unnamed_arg()?),
             "id" => self.set_id_return_empty(id_string_to_felt(attribute.single_unnamed_arg()?)),
             "index" => AttributeVariant::lazy_empty_i_attribute("index".to_string()),
@@ -113,7 +112,7 @@ impl Column {
             i_table_path,
             &self.member_impl_name,
             struct_impl_name,
-            &self.ty.as_cairo(),
+            &self.ty.to_cairo(),
             &self.id,
         )
     }

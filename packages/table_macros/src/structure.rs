@@ -10,7 +10,7 @@ use introspect_macros::table::primary::PrimaryTypeDefVariant;
 use introspect_macros::ty::TyItem;
 use introspect_macros::type_def::CairoElementDefWith;
 use introspect_macros::{
-    AsCairo, AsCairoBytes, CairoElementDefs, CollectionsAsCairo, IAttribute, Member, Struct, Ty,
+    AsCairoBytes, CairoElementDefs, CairoFormat, IAttribute, Member, Struct, Ty,
 };
 use itertools::Itertools;
 
@@ -123,13 +123,13 @@ impl TableStructure {
             i_table_path,
             &self.name,
             &self.impl_name,
-            &primary.ty.as_cairo(),
+            &primary.ty.to_cairo(),
             &primary.name.as_cairo_byte_array(),
             &primary.attributes.as_element_defs_span(i_path),
             &primary.type_def.type_def(&primary.ty, i_path),
             &self.columns_mod_name,
             &column_id_consts.join("\n"),
-            &column_defs.as_cairo_span(),
+            &column_defs.as_element_defs_span(i_path),
             &tys.collect_child_defs(i_path),
             &member_impls.join("\n"),
             &serialize_member_calls.join("\n"),
@@ -138,7 +138,7 @@ impl TableStructure {
 
     pub fn get_keyed_impls(&self, i_table_path: &str) -> String {
         let keys = self.columns.iter().filter(|c| c.key).collect::<Vec<_>>();
-        let key_types: Vec<_> = keys.iter().map(|c| c.ty.as_cairo()).collect();
+        let key_types: Vec<_> = keys.iter().map(|c| c.ty.to_cairo()).collect();
         let snapped_key_types = key_types.iter().map(|k| format!("@{k}")).join(",");
         let serialize_calls = keys
             .iter()
@@ -164,7 +164,7 @@ impl TableStructure {
             i_table_path,
             &self.name,
             &self.impl_name,
-            &key.ty.as_cairo(),
+            &key.ty.to_cairo(),
             &key.member,
             &key.member_impl_name,
         )

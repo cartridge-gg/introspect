@@ -24,16 +24,6 @@ impl Attribute {
     }
 }
 
-// impl<'db> $crate::FromAst<'db, cairo_lang_syntax::node::ast::Attribute<'db>> for Attribute {
-//     fn from_ast(ast: cairo_lang_syntax::node::ast::Attribute<'db>, db: &'db dyn salsa::Database) -> Self {
-//         use $crate::AstInto;
-//         let path: ExprPath = ast.attr(db).ast_into(db);
-//         let path_str = $crate::AsCairo::as_cairo(&path);
-//         let arguments = ast.arguments(db).ast_into(db);
-//         Self { path, path_str, arguments }
-//     }
-// }
-
 pub trait AttributesTrait {
     fn attributes_mut(&mut self) -> &mut Vec<Attribute>;
     fn attributes(&self) -> &[Attribute];
@@ -101,18 +91,3 @@ impl Attribute {
         }
     }
 }
-
-// impl AsCairo for Attribute {
-//     fn as_cairo(&self) -> String {
-//         if let Some(args) = &self.arguments {
-//             let mut result = String::with_capacity(self.path_str.len() + 4);
-//             result.push_str("#[");
-//             result.push_str(&self.path_str);
-//             result.push_str(&args.as_cairo_csv_parenthesized());
-//             result.push(']');
-//             result
-//         } else {
-//             format!("#[{}]", self.path_str)
-//         }
-//     }
-// }

@@ -40,7 +40,7 @@ impl AttributeParser<Struct> for TableAttributes {
         _module: &mut Struct,
         attribute: introspect_macros::Attribute,
     ) -> TableResult<Vec<AttributeVariant>> {
-        match attribute.path.as_str() {
+        match attribute.path_str() {
             "name" => self.set_name_return_empty(attribute.single_unnamed_arg()?),
             "id" => self.set_id_return_empty(attribute.single_unnamed_arg()?.try_into()?),
             _ => attribute.into(),

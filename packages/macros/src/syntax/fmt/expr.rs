@@ -85,42 +85,41 @@ impl CairoFormat for GenericArgNamed {
 
 impl CairoFormat for BinaryOp {
     fn cfmt(&self, buf: &mut String) {
-        let val = match self {
-            BinaryOp::Dot => ".",
-            BinaryOp::Not => "!",
-            BinaryOp::Mul => "*",
-            BinaryOp::MulEq => "*=",
-            BinaryOp::Div => "/",
-            BinaryOp::DivEq => "/=",
-            BinaryOp::Mod => "%",
-            BinaryOp::ModEq => "%=",
-            BinaryOp::Plus => "+",
-            BinaryOp::PlusEq => "+=",
-            BinaryOp::Minus => "-",
-            BinaryOp::MinusEq => "-=",
-            BinaryOp::EqEq => "==",
-            BinaryOp::Neq => "!=",
-            BinaryOp::Eq => "=",
-            BinaryOp::And => "&",
-            BinaryOp::AndAnd => "&&",
-            BinaryOp::Or => "|",
-            BinaryOp::OrOr => "||",
-            BinaryOp::Xor => "^",
-            BinaryOp::LE => "<=",
-            BinaryOp::GE => ">=",
-            BinaryOp::LT => "<",
-            BinaryOp::GT => ">",
-            BinaryOp::DotDot => "..",
-            BinaryOp::DotDotEq => "..=",
+        match self {
+            BinaryOp::Dot => buf.push('.'),
+            BinaryOp::DotDot => buf.push_str(".."),
+            BinaryOp::DotDotEq => buf.push_str("..="),
+            BinaryOp::Not => buf.push_str(" ! "),
+            BinaryOp::Mul => buf.push_str(" * "),
+            BinaryOp::MulEq => buf.push_str(" *= "),
+            BinaryOp::Div => buf.push_str(" / "),
+            BinaryOp::DivEq => buf.push_str(" /= "),
+            BinaryOp::Mod => buf.push_str(" % "),
+            BinaryOp::ModEq => buf.push_str(" %= "),
+            BinaryOp::Plus => buf.push_str(" + "),
+            BinaryOp::PlusEq => buf.push_str(" += "),
+            BinaryOp::Minus => buf.push_str(" - "),
+            BinaryOp::MinusEq => buf.push_str(" -= "),
+            BinaryOp::EqEq => buf.push_str(" == "),
+            BinaryOp::Neq => buf.push_str(" != "),
+            BinaryOp::Eq => buf.push_str(" = "),
+            BinaryOp::And => buf.push_str(" & "),
+            BinaryOp::AndAnd => buf.push_str(" && "),
+            BinaryOp::Or => buf.push_str(" | "),
+            BinaryOp::OrOr => buf.push_str(" || "),
+            BinaryOp::Xor => buf.push_str(" ^ "),
+            BinaryOp::LE => buf.push_str(" <= "),
+            BinaryOp::GE => buf.push_str(" >= "),
+            BinaryOp::LT => buf.push_str(" < "),
+            BinaryOp::GT => buf.push_str(" > "),
         };
-        buf.push_str(val);
     }
 }
 
 impl CairoFormat for BinaryExpr {
     fn cfmt(&self, buf: &mut String) {
         self.lhs.cfmt(buf);
-        self.op.cfmt_wrapped(buf, ' ', ' ');
+        self.op.cfmt(buf);
         self.rhs.cfmt(buf);
     }
 }
@@ -182,7 +181,7 @@ impl CairoFormat for MatchExpr {
     fn cfmt(&self, buf: &mut String) {
         buf.push_str("match ");
         self.expr.cfmt(buf);
-        self.arms.cfmt_csv_braced(buf);
+        self.arms.cfmt_fields_braced(buf);
     }
 }
 
@@ -246,7 +245,7 @@ impl CairoFormat for Closure {
     fn cfmt(&self, buf: &mut String) {
         self.params.cfmt_csv_barred(buf);
         if let Some(ret_ty) = &self.ret_ty {
-            ret_ty.cfmt_prefixed_str(buf, " ->");
+            ret_ty.cfmt_prefixed_str(buf, " -> ");
         }
         if self.no_panic {
             buf.push_str(" nopanic");

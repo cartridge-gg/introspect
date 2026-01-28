@@ -4,7 +4,7 @@ use salsa::Database;
 
 use crate::syntax::expr::Expr;
 use crate::{
-    AsCairo, FromAst, from_typed_syntax_node, syntax_enum, syntax_option, syntax_terminal_bool,
+    FromAst, from_typed_syntax_node, syntax_enum, syntax_option, syntax_terminal_bool,
     syntax_terminal_enum, syntax_type, terminal_to_string, vec_from_element_list,
 };
 
@@ -54,40 +54,3 @@ impl<'db> FromAst<'db, TokenTreeNode<'db>> for String {
         node.as_syntax_node().get_text(db).to_string()
     }
 }
-
-impl AsCairo for Visibility {
-    fn as_cairo(&self) -> String {
-        match self {
-            Visibility::Default => "".to_string(),
-            Visibility::Pub(None) => "pub ".to_string(),
-            Visibility::Pub(Some(c)) => format!("pub({c}) "),
-        }
-    }
-}
-
-// impl AsCairo
-
-impl AsCairo for Modifier {
-    fn as_cairo(&self) -> String {
-        match self {
-            Modifier::Ref => "ref".to_string(),
-            Modifier::Mut => "mut ".to_string(),
-        }
-    }
-}
-
-impl AsCairo for Vec<Modifier> {
-    fn as_cairo(&self) -> String {
-        self.into_iter().map(|m| m.as_cairo_suffixed(" ")).collect()
-    }
-}
-
-// impl AsCairo for Param {
-//     fn as_cairo(&self) -> String {
-//         let type_clause = match &self.type_clause {
-//             Some(ty) => format!(":{}", ty.as_cairo()),
-//             None => "".to_string(),
-//         };
-//         format!("{}{}{}", self.modifiers.as_cairo(), self.name, type_clause,)
-//     }
-// }

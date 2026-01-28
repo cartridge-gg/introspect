@@ -1,6 +1,6 @@
 use introspect_macros::i_type::IExtract;
 use introspect_macros::i_type::extraction::IExtractablesContext;
-use introspect_macros::{AsCairo, Struct};
+use introspect_macros::{CairoFormat, Struct};
 use itertools::Itertools;
 
 use crate::structure::{KeyType, get_keys_index};
@@ -76,11 +76,11 @@ impl ColumnSet {
     pub fn column_set_item_impl(&self, i_table_path: &str) -> String {
         let (snapped_key, self_keys) = match &self.keys {
             KeyType::Primary(p) => (
-                format!("@{}", p.ty.as_cairo()),
+                format!("@{}", p.ty.to_cairo()),
                 format!("self.{}", p.member,),
             ),
             KeyType::Custom(k) if *k == 1 => (
-                format!("@{}", self.columns[0].ty.as_cairo()),
+                format!("@{}", self.columns[0].ty.to_cairo()),
                 format!("self.{}", self.columns[0].member),
             ),
             KeyType::Custom(s) => make_compound_key(&self.columns[..*s]),
@@ -114,7 +114,7 @@ impl ColumnSet {
 fn make_compound_key(columns: &[Column]) -> (String, String) {
     let key_types = columns
         .iter()
-        .map(|c| format!("@{}", c.ty.as_cairo()))
+        .map(|c| format!("@{}", c.ty.to_cairo()))
         .join(",");
     let self_keys = columns
         .iter()
@@ -129,7 +129,7 @@ impl Column {
             i_table_path,
             &self.member_impl_name,
             &self.id,
-            &self.ty.as_cairo(),
+            &self.ty.to_cairo(),
         )
     }
 }

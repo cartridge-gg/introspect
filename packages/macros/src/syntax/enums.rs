@@ -83,34 +83,6 @@ impl CairoFormat for Variant {
     }
 }
 
-// impl<'db> AsCairo for Variant {
-//     fn as_cairo(&self) -> String {
-//         let ty_str = match &self.ty {
-//             Some(ty) => format!(": {}", ty.as_cairo()),
-//             None => "".to_string(),
-//         };
-//         format!(
-//             "{attributes}{name}{ty_str},",
-//             attributes = self.attributes.as_cairo_block(),
-//             name = self.name,
-//         )
-//     }
-// }
-
-// impl<'db> AsCairo for Enum {
-//     fn as_cairo(&self) -> String {
-//         format!(
-//             "{derives}{attributes}{vis}enum {name}{params}{{{variants}}}",
-//             derives = self.derives.as_cairo(),
-//             attributes = self.attributes.as_cairo_block(),
-//             vis = self.visibility.as_cairo(),
-//             params = self.generic_params.as_cairo(),
-//             name = self.name,
-//             variants = self.variants.as_cairo_block_section()
-//         )
-//     }
-// }
-
 impl SyntaxItemTrait for Enum {
     fn from_file_node<'db>(
         db: &'db dyn Database,

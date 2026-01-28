@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::{AsCairo, AsCairoBytes, IAttribute};
+use crate::{AsCairoBytes, IAttribute};
 use introspect_types::{
     ArrayDef, ByteArrayEncodedDef, Bytes31EncodedDef, CustomDef, EnumDef, Felt252DictDef,
     FixedArrayDef, MemberDef, NullableDef, OptionDef, RefDef, ResultDef, StructDef, TupleDef,
@@ -19,6 +19,12 @@ pub use templates::{
 
 pub trait CairoElementDef {
     fn as_element_def(&self, i_path: &str) -> String;
+}
+
+impl CairoElementDef for String {
+    fn as_element_def(&self, _i_path: &str) -> String {
+        self.clone()
+    }
 }
 
 pub trait CairoElementDefs {
@@ -142,9 +148,11 @@ impl CairoElementDef for TypeDef {
 impl CairoElementDef for IAttribute {
     fn as_element_def(&self, i_path: &str) -> String {
         match &self.data {
-            Some(data) => {
-                attribute_data_tpl(i_path, &self.name.as_cairo_byte_array(), &data.as_cairo())
-            }
+            Some(data) => attribute_data_tpl(
+                i_path,
+                &self.name.as_cairo_byte_array(),
+                &data.as_cairo_byte_array(),
+            ),
             None => attribute_empty_tpl(i_path, &self.name.as_cairo_byte_array()),
         }
     }
@@ -175,7 +183,7 @@ impl CairoElementDef for StructDef {
 impl CairoElementDefWith for VariantDef {
     type Context = Felt;
     fn as_element_def_with(&self, i_path: &str, selector: &Felt) -> String {
-        let selector = selector.as_cairo();
+        let selector = selector.to_fixed_hex_string();
         let name = self.name.as_cairo_byte_array();
         let attributes = self.attributes.as_element_defs_span(i_path);
         match &self.type_def {
@@ -261,6 +269,6 @@ impl CairoTypeDef for TupleDef {
 
 impl CairoTypeDef for RefDef {
     fn as_type_def(&self, i_path: &str) -> String {
-        ref_type_def_tpl(i_path, &self.id.as_cairo())
+        ref_type_def_tpl(i_path, &self.id.to_fixed_hex_string())
     }
 }

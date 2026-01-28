@@ -65,31 +65,3 @@ impl CairoFormat for Derives {
         }
     }
 }
-
-// impl AsCairo for Derives {
-//     fn as_cairo(&self) -> String {
-//         match self.0.is_empty() {
-//             true => "".to_string(),
-//             false => format!("#[derive({})]\n", self.0.join(", ")),
-//         }
-//     }
-// }
-
-// pub fn split_derives_attribute<'db>(
-//     attributes: AttributeList<'db>,
-//     db: &'db dyn Database,
-// ) -> Result<(Vec<Attribute<'db>>, Vec<String>)> {
-//     let attributes = parse_attributes(attributes, db);
-//     let mut other_attributes = Vec::new();
-//     let mut derives = Vec::new();
-//     for attr in attributes {
-//         if attr.name == DERIVE_MACRO_NAME {
-//             for derive in get_derives_from_macro(&attr)? {
-//                 derives.push(derive)
-//             }
-//         } else {
-//             other_attributes.push(attr);
-//         }
-//     }
-//     Ok((other_attributes, derives))
-// }

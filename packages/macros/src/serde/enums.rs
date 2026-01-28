@@ -1,5 +1,5 @@
 use crate::serde::ToISerdeImpl;
-use crate::{AsCairo, I_PATH, IEnum, IVariant, ItemTrait};
+use crate::{I_PATH, IEnum, IVariant, ItemTrait};
 
 impl ToISerdeImpl for IEnum {
     fn serialize_body(&self) -> String {
@@ -25,7 +25,7 @@ impl ToISerdeImpl for IEnum {
 
 impl IVariant {
     pub fn serialize_variant(&self, enum_name: &str) -> String {
-        let selector = &self.selector;
+        let selector = self.selector.to_fixed_hex_string();
         let variant_name = &self.field;
         match self.ty {
             None => format!("{enum_name}::{variant_name} => output.append({selector}),"),
@@ -36,7 +36,7 @@ impl IVariant {
     }
 
     pub fn deserialize_variant(&self, enum_name: &str) -> String {
-        let selector = self.selector.as_cairo();
+        let selector = self.selector.to_fixed_hex_string();
         let field = &self.field;
         match &self.ty {
             None => format!("{selector} => Some({enum_name}::{field}),"),

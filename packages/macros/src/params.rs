@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use crate::{
-    AstInto, CairoCollectionFormat, CairoFormat, CollectionsAsCairo, FromAst,
+    AstInto, CairoCollectionFormat, CairoFormat, FromAst,
     typed_syntax_node_to_string_without_trivia, vec_from_element_list,
 };
 use cairo_lang_syntax::node::ast::OptionWrappedGenericParamList;
@@ -16,10 +16,12 @@ pub struct GenericParams(pub Vec<String>);
 
 impl GenericParams {
     pub fn as_cairo_callable(&self) -> String {
-        match &self.0.len() {
-            0 => "".to_string(),
-            _ => format!("::<{}>", self.0.as_cairo_csv()),
+        let mut buf = String::new();
+        if !self.is_empty() {
+            buf.push_str("::");
+            self.cfmt_csv_angled(&mut buf);
         }
+        buf
     }
 
     pub fn with_trait_bounds(&self, traits: &[&str]) -> String {
@@ -63,13 +65,3 @@ impl CairoFormat for GenericParams {
         }
     }
 }
-
-// impl AsCairo for GenericParams {
-//     fn as_cairo(&self) -> String {
-//         if self.0.is_empty() {
-//             "".to_string()
-//         } else {
-//             self.0.as_cairo_csv_wrapped("<", ">")
-//         }
-//     }
-// }

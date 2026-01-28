@@ -33,7 +33,7 @@ impl CairoFormat for Struct {
         self.visibility.cfmt(buf);
         self.name.cfmt_prefixed_str(buf, "struct ");
         self.generic_params.cfmt(buf);
-        self.members.cfmt_csv_braced(buf);
+        self.members.cfmt_fields_braced(buf);
     }
 }
 
@@ -52,7 +52,7 @@ impl CairoFormat for Enum {
         self.visibility.cfmt(buf);
         self.name.cfmt_prefixed_str(buf, "enum ");
         self.generic_params.cfmt(buf);
-        self.variants.cfmt_csv_braced(buf);
+        self.variants.cfmt_fields_braced(buf);
     }
 }
 
@@ -153,11 +153,11 @@ impl CairoFormat for FunctionSignature {
             ret_type.cfmt_prefixed_str(buf, " -> ");
         }
         if let Some(implicits) = &self.implicits_clause {
-            buf.push_str(" implicit");
+            buf.push_str(" implicits");
             implicits.cfmt_csv_parenthesized(buf);
         }
         if self.no_panic {
-            buf.push_str(" no_panic");
+            buf.push_str(" nopanic");
         }
     }
 }
