@@ -1,8 +1,8 @@
 ---
 snip: $SNIP_ID
 title: Introspection
-description: Introspection of onchain types and data
-author: Bengineer <@bengineer42>, Glihm <@glihm>
+description: Introspection and serialization of onchain data
+author: Bengineer <@bengineer42>, Glihm <@glihm>, Kronosapiens <@kronosapiens>
 discussions-to: The url pointing to the official discussion thread
 status: Draft
 type: Standards Track
@@ -10,977 +10,121 @@ category: SRC
 created: 2025-10-28
 ---
 
-<!-- Refer to: <https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-1.md#snip-header-preamble> -->
+<!-- Refer to: <https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-1.md> -->
 
-## Simple Summary
+# Abstract
 
-This SNIP proposes a standardized collection of events and data structures to describe on-chain data structures, enabling the creation of generic indexers and tooling to interact with on-chain data.
+This SNIP proposes a standardized collection of **types** and **events** for describing onchain data, as well as a compact **serialization** scheme for wire transmission, enabling the development of _generic indexers_ for _efficiently parsing_ data from _arbitrary contracts_.
 
-## Motivation
+# Rationale
 
-One of the challenges with building on starknet is making chain data easily accessible and queryable to client side applications. Most apps will have to make there own systems to fetch, decode and make available the data stored on chain. This leads to a lot of duplicated effort, high barrier to entry for new developers in both time and skill.
+One of the challenges of blockchain application development is making chain data accessible to clients. Many applications adopt the pattern of creating offchain replicas ("indexes") of onchain state, but without a shared standard most applications end up "rolling their own" non-interoperable tools for representing, fetching, storing, and serving onchain data. This leads to duplicated efforts and creates a high barrier to entry for new developers.
 
-Some standards such as ERC20 and ERC721 have helped with this by providing a common interface for certain data structures, but there is no general purpose standard for describing arbitrary data structures stored on chain.
+Standards such as ERC20 and ERC721 establish common interfaces for _certain_ onchain data structures, but we have yet to see a general standard for describing _arbitrary_ onchain data structures; a gap this SNIP is trying to fill.
 
-Currently the only source of type data for contracts is the ABI, which only describes function inputs and outputs and events declared by the contract. This is not verified and when deploying could be set to anything.
+A common source of type data for contracts is the ABI (application binary interface), which describes function inputs, outputs, and events declared by the contract. However, ABIs are not secure -- only the hash is verified, and when deployed could be set to anything. We would prefer a _self-documenting_ specification derived from events emitted by deployed contracts -- a type of "write-ahead logging" converting onchain state into offchain representations.
 
-This SNIP splits the solution into two parts: type declarations and data serialisation. Both these also need standardised event.
+In 2023, the Dojo framework implemented a gaming-specific introspect scheme tightly coupled to its own indexer; this worked well for the use-case but struggled to generalize as the user base expanded. This SNIP proposes a _general_ standard for describing onchain state, splitting the solution into three parts: _types_, _events_, and _data serialization rules_.
 
-This specification also considers gas optimisation by packing some data types and removing redundant length prefixes.
-
-This SNIP does not cover higher level frameworks only the type and event spec.
-
-## Specification
-
-The standard consists of two main parts the events and data structures used to describe the data.
-
-### Key words
-
-- Modifying Tables
-  - `Create` Used to make tables
-  - `Add` Used to add columns to tables
-  - `Drop` Used to remove tables and columns
-  - `Rename`/`Retype` Used to change the name or type of tables columns and primaries
-- Modifying Records
-  - `Insert` Used to add or update records and fields
-  - `Delete` Used to remove records and fields
-
-### Primary Keys
-
-To simplify the spec primary keys are always a single column that can be represented by single felt.
-
-### ISerde Trait
-
-The ISerde trait is used to serialize data to a span of felt252 values which can then be decoded using the corresponding `TypeDef` by another system. Its`iserialize` mirrors `serialize` from the Serde trait for the most part but is implemented separately to allow for optimizations specific to either ISerde or Serde without causing conflicts.
-
-#### ISerde ByteArray Serialization
-
-To reduce event size ByteArrays are serialized like so:
-
-- No length prefix
-- The 0 bit in the 31st byte is used to indicate if it is the last felt252 in the ByteArray; 0 = more to follow, 1 = is last.
-- The 1 bit in the 31st byte is use to show if the felt is a partial word (less than 31 bytes). 0 = full 31 bytes, 1 = 30 bytes or less. If the felt is a partial word the 30th byte contains the length of the valid bytes in that felt.
-
-This means a ByteArray with 31 Bytes or less will only take up a single felt252 with no felts used for total felts or pending word size.
-
-As all data emitted with ISerde is expected to be decoded using the corresponding TypeDef by another system and wont be represented in the ABI, this shouldn't cause any issues with compatibility.
+The end goal is for Cairo developers to be able to integrate this functionality trivially, by way of an external framework, as in this example:
 
 ```rust
-pub trait ISerde<T> {
-    fn iserialize(self: @T, ref output: Array<felt252>);
-    fn iserialize_inline(
-        self: @T,
-    ) -> Span<
-        felt252,
-    > {
-        let mut data: Array<felt252> = Default::default();
-        Self::iserialize(self, ref data);
-        data.span()
-    }
-    fn ideserialize(ref serialized: Span<felt252>) -> Option<T>;
+#[derive(Introspect, ISerde)]
+struct Player {
+    health: u32,
+    strength: u32,
 }
 ```
 
-#### ISerdeEnd Trait
+By adopting this SNIP, Cairo developers will be able to more easily make their onchain data available for offchain indexing, simplifying application development on Starknet.
 
-For the final field in an event, the `ISerdeEnd` trait is used to omit the length prefix entirely, saving an additional felt252.
+# Specification
 
-```rust
-pub trait ISerdeEnd<T> {
-    fn iserialize_end(self: @T, ref output: Array<felt252>);
-    fn ideserialize_end(ref serialized: Span<felt252>) -> Option<T>;
-}
-```
+The standard consists of three parts: **types**, **events**, and **serialization**. The data model mimics those used by standard databases, oriented around "tables" and typed "columns," making it easy to mirror onchain data using any number of existing enterprise-grade storage solutions.
 
-### Event Serialization Optimization
+The specification is designed to be **extendible**, supporting the addition of types and events not described in this spec. The minimum requirement is that indexers are able to parse data streams conforming to the specified wire format, and to be able to interpret the types and events described here.
 
-Events use a custom serialization strategy to minimize the number of felts emitted, significantly reducing gas costs. The Event trait provides two methods:
+The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL NOT”, “SHOULD”, “SHOULD NOT”, “RECOMMENDED”, “MAY”, and “OPTIONAL” in this document are to be interpreted as described in RFC 2119.
 
-```rust
-trait Event<T> {
-    fn append_keys_and_data(
-        self: @T,
-        ref keys: Array<felt252>,
-        ref data: Array<felt252>
-    );
-    fn deserialize(
-        ref keys: Span<felt252>,
-        ref data: Span<felt252>
-    ) -> Option<T>;
-}
-```
+## Types
 
-#### Serialization Strategies
+Introspect defines several core types used to communicate onchain state changes. These include enumerations of primitive types, structs used for generic metadata, complex core types, custom core types used for application-specific data, and table definitions for defining columns and records. Some of these types mirror core Cairo types, in a struct format amenable to standard serialization.
 
-Events use three different serialization strategies depending on the field position and type:
+The `TypeDef` enum describes all data types initially supported by Introspect. Each variant represents either a primitive type or a composite type with associated structure.
 
-**1. Standard ISerde (with length prefix)**
-Used for fields that are not the last field in the event data or not a span:
+All indexers implementing Introspect MUST support the following types:
 
 ```rust
-self.name.iserialize(ref data);        // Includes length prefix
-self.columns.iserialize(ref data);      // Includes length prefix
-```
+enum TypeDef {
+  #[default]
+  None,                              // Unit type () or empty enum
 
-**2. ISerdeEnd (no length prefix)**
-Used for the final field when it's a span of non felt types:
+  // Field elements and bytes
+  Felt252,                           // Base field element
+  Bytes31,                           // 31 bytes packed into a felt252
+  Bytes31E: ByteArray,               // 31 bytes with specified encoding
 
-```rust
-self.attributes.iserialize_end(ref data);  // No length prefix - saves 1 felt
-self.columns.iserialize_end(ref data);     // No length prefix - saves 1 felt
-```
+  // Strings
+  ShortUtf8,                         // UTF-8 string up to 31 bytes
+  ByteArray,                         // Variable-length byte array
+  Utf8String,                        // Variable-length UTF-8 string
+  ByteArrayE: ByteArray,             // Variable-length bytes with encoding
 
-**3. Raw append_span (no serialization)**
-Used when the final field is raw data that doesn't need structure:
+  // Boolean
+  Bool,                              // True or false
 
-```rust
-data.append_span(*self.data);    // Direct span append - saves 1 felt
-data.append_span(*self.ids);     // Direct span append - saves 1 felt
-```
+  // Unsigned integers
+  U8,                                // 8-bit unsigned integer
+  U16,                               // 16-bit unsigned integer
+  U32,                               // 32-bit unsigned integer
+  U64,                               // 64-bit unsigned integer
+  U128,                              // 128-bit unsigned integer
+  U256,                              // 256-bit unsigned integer
+  U512,                              // 512-bit unsigned integer
 
-The members of an event can also be reordered to place span fields at the end to take advantage of these optimizations wherever possible.
+  // Signed integers
+  I8,                                // 8-bit signed integer
+  I16,                               // 16-bit signed integer
+  I32,                               // 32-bit signed integer
+  I64,                               // 64-bit signed integer
+  I128,                              // 128-bit signed integer
 
-### TypeEvents
+  // Starknet types
+  ClassHash,                         // Contract class identifier
+  ContractAddress,                   // Contract address
+  EthAddress,                        // Ethereum address (20 bytes)
+  StorageAddress,                    // Storage slot address
+  StorageBaseAddress,                // Storage base address
 
-- `DeclareType`: Declare a new type with a given name and structure.
+  // Collections
+  Tuple: Span<TypeDef>,              // Fixed heterogeneous sequence
+  Array: Box<TypeDef>,               // Variable-length homogeneous sequence
+  FixedArray: Box<FixedArrayDef>,    // Fixed-length homogeneous sequence
+  Felt252Dict: Box<TypeDef>,         // Mapping from felt252 to values
 
-```rust
-struct DeclareType {
-    /// A unique identifier for the type.
-    #[key]
-    id: felt252,
-    /// The type definition.
-    type_def: TypeDef,
+  // Composite types
+  Struct: StructDef,                 // Named product type with fields
+  Enum: EnumDef,                     // Tagged union with variants
+
+  // Wrapper types
+  Option: Box<TypeDef>,              // Optional value (Some or None)
+  Result: Box<ResultDef>,            // Success or error (Ok or Err)
+  Nullable: Box<TypeDef>,            // Nullable pointer
+
+  // References
+  Ref: felt252,                      // Reference to a declared type by hash
+  Custom: ByteArray,                 // User-defined type by name
 }
 ```
 
 > [!IMPORTANT]
-> The ids for these types should be generated using a consistent hashing function to ensure uniqueness across different contracts.
+> `Box<T>` is used to wrap types that themselves contain a `TypeDef`, as the compiler can't handle recursive types.
 
-### Database Events
+### Key Types
 
-These consist of events for table, column and record manipulation.
+A common database construct is the **primary key** which uniquely identifies a row. Any value used as a primary key MUST be representable using a single `Felt252`.
 
-#### Table Management Events:
-
-- `CreateFieldGroup`: Create a field group (schema) with specified columns.
-- `CreateTable`: Create a new table with a given name.
-- `CreateTableWithColumns`: Create or update a table with a given name and columns.
-- `CreateTableFromClassHash`: Create or update a table from a class hash.
-- `RenameTable`: Rename an existing table.
-- `DropTable`: Drop an existing table.
-
-Common members:
-
-- id: felt252 - Unique identifier for the table.
-- name: ByteArray - Name of the table.
-- primary: PrimaryDef - Definition of the primary key field.
-- columns: Span<ColumnDef> - Definitions of the columns in the table.
-- class_hash: felt252 - Class hash to derive schema from.
-
-```rust
-/// Field group management:
-/// - id: felt252 - Unique identifier for the field group.
-/// - columns: Span<felt252> - List of column IDs included in the field group.
-
-struct CreateFieldGroup {
-    #[key]
-    id: felt252,
-    columns: Span<felt252>,
-}
-```
-
-Data Serialization order:
-
-- columns - append_span
-
-```rust
-
-struct CreateTable {
-    #[key]
-    id: felt252,
-    name: ByteArray,
-    attributes: Span<Attribute>,
-    primary: PrimaryDef,
-}
-```
-
-Data Serialization order:
-
-- name - iserialize
-- primary - iserialize
-- attributes - iserialize_end
-
-```rust
-struct CreateTableWithColumns {
-    #[key]
-    id: felt252,
-    name: ByteArray,
-    attributes: Span<Attribute>,
-    primary: PrimaryDef,
-    columns: Span<ColumnDef>,
-}
-```
-
-Data Serialization order:
-
-- name - iserialize
-- attributes - iserialize
-- primary - iserialize
-- columns - iserialize_end
-
-```rust
-struct CreateTableFromClassHash {
-    #[key]
-    id: felt252,
-    name: ByteArray,
-    class_hash: felt252,
-}
-```
-
-Data Serialization order:
-
-- name - iserialize
-- class_hash - append
-
-```rust
-struct RenameTable {
-    #[key]
-    id: felt252,
-    name: ByteArray,
-}
-```
-
-Data Serialization order:
-
-- name - iserialize
-
-```rust
-struct DropTable {
-    #[key]
-    id: felt252,
-}
-```
-
-#### Index Management Events:
-
-- `CreateIndex`: Create a new index on a table.
-- `DropIndex`: Drop an existing index from a table.
-
-Common members:
-
-- table: felt252 - Unique identifier for the table.
-- id: felt252 - Unique identifier for the index.
-- name: ByteArray - Name of the index.
-- columns: Span<felt252> - Column IDs included in the index.
-
-```rust
-
-
-struct CreateIndex {
-    #[key]
-    table: felt252,
-    #[key]
-    id: felt252,
-    name: ByteArray,
-    columns: Span<felt252>,
-}
-```
-
-Data Serialization order:
-
-- name - iserialize
-- columns - iserialize_end
-
-```rust
-struct DropIndex {
-    #[key]
-    table: felt252,
-    #[key]
-    id: felt252,
-}
-```
-
-#### Primary Key Management Events:
-
-- `RenamePrimary`: Rename the primary key of a table.
-- `RetypePrimary`: Change the type of the primary key of a table.
-
-Common members:
-
-- table: felt252 - Unique identifier for the table.
-- name: ByteArray - Name of the primary key.
-- attributes: Span<Attribute> - Attributes of the column.
-- type_def: TypeDef - Type definition of the primary key.
-
-```rust
-struct RenamePrimary {
-    #[key]
-    table: felt252,
-    name: ByteArray,
-}
-```
-
-Data Serialization order:
-
-- name - iserialize
-
-```rust
-struct RetypePrimary {
-    #[key]
-    table: felt252,
-    type_def: PrimaryTypeDef,
-    attributes: Span<Attribute>,
-}
-
-```
-
-Data Serialization order:
-
-- type_def - iserialize
-- attributes - iserialize_end
-
-#### Column Management Events:
-
-- `AddColumn`: Add a new column to a table.
-- `AddColumns`: Add multiple new columns to a table.
-- `RenameColumn`: Rename an existing column in a table.
-- `RenameColumns`: Rename multiple existing columns in a table.
-- `RetypeColumn`: Change the type of an existing column in a table.
-- `RetypeColumns`: Change the types of multiple existing columns in a table.
-- `DropColumn`: Drop an existing column from a table.
-- `DropColumns`: Drop multiple existing columns from a table.
-
-Common members:
-
-- table: felt252 - Unique identifier for the table.
-- id: felt252 - Unique identifier for the column.
-- name: ByteArray - Name of the column.
-- attributes: Span<Attribute> - Attributes of the column.
-- type_def: TypeDef - Type definition of the column.
-
-```rust
-struct AddColumn {
-    #[key]
-    table: felt252,
-    #[key]
-    id: felt252,
-    name: ByteArray,
-    attributes: Span<Attribute>,
-    type_def: TypeDef,
-}
-```
-
-Data Serialization order:
-
-- name - iserialize
-- type_def - iserialize
-- attributes - iserialize_end
-
-```rust
-struct AddColumns {
-    #[key]
-    table: felt252,
-    /// columns: Definitions of the columns being added.
-    columns: Span<ColumnDef>,
-}
-```
-
-Data Serialization order:
-
-- columns - iserialize_end
-
-```rust
-struct RenameColumn {
-    #[key]
-    table: felt252,
-    #[key]
-    id: felt252,
-    name: ByteArray,
-}
-```
-
-Data Serialization order:
-
-- name - iserialize
-
-```rust
-struct RenameColumns {
-    #[key]
-    table: felt252,
-    /// columns: Pairs of column ids and their new names.
-    columns: Span<IdName>,
-}
-```
-
-Data Serialization order:
-
-- columns - iserialize_end
-
-```rust
-struct RetypeColumn {
-    #[key]
-    table: felt252,
-    #[key]
-    id: felt252,
-    attributes: Span<Attribute>,
-    type_def: TypeDef,
-}
-```
-
-Data Serialization order:
-
-- type_def - iserialize
-- attributes - iserialize_end
-
-```rust
-struct RetypeColumns {
-    #[key]
-    table: felt252,
-    /// columns: column ids to retype with their new type defs and attributes
-    columns: Span<IdTypeDef>,
-}
-struct IdTypeDef {
-    id: felt252,
-    attributes: Span<Attribute>,
-    type_def: TypeDef,
-}
-```
-
-Data Serialization order:
-
-- columns - iserialize_end
-
-```rust
-
-
-struct DropColumn {
-    #[key]
-    table: felt252,
-    #[key]
-    id: felt252,
-}
-```
-
-Data Serialization order:
-
-- (no data fields)
-
-```rust
-struct DropColumns {
-    #[key]
-    table: felt252,
-    /// ids: column ids to drop
-    ids: Span<felt252>,
-}
-```
-
-Data Serialization order:
-
-- ids - append_span
-
-#### Record Manipulation Events:
-
-- `InsertRecord`: Insert or update a record in a table.
-- `InsertRecords`: Insert or update multiple records in a table.
-- `InsertField`: Insert or update a field in a record.
-- `InsertFields`: Insert or update multiple fields in a record.
-- `InsertsField`: Insert or update a field in multiple records.
-- `InsertsFields`: Insert or update multiple fields in multiple records.
-- `InsertFieldGroup`: Insert or update a group of fields in a record.
-- `InsertFieldGroups`: Insert or update multiple groups of fields in a record.
-- `InsertsFieldGroup`: Insert or update a group of fields in multiple records.
-- `InsertsFieldGroups`: Insert or update multiple groups of fields in multiple records.
-- `DeleteRecord`: Drop an existing record from a table.
-- `DeleteRecords`: Drop multiple existing records from a table.
-- `DeleteField`: Drop an existing field from a record.
-- `DeleteFields`: Drop multiple existing fields from a record.
-- `DeletesField`: Drop an existing field from multiple records.
-- `DeletesFields`: Drop multiple existing fields from multiple records.
-- `DeleteFieldGroup`: Drop a group of fields from a record.
-- `DeleteFieldGroups`: Drop multiple groups of fields from a record.
-- `DeletesFieldGroup`: Drop a group of fields from multiple records.
-- `DeletesFieldGroups`: Drop multiple groups of fields from multiple records.
-
-Common members:
-
-- table: felt252 - Table ID.
-- record/records: felt252/Span<felt252> - Record IDs.
-- column/columns: felt252/Span<felt252> - Column IDs.
-- group/groups: felt252/Span<felt252> - Field group IDs.
-- data: Span<felt252> - Serialised data being set.
-- records_data: Span<IdData> - Pairs of Record IDs and their serialised data.
-
-```rust
-struct IdData {
-    id: felt252,
-    data: Span<felt252>,
-}
-
-struct IdName {
-    id: felt252,
-    name: ByteArray,
-}
-
-struct InsertRecord {
-    #[key]
-    table: felt252,
-    #[key]
-    record: felt252,
-    data: Span<felt252>,
-}
-```
-
-Data Serialization order:
-
-- data - append_span
-
-```rust
-struct InsertRecords {
-    #[key]
-    table: felt252,
-    records_data: Span<IdData>,
-}
-```
-
-Data Serialization order:
-
-- records_data - iserialize_end
-
-```rust
-struct InsertField {
-    #[key]
-    table: felt252,
-    #[key]
-    record: felt252,
-    #[key]
-    column: felt252,
-    data: Span<felt252>,
-}
-
-```
-
-Data Serialization order:
-
-- data - append_span
-
-```rust
-struct InsertFields {
-    #[key]
-    table: felt252,
-    #[key]
-    record: felt252,
-    columns: Span<felt252>,
-    data: Span<felt252>,
-}
-
-```
-
-Data Serialization order:
-
-- columns - iserialize
-- data - append_span
-
-```rust
-struct InsertsField {
-    #[key]
-    table: felt252,
-    #[key]
-    column: felt252,
-    records_data: Span<IdData>,
-}
-
-```
-
-Data Serialization order:
-
-- records_data - iserialize_end
-
-```rust
-struct InsertsFields {
-    #[key]
-    table: felt252,
-    columns: Span<felt252>,
-    records_data: Span<IdData>,
-}
-```
-
-Data Serialization order:
-
-- columns - iserialize
-- records_data - iserialize_end
-
-```rust
-struct InsertFieldGroup {
-    #[key]
-    table: felt252,
-    #[key]
-    record: felt252,
-    #[key]
-    group: felt252,
-    data: Span<felt252>,
-}
-
-```
-
-Data Serialization order:
-
-- data - append_span
-
-```rust
-struct InsertFieldGroups {
-    #[key]
-    table: felt252,
-    #[key]
-    record: felt252,
-    groups: Span<felt252>,
-    data: Span<felt252>,
-}
-```
-
-Data Serialization order:
-
-- groups - iserialize
-- data - append_span
-
-```rust
-struct InsertsFieldGroup {
-    #[key]
-    table: felt252,
-    #[key]
-    group: felt252,
-    records_data: Span<IdData>,
-}
-
-```
-
-Data Serialization order:
-
-- records_data - iserialize_end
-
-```rust
-struct InsertsFieldGroups {
-    #[key]
-    table: felt252,
-    groups: Span<felt252>,
-    records_data: Span<IdData>,
-}
-```
-
-Data Serialization order:
-
-- groups - iserialize
-- records_data - iserialize_end
-
-```rust
-
-struct DeleteRecord {
-    #[key]
-    table: felt252,
-    #[key]
-    record: felt252,
-}
-```
-
-```rust
-
-struct DeleteRecords {
-    #[key]
-    table: felt252,
-    records: Span<felt252>,
-}
-```
-
-Data Serialization order:
-
-- records - append_span
-
-```rust
-struct DeleteField {
-    #[key]
-    table: felt252,
-    #[key]
-    record: felt252,
-    #[key]
-    column: felt252,
-}
-```
-
-Data Serialization order:
-
-- (no data fields)
-
-```rust
-
-struct DeleteFields {
-    #[key]
-    table: felt252,
-    #[key]
-    record: felt252,
-    columns: Span<felt252>,
-}
-```
-
-Data Serialization order:
-
-- columns - append_span
-
-```rust
-struct DeletesField {
-    #[key]
-    table: felt252,
-    #[key]
-    column: felt252,
-    records: Span<felt252>,
-
-}
-```
-
-Data Serialization order:
-
-- records - append_span
-
-```rust
-struct DeletesFields {
-    #[key]
-    table: felt252,
-    records: Span<felt252>,
-    columns: Span<felt252>,
-}
-```
-
-Data Serialization order:
-
-- records - iserialize
-- columns - append_span
-
-```rust
-struct DeleteFieldGroup {
-    #[key]
-    table: felt252,
-    #[key]
-    record: felt252,
-    #[key]
-    group: felt252,
-}
-```
-
-Data Serialization order:
-
-- (no data fields)
-
-```rust
-struct DeleteFieldGroups {
-    #[key]
-    table: felt252,
-    #[key]
-    record: felt252,
-    groups: Span<felt252>,
-}
-```
-
-Data Serialization order:
-
-- groups - append_span
-
-```rust
-struct DeletesFieldGroup {
-    #[key]
-    table: felt252,
-    #[key]
-    group: felt252,
-    records: Span<felt252>,
-}
-```
-
-Data Serialization order:
-
-- records - append_span
-
-```rust
-struct DeletesFieldGroups {
-    #[key]
-    table: felt252,
-    records: Span<felt252>,
-    groups: Span<felt252>,
-}
-```
-
-Data Serialization order:
-
-- records - iserialize
-- groups - append_span
-
-### Variable Events
-
-These events are for values that don't fit into the table/record model, such as global variables or configuration settings.
-
-- `RegisterVariable`: Register a new variable with value.
-- `DeclareVariable`: Register a new variable with a given name and type.
-- `SetVariable`: Set the value of an existing variable.
-- `RenameVariable`: Rename an existing variable.
-- `DeleteVariable`: Delete an existing variable.
-
-Common members:
-
-- id: felt252 - Unique identifier for the variable.
-- name: ByteArray - Name of the variable.
-- type_def: TypeDef - Type definition of the variable.
-- data: Span<felt252> - Serialised data being set.
-
-```rust
-struct RegisterVariable {
-    #[key]
-    id: felt252,
-    name: ByteArray,
-    type_def: TypeDef,
-}
-```
-
-Data Serialization order:
-
-- name - iserialize
-- type_def - iserialize
-
-```rust
-struct DeclareVariable {
-    #[key]
-    id: felt252,
-    name: ByteArray,
-    type_def: TypeDef,
-    data: Span<felt252>,
-}
-```
-
-Data Serialization order:
-
-- name - iserialize
-- type_def - iserialize
-- data - append_span
-
-```rust
-struct SetVariable {
-    #[key]
-    id: felt252,
-    data: Span<felt252>,
-}
-```
-
-Data Serialization order:
-
-- data - append_span
-
-```rust
-struct RenameVariable {
-    #[key]
-    id: felt252,
-    name: ByteArray,
-}
-```
-
-Data Serialization order:
-
-- name - iserialize
-
-```rust
-struct DeleteVariable {
-    #[key]
-    id: felt252,
-}
-
-```
-
-### Type Definitions
-
-The following data structures are used to describe the types and schemas of cairo structures.
-
-`TypeDef`: An enum to represent what the value should be decoded as. The values are:
-| Variant | Description | Selector|
-|----------|-------------|-----------|
-|`None`| None type e.g. `()` or an empty enum.| 0
-|`Felt252`| Base [field element](https://docs.starknet.io/build/corelib/core-felt252) in cairo | 'felt252'
-|`Bytes31`| 31 bytes packed into a felt252.| 'bytes31'
-|`Bytes31Encoded`| 31 bytes packed into a felt252 with encoding.| 'bytes31e'
-|`ShortUtf8`| A 31 byte UTF-8 string.| 'ShortUtf8'
-|`Bool`| A boolean value (true or false).| 'bool'
-|`U8`| An unsigned 8-bit integer.| 'u8'
-|`U16`| An unsigned 16-bit integer.| 'u16'
-|`U32`| An unsigned 32-bit integer.| 'u32'
-|`U64`| An unsigned 64-bit integer.| 'u64'
-|`U128`| An unsigned 128-bit integer.| 'u128'
-|`U256`| An unsigned 256-bit integer.| 'u256'
-|`U512`| An unsigned 512-bit integer.| 'u512'
-|`I8`| A signed 8-bit integer.| 'i8'
-|`I16`| A signed 16-bit integer.| 'i16'
-|`I32`| A signed 32-bit integer.| 'i32'
-|`I64`| A signed 64-bit integer.| 'i64'
-|`I128`| A signed 128-bit integer.| 'i128'
-|`ClassHash`| An identifier for a contract class.| 'ClassHash'
-|`ContractAddress`| An address of a contract on StarkNet.| 'ContractAddress'
-|`EthAddress`| An Ethereum address.| 'EthAddress'
-|`StorageAddress`| An address of a storage location of a contract.| 'StorageAddress'
-|`StorageBaseAddress`| An address of a storage base location of a contract.| 'StorageBaseAddress'
-|`ByteArray`| A byte array (An array of bytes31 with a pending word).| 'ByteArray'
-|`Utf8String`| A UTF-8 string.| 'Utf8String'
-|`ByteArrayEncoded`| A byte array with encoding (An array of bytes31 with a pending word).| 'ByteArrayEncoded'
-|`Tuple`| A tuple | 'Tuple'
-|`Array`| Variable sized array | 'Array'
-|`FixedArray`| Compile-time sized array| 'FixedArray'
-|`Felt252Dict`| A dictionary (A mapping from felt252 keys to values).| 'Felt252Dict'
-|`Struct`| Custom struct| 'struct'
-|`Enum`| Rust style enum | 'enum'
-|`Option`| Option type - Either `Some` with a value or `None`| 'Option'
-|`Result`| Result type - Either `Ok` or `Err` each with there own type| 'Result'
-|`Nullable`| Nullable type - Either a value or `Null`| 'Nullable'
-|`Ref`| A reference type (A type that refers to another value).| 'ref'
-|`Custom`| A custom type (A user-defined data structure and decoding).| 'custom'
-
-```rust
-enum TypeDef {
-    #[default]
-    None,
-    Felt252,
-    ShortUtf8,
-    Bytes31,
-    Bytes31Encoded: ByteArray,
-    Bool,
-    U8,
-    U16,
-    U32,
-    U64,
-    U128,
-    U256,
-    U512,
-    I8,
-    I16,
-    I32,
-    I64,
-    I128,
-    ClassHash,
-    ContractAddress,
-    EthAddress,
-    StorageAddress,
-    StorageBaseAddress,
-    ByteArray,
-    Utf8String,
-    ByteArrayEncoded: ByteArray,
-    Tuple: Span<TypeDef>,
-    Array: Box<TypeDef>,
-    FixedArray: Box<FixedArrayDef>,
-    Felt252Dict: Box<TypeDef>,
-    Struct: StructDef,
-    Enum: EnumDef,
-    Option: Box<TypeDef>,
-    Result: Box<ResultDef>,
-    Nullable: Box<TypeDef>,
-    Ref: felt252,
-    Custom: ByteArray,
-}
-```
-
-> [!IMPORTANT] > `Box<T>` are used to wrap types that also contain TypeDefs as the compiler can't take recursive types.
-
-For primary keys the `PrimaryTypeDef` which contains a subset of `TypeDef` that can be used as primary keys.
+The `PrimaryTypeDef` is a subset of `TypeDef` containing valid primary key types:
 
 ```rust
 enum PrimaryTypeDef {
@@ -1008,16 +152,11 @@ enum PrimaryTypeDef {
 }
 ```
 
-These are the types that can be used as primary keys as they can be represented by a single felt252 value.
+> Complex data types (like a `Struct` or `ByteArray`) may be hashed to produce a primary key.
 
-#### Attributes
+### Attributes
 
-An attribute is a key-value pair that can be attached to various type definitions to provide additional metadata or information about the type such as encoding.
-
-`Attribute`: Defines an attribute with the fields:
-
-- `name`: The name/identifier of the attribute as a ByteArray.
-- `data`: Optional data associated with the attribute as a ByteArray.
+An attribute is a key-value pair that can be attached to various items to provide additional metadata (e.g. marking columns for indexing).
 
 ```rust
 struct Attribute {
@@ -1026,21 +165,33 @@ struct Attribute {
 }
 ```
 
-#### Structs
+### Complex Core Types
 
-`StructDef`: Defines the structure of a struct type with the fields:
-
-- `name`: The name of the struct.
-- `attributes`: A span of attributes associated with the struct.
-- `members`: A span of `MemberDef` representing the members of the struct.
-
-`MemberDef`: Defines a member of a struct with the fields:
-
-- `name`: The name of the member.
-- `attributes`: A span of attributes associated with the member.
-- `type_def`: The type definition of the member.
+The following structs represent complex types with Cairo-specific purposes:
 
 ```rust
+// Defines a typed, fixed-size array
+
+struct FixedArrayDef {
+    type_def: TypeDef,
+    size: u32,
+}
+
+// Defines the structure of a result
+
+struct ResultDef {
+    ok: TypeDef,
+    err: TypeDef,
+}
+```
+
+### Complex Custom Types
+
+The following structs represent application-specific data:
+
+```rust
+// Defines structs for arbitrary data
+
 struct StructDef {
     name: ByteArray,
     attributes: Span<Attribute>,
@@ -1052,24 +203,9 @@ struct MemberDef {
     attributes: Span<Attribute>,
     type_def: TypeDef,
 }
-```
 
-#### Enums
+// Defines enumeration types and variants
 
-`EnumDef`: Defines the structure of an enum type with the fields:
-
-- `name`: The name of the enum.
-- `attributes`: A span of attributes associated with the enum.
-- `variants`: A span of `VariantDef` representing the variants of the enum.
-
-`VariantDef`: Defines a variant of an enum with the fields:
-
-- `selector`: The selector of the variant.
-- `name`: The name of the variant.
-- `attributes`: A span of attributes associated with the variant.
-- `type_def`: An optional type definition of the variant.
-
-```rust
 struct EnumDef {
     name: ByteArray,
     attributes: Span<Attribute>,
@@ -1080,54 +216,17 @@ struct VariantDef {
     selector: felt252,
     name: ByteArray,
     attributes: Span<Attribute>,
-    type_def: TypeDef,
+    type_def: Option<TypeDef>,
 }
 ```
 
-#### Fixed Arrays
+### Table Definitions
 
-`FixedArrayDef`: Defines a fixed-size array type with the fields:
-
-- `type_def`: The type definition of the elements in the array.
-- `size`: The size of the array.
+The following structs represent table column and data formats:
 
 ```rust
-struct FixedArrayDef {
-    type_def: TypeDef,
-    size: u32,
-}
-```
+// Defines a column in a table
 
-#### Results
-
-`ResultDef`: Defines the structure of a result type with the fields:
-
-- `ok`: The type definition of the Ok variant.
-- `err`: The type definition of the Err variant.
-
-```rust
-struct ResultDef {
-    ok: TypeDef,
-    err: TypeDef,
-}
-```
-
-### Schema
-
-`ColumnDef`: Defines a column in a schema with the fields:
-
-- `id`: A unique identifier for the column.
-- `name`: The name of the column.
-- `attributes`: A span of attributes associated with the column.
-- `type_def`: The type definition of the column.
-
-`PrimaryDef`: Defines a field in a record with the fields:
-
-- `name`: The name of the field.
-- `type_def`: The type definition of the field.
-- `attributes`: A span of attributes associated with the field.
-
-```rust
 struct ColumnDef {
     id: felt252,
     name: ByteArray,
@@ -1135,59 +234,905 @@ struct ColumnDef {
     type_def: TypeDef,
 }
 
+// Defines a primary key in a table
+
 struct PrimaryDef {
     name: ByteArray,
     attributes: Span<Attribute>,
     type_def: PrimaryTypeDef,
 }
+
+// Defines entry composed of a row and associated data
+
+struct Entry {
+    row: felt252,
+    data: Span<felt252>,
+}
+
+// Defines an identifiable name
+
+struct IdName {
+    id: felt252,
+    name: ByteArray,
+}
+
+// Defines an identifiable type definition
+
+struct IdTypeDef {
+    id: felt252,
+    attributes: Span<Attribute>,
+    type_def: TypeDef,
+}
 ```
 
-### Traits
+## Events
 
-Although to use this spec directly you can just emit the events with the correct data structures, to make it easier to work with there are some traits provided to generate TypeDefs and serialize data. These are implemented for all core cairo and starknet types and there are macros provided to generate them for custom structs and enums.
+Events are a way for smart contracts to inform the outside world of any changes that occur during their execution, by writing additional data to the transaction's receipt. Event data are not readable by other contracts, but are accessible externally to indexers.
 
-### Introspect Trait
+The following events comprise a _vocabulary_ for defining onchain state structures and changes, enabling offchain indexers to build accurate representations of onchain state.
 
-The Introspect trait is used to describe types so they can be reconstructed by another system.
+All indexers implementing Introspect MUST support the following events. It is RECOMMENDED that contracts implementing Introspect use Starknet events to emit these updates, although alternatives like direct data dumps are acceptable.
 
-Methods:
+### Type Events
 
-- `type_def() -> TypeDef`: Returns the type definition of the implementing type.
-- `child_defs() -> Array<(felt252, TypeDef)>`: Returns any types and their ids that are referenced (including recursively) by this type.
-- `hash() -> felt252`: Returns a unique hash of the type definition.
+An event for declaring new types.
+
+Contracts MUST emit this event before emitting events referencing this type.
+
+```rust
+// Declare a new type with a given name and structure
+
+struct DeclareType {
+    id: felt252,
+    type_def: TypeDef,
+}
+```
+
+### Database Events
+
+Events for table, column and row manipulation.
+
+> Events that apply to singular items have members expanded into the events for efficiency.
+
+#### Definitions
+
+The following terms are used to describe common database operations.
+
+- `Create`: Used to make tables
+- `Add`: Used to add columns to tables
+- `Drop`: Used to remove tables and columns
+- `Rename`/`Retype`: Used to change the name or type of table columns
+- `Insert`: Used to add or update records and fields
+- `Delete`: Used to remove records and fields
+
+#### Table Management
+
+Tables are one of the core concepts in Introspect's data model. Tables consist of **rows** of **records** with data in typed **columns**, corresponding closely to Cairo's notion of **structs** containing typed **members**.
+
+**Common field meanings:**
+
+- `id`: Unique table identifier
+
+```rust
+// Create a new table with a given name
+
+struct CreateTable {
+    id: felt252,
+    name: ByteArray,
+    primary: PrimaryDef,
+    attributes: Span<Attribute>,
+}
+
+// Create or update a table with a given name and columns
+
+struct CreateTableWithColumns {
+    id: felt252,
+    name: ByteArray,
+    attributes: Span<Attribute>,
+    primary: PrimaryDef,
+    columns: Span<ColumnDef>,
+}
+
+// Create or update a table from a class hash
+
+struct CreateTableFromClassHash {
+    id: felt252,
+    name: ByteArray,
+    class_hash: felt252,
+}
+
+// Rename an existing table
+
+struct RenameTable {
+    id: felt252,
+    name: ByteArray,
+}
+
+// Drop an existing table
+
+struct DropTable {
+    id: felt252,
+}
+```
+
+#### Column Management
+
+Columns contain typed attributes of a record.
+
+**Common field meanings:**
+
+- `id`: Unique column identifier
+- `table`: Matches `id` from [table events](#Table-Management)
+
+```rust
+// Add a new column to a table
+
+struct AddColumn {
+    table: felt252,
+    id: felt252,
+    name: ByteArray,
+    type_def: TypeDef,
+    attributes: Span<Attribute>,
+}
+
+// Add multiple new columns to a table
+
+struct AddColumns {
+    table: felt252,
+    columns: Span<ColumnDef>,
+}
+
+// Rename an existing column in a table
+
+struct RenameColumn {
+    table: felt252,
+    id: felt252,
+    name: ByteArray,
+}
+
+// Rename multiple existing columns in a table
+
+struct RenameColumns {
+    table: felt252,
+    columns: Span<IdName>,
+}
+
+// Change the type of an existing column in a table
+
+struct RetypeColumn {
+    table: felt252,
+    id: felt252,
+    type_def: TypeDef,
+    attributes: Span<Attribute>,
+}
+
+// Change the types of multiple existing columns in a table
+
+struct RetypeColumns {
+    table: felt252,
+    columns: Span<IdTypeDef>,
+}
+
+// Drop an existing column from a table
+
+struct DropColumn {
+    table: felt252,
+    id: felt252,
+}
+
+// Drop multiple existing columns from a table
+
+struct DropColumns {
+    table: felt252,
+    ids: Span<felt252>,
+}
+```
+
+#### Primary Key Management
+
+Primary keys are `Felt252`-compatible values uniquely identifying a record in a table.
+
+**Common field meanings:**
+
+- `table`: Matches `id` from [table events](#Table-Management)
+
+```rust
+// Rename the primary key of a table
+
+struct RenamePrimary {
+    table: felt252,
+    name: ByteArray,
+}
+
+// Change the type of the primary key of a table
+
+struct RetypePrimary {
+    table: felt252,
+    type_def: PrimaryTypeDef,
+    attributes: Span<Attribute>,
+}
+```
+
+#### Index Management
+
+Indices are supplemental data structures enabling fast querying of specific columns.
+
+**Common field meanings:**
+
+- `id`: Unique index identifier
+- `table`: Matches `id` from [table events](#Table-Management)
+- `attributes`: Attributes associated with the index, eg a boolean flag for uniqueness
+- `columns`: Ordered list of column IDs included in the index
+
+```rust
+// Create a new index on a table
+
+struct CreateIndex {
+    table: felt252,
+    id: felt252,
+    attributes: Span<Attribute>,
+    columns: Span<felt252>,
+}
+
+// Drop an existing index from a table
+
+struct DropIndex {
+    table: felt252,
+    id: felt252,
+}
+```
+
+Indexes can also be made using attributes on columns and tables.
+To crate an index for a single column an empty attribute with the name `create_index` `create_unique_index`can be used.
+For multiple columns, a table attribute with the name `create_index` or `create_unique_index` and data containing the column IDs can be used.
+
+#### Column Set Management
+
+A column set can be used to reference a set of fields and reduce the amount of data needed to reference them.
+
+```rust
+// Create a Column set with specified columns
+
+struct CreateColumnSet {
+    id: felt252,
+    columns: Span<felt252>,
+}
+```
+
+#### Record Manipulation
+
+Stored in tables, **records** are the data of an application, identified by a unique primary key.
+
+**Common field meanings:**
+
+- `row`/`rows`: A felt for corresponding to the Primary key(s)
+- `table`: Matches `id` from [table events](#Table-Management)
+- `column`: Matches `id` from [column events](#Column-Management)
+- `set`: Matches `id` from [column set events](#Column-Set-Management)
+- `data`: Raw `felt252` values representing the data being inserted/updated
+- `entries`: Collection of [`Entry`](#table-definitions) structs containing row and data pairs
+
+```rust
+// Insert or update a record in a table
+
+struct InsertRecord {
+    table: felt252,
+    row: felt252,
+    data: Span<felt252>,
+}
+
+// Insert or update multiple records in a table
+
+struct InsertRecords {
+    table: felt252,
+    entries: Span<Entry>,
+}
+
+// Insert or update a field in a record
+
+struct InsertField {
+    table: felt252,
+    row: felt252,
+    column: felt252,
+    data: Span<felt252>,
+}
+
+// Insert or update multiple fields in a record
+
+struct InsertFields {
+    table: felt252,
+    row: felt252,
+    columns: Span<felt252>,
+    data: Span<felt252>,
+}
+
+// Insert or update a field in multiple records
+
+struct InsertsField {
+    table: felt252,
+    column: felt252,
+    entries: Span<Entry>,
+}
+
+// Insert or update multiple fields in multiple records
+
+struct InsertsFields {
+    table: felt252,
+    columns: Span<felt252>,
+    entries: Span<Entry>,
+}
+
+// Insert or update a set of fields in a record
+
+struct InsertFieldSet {
+    table: felt252,
+    row: felt252,
+    set: felt252,
+    data: Span<felt252>,
+}
+
+// Insert or update multiple sets of fields in a record
+
+struct InsertFieldSets {
+    table: felt252,
+    row: felt252,
+    sets: Span<felt252>,
+    data: Span<felt252>,
+}
+
+// Insert or update a set of fields in multiple records
+
+struct InsertsFieldSet {
+    table: felt252,
+    set: felt252,
+    entries: Span<Entry>,
+}
+
+// Insert or update multiple sets of fields in multiple records
+
+struct InsertsFieldSets {
+    table: felt252,
+    sets: Span<felt252>,
+    entries: Span<Entry>,
+}
+
+// Drop an existing row from a table
+
+struct DeleteRecord {
+    table: felt252,
+    row: felt252,
+}
+
+// Drop multiple existing records from a table
+
+struct DeleteRecords {
+    table: felt252,
+    rows: Span<felt252>,
+}
+
+// Drop an existing field from a record
+
+struct DeleteField {
+    table: felt252,
+    row: felt252,
+    column: felt252,
+}
+
+// Drop multiple existing fields from a record
+
+struct DeleteFields {
+    table: felt252,
+    row: felt252,
+    columns: Span<felt252>,
+}
+
+// Drop an existing field from multiple records
+
+struct DeletesField {
+    table: felt252,
+    column: felt252,
+    rows: Span<felt252>,
+}
+
+// Drop multiple existing fields from multiple records
+
+struct DeletesFields {
+    table: felt252,
+    rows: Span<felt252>,
+    columns: Span<felt252>,
+}
+
+
+
+// Drop a set of fields from a record
+
+struct DeleteFieldSet {
+    table: felt252,
+    row: felt252,
+    set: felt252,
+}
+
+// Drop multiple sets of fields from a record
+
+struct DeleteFieldSets {
+    table: felt252,
+    row: felt252,
+    sets: Span<felt252>,
+}
+
+// Drop a set of fields from multiple records
+
+struct DeletesFieldSet {
+    table: felt252,
+    set: felt252,
+    rows: Span<felt252>,
+}
+
+// Drop multiple sets of fields from multiple records
+
+struct DeletesFieldSets {
+    table: felt252,
+    rows: Span<felt252>,
+    sets: Span<felt252>,
+}
+```
+
+### Variable Events
+
+These events are for values that don't fit into the table/record model, such as global variables or configuration settings.
+
+Common field meanings:
+
+- `id`: Unique variable identifier
+
+```rust
+// Register a new variable
+
+struct RegisterVariable {
+    id: felt252,
+    name: ByteArray,
+    type_def: TypeDef,
+}
+
+// Register a new variable with value
+
+struct DeclareVariable {
+    id: felt252,
+    name: ByteArray,
+    type_def: TypeDef,
+    data: Span<felt252>,
+}
+
+// Set the value of an existing variable
+
+struct SetVariable {
+    id: felt252,
+    data: Span<felt252>,
+}
+
+// Rename an existing variable
+
+struct RenameVariable {
+    id: felt252,
+    name: ByteArray,
+}
+
+// Delete an existing variable
+
+struct DeleteVariable {
+    id: felt252,
+}
+```
+
+#### Example
+
+Here is an example of how these types and events can be used to create offchain representations of onchain state:
+
+**1. Define the schema (once):**
+
+```rust
+CreateTableWithColumns {
+    id: 'Player',
+    name: "Player",
+    attributes: [],
+    primary: PrimaryDef { name: "id", type_def: PrimaryTypeDef::Felt252, ... },
+    columns: [
+        ColumnDef { id: 'health', type_def: TypeDef::U32, ... },
+        ColumnDef { id: 'strength', type_def: TypeDef::U32, ... },
+    ]
+}
+```
+
+**2. Insert data (often):**
+
+```rust
+InsertRecord {
+    table: 'Player',   // Links to schema via table ID
+    row: 0x123,        // Primary key
+    data: [100, 10]    // Raw values: health=100, strength=10
+}
+```
+
+The `data` field contains raw `felt252` values with no type information. Indexers use the table `id` to look up the previously-emitted schema and interpret the data accordingly.
+
+## Serialization
+
+### TypeDef Encoding
+
+When a `TypeDef` is serialized, it MUST be prefixed with a **selector** - a Cairo short-string that identifies the variant. This allows a deserializer to determine which variant is being received and how to parse associated data.
+
+The selector is encoded as a `felt252` containing the ASCII bytes of the selector string.
+For example, `'struct'` is the ASCII bytes of "struct" interpreted as a `felt252`.
+
+> TODO: explain why selector casing is inconsistent
+
+#### Selector Table
+
+Conforming implementations MUST use the following selectors:
+
+| Variant              | Selector               | Associated Data                      |
+| -------------------- | ---------------------- | ------------------------------------ |
+| `None`               | `0`                    | —                                    |
+| `Felt252`            | `'felt252'`            | —                                    |
+| `Bytes31`            | `'bytes31'`            | —                                    |
+| `Bytes31E`           | `'bytes31e'`           | encoding: `ByteArray`                |
+| `ShortUtf8`          | `'ShortUtf8'`          | —                                    |
+| `Bool`               | `'bool'`               | —                                    |
+| `U8`                 | `'u8'`                 | —                                    |
+| `U16`                | `'u16'`                | —                                    |
+| `U32`                | `'u32'`                | —                                    |
+| `U64`                | `'u64'`                | —                                    |
+| `U128`               | `'u128'`               | —                                    |
+| `U256`               | `'u256'`               | —                                    |
+| `U512`               | `'u512'`               | —                                    |
+| `I8`                 | `'i8'`                 | —                                    |
+| `I16`                | `'i16'`                | —                                    |
+| `I32`                | `'i32'`                | —                                    |
+| `I64`                | `'i64'`                | —                                    |
+| `I128`               | `'i128'`               | —                                    |
+| `ClassHash`          | `'ClassHash'`          | —                                    |
+| `ContractAddress`    | `'ContractAddress'`    | —                                    |
+| `EthAddress`         | `'EthAddress'`         | —                                    |
+| `StorageAddress`     | `'StorageAddress'`     | —                                    |
+| `StorageBaseAddress` | `'StorageBaseAddress'` | —                                    |
+| `ByteArray`          | `'ByteArray'`          | —                                    |
+| `Utf8String`         | `'Utf8String'`         | —                                    |
+| `ByteArrayE`         | `'ByteArrayE'`         | encoding: `ByteArray`                |
+| `Tuple`              | `'Tuple'`              | elements: `Span<TypeDef>`            |
+| `Array`              | `'Array'`              | element type: `TypeDef`              |
+| `FixedArray`         | `'FixedArray'`         | element type: `TypeDef`, size: `u32` |
+| `Felt252Dict`        | `'Felt252Dict'`        | value type: `TypeDef`                |
+| `Struct`             | `'struct'`             | `StructDef`                          |
+| `Enum`               | `'enum'`               | `EnumDef`                            |
+| `Option`             | `'Option'`             | inner type: `TypeDef`                |
+| `Result`             | `'Result'`             | `ResultDef`                          |
+| `Nullable`           | `'Nullable'`           | inner type: `TypeDef`                |
+| `Ref`                | `'ref'`                | type hash: `felt252`                 |
+| `Custom`             | `'custom'`             | type name: `ByteArray`               |
+
+> `None` uses `0` instead of a short-string, representing the absence of a type.
+
+#### Example
+
+Consider again the example of an onchain game's `Player` struct:
+
+```rust
+struct Player {
+    health: u32,
+    strength: u32,
+}
+```
+
+This struct would be represented by the corresponding `TypeDef`:
+
+```rust
+TypeDef::Struct(StructDef {
+  name: "Player",
+  attributes: [],
+  members: [
+      MemberDef {
+          name: "health",
+          attributes: [],
+          type_def: TypeDef::U32,
+      },
+      MemberDef {
+          name: "strength",
+          attributes: [],
+          type_def: TypeDef::U32,
+      },
+  ],
+})
+```
+
+The `TypeDef` serializes to a flat sequence of `felt252` values:
+
+```
+['struct', "Player", 0, 2, "health", 0, 'u32', "strength", 0, 'u32']
+```
+
+### ByteArray Encoding
+
+A goal of this SNIP is gas-efficiency in event emissions. To reduce event size, a `ByteArray` MUST be serialized as follows:
+
+- Implementations MUST NOT include a length prefix
+- Bit 249 MUST indicate if it is the last `felt252` in the `ByteArray`
+- Bit 248 MUST indicate if the felt is a partial word (less than 31 bytes)
+- If the felt is a partial word, byte 30 MUST store the number of bytes
+
+The result is that a `ByteArray` with 31 Bytes or less takes up a single `felt252`, with no felts used for total felts or pending word size.
+
+#### Encoding Design
+
+To understand how this scheme was developed, first consider Cairo's default `ByteArray` serialization. A `Serde`-encoded `ByteArray` takes up $3 + \lfloor B/31 \rfloor$ felts (`B` is the number of bytes being encoded), with the following structure:
+
+| Component      | Encoding         | Felts                      |
+| -------------- | ---------------- | -------------------------- |
+| Full `byte31`  | `Span<byte31>`   | $1 + \lfloor B/31 \rfloor$ |
+| Pending word   | `felt252`        | $1$                        |
+| Pending length | `Bounded<0, 31>` | $1$                        |
+
+In the standard scheme, **two felts** are used to encode the final word. Now, consider how Cairo uses a standard 256-bit word:
+
+- `X`: Unusable Bit
+- `*`: Partially useable bit in `felt252`
+- `O`: Bit not used in `byte31` but used in `felt252`
+- `±`: Bit used in both `byte31` and `felt252`
+
+| Byte index (big-endian) | Bit Diagram<br/>`7 6 5 4 3 2 1 0` | Use in `byte31` | Use in `felt252` |
+| ----------------------- | --------------------------------- | --------------- | ---------------- |
+| 31 (MSB)                | `X X X X * O O O`                 | Unused          | Partial use      |
+| 30                      | `± ± ± ± ± ± ± ±`                 | Usable          | Usable           |
+| 29…1                    | `± ± ± ± ± ± ± ±`                 | Usable          | Usable           |
+| 0 (LSB)                 | `± ± ± ± ± ± ± ±`                 | Usable          | Usable           |
+
+The reason that bit 251 (bit 3 in the 31st byte) is _partially_ usable is due to the fact that a `felt252` can have a max value of $2^{251}+17*2^{192}$, which means that for values between $2^{251}$ and its max the `251` bit is `1`. In values above $17*2^{192}$ the `251` has to be `0` to avoid exceeding the max value.
+
+This means there are three bits (`250`, `249`, `248`) are unused in byte31 but usable in felt252. **These can be used to encode a `ByteArray` in $1+\lfloor B/31 \rfloor$ felts.**
+
+- `249`: `1` if it's the last felt in the ByteArray, `0` otherwise.
+- `248`: `1` if it's an incomplete byte31 (≤30 bytes), `0` otherwise.
+- If it's an incomplete `byte31` Byte 30 contains the number of bytes (0-30).
+
+> [!IMPORTANT]
+> The lack of a length prefix means deserializers MUST scan to the end for a terminator.
+
+#### Examples
+
+|     | 31B / 255-248b<br/>`7 6 5 4 3 2 1 0` | 30B / 247-240b<br/>`7 6 5 4 3 2 1 0` | 9-1B / 239-8b<br/>`7 6 5 4 3 2 1 0` | 0B / 7-0b<br/>`7 6 5 4 3 2 1 0` |
+| --- | ------------------------------------ | ------------------------------------ | ----------------------------------- | ------------------------------- |
+| 1   | `0 0 0 0 0 0 0 0`                    | `± ± ± ± ± ± ± ±`                    | `± ± ± ± ± ± ± ±`                   | `± ± ± ± ± ± ± ±`               |
+| 2   | `0 0 0 0 0 0 1 0`                    | `± ± ± ± ± ± ± ±`                    | `± ± ± ± ± ± ± ±`                   | `± ± ± ± ± ± ± ±`               |
+| 3   | `0 0 0 0 0 0 1 1`                    | `0 0 0 1 1 1 1 0`                    | `± ± ± ± ± ± ± ±`                   | `± ± ± ± ± ± ± ±`               |
+| 4   | `0 0 0 0 0 0 1 1`                    | `0 0 0 0 0 0 0 1`                    | `0 0 0 0 0 0 0 0`                   | `± ± ± ± ± ± ± ±`               |
+| 5   | `0 0 0 0 0 0 1 1`                    | `0 0 0 0 0 0 0 0`                    | `0 0 0 0 0 0 0 0`                   | `0 0 0 0 0 0 0 0`               |
+| 6   | `0 0 0 0 0 0 0 1`                    | `0 0 0 1 1 1 1 0`                    | `± ± ± ± ± ± ± ±`                   | `± ± ± ± ± ± ± ±`               |
+
+1. Full `bytes31` followed by more → $b^{249}=0$, $b^{248}=0$
+2. Full `bytes31` not followed by more → $b^{249}=1$, $b^{248}=0$
+3. 30 bytes not followed by more → $b^{249}=1$, $b^{248}=1$, $B_{30} = 30$ (number of bytes)
+4. 1 byte not followed by more → $b^{249}=1$, $b^{248}=1$, $B_{30} = 1$
+5. Empty `ByteArray` not followed by more data → $b^{249}=1$, $b^{248}=1$, $B_{30} = 0$
+6. 30 bytes + more data (allowed but pointless) → $b^{249}=0$, $b^{248}=1$, $B_{30} = 30$
+
+**Result:** up to 31 bytes encoded in 1 felt, vs. 3 with `Serde`.
+
+An important implication of this scheme is that a `ByteArray` of less than 31 bytes would be identically sized to a `felt252` containing the same data -- meaning that `ByteArray` can be used as the default string type with no loss of efficiency.
+
+### Attribute Encoding
+
+[Attributes](#Attributes) MUST be encoded on top of the `ByteArray` optimization, using $b^{250}$ of the `name` member to indicate if the attribute's `data` option has a value:
+
+- `0`: key-only attribute (`Option` is `None`)
+- `1`: attribute has additional `data` (encoded `ByteArray` follows)
+
+**Result:** 1 fewer felts per attribute.
+
+### Event Struct Encoding
+
+As with types, event structs use a custom serialization scheme to reduce the number of felts emitted. These optimizations leverage the fact that Starknet events arrive as a bounded `Span<felt252>` with a known length, allowing the final field to omit the length prefix.
+
+Implementations MUST use the appropriate serialization strategy based on field position and type:
+
+#### 1. Standard serialization
+
+Used for non-final fields. Serializes using optimized `ByteArray`/`Attribute` encoding with a length prefix for collections.
+
+#### 2. Terminal serialization
+
+Used for the final field when it contains complex types (e.g., `Span<Attribute>`). Serializes using optimized `ByteArray`/`Attribute` encoding but omits the length prefix.
+
+**Result:** 1 fewer felts per event.
+
+#### 3. No serialization
+
+Used for the final field when it is `Span<felt252>`. Appends values directly with no serialization or length prefix.
+
+**Result:** 1 fewer felts per event.
+
+**Examples**
+
+```rust
+struct CreateTableWithColumns {
+    id: felt252,
+    name: ByteArray,                 // Standard serialization
+    attributes: Span<Attribute>,     // Standard serialization
+    primary: PrimaryDef,             // Standard serialization
+    columns: Span<ColumnDef>,        // Terminal serialization
+}
+
+struct CreateFieldGroup {
+    id: felt252,
+    columns: Span<felt252>,          // No serialization (raw append)
+}
+```
+
+> To best take advantage of these optimizations, members of a struct should be organized to place `Span` fields at the end.
+
+# Reference Implementation
+
+This SNIP specifies **types** and **events** for describing application data, as well as a **serialization** scheme for efficient transmission. It is expected that most developers will not implement this specification themselves, but rather leverage higher level frameworks and libraries on the contract, indexer and client side.
+
+It is RECOMMENDED that libraries, frameworks, and tools will support the entire spec, but in cases in which they do not, each library/framework SHOULD clearly document which events they use and how they interpret them.
+
+Implementations MAY omit parts of the spec for optimization purposes, e.g. not allowing upgrades of database to allow for more efficient storage and querying.
+
+## Traits
+
+While this specification's _minimum_ requirement is emitting events with the correct structure, to make it easier to work with we recommend using traits for generating `TypeDef`s and serializing data. Our [reference implementation](https://github.com/cartridge-gg/introspect) provides these for all core Cairo and Starknet types, along with macros to generate them for custom structs and enums.
+
+### `Introspect`
+
+The `Introspect` trait is used to produce type definitions for external indexers, enabling correct data deserialization.
 
 ```rust
 trait Introspect<T> {
+    // Return the `TypeDef` for the type
     fn type_def() -> TypeDef;
-    fn child_defs() -> Array<(felt252, TypeDef)> {
-        Default::default()
-    }
+
+    // Return a unique identifier for the type
     fn hash() -> felt252 {
         let mut serialized: Array<felt252> = Default::default();
         Serde::<TypeDef>::serialize(@Self::type_def(), ref serialized);
         poseidon_hash_span(serialized.span())
     }
+
+    // Return a recursive, deduped array of (hash(), type_def()) for members
+    fn child_defs() -> Array<(felt252, TypeDef)> {
+        Default::default()
+    }
 }
 ```
 
-## Implementation
+Here is a sample implementation of `Introspect` for the `ComplexStruct` type:
 
-This SNIP provides a spec for encoding types, corresponding data and events to describe what to do with that data. It is expected that most of these will be hidden from most developers behind higher level frameworks and libraries both on the contract, indexer and client side. Its not expected that all these tool will use all the events but each library/framework should clearly document which events they use and how they interpret them. Optimization can be made by limiting certain features e.g. not allowing upgrades of database to allow for more efficient storage and querying.
+```rust
+use introspect::Introspect;
+use introspect::type_definitions::{TypeDef, StructDef, MemberDef, merge_defs};
+use crate::{SimpleStruct, SimpleEnum};
 
-## Security Considerations
 
-As this SNIP primarily defines events and data structures for describing on-chain data, it does not introduce new security risks. However, implementers should ensure that the calls to allow emitting these events are properly authorized to prevent unauthorized modifications to the described data structures.
+struct ComplexStruct {
+    field1: SimpleStruct,
+    field2: SimpleEnum,
+    field3: bool,
+}
 
-## History
+impl ComplexStructIntrospectImpl of Introspect<ComplexStruct>{
+    fn type_def() -> TypeDef {
+        TypeDef::Struct(StructDef {
+            name: "ComplexStruct",
+            attributes: [].span(),
+            members: Span<MemberDef>::from_array([
+                MemberDef {
+                    name: "field1",
+                    attributes: [].span(),
+                    type_def: Introspect::<SimpleStruct>::type_def(),
+                },
+                MemberDef {
+                    name: "field2",
+                    attributes: [].span(),
+                    type_def: Introspect::<SimpleEnum>::type_def(),
+                },
+                MemberDef {
+                    name: "field3",
+                    attributes: [].span(),
+                    type_def: Introspect::<bool>::type_def(),
+                },
+            ]),
+        })
+    }
 
-## Copyright
-
-Copyright and related rights waived via [MIT](../LICENSE).
-
+    fn child_defs() -> Array<(felt252, TypeDef)> {
+        merge_defs(array![
+            Introspect::<SimpleStruct>::child_defs(),
+            Introspect::<SimpleEnum>::child_defs(),
+        ])
+    }
+}
 ```
 
+The trait can also be implemented via a macro:
+
+```rust
+#[derive(Introspect, ISerde, Serde)]
+struct ComplexStruct {
+    field1: SimpleStruct,
+    field2: SimpleEnum,
+    field3: bool,
+}
 ```
 
+> [!IMPORTANT]
+> To use the macro, all members must implement `Introspect`.
+
+### `ISerde` and `ISerdeEnd`
+
+The `ISerde` trait (short for "Introspect Serde") is used to serialize data into a span of `felt252` values, which can then be deserialized by another system using the corresponding `TypeDef`. Its `iserialize` function mirrors `serialize` from `Serde`, but performs additional optimizations as [described earlier](#Serialization).
+
+```rust
+pub trait ISerde<T> {
+    fn iserialize(self: @T, ref output: Array<felt252>);
+    fn iserialize_inline(self: @T) -> Span<felt252> {
+        let mut data: Array<felt252> = Default::default();
+        Self::iserialize(self, ref data);
+        data.span()
+    }
+    fn ideserialize(ref serialized: Span<felt252>) -> Option<T>;
+}
 ```
 
+For the final field in an event, the `ISerdeEnd` trait is used to omit the length prefix entirely, saving an additional `felt252`.
+
+```rust
+pub trait ISerdeEnd<T> {
+    fn iserialize_end(self: @T, ref output: Array<felt252>);
+    fn ideserialize_end(ref serialized: Span<felt252>) -> Option<T>;
+}
 ```
+
+### `Event`
+
+The reference implementation reimplements Starknet's `Event` trait for each event struct, using `ISerde` instead of `Serde` for the data portion. This preserves the standard keys/data split while applying the gas-optimized serialization to the payload.
+
+Here is an implementation of `Event` for the `CreateTable` struct:
+
+```rust
+impl CreateTableEvent of Event<CreateTable> {
+    fn append_keys_and_data(
+        self: @CreateTable,
+        ref keys: Array<felt252>,
+        ref data: Array<felt252>,
+    ) {
+        keys.append(*self.id);                   // Keys use standard append
+        self.name.iserialize(ref data);          // Data uses ISerde
+        self.primary.iserialize(ref data);
+        self.attributes.iserialize_end(ref data); // Final field omits length
+    }
+
+    fn deserialize(
+        ref keys: Span<felt252>,
+        ref data: Span<felt252>,
+    ) -> Option<CreateTable> {
+        CreateTable {
+            id: *keys.pop_front()?,
+            name: ISerde::ideserialize(ref data)?,
+            primary: ISerde::ideserialize(ref data)?,
+            attributes: ISerdeEnd::ideserialize_end(ref data)?,
+        }
+    }
+}
+```
+
+> The full reference implementation is [available here](https://github.com/cartridge-gg/introspect).
+
+# Backwards Compatibility
+
+All data emitted with `ISerde` is expected to be decoded using the corresponding `TypeDef` by another system. Serialized data will appear as `Span<felt252>` in the ABI, which is well supported by existing infrastructure.
+
+# Security Considerations
+
+As this SNIP defines events and data structures for describing on-chain data, it does not introduce new security risks beyond those already present when dealing with untrusted contracts on permissionless blockchains. Implementers should ensure that the calls emitting these events are properly authorized to prevent unintended modifications to the offchain data structures.
+
+## Copyright Waiver
+
+Copyright and related rights waived via [MIT](https://opensource.org/license/mit).
