@@ -314,18 +314,9 @@ Tables are one of the core concepts in Introspect's data model. Tables consist o
 - `id`: Unique table identifier
 
 ```rust
-// Create a new table with a given name
+// Create or update a table with a given name, attributes and columns
 
 struct CreateTable {
-    id: felt252,
-    name: ByteArray,
-    primary: PrimaryDef,
-    attributes: Span<Attribute>,
-}
-
-// Create or update a table with a given name and columns
-
-struct CreateTableWithColumns {
     id: felt252,
     name: ByteArray,
     attributes: Span<Attribute>,
@@ -335,7 +326,15 @@ struct CreateTableWithColumns {
 
 // Create or update a table from a class hash
 
-struct CreateTableFromClassHash {
+struct CreateTableFromContract {
+    id: felt252,
+    name: ByteArray,
+    contract_address: ContractAddress,
+}
+
+// Create or update a table from a class hash
+
+struct CreateTableFromClass {
     id: felt252,
     name: ByteArray,
     class_hash: felt252,
@@ -484,7 +483,6 @@ struct DropIndex {
 
 Indexes can also be made using attributes on columns and tables.
 To crate an index for a single column an empty attribute with the name `create_index` `create_unique_index`can be used.
-For multiple columns, a table attribute with the name `create_index` or `create_unique_index` and data containing the column IDs can be used.
 
 #### Column Set Management
 
