@@ -124,7 +124,6 @@ macro_rules! syntax_type {
 
         impl<'db> $crate::FromAst<'db, cairo_lang_syntax::node::ast::$struct_name<'db>> for $struct_name {
             fn from_ast(ast: cairo_lang_syntax::node::ast::$struct_name<'db>, db: &'db dyn salsa::Database) -> Self {
-                use crate::AstInto;
                 $struct_name {
                     $(
                         $field: $crate::syntax_type!(@get_value ast, db, $field $(, $method)?),
@@ -135,11 +134,11 @@ macro_rules! syntax_type {
     };
 
     (@get_value $ast:ident, $db:ident, $field:ident, $method:ident) => {
-        $ast.$method($db).ast_into($db)
+        crate::AstInto::ast_into($ast.$method($db), $db)
     };
 
     (@get_value $ast:ident, $db:ident, $field:ident) => {
-        $ast.$field($db).ast_into($db)
+        crate::AstInto::ast_into($ast.$field($db), $db)
     };
 }
 
@@ -248,7 +247,6 @@ macro_rules! syntax_enum {
         }
     };
 
-    // ---- pattern side (returns a pattern) ----
     (@pat $ast_enum:ident $variant:ident [ $ast_variant:ident ] ( $ty:ty ) $e:ident) => {
         cairo_lang_syntax::node::ast::$ast_enum::$ast_variant($e)
     };
@@ -262,7 +260,6 @@ macro_rules! syntax_enum {
         cairo_lang_syntax::node::ast::$ast_enum::$variant(_)
     };
 
-    // ---- expression side (returns an expression) ----
     (@expr $variant:ident ( $ty:ty ) $e:ident, $db:ident) => {
         Self::$variant($crate::AstInto::ast_into($e, $db))
     };
@@ -270,144 +267,6 @@ macro_rules! syntax_enum {
         Self::$variant
     };
 }
-
-// #[macro_export]
-// macro_rules! syntax_enum {
-//     // With AST type override
-//     (
-//         $enum_name:ident[$ast_type:ident] {
-//             $($variant:ident $([$ast_name:ident])? $(($type:ty))?),* $(,)?
-//         }
-//     ) => {
-//         syntax_enum!(@impl $enum_name, $ast_type, { $($variant $([$ast_name])? $(($type))?),* });
-//     };
-
-//     // Without AST type override - use enum name
-//     (
-//         $enum_name:ident {
-//             $($variant:ident $([$ast_name:ident])? $(($type:ty))?),* $(,)?
-//         }
-//     ) => {
-//         syntax_enum!(@impl $enum_name, $enum_name, { $($variant $([$ast_name])? $(($type))?),* });
-//     };
-
-//     // Main implementation - initiates recursive processing wrapped in paste! once
-//     (@impl $enum_name:ident, $ast_type:ident, { $($variants:tt)* }) => {
-//         syntax_enum!(@build_enum $enum_name, [], [$($variants)*]);
-//         paste::paste! {
-//             syntax_enum!(@build_impl $enum_name, $ast_type, [], [$($variants)*]);
-//         }
-//     };
-
-//     // Build enum definition recursively - process one variant at a time
-//     (@build_enum $enum_name:ident, [$($accum:tt)*], [$variant:ident[$ast_name:ident]($type:ty) , $($rest:tt)*]) => {
-//         syntax_enum!(@build_enum $enum_name, [$($accum)* $variant($type),], [$($rest)*]);
-//     };
-//     (@build_enum $enum_name:ident, [$($accum:tt)*], [$variant:ident($type:ty) , $($rest:tt)*]) => {
-//         syntax_enum!(@build_enum $enum_name, [$($accum)* $variant($type),], [$($rest)*]);
-//     };
-//     (@build_enum $enum_name:ident, [$($accum:tt)*], [$variant:ident[$ast_name:ident] , $($rest:tt)*]) => {
-//         syntax_enum!(@build_enum $enum_name, [$($accum)* $variant,], [$($rest)*]);
-//     };
-//     (@build_enum $enum_name:ident, [$($accum:tt)*], [$variant:ident , $($rest:tt)*]) => {
-//         syntax_enum!(@build_enum $enum_name, [$($accum)* $variant,], [$($rest)*]);
-//     };
-//     // Handle last variant without trailing comma
-//     (@build_enum $enum_name:ident, [$($accum:tt)*], [$variant:ident[$ast_name:ident]($type:ty)]) => {
-//         syntax_enum!(@build_enum $enum_name, [$($accum)* $variant($type),], []);
-//     };
-//     (@build_enum $enum_name:ident, [$($accum:tt)*], [$variant:ident($type:ty)]) => {
-//         syntax_enum!(@build_enum $enum_name, [$($accum)* $variant($type),], []);
-//     };
-//     (@build_enum $enum_name:ident, [$($accum:tt)*], [$variant:ident[$ast_name:ident]]) => {
-//         syntax_enum!(@build_enum $enum_name, [$($accum)* $variant,], []);
-//     };
-//     (@build_enum $enum_name:ident, [$($accum:tt)*], [$variant:ident]) => {
-//         syntax_enum!(@build_enum $enum_name, [$($accum)* $variant,], []);
-//     };
-//     (@build_enum $enum_name:ident, [$($accum:tt)*], []) => {
-//         #[derive(Clone, Debug, PartialEq)]
-//         pub enum $enum_name { $($accum)* }
-//     };
-
-//     // Build FromAst impl recursively - process one variant at a time
-//     (@build_impl $enum_name:ident, $ast_type:ident, [$($accum:tt)*], [$variant:ident[$ast_name:ident]($type:ty) , $($rest:tt)*]) => {
-//         paste::paste! {
-//             syntax_enum!(@build_impl $enum_name, $ast_type, [$($accum)*
-//                 cairo_lang_syntax::node::ast::$ast_type::$ast_name(expr) =>
-//                     $enum_name::$variant(expr.ast_into(__db)),],
-//                 [$($rest)*]);
-//         }
-//     };
-//     (@build_impl $enum_name:ident, $ast_type:ident, [$($accum:tt)*], [$variant:ident($type:ty) , $($rest:tt)*]) => {
-//         paste::paste! {
-//             syntax_enum!(@build_impl $enum_name, $ast_type, [$($accum)*
-//                 cairo_lang_syntax::node::ast::$ast_type::$variant(expr) =>
-//                     $enum_name::$variant(expr.ast_into(__db)),],
-//                 [$($rest)*]);
-//         }
-//     };
-//     (@build_impl $enum_name:ident, $ast_type:ident, [$($accum:tt)*], [$variant:ident[$ast_name:ident] , $($rest:tt)*]) => {
-//         paste::paste! {
-//             syntax_enum!(@build_impl $enum_name, $ast_type, [$($accum)*
-//                 cairo_lang_syntax::node::ast::$ast_type::$ast_name(_) =>
-//                     $enum_name::$variant,],
-//                 [$($rest)*]);
-//         }
-//     };
-//     (@build_impl $enum_name:ident, $ast_type:ident, [$($accum:tt)*], [$variant:ident , $($rest:tt)*]) => {
-//         paste::paste! {
-//             syntax_enum!(@build_impl $enum_name, $ast_type, [$($accum)*
-//                 cairo_lang_syntax::node::ast::$ast_type::$variant(_) =>
-//                     $enum_name::$variant,],
-//                 [$($rest)*]);
-//         }
-//     };
-//     // Handle last variant without trailing comma
-//     (@build_impl $enum_name:ident, $ast_type:ident, [$($accum:tt)*], [$variant:ident[$ast_name:ident]($type:ty)]) => {
-//         paste::paste! {
-//             syntax_enum!(@build_impl $enum_name, $ast_type, [$($accum)*
-//                 cairo_lang_syntax::node::ast::$ast_type::$ast_name(expr) =>
-//                     $enum_name::$variant(expr.ast_into(__db)),],
-//                 []);
-//         }
-//     };
-//     (@build_impl $enum_name:ident, $ast_type:ident, [$($accum:tt)*], [$variant:ident($type:ty)]) => {
-//         paste::paste! {
-//             syntax_enum!(@build_impl $enum_name, $ast_type, [$($accum)*
-//                 cairo_lang_syntax::node::ast::$ast_type::$variant(expr) =>
-//                     $enum_name::$variant(expr.ast_into(__db)),],
-//                 []);
-//         }
-//     };
-//     (@build_impl $enum_name:ident, $ast_type:ident, [$($accum:tt)*], [$variant:ident[$ast_name:ident]]) => {
-//         paste::paste! {
-//             syntax_enum!(@build_impl $enum_name, $ast_type, [$($accum)*
-//                 cairo_lang_syntax::node::ast::$ast_type::$ast_name(_) =>
-//                     $enum_name::$variant,],
-//                 []);
-//         }
-//     };
-//     (@build_impl $enum_name:ident, $ast_type:ident, [$($accum:tt)*], [$variant:ident]) => {
-//         paste::paste! {
-//             syntax_enum!(@build_impl $enum_name, $ast_type, [$($accum)*
-//                 cairo_lang_syntax::node::ast::$ast_type::$variant(_) =>
-//                     $enum_name::$variant,],
-//                 []);
-//         }
-//     };
-//     (@build_impl $enum_name:ident, $ast_type:ident, [$($accum:tt)*], []) => {
-//         impl<'db> $crate::FromAst<'db, cairo_lang_syntax::node::ast::$ast_type<'db>> for $enum_name {
-//             fn from_ast(
-//                 ast: cairo_lang_syntax::node::ast::$ast_type<'db>,
-//                 __db: &'db dyn salsa::Database
-//             ) -> Self {
-//                 use crate::AstInto;
-//                 match ast { $($accum)* }
-//             }
-//         }
-//     };
-// }
 
 #[macro_export]
 macro_rules! syntax_terminal_bool {

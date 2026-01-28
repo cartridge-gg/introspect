@@ -1,16 +1,15 @@
+use crate::syntax::Expr;
 use crate::{
-    AsCairo, AstInto, AstToString, CollectionsAsCairo, FromAst, Modifier, syntax_type,
+    AsCairo, AstInto, AstToString, CollectionsAsCairo, FromAst, Modifier, syntax_enum, syntax_type,
     terminal_to_string,
 };
 use cairo_lang_macro::{TokenStream, quote};
 use cairo_lang_parser::printer::print_tree;
 use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_syntax::node::ast::{
-    ArgClause as AstArgClause, ArgClauseNamed as AstArgClauseNamed,
     ArgClauseUnnamed as AstArgClauseUnnamed, ArgListParenthesized, OptionArgListParenthesized,
 };
 use cairo_lang_syntax::node::kind::SyntaxKind;
-use cairo_lang_syntax::node::{Terminal, TypedSyntaxNode};
 use salsa::Database;
 
 syntax_type! {
@@ -20,16 +19,19 @@ syntax_type! {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct ArgNamed {
-    pub value: String,
-    pub name: String,
+syntax_enum! {
+    ArgClause{
+        Unnamed(Expr),
+        Named(NamedArg),
+        Shorthand[FieldInitShorthand](String),
+    }
 }
-#[derive(Clone, Debug, PartialEq)]
-pub enum ArgClause {
-    Unnamed(String),
-    Named(ArgNamed),
-    Shorthand(String),
+
+syntax_type! {
+    NamedArg[ArgClauseNamed]{
+        name: String,
+        value: Expr,
+    }
 }
 
 impl Arg {
@@ -56,18 +58,6 @@ impl ArgClause {
     }
 }
 
-impl<'db> FromAst<'db, AstArgClauseNamed<'db>> for ArgNamed {
-    fn from_ast(ast: AstArgClauseNamed<'db>, db: &'db dyn Database) -> Self {
-        ArgNamed {
-            value: ast
-                .value(db)
-                .as_syntax_node()
-                .get_text_without_all_comment_trivia(db),
-            name: ast.name(db).text(db).to_string(db),
-        }
-    }
-}
-
 impl<'db> AstToString<'db> for AstArgClauseUnnamed<'db> {
     fn to_string(&self, db: &'db dyn Database) -> String {
         self.value(db).to_string(db)
@@ -76,16 +66,6 @@ impl<'db> AstToString<'db> for AstArgClauseUnnamed<'db> {
 
 // terminal_to_string!(ArgClauseUnnamed.value,);
 terminal_to_string!(ArgClauseFieldInitShorthand.name.name,);
-
-impl<'db> FromAst<'db, AstArgClause<'db>> for ArgClause {
-    fn from_ast(ast: AstArgClause<'db>, db: &'db dyn Database) -> Self {
-        match ast {
-            AstArgClause::Unnamed(clause) => ArgClause::Unnamed(clause.to_string(db)),
-            AstArgClause::Named(clause) => ArgClause::Named(clause.ast_into(db)),
-            AstArgClause::FieldInitShorthand(clause) => ArgClause::Shorthand(clause.to_string(db)),
-        }
-    }
-}
 
 // impl<'db> FromAst<'db, AstArg<'db>> for Arg {
 //     fn from_ast(ast_arg: AstArg<'db>, db: &'db dyn Database) -> Self {

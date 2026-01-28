@@ -21,6 +21,9 @@ pub trait AsCairoWith<C> {
 
 pub trait CollectionsAsCairo<S> {
     fn as_cairo_elements(&self) -> Vec<String>;
+    fn as_cairo_concatenated(&self) -> String {
+        self.as_cairo_elements().join("")
+    }
     fn as_cairo_block(&self) -> String {
         let elements = self.as_cairo_elements();
         match elements.len() {
@@ -28,18 +31,21 @@ pub trait CollectionsAsCairo<S> {
             _ => elements.join("\n") + "\n",
         }
     }
-    // fn as_cairo_block_indented(&self, indent: usize) -> String {
-    //     indent_by(indent, self.as_cairo_block())
-    // }
+    fn as_cairo_block_braced(&self) -> String {
+        format!("{{{}}}", self.as_cairo_block())
+    }
+
     fn as_cairo_csv_wrapped(&self, prefix: &str, suffix: &str) -> String {
         format!("{}{}{}", prefix, self.as_cairo_csv(), suffix)
     }
-
+    fn as_block_wrapped(&self, prefix: &str, suffix: &str) -> String {
+        format!("{}{}{}", prefix, self.as_cairo_block(), suffix)
+    }
     fn as_cairo_block_section(&self) -> String {
         let elements = self.as_cairo_elements();
         match elements.len() {
             0 => "".to_string(),
-            _ => format!("\n{}\n", indent_all_by(4, elements.join("\n"))),
+            _ => format!("{}\n", elements.join("\n")),
         }
     }
     fn as_cairo_csv(&self) -> String {
@@ -47,6 +53,15 @@ pub trait CollectionsAsCairo<S> {
     }
     fn as_cairo_delimited(&self, delimiter: &str) -> String {
         self.as_cairo_elements().join(delimiter)
+    }
+    fn as_cairo_csv_braced(&self) -> String {
+        self.as_cairo_csv_wrapped("{", "}")
+    }
+    fn as_cairo_csv_parenthesized(&self) -> String {
+        self.as_cairo_csv_wrapped("(", ")")
+    }
+    fn as_cairo_csv_bracketed(&self) -> String {
+        self.as_cairo_csv_wrapped("[", "]")
     }
     fn as_cairo_span(&self) -> String {
         let elements = self.as_cairo_elements();
@@ -60,9 +75,14 @@ pub trait CollectionsAsCairo<S> {
         let elements = self.as_cairo_elements();
         format!("[{}]", elements.join(","))
     }
-    // fn as_cairo_delimited_indented(&self, delimiter: &str, indent: usize) -> String {
-    //     indent_by(indent, self.as_cairo_delimited(delimiter))
-    // }
+    fn as_cairo_tuple(&self) -> String {
+        let elements = self.as_cairo_elements();
+        if elements.len() == 1 {
+            format!("({},)", elements[0])
+        } else {
+            format!("({})", elements.join(","))
+        }
+    }
 }
 
 pub trait CollectionsAsCairoWith<S, C> {

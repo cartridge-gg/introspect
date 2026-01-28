@@ -4,7 +4,7 @@ use salsa::Database;
 
 use crate::syntax::expr::Expr;
 use crate::{
-    AsCairo, AstInto, FromAst, syntax_terminal_bool, syntax_terminal_enum, syntax_type,
+    AsCairo, FromAst, syntax_terminal_bool, syntax_terminal_enum, syntax_type,
     vec_from_element_list,
 };
 
@@ -12,7 +12,7 @@ syntax_type! {
     Param{
         modifiers: Vec<Modifier>,
         name: String,
-        ty[type_clause]: Option<Expr>,
+        type_clause: Option<Expr>,
     }
 }
 
@@ -41,6 +41,7 @@ vec_from_element_list!(ModifierList, Modifier);
 vec_from_element_list!(ParamList, Param);
 
 syntax_terminal_bool! {Const}
+syntax_terminal_bool! {ColonColon}
 
 impl<'db> FromAst<'db, TokenTreeNode<'db>> for String {
     fn from_ast(node: TokenTreeNode<'db>, db: &'db dyn Database) -> Self {
@@ -69,5 +70,15 @@ impl AsCairo for Modifier {
 impl AsCairo for Vec<Modifier> {
     fn as_cairo(&self) -> String {
         self.into_iter().map(|m| m.as_cairo_suffixed(" ")).collect()
+    }
+}
+
+impl AsCairo for Param {
+    fn as_cairo(&self) -> String {
+        let type_clause = match &self.type_clause {
+            Some(ty) => format!(":{}", ty.as_cairo()),
+            None => "".to_string(),
+        };
+        format!("{}{}{}", self.modifiers.as_cairo(), self.name, type_clause,)
     }
 }
