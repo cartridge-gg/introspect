@@ -7,7 +7,7 @@ use crate::type_def::{
 };
 use crate::utils::string_to_keccak_felt;
 use crate::{
-    AsCairo, AsCairoBytes, CairoElementDef, CairoElementDefs, CairoTypeDef, Enum, IAttribute,
+    AsCairoBytes, CairoElementDef, CairoElementDefs, CairoFormat, CairoTypeDef, Enum, IAttribute,
     IntrospectError, IntrospectResult, ItemTrait, Ty, Variant,
 };
 use starknet_types_core::felt::Felt;
@@ -30,7 +30,7 @@ pub struct IVariant {
 
 impl CairoElementDef for IVariant {
     fn as_element_def(&self, i_path: &str) -> String {
-        let selector = &self.selector.as_cairo();
+        let selector = &self.selector.to_fixed_hex_string();
         let name = &self.name.as_cairo_byte_array();
         let attributes = &self.attributes.as_element_defs_span(i_path);
         match (&self.type_def, &self.ty) {
@@ -38,7 +38,7 @@ impl CairoElementDef for IVariant {
                 variant_unit_def_tpl(i_path, selector, name, attributes)
             }
             (TypeDefVariant::Default, Some(ty)) => {
-                variant_default_def_tpl(i_path, &selector, name, attributes, &ty.as_cairo())
+                variant_default_def_tpl(i_path, &selector, name, attributes, &ty.to_cairo())
             }
             (TypeDefVariant::TypeDef(type_def), _) => variant_def_tpl(
                 i_path,
@@ -94,8 +94,8 @@ impl IExtract for IVariant {
             name: variant.name.clone(),
             field: variant.name.clone(),
             attributes,
-            ty: variant.ty.clone(),
-            type_def: type_mod.get_type_def_option(&variant.ty)?,
+            ty: variant.type_clause.clone(),
+            type_def: type_mod.get_type_def_option(&variant.type_clause)?,
         })
     }
 }

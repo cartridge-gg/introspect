@@ -1,20 +1,27 @@
-use crate::{Arg, AsCairo, Attribute, IntrospectError, IntrospectResult};
+use crate::syntax::{ExprPath, PathSegment};
+use crate::{
+    Arg, Attribute, CairoCollectionFormat, CairoFormat, IntrospectError, IntrospectResult,
+};
 use std::ops::Deref;
 
 const DERIVE_MACRO_NAME: &str = "derive";
 
 impl Attribute {
     pub fn to_derives(self) -> IntrospectResult<Vec<String>> {
-        self.args
+        self.arguments
             .ok_or(IntrospectError::DeriveMacroMissingArgs)?
-            .into_iter()
-            .map(Arg::to_unnamed)
+            .iter()
+            .map(Arg::as_unnamed)
             .collect::<Option<Vec<String>>>()
             .ok_or(IntrospectError::InvalidDerivesArgumentFormat)
     }
 
     pub fn is_derive(&self) -> bool {
-        self.name == DERIVE_MACRO_NAME
+        self.path
+            == ExprPath {
+                dollar: false,
+                path: vec![PathSegment::Simple(DERIVE_MACRO_NAME.to_string())],
+            }
     }
 }
 
@@ -49,14 +56,24 @@ impl From<Vec<String>> for Derives {
     }
 }
 
-impl AsCairo for Derives {
-    fn as_cairo(&self) -> String {
-        match self.0.is_empty() {
-            true => "".to_string(),
-            false => format!("#[derive({})]\n", self.0.join(", ")),
+impl CairoFormat for Derives {
+    fn cfmt(&self, buf: &mut String) {
+        if !self.is_empty() {
+            buf.push_str("#[derive");
+            self.cfmt_csv_parenthesized(buf);
+            buf.push_str("]\n");
         }
     }
 }
+
+// impl AsCairo for Derives {
+//     fn as_cairo(&self) -> String {
+//         match self.0.is_empty() {
+//             true => "".to_string(),
+//             false => format!("#[derive({})]\n", self.0.join(", ")),
+//         }
+//     }
+// }
 
 // pub fn split_derives_attribute<'db>(
 //     attributes: AttributeList<'db>,

@@ -1,4 +1,7 @@
-use crate::{AsCairo, AstToString, AstTryInto, IntrospectError, IntrospectResult, TryFromAst};
+use crate::{
+    AstToString, AstTryInto, CairoCollectionFormat, CairoFormat, IntrospectError, IntrospectResult,
+    TryFromAst,
+};
 use cairo_lang_syntax::node::ast::{OptionTypeClause, TypeClause};
 use itertools::Itertools;
 use salsa::Database;
@@ -242,26 +245,49 @@ impl Ty {
     }
 }
 
-fn tys_to_list_string(tys: &[Ty]) -> String {
-    tys.iter().map(Ty::as_cairo).join(", ")
-}
-
-impl AsCairo for Ty {
-    fn as_cairo(&self) -> String {
+impl CairoFormat for Ty {
+    fn cfmt(&self, buf: &mut String) {
         match self {
-            Ty::Item(item) => match &item.params {
-                Some(params) => format!("{}<{}>", item.name, tys_to_list_string(params)),
-                None => item.name.clone(),
-            },
-            Ty::Tuple(types) => {
-                format!("({})", tys_to_list_string(types))
-            }
-            Ty::FixedArray(fixed_array) => {
-                format!("[{}; {}]", fixed_array.ty.as_cairo(), fixed_array.size)
-            }
+            Ty::Item(e) => e.cfmt(buf),
+            Ty::Tuple(types) => types.cfmt_tuple(buf),
+            Ty::FixedArray(fixed_array) => fixed_array.cfmt(buf),
         }
     }
 }
+
+impl CairoFormat for TyItem {
+    fn cfmt(&self, buf: &mut String) {
+        self.name.cfmt(buf);
+        if let Some(params) = &self.params {
+            params.cfmt_csv_angled(buf);
+        }
+    }
+}
+
+impl CairoFormat for FixedArray {
+    fn cfmt(&self, buf: &mut String) {
+        self.ty.cfmt_prefixed(buf, '[');
+        self.size.cfmt_prefixed_str(buf, "; ");
+        buf.push(']');
+    }
+}
+
+// impl AsCairo for Ty {
+//     fn as_cairo(&self) -> String {
+//         match self {
+//             Ty::Item(item) => match &item.params {
+//                 Some(params) => format!("{}<{}>", item.name, tys_to_list_string(params)),
+//                 None => item.name.clone(),
+//             },
+//             Ty::Tuple(types) => {
+//                 format!("({})", tys_to_list_string(types))
+//             }
+//             Ty::FixedArray(fixed_array) => {
+//                 format!("[{}; {}]", fixed_array.ty.as_cairo(), fixed_array.size)
+//             }
+//         }
+//     }
+// }
 
 pub fn parse_wrapped_types(type_name: &str) -> Option<(&str, Vec<&str>)> {
     let start = type_name.find('<').unwrap();

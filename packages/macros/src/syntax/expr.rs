@@ -86,10 +86,10 @@ syntax_type! {
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct IfExpr {
-    conditions: Vec<Condition>,
-    if_block: Vec<Statement>,
-    else_if_clauses: Vec<ElseIfBlock>,
-    else_clause: Option<Vec<Statement>>,
+    pub conditions: Vec<Condition>,
+    pub if_block: Vec<Statement>,
+    pub else_if_clauses: Vec<ElseIfBlock>,
+    pub else_clause: Option<Vec<Statement>>,
 }
 
 impl<'db> FromAst<'db, ast::ExprIf<'db>> for IfExpr {
@@ -240,6 +240,7 @@ vec_from_element_list! {MatchArms, MatchArm}
 from_typed_syntax_node! {FixedSizeArraySize.size, Expr}
 typed_syntax_node_to_string_without_trivia! {PathSegmentSimple.ident}
 typed_syntax_node_to_string_without_trivia! {ExprFieldInitShorthand.name}
+typed_syntax_node_to_string_without_trivia! {ExprPath}
 
 syntax_enum! {PathSegment {
     Simple(String),
@@ -310,272 +311,272 @@ syntax_terminal_enum! {
     }
 }
 
-impl AsCairo for Expr {
-    fn as_cairo(&self) -> String {
-        match self {
-            Expr::Path(e) => e.as_cairo(),
-            Expr::Literal(e) => e.clone(),
-            Expr::ShortString(e) => format!("'{e}'"),
-            Expr::String(e) => format!("\"{e}\""),
-            Expr::False => "false".to_string(),
-            Expr::True => "true".to_string(),
-            Expr::Parenthesized(e) => format!("({})", e.as_cairo()),
-            Expr::Unary(e) => e.as_cairo(),
-            Expr::Binary(e) => e.as_cairo(),
-            Expr::Tuple(e) => e.as_cairo_tuple(),
-            Expr::FunctionCall(e) => e.as_cairo(),
-            Expr::StructConstructorCall(e) => e.as_cairo(),
-            Expr::Block(e) => e.as_cairo_block_braced(),
-            Expr::Match(e) => e.as_cairo(),
-            Expr::If(e) => e.as_cairo(),
-            Expr::Loop(e) => e.as_cairo(),
-            Expr::While(e) => e.as_cairo(),
-            Expr::For(e) => e.as_cairo(),
-            Expr::Closure(e) => e.as_cairo(),
-            Expr::ErrorPropagate(e) => format!("{}?", e.as_cairo()),
-            Expr::FieldInitShorthand(e) => e.as_cairo(),
-            Expr::Indexed(e) => e.as_cairo(),
-            Expr::InlineMacro(e) => e.as_cairo(),
-            Expr::FixedSizeArray(e) => e.as_cairo(),
-            Expr::Underscore => "_".to_string(),
-            Expr::Missing => "".to_string(),
-        }
-    }
-}
+// impl AsCairo for Expr {
+//     fn as_cairo(&self) -> String {
+//         match self {
+//             Expr::Path(e) => e.as_cairo(),
+//             Expr::Literal(e) => e.clone(),
+//             Expr::ShortString(e) => e.clone(),
+//             Expr::String(e) => e.clone(),
+//             Expr::False => "false".to_string(),
+//             Expr::True => "true".to_string(),
+//             Expr::Parenthesized(e) => format!("({})", e.as_cairo()),
+//             Expr::Unary(e) => e.as_cairo(),
+//             Expr::Binary(e) => e.as_cairo(),
+//             Expr::Tuple(e) => e.as_cairo_tuple(),
+//             Expr::FunctionCall(e) => e.as_cairo(),
+//             Expr::StructConstructorCall(e) => e.as_cairo(),
+//             Expr::Block(e) => e.as_cairo_block_braced(),
+//             Expr::Match(e) => e.as_cairo(),
+//             Expr::If(e) => e.as_cairo(),
+//             Expr::Loop(e) => e.as_cairo(),
+//             Expr::While(e) => e.as_cairo(),
+//             Expr::For(e) => e.as_cairo(),
+//             Expr::Closure(e) => e.as_cairo(),
+//             Expr::ErrorPropagate(e) => format!("{}?", e.as_cairo()),
+//             Expr::FieldInitShorthand(e) => e.as_cairo(),
+//             Expr::Indexed(e) => e.as_cairo(),
+//             Expr::InlineMacro(e) => e.as_cairo(),
+//             Expr::FixedSizeArray(e) => e.as_cairo(),
+//             Expr::Underscore => "_".to_string(),
+//             Expr::Missing => "".to_string(),
+//         }
+//     }
+// }
 
-impl AsCairo for ExprPath {
-    fn as_cairo(&self) -> String {
-        let dollar = if self.dollar { "$" } else { "" };
-        let segments = self.path.as_cairo_delimited("::");
-        format!("{dollar}{segments}")
-    }
-}
+// impl AsCairo for ExprPath {
+//     fn as_cairo(&self) -> String {
+//         let dollar = if self.dollar { "$" } else { "" };
+//         let segments = self.path.as_cairo_delimited("::");
+//         format!("{dollar}{segments}")
+//     }
+// }
 
-impl AsCairo for PathSegment {
-    fn as_cairo(&self) -> String {
-        match self {
-            PathSegment::Simple(e) => e.as_cairo(),
-            PathSegment::WithGenerics(e) => e.as_cairo(),
-            PathSegment::Missing => "".to_string(),
-        }
-    }
-}
+// impl AsCairo for PathSegment {
+//     fn as_cairo(&self) -> String {
+//         match self {
+//             PathSegment::Simple(e) => e.as_cairo(),
+//             PathSegment::WithGenerics(e) => e.as_cairo(),
+//             PathSegment::Missing => "".to_string(),
+//         }
+//     }
+// }
 
-impl AsCairo for PathSegmentWithGenerics {
-    fn as_cairo(&self) -> String {
-        let separator = if self.separator { "::" } else { "" };
-        let args = self.args.as_cairo_csv();
-        format!("{}{separator}<{args}>", self.ident)
-    }
-}
+// impl AsCairo for PathSegmentWithGenerics {
+//     fn as_cairo(&self) -> String {
+//         let separator = if self.separator { "::" } else { "" };
+//         let args = self.args.as_cairo_csv();
+//         format!("{}{separator}<{args}>", self.ident)
+//     }
+// }
 
-impl AsCairo for GenericArg {
-    fn as_cairo(&self) -> String {
-        match self {
-            GenericArg::Unnamed(e) => e.as_cairo(),
-            GenericArg::Named(e) => e.as_cairo(),
-        }
-    }
-}
+// impl AsCairo for GenericArg {
+//     fn as_cairo(&self) -> String {
+//         match self {
+//             GenericArg::Unnamed(e) => e.as_cairo(),
+//             GenericArg::Named(e) => e.as_cairo(),
+//         }
+//     }
+// }
 
-impl AsCairo for GenericArgNamed {
-    fn as_cairo(&self) -> String {
-        format!("{}:{}", self.name, self.value.as_cairo())
-    }
-}
+// impl AsCairo for GenericArgNamed {
+//     fn as_cairo(&self) -> String {
+//         format!("{}:{}", self.name, self.value.as_cairo())
+//     }
+// }
 
-impl AsCairo for BinaryOp {
-    fn as_cairo(&self) -> String {
-        match self {
-            BinaryOp::Dot => ".".to_string(),
-            BinaryOp::Not => "!".to_string(),
-            BinaryOp::Mul => "*".to_string(),
-            BinaryOp::MulEq => "*=".to_string(),
-            BinaryOp::Div => "/".to_string(),
-            BinaryOp::DivEq => "/=".to_string(),
-            BinaryOp::Mod => "%".to_string(),
-            BinaryOp::ModEq => "%=".to_string(),
-            BinaryOp::Plus => "+".to_string(),
-            BinaryOp::PlusEq => "+=".to_string(),
-            BinaryOp::Minus => "-".to_string(),
-            BinaryOp::MinusEq => "-=".to_string(),
-            BinaryOp::EqEq => "==".to_string(),
-            BinaryOp::Neq => "!=".to_string(),
-            BinaryOp::Eq => "=".to_string(),
-            BinaryOp::And => "&".to_string(),
-            BinaryOp::AndAnd => "&&".to_string(),
-            BinaryOp::Or => "|".to_string(),
-            BinaryOp::OrOr => "||".to_string(),
-            BinaryOp::Xor => "^".to_string(),
-            BinaryOp::LE => "<=".to_string(),
-            BinaryOp::GE => ">=".to_string(),
-            BinaryOp::LT => "<".to_string(),
-            BinaryOp::GT => ">".to_string(),
-            BinaryOp::DotDot => "..".to_string(),
-            BinaryOp::DotDotEq => "..=".to_string(),
-        }
-    }
-}
+// impl AsCairo for BinaryOp {
+//     fn as_cairo(&self) -> String {
+//         match self {
+//             BinaryOp::Dot => ".".to_string(),
+//             BinaryOp::Not => "!".to_string(),
+//             BinaryOp::Mul => "*".to_string(),
+//             BinaryOp::MulEq => "*=".to_string(),
+//             BinaryOp::Div => "/".to_string(),
+//             BinaryOp::DivEq => "/=".to_string(),
+//             BinaryOp::Mod => "%".to_string(),
+//             BinaryOp::ModEq => "%=".to_string(),
+//             BinaryOp::Plus => "+".to_string(),
+//             BinaryOp::PlusEq => "+=".to_string(),
+//             BinaryOp::Minus => "-".to_string(),
+//             BinaryOp::MinusEq => "-=".to_string(),
+//             BinaryOp::EqEq => "==".to_string(),
+//             BinaryOp::Neq => "!=".to_string(),
+//             BinaryOp::Eq => "=".to_string(),
+//             BinaryOp::And => "&".to_string(),
+//             BinaryOp::AndAnd => "&&".to_string(),
+//             BinaryOp::Or => "|".to_string(),
+//             BinaryOp::OrOr => "||".to_string(),
+//             BinaryOp::Xor => "^".to_string(),
+//             BinaryOp::LE => "<=".to_string(),
+//             BinaryOp::GE => ">=".to_string(),
+//             BinaryOp::LT => "<".to_string(),
+//             BinaryOp::GT => ">".to_string(),
+//             BinaryOp::DotDot => "..".to_string(),
+//             BinaryOp::DotDotEq => "..=".to_string(),
+//         }
+//     }
+// }
 
-impl AsCairo for BinaryExpr {
-    fn as_cairo(&self) -> String {
-        format!(
-            "{}{}{}",
-            self.lhs.as_cairo(),
-            self.op.as_cairo(),
-            self.rhs.as_cairo()
-        )
-    }
-}
+// impl AsCairo for BinaryExpr {
+//     fn as_cairo(&self) -> String {
+//         format!(
+//             "{}{}{}",
+//             self.lhs.as_cairo(),
+//             self.op.as_cairo(),
+//             self.rhs.as_cairo()
+//         )
+//     }
+// }
 
-impl AsCairo for UnaryOp {
-    fn as_cairo(&self) -> String {
-        match self {
-            UnaryOp::Not => "!".to_string(),
-            UnaryOp::BitNot => "~".to_string(),
-            UnaryOp::Minus => "-".to_string(),
-            UnaryOp::At => "@".to_string(),
-            UnaryOp::Desnap => "*".to_string(),
-            UnaryOp::Reference => "&".to_string(),
-        }
-    }
-}
+// impl AsCairo for UnaryOp {
+//     fn as_cairo(&self) -> String {
+//         match self {
+//             UnaryOp::Not => "!".to_string(),
+//             UnaryOp::BitNot => "~".to_string(),
+//             UnaryOp::Minus => "-".to_string(),
+//             UnaryOp::At => "@".to_string(),
+//             UnaryOp::Desnap => "*".to_string(),
+//             UnaryOp::Reference => "&".to_string(),
+//         }
+//     }
+// }
 
-impl AsCairo for UnaryExpr {
-    fn as_cairo(&self) -> String {
-        format!("{}{}", self.op.as_cairo(), self.expr.as_cairo())
-    }
-}
+// impl AsCairo for UnaryExpr {
+//     fn as_cairo(&self) -> String {
+//         format!("{}{}", self.op.as_cairo(), self.expr.as_cairo())
+//     }
+// }
 
-impl AsCairo for FunctionCall {
-    fn as_cairo(&self) -> String {
-        format!("{}({})", self.path.as_cairo(), self.args.as_cairo_csv())
-    }
-}
+// impl AsCairo for FunctionCall {
+//     fn as_cairo(&self) -> String {
+//         format!("{}({})", self.path.as_cairo(), self.args.as_cairo_csv())
+//     }
+// }
 
-impl AsCairo for StructConstructorCall {
-    fn as_cairo(&self) -> String {
-        format!("{}{{{}}}", self.path.as_cairo(), self.args.as_cairo_csv())
-    }
-}
+// impl AsCairo for StructConstructorCall {
+//     fn as_cairo(&self) -> String {
+//         format!("{}{{{}}}", self.path.as_cairo(), self.args.as_cairo_csv())
+//     }
+// }
 
-impl AsCairo for StructArg {
-    fn as_cairo(&self) -> String {
-        match self {
-            StructArg::Single(e) => e.as_cairo(),
-            StructArg::Tail(e) => format!("..{}", e.as_cairo()),
-        }
-    }
-}
+// impl AsCairo for StructArg {
+//     fn as_cairo(&self) -> String {
+//         match self {
+//             StructArg::Single(e) => e.as_cairo(),
+//             StructArg::Tail(e) => format!("..{}", e.as_cairo()),
+//         }
+//     }
+// }
 
-impl AsCairo for StructArgSingle {
-    fn as_cairo(&self) -> String {
-        match &self.arg_expr {
-            Some(expr) => format!("{}:{}", self.identifier, expr.as_cairo()),
-            None => self.identifier.clone(),
-        }
-    }
-}
+// impl AsCairo for StructArgSingle {
+//     fn as_cairo(&self) -> String {
+//         match &self.arg_expr {
+//             Some(expr) => format!("{}:{}", self.identifier, expr.as_cairo()),
+//             None => self.identifier.clone(),
+//         }
+//     }
+// }
 
-impl AsCairo for MatchExpr {
-    fn as_cairo(&self) -> String {
-        let arms = self.arms.as_cairo_block();
-        format!("match {}{{{arms}}}", self.expr.as_cairo())
-    }
-}
+// impl AsCairo for MatchExpr {
+//     fn as_cairo(&self) -> String {
+//         let arms = self.arms.as_cairo_block();
+//         format!("match {}{{{arms}}}", self.expr.as_cairo())
+//     }
+// }
 
-impl AsCairo for MatchArm {
-    fn as_cairo(&self) -> String {
-        let patterns = self.patterns.as_cairo_delimited("|");
-        format!("{} => {},", patterns, self.expr.as_cairo())
-    }
-}
+// impl AsCairo for MatchArm {
+//     fn as_cairo(&self) -> String {
+//         let patterns = self.patterns.as_cairo_delimited("|");
+//         format!("{} => {},", patterns, self.expr.as_cairo())
+//     }
+// }
 
-impl AsCairo for IfExpr {
-    fn as_cairo(&self) -> String {
-        let conditions = self.conditions.as_cairo_delimited(" && ");
-        let block = self.if_block.as_cairo_block();
-        let else_ifs = self.else_if_clauses.as_cairo_concatenated();
-        let else_clause = match &self.else_clause {
-            Some(else_block) => format!("else {{{}}}", else_block.as_cairo_block()),
-            None => "".to_string(),
-        };
-        format!("if {conditions} {{{block}}}{else_ifs}{else_clause}",)
-    }
-}
+// impl AsCairo for IfExpr {
+//     fn as_cairo(&self) -> String {
+//         let conditions = self.conditions.as_cairo_delimited(" && ");
+//         let block = self.if_block.as_cairo_block();
+//         let else_ifs = self.else_if_clauses.as_cairo_concatenated();
+//         let else_clause = match &self.else_clause {
+//             Some(else_block) => format!("else {{{}}}", else_block.as_cairo_block()),
+//             None => "".to_string(),
+//         };
+//         format!("if {conditions} {{{block}}}{else_ifs}{else_clause}",)
+//     }
+// }
 
-impl AsCairo for ElseIfBlock {
-    fn as_cairo(&self) -> String {
-        format!(
-            "else if {} {{{}}}",
-            self.conditions.as_cairo(),
-            self.body.as_cairo_block(),
-        )
-    }
-}
+// impl AsCairo for ElseIfBlock {
+//     fn as_cairo(&self) -> String {
+//         format!(
+//             "else if {} {{{}}}",
+//             self.conditions.as_cairo(),
+//             self.body.as_cairo_block(),
+//         )
+//     }
+// }
 
-impl AsCairo for LoopExpr {
-    fn as_cairo(&self) -> String {
-        let body = self.body.as_cairo_block();
-        format!("loop {{{body}}}")
-    }
-}
+// impl AsCairo for LoopExpr {
+//     fn as_cairo(&self) -> String {
+//         let body = self.body.as_cairo_block();
+//         format!("loop {{{body}}}")
+//     }
+// }
 
-impl AsCairo for WhileExpr {
-    fn as_cairo(&self) -> String {
-        let conditions = self.conditions.as_cairo();
-        let body = self.body.as_cairo_block();
-        format!("while {conditions} {{{body}}}")
-    }
-}
+// impl AsCairo for WhileExpr {
+//     fn as_cairo(&self) -> String {
+//         let conditions = self.conditions.as_cairo();
+//         let body = self.body.as_cairo_block();
+//         format!("while {conditions} {{{body}}}")
+//     }
+// }
 
-impl AsCairo for ForExpr {
-    fn as_cairo(&self) -> String {
-        let body = self.body.as_cairo_block();
-        format!(
-            "for {} {} in {} {{{}}}",
-            self.pattern.as_cairo(),
-            self.identifier,
-            self.expr.as_cairo(),
-            body
-        )
-    }
-}
+// impl AsCairo for ForExpr {
+//     fn as_cairo(&self) -> String {
+//         let body = self.body.as_cairo_block();
+//         format!(
+//             "for {} {} {}{{{}}}",
+//             self.pattern.as_cairo(),
+//             self.identifier,
+//             self.expr.as_cairo(),
+//             body
+//         )
+//     }
+// }
 
-impl AsCairo for FixedSizeArray {
-    fn as_cairo(&self) -> String {
-        match &self.size {
-            Some(size_expr) => format!("[{}; {}]", self.exprs.as_cairo_csv(), size_expr.as_cairo()),
-            None => format!("[{}]", self.exprs.as_cairo_csv()),
-        }
-    }
-}
+// impl AsCairo for FixedSizeArray {
+//     fn as_cairo(&self) -> String {
+//         match &self.size {
+//             Some(size_expr) => format!("[{}; {}]", self.exprs.as_cairo_csv(), size_expr.as_cairo()),
+//             None => format!("[{}]", self.exprs.as_cairo_csv()),
+//         }
+//     }
+// }
 
-impl AsCairo for IndexExpr {
-    fn as_cairo(&self) -> String {
-        format!("{}[{}]", self.expr.as_cairo(), self.index_expr.as_cairo())
-    }
-}
+// impl AsCairo for IndexExpr {
+//     fn as_cairo(&self) -> String {
+//         format!("{}[{}]", self.expr.as_cairo(), self.index_expr.as_cairo())
+//     }
+// }
 
-impl AsCairo for Closure {
-    fn as_cairo(&self) -> String {
-        let no_panic = if self.no_panic { "no_panic " } else { "" };
-        let ret_ty = match &self.ret_ty {
-            Some(ty) => format!("-> {} ", ty.as_cairo()),
-            None => "".to_string(),
-        };
-        format!(
-            "|{}| {}{}{}",
-            self.params.as_cairo_csv(),
-            no_panic,
-            ret_ty,
-            self.expr.as_cairo()
-        )
-    }
-}
+// impl AsCairo for Closure {
+//     fn as_cairo(&self) -> String {
+//         let no_panic = if self.no_panic { "nopanic " } else { "" };
+//         let ret_ty = match &self.ret_ty {
+//             Some(ty) => format!("-> {} ", ty.as_cairo()),
+//             None => "".to_string(),
+//         };
+//         format!(
+//             "|{}| {}{}{}",
+//             self.params.as_cairo_csv(),
+//             ret_ty,
+//             no_panic,
+//             self.expr.as_cairo()
+//         )
+//     }
+// }
 
-impl AsCairo for InlineMacroExpr {
-    fn as_cairo(&self) -> String {
-        format!("{}!({})", self.path.as_cairo(), self.arguments)
-    }
-}
+// impl AsCairo for InlineMacroExpr {
+//     fn as_cairo(&self) -> String {
+//         format!("{}!{}", self.path.as_cairo(), self.arguments)
+//     }
+// }

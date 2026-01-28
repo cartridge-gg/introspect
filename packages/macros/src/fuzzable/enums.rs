@@ -17,7 +17,7 @@ impl FuzzableImpl for Enum {
 }
 
 fn fuzzable_variant(variant: &Variant, enum_name: &str, index: usize) -> String {
-    match &variant.ty {
+    match &variant.type_clause {
         None => format!("{index} => {enum_name}::{},", variant.name),
         Some(_) => format!(
             "{index} => {enum_name}::{}(snforge_std::fuzzable::Fuzzable::generate()),",

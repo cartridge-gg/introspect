@@ -30,8 +30,8 @@ pub trait TypeModMemberTrait {
             .map(|res| res.map(|_| Vec::new()))
     }
     fn extract_type_mod(&mut self, attribute: &Attribute) -> Option<IntrospectResult<()>> {
-        match attribute.name.as_str() {
-            "raw" => match &attribute.args {
+        match attribute.path_str() {
+            "raw" => match &attribute.arguments {
                 None => Some(self.set_type_mod(TypeMod::Raw)),
                 _ => Some(attribute.format_err()),
             },
@@ -135,7 +135,7 @@ impl<SyntaxType: AttributesTrait> AttributeParser<SyntaxType> for TypeModAndName
         if let Some(r) = self.extract_type_mod_return_empty(&attribute) {
             return r.map_err(From::from);
         }
-        match attribute.name.as_str() {
+        match attribute.path_str() {
             "name" => self.set_name_return_empty(attribute.single_unnamed_arg()?),
             _ => attribute.into(),
         }

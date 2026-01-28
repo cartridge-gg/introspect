@@ -1,8 +1,8 @@
 use std::ops::Deref;
 
 use crate::{
-    AsCairo, AstInto, CollectionsAsCairo, FromAst, typed_syntax_node_to_string_without_trivia,
-    vec_from_element_list,
+    AstInto, CairoCollectionFormat, CairoFormat, CollectionsAsCairo, FromAst,
+    typed_syntax_node_to_string_without_trivia, vec_from_element_list,
 };
 use cairo_lang_syntax::node::ast::OptionWrappedGenericParamList;
 use salsa::Database;
@@ -56,12 +56,20 @@ impl<'db> FromAst<'db, OptionWrappedGenericParamList<'db>> for GenericParams {
     }
 }
 
-impl AsCairo for GenericParams {
-    fn as_cairo(&self) -> String {
-        if self.0.is_empty() {
-            "".to_string()
-        } else {
-            self.0.as_cairo_csv_wrapped("<", ">")
+impl CairoFormat for GenericParams {
+    fn cfmt(&self, buf: &mut String) {
+        if !self.is_empty() {
+            self.cfmt_csv_angled(buf);
         }
     }
 }
+
+// impl AsCairo for GenericParams {
+//     fn as_cairo(&self) -> String {
+//         if self.0.is_empty() {
+//             "".to_string()
+//         } else {
+//             self.0.as_cairo_csv_wrapped("<", ">")
+//         }
+//     }
+// }

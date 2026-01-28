@@ -1,9 +1,8 @@
-use crate::as_cairo::CollectionsAsCairo;
 use crate::ast::AstToString;
 use crate::{
-    AsCairo, AstInto, AstTryInto, Attribute, Derives, FromAst, GenericParams, IntrospectError,
-    IntrospectResult, ItemTrait, SyntaxItemTrait, TryFromAst, Ty, Visibility,
-    impl_attributes_trait, vec_try_from_element_list,
+    AstInto, AstTryInto, Attribute, CairoCollectionFormat, CairoFormat, Derives, FromAst,
+    GenericParams, IntrospectError, IntrospectResult, ItemTrait, SyntaxItemTrait, TryFromAst, Ty,
+    Visibility, impl_attributes_trait, vec_try_from_element_list,
 };
 use cairo_lang_syntax::node::ast::{ItemEnum, Variant as VariantAst};
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -23,7 +22,7 @@ pub struct Enum {
 pub struct Variant {
     pub attributes: Vec<Attribute>,
     pub name: String,
-    pub ty: Option<Ty>,
+    pub type_clause: Option<Ty>,
 }
 
 impl_attributes_trait!(Enum);
@@ -35,7 +34,7 @@ impl<'db> TryFromAst<'db, VariantAst<'db>> for Variant {
         Ok(Self {
             name,
             attributes: variant.attributes(db).ast_into(db),
-            ty: variant.type_clause(db).ast_try_into(db)?,
+            type_clause: variant.type_clause(db).ast_try_into(db)?,
         })
     }
 }
@@ -47,7 +46,7 @@ impl<'db> TryFromAst<'db, ItemEnum<'db>> for Enum {
         let all_attributes: Vec<Attribute> = item.attributes(db).ast_into(db);
         let (attributes, derives) = Derives::split_derives(all_attributes)?;
         Ok(Self {
-            visibility: item.visibility(db).into(),
+            visibility: item.visibility(db).ast_into(db),
             attributes,
             derives,
             name: item.name(db).to_string(db),
@@ -63,33 +62,54 @@ impl<'db> FromAst<'db, ItemEnum<'db>> for Enum {
     }
 }
 
-impl<'db> AsCairo for Variant {
-    fn as_cairo(&self) -> String {
-        let ty_str = match &self.ty {
-            Some(ty) => format!(": {}", ty.as_cairo()),
-            None => "".to_string(),
-        };
-        format!(
-            "{attributes}{name}{ty_str},",
-            attributes = self.attributes.as_cairo_block(),
-            name = self.name,
-        )
+impl CairoFormat for Enum {
+    fn cfmt(&self, buf: &mut String) {
+        self.attributes.cfmt(buf);
+        self.derives.cfmt(buf);
+        self.visibility.cfmt(buf);
+        self.name.cfmt_prefixed_str(buf, "enum ");
+        self.generic_params.cfmt(buf);
+        self.variants.cfmt_csv_braced(buf);
     }
 }
 
-impl<'db> AsCairo for Enum {
-    fn as_cairo(&self) -> String {
-        format!(
-            "{derives}{attributes}{vis}enum {name}{params}{{{variants}}}",
-            derives = self.derives.as_cairo(),
-            attributes = self.attributes.as_cairo_block(),
-            vis = self.visibility.as_cairo(),
-            params = self.generic_params.as_cairo(),
-            name = self.name,
-            variants = self.variants.as_cairo_block_section()
-        )
+impl CairoFormat for Variant {
+    fn cfmt(&self, buf: &mut String) {
+        self.attributes.cfmt(buf);
+        self.name.cfmt(buf);
+        if let Some(ty) = &self.type_clause {
+            ty.cfmt_prefixed_str(buf, ": ");
+        }
     }
 }
+
+// impl<'db> AsCairo for Variant {
+//     fn as_cairo(&self) -> String {
+//         let ty_str = match &self.ty {
+//             Some(ty) => format!(": {}", ty.as_cairo()),
+//             None => "".to_string(),
+//         };
+//         format!(
+//             "{attributes}{name}{ty_str},",
+//             attributes = self.attributes.as_cairo_block(),
+//             name = self.name,
+//         )
+//     }
+// }
+
+// impl<'db> AsCairo for Enum {
+//     fn as_cairo(&self) -> String {
+//         format!(
+//             "{derives}{attributes}{vis}enum {name}{params}{{{variants}}}",
+//             derives = self.derives.as_cairo(),
+//             attributes = self.attributes.as_cairo_block(),
+//             vis = self.visibility.as_cairo(),
+//             params = self.generic_params.as_cairo(),
+//             name = self.name,
+//             variants = self.variants.as_cairo_block_section()
+//         )
+//     }
+// }
 
 impl SyntaxItemTrait for Enum {
     fn from_file_node<'db>(

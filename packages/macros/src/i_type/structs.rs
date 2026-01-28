@@ -2,7 +2,7 @@ use super::{IExtract, IntrospectItemTrait, TypeDefVariant, TypeModTrait};
 use crate::i_type::{ExtractAttributes, TypeModAndName};
 use crate::type_def::{member_def_tpl, member_default_def_tpl, struct_def_tpl};
 use crate::{
-    AsCairo, AsCairoBytes, CairoElementDef, CairoElementDefs, CairoTypeDef, GenericParams,
+    AsCairoBytes, CairoElementDef, CairoElementDefs, CairoFormat, CairoTypeDef, GenericParams,
     IAttribute, IntrospectError, IntrospectResult, ItemTrait, Member, Struct, Ty,
 };
 
@@ -27,7 +27,7 @@ impl CairoElementDef for IMember {
         let attributes = &self.attributes.as_element_defs_span(i_path);
         match &self.type_def {
             TypeDefVariant::Default => {
-                member_default_def_tpl(i_path, name, attributes, &self.ty.as_cairo())
+                member_default_def_tpl(i_path, name, attributes, &self.ty.to_cairo())
             }
             TypeDefVariant::TypeDef(type_def) => {
                 member_def_tpl(i_path, name, attributes, &type_def.as_type_def(i_path))

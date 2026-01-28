@@ -1,34 +1,54 @@
-use crate::{
-    Arg, AsCairo, AstInto, FromAst, IntrospectError, IntrospectResult, vec_from_element_list,
-};
-use cairo_lang_syntax::node::TypedSyntaxNode;
-use cairo_lang_syntax::node::ast::Attribute as AstAttribute;
-use core::mem;
-use salsa::Database;
+use crate::syntax::ExprPath;
+use crate::{Arg, IntrospectError, IntrospectResult, syntax_type, vec_from_element_list};
 
-#[derive(Clone, Debug, PartialEq)]
-pub struct Attribute {
-    pub name: String,
-    pub args: Option<Vec<Arg>>,
+use core::mem;
+
+syntax_type! {
+    Attribute{
+        path[attr]: ExprPath,
+        arguments: Option<Vec<Arg>>,
+        path_str[attr]: String,
+    }
 }
+
+vec_from_element_list!(AttributeList, Attribute);
+
+impl Attribute {
+    /// Get cached string representation of path (zero allocation)
+    pub fn path_str(&self) -> &str {
+        &self.path_str
+    }
+
+    pub fn path_string(&self) -> String {
+        self.path_str.clone()
+    }
+}
+
+// impl<'db> $crate::FromAst<'db, cairo_lang_syntax::node::ast::Attribute<'db>> for Attribute {
+//     fn from_ast(ast: cairo_lang_syntax::node::ast::Attribute<'db>, db: &'db dyn salsa::Database) -> Self {
+//         use $crate::AstInto;
+//         let path: ExprPath = ast.attr(db).ast_into(db);
+//         let path_str = $crate::AsCairo::as_cairo(&path);
+//         let arguments = ast.arguments(db).ast_into(db);
+//         Self { path, path_str, arguments }
+//     }
+// }
 
 pub trait AttributesTrait {
     fn attributes_mut(&mut self) -> &mut Vec<Attribute>;
     fn attributes(&self) -> &[Attribute];
     fn has_attribute(&self, name: &str) -> bool {
-        self.attributes()
-            .iter()
-            .any(|attr| attr.name.as_str() == name)
+        self.attributes().iter().any(|attr| attr.path_str() == name)
     }
     fn has_name_only_attribute(&self, name: &str) -> bool {
         self.attributes()
             .iter()
-            .any(|attr| attr.name.as_str() == name && attr.args.is_none())
+            .any(|attr| attr.path_str() == name && attr.arguments.is_none())
     }
     fn get_attribute(&self, name: &str) -> Option<&Attribute> {
         self.attributes()
             .iter()
-            .find(|attr| attr.name.as_str() == name)
+            .find(|attr| attr.path_str() == name)
     }
     fn update_attributes(&mut self, attributes: Vec<Attribute>) {
         *self.attributes_mut() = attributes;
@@ -60,19 +80,19 @@ macro_rules! impl_attributes_trait {
 
 impl Attribute {
     pub fn format_error(&self) -> IntrospectError {
-        IntrospectError::InvalidIntrospectAttributeFormat(self.name.clone())
+        IntrospectError::InvalidIntrospectAttributeFormat(self.path_string())
     }
     pub fn format_err<T>(&self) -> IntrospectResult<T> {
         Err(self.format_error())
     }
     pub fn single_unnamed_arg(&self) -> IntrospectResult<String> {
-        match &self.args {
+        match &self.arguments {
             Some(args) if args.len() == 1 => args[0].as_unnamed().ok_or(self.format_error()),
             _ => Err(self.format_error()),
         }
     }
     pub fn all_unnamed_args(&self) -> IntrospectResult<Vec<String>> {
-        match &self.args {
+        match &self.arguments {
             Some(args) => args
                 .iter()
                 .map(|arg| arg.as_unnamed().ok_or(self.format_error()))
@@ -82,23 +102,17 @@ impl Attribute {
     }
 }
 
-impl AsCairo for Attribute {
-    fn as_cairo(&self) -> String {
-        format!("#[{}{}]", self.name, self.args.as_cairo())
-    }
-}
-
-impl<'db> FromAst<'db, AstAttribute<'db>> for Attribute {
-    fn from_ast(ast_attribute: AstAttribute<'db>, db: &'db dyn Database) -> Self {
-        Self {
-            name: ast_attribute
-                .attr(db)
-                .as_syntax_node()
-                .get_text_without_trivia(db)
-                .to_string(db),
-            args: ast_attribute.arguments(db).ast_into(db),
-        }
-    }
-}
-
-vec_from_element_list!(AttributeList, Attribute);
+// impl AsCairo for Attribute {
+//     fn as_cairo(&self) -> String {
+//         if let Some(args) = &self.arguments {
+//             let mut result = String::with_capacity(self.path_str.len() + 4);
+//             result.push_str("#[");
+//             result.push_str(&self.path_str);
+//             result.push_str(&args.as_cairo_csv_parenthesized());
+//             result.push(']');
+//             result
+//         } else {
+//             format!("#[{}]", self.path_str)
+//         }
+//     }
+// }

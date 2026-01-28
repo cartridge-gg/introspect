@@ -1,10 +1,9 @@
-use crate::{AsCairo, GenericParams};
-
+use crate::{CairoFormat, GenericParams};
 pub trait ItemTrait {
     fn name(&self) -> &str;
     fn generic_params(&self) -> &GenericParams;
     fn generics_clause(&self) -> String {
-        self.generic_params().as_cairo()
+        self.generic_params().to_cairo()
     }
     fn full_name(&self) -> String {
         format!("{}{}", self.name(), self.generics_clause())

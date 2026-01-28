@@ -1,6 +1,6 @@
 pub use super::{IEnum, IExtract, IMember, IStruct, IVariant};
 use crate::type_def::collect_child_defs_tpl;
-use crate::{AsCairo, CairoTypeDef, IntrospectResult, Ty};
+use crate::{CairoFormat, CairoTypeDef, IntrospectResult, Ty};
 use introspect_types::{ItemDefTrait, TypeDef};
 use itertools::Itertools;
 
@@ -30,7 +30,7 @@ impl TypeDefVariant {
     pub fn type_def(&self, ty: &Ty, i_path: &str) -> String {
         match self {
             TypeDefVariant::Default => {
-                format!("{i_path}::type_def_default::<{}>()", ty.as_cairo())
+                format!("{i_path}::type_def_default::<{}>()", ty.to_cairo())
             }
             TypeDefVariant::TypeDef(type_def) => type_def.as_type_def(i_path),
             TypeDefVariant::Fn(call) => call.clone(),
@@ -60,7 +60,7 @@ impl ITys for [&Ty] {
         self.iter()
             .unique()
             .filter(|t| !t.is_core_type())
-            .map(|t| collect_child_defs_tpl(i_path, &t.as_cairo()))
+            .map(|t| collect_child_defs_tpl(i_path, &t.to_cairo()))
             .join("\n")
     }
 }

@@ -28,9 +28,9 @@ macro_rules! typed_syntax_node_to_string_without_trivia {
 
 #[macro_export]
 macro_rules! from_typed_syntax_node {
-    {$typed_syntax_node:ident $(. $($methods:ident).+)?, $syntax_type:ident} => {
-        impl<'db> crate::FromAst<'db, cairo_lang_syntax::node::ast::$typed_syntax_node<'db>> for $syntax_type {
-            fn from_ast(ast: cairo_lang_syntax::node::ast::$typed_syntax_node<'db>, db: &'db dyn salsa::Database) -> $syntax_type {
+    {$typed_syntax_node:ident $(. $($methods:ident).+)?, $($syntax_type:tt)+} => {
+        impl<'db> crate::FromAst<'db, cairo_lang_syntax::node::ast::$typed_syntax_node<'db>> for $($syntax_type)+ {
+            fn from_ast(ast: cairo_lang_syntax::node::ast::$typed_syntax_node<'db>, db: &'db dyn salsa::Database) -> Self {
                 use crate::AstInto;
                 ast$(.$($methods(db)).+)?.ast_into(db)
             }

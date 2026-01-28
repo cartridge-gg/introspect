@@ -1,5 +1,5 @@
 use crate::{
-    AstInto, Attribute, Visibility, from_typed_syntax_node, syntax_enum, syntax_option,
+    Attribute, Visibility, from_typed_syntax_node, syntax_enum, syntax_option,
     syntax_terminal_bool, syntax_terminal_enum, syntax_type,
     typed_syntax_node_to_string_without_trivia, vec_from_element_list,
 };

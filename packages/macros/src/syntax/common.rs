@@ -4,8 +4,8 @@ use salsa::Database;
 
 use crate::syntax::expr::Expr;
 use crate::{
-    AsCairo, FromAst, syntax_terminal_bool, syntax_terminal_enum, syntax_type,
-    vec_from_element_list,
+    AsCairo, FromAst, from_typed_syntax_node, syntax_enum, syntax_option, syntax_terminal_bool,
+    syntax_terminal_enum, syntax_type, terminal_to_string, vec_from_element_list,
 };
 
 syntax_type! {
@@ -23,10 +23,10 @@ syntax_type! {
     }
 }
 
-syntax_terminal_enum! {
+syntax_enum! {
     Visibility{
-        Default[VisibilityDefault],
-        Pub[VisibilityPub],
+        Default,
+        Pub(Option<String>),
     }
 }
 
@@ -43,6 +43,12 @@ vec_from_element_list!(ParamList, Param);
 syntax_terminal_bool! {Const}
 syntax_terminal_bool! {ColonColon}
 
+terminal_to_string! {VisibilityPubArgumentClause.argument}
+
+from_typed_syntax_node!(VisibilityPub.argument_clause, Option<String>);
+
+syntax_option! {OptionVisibilityPubArgumentClause{VisibilityPubArgumentClause: String}}
+
 impl<'db> FromAst<'db, TokenTreeNode<'db>> for String {
     fn from_ast(node: TokenTreeNode<'db>, db: &'db dyn Database) -> Self {
         node.as_syntax_node().get_text(db).to_string()
@@ -53,10 +59,13 @@ impl AsCairo for Visibility {
     fn as_cairo(&self) -> String {
         match self {
             Visibility::Default => "".to_string(),
-            Visibility::Pub => "pub ".to_string(),
+            Visibility::Pub(None) => "pub ".to_string(),
+            Visibility::Pub(Some(c)) => format!("pub({c}) "),
         }
     }
 }
+
+// impl AsCairo
 
 impl AsCairo for Modifier {
     fn as_cairo(&self) -> String {
@@ -73,12 +82,12 @@ impl AsCairo for Vec<Modifier> {
     }
 }
 
-impl AsCairo for Param {
-    fn as_cairo(&self) -> String {
-        let type_clause = match &self.type_clause {
-            Some(ty) => format!(":{}", ty.as_cairo()),
-            None => "".to_string(),
-        };
-        format!("{}{}{}", self.modifiers.as_cairo(), self.name, type_clause,)
-    }
-}
+// impl AsCairo for Param {
+//     fn as_cairo(&self) -> String {
+//         let type_clause = match &self.type_clause {
+//             Some(ty) => format!(":{}", ty.as_cairo()),
+//             None => "".to_string(),
+//         };
+//         format!("{}{}{}", self.modifiers.as_cairo(), self.name, type_clause,)
+//     }
+// }

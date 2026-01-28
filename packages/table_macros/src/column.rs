@@ -62,7 +62,7 @@ impl AttributeParser<Member> for ColumnAttributes {
         if let Some(r) = self.extract_type_mod_return_empty(&attribute) {
             return r.map_err(From::from);
         }
-        match attribute.name.as_str() {
+        match attribute.path.as_str() {
             "name" => self.set_name_return_empty(attribute.single_unnamed_arg()?),
             "id" => self.set_id_return_empty(id_string_to_felt(attribute.single_unnamed_arg()?)),
             "index" => AttributeVariant::lazy_empty_i_attribute("index".to_string()),
