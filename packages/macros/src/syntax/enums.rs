@@ -1,8 +1,8 @@
 use crate::ast::AstToString;
 use crate::{
-    AstInto, AstTryInto, Attribute, CairoCollectionFormat, CairoFormat, Derives, FromAst,
-    GenericParams, IntrospectError, IntrospectResult, ItemTrait, SyntaxItemTrait, TryFromAst, Ty,
-    Visibility, impl_attributes_trait, vec_try_from_element_list,
+    AstInto, AstTryInto, Attribute, CairoCollectionFormat, CairoFormat, CodeBuffer, Derives,
+    FromAst, GenericParams, IntrospectError, IntrospectResult, ItemTrait, SyntaxItemTrait,
+    TryFromAst, Ty, Visibility, impl_attributes_trait, vec_try_from_element_list,
 };
 use cairo_lang_syntax::node::ast::{ItemEnum, Variant as VariantAst};
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -62,8 +62,8 @@ impl<'db> FromAst<'db, ItemEnum<'db>> for Enum {
     }
 }
 
-impl CairoFormat for Enum {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Enum {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.derives.cfmt(buf);
         self.visibility.cfmt(buf);
@@ -73,8 +73,8 @@ impl CairoFormat for Enum {
     }
 }
 
-impl CairoFormat for Variant {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Variant {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.name.cfmt(buf);
         if let Some(ty) = &self.type_clause {

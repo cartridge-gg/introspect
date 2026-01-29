@@ -39,7 +39,10 @@ impl PrimaryTypeDefVariant {
     pub fn type_def(&self, ty: &Ty, i_path: &str) -> String {
         match self {
             PrimaryTypeDefVariant::Default => {
-                format!("{i_path}::primary_type_def::<{}>()", ty.to_cairo())
+                format!(
+                    "{i_path}::primary_type_def::<{}>()",
+                    CairoFormat::<String>::to_cairo(ty)
+                )
             }
             PrimaryTypeDefVariant::TypeDef(type_def) => type_def.as_element_def(i_path),
             PrimaryTypeDefVariant::Fn(call) => call.clone(),

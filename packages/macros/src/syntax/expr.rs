@@ -251,13 +251,13 @@ syntax_enum! {PathSegment {
 syntax_enum! {
     StructArg{
         Single[StructArgSingle](StructArgSingle),
-        Tail[StructArgTail](Box<Expr>),
+        Tail[StructArgTail](Expr),
     }
 }
 
 syntax_enum!(
     GenericArg {
-        Unnamed(Box<Expr>),
+        Unnamed(Expr),
         Named(GenericArgNamed),
     }
 );

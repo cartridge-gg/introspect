@@ -24,8 +24,8 @@ pub use i_type::{IEnum, IItem, IMember, IStruct, IVariant};
 pub use item::ItemTrait;
 pub use params::GenericParams;
 pub use syntax::{
-    Arg, ArgClause, Attribute, AttributesTrait, CairoCollectionFormat, CairoFormat, Derives, Enum,
-    Item, Member, Modifier, Struct, SyntaxItemTrait, Variant, Visibility,
+    Arg, ArgClause, Attribute, AttributesTrait, CairoCollectionFormat, CairoFormat, CodeBuffer,
+    Derives, Enum, Item, Member, Modifier, Struct, SyntaxItemTrait, Variant, Visibility,
 };
 pub use ty::Ty;
 pub use type_def::{

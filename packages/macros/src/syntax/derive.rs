@@ -1,3 +1,4 @@
+use crate::syntax::fmt::CodeBuffer;
 use crate::syntax::{ExprPath, PathSegment};
 use crate::{
     Arg, Attribute, CairoCollectionFormat, CairoFormat, IntrospectError, IntrospectResult,
@@ -56,12 +57,14 @@ impl From<Vec<String>> for Derives {
     }
 }
 
-impl CairoFormat for Derives {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Derives {
+    fn cfmt(&self, buf: &mut T) {
         if !self.is_empty() {
-            buf.push_str("#[derive");
+            buf.push_token_char('#');
+            buf.push_token_char('[');
+            buf.push_token_str("derive");
             self.cfmt_csv_parenthesized(buf);
-            buf.push_str("]\n");
+            buf.push_token_str("]\n");
         }
     }
 }

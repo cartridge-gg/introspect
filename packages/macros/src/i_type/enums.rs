@@ -37,9 +37,13 @@ impl CairoElementDef for IVariant {
             (TypeDefVariant::Default, None) => {
                 variant_unit_def_tpl(i_path, selector, name, attributes)
             }
-            (TypeDefVariant::Default, Some(ty)) => {
-                variant_default_def_tpl(i_path, &selector, name, attributes, &ty.to_cairo())
-            }
+            (TypeDefVariant::Default, Some(ty)) => variant_default_def_tpl(
+                i_path,
+                &selector,
+                name,
+                attributes,
+                &CairoFormat::<String>::to_cairo(ty),
+            ),
             (TypeDefVariant::TypeDef(type_def), _) => variant_def_tpl(
                 i_path,
                 selector,

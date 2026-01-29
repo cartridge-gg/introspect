@@ -1,6 +1,6 @@
 use crate::{
-    AstToString, AstTryInto, CairoCollectionFormat, CairoFormat, IntrospectError, IntrospectResult,
-    TryFromAst,
+    AstToString, AstTryInto, CairoCollectionFormat, CairoFormat, CodeBuffer, IntrospectError,
+    IntrospectResult, TryFromAst,
 };
 use cairo_lang_syntax::node::ast::{OptionTypeClause, TypeClause};
 use salsa::Database;
@@ -244,8 +244,8 @@ impl Ty {
     }
 }
 
-impl CairoFormat for Ty {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Ty {
+    fn cfmt(&self, buf: &mut T) {
         match self {
             Ty::Item(e) => e.cfmt(buf),
             Ty::Tuple(types) => types.cfmt_tuple(buf),
@@ -254,8 +254,8 @@ impl CairoFormat for Ty {
     }
 }
 
-impl CairoFormat for TyItem {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for TyItem {
+    fn cfmt(&self, buf: &mut T) {
         self.name.cfmt(buf);
         if let Some(params) = &self.params {
             params.cfmt_csv_angled(buf);
@@ -263,11 +263,11 @@ impl CairoFormat for TyItem {
     }
 }
 
-impl CairoFormat for FixedArray {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for FixedArray {
+    fn cfmt(&self, buf: &mut T) {
         self.ty.cfmt_prefixed(buf, '[');
         self.size.cfmt_prefixed_str(buf, "; ");
-        buf.push(']');
+        buf.push_token_char(']');
     }
 }
 

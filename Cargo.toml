@@ -5,8 +5,10 @@ members = [
     "crates/types",
     "crates/events",
     "crates/macros",
+    "crates/cairo-syntax-parser",
     "packages/macros",
     "packages/table_macros",
+
 ]
 exclude = ["crates/type_library"]
 
@@ -29,26 +31,28 @@ inherits = "release"
 
 [workspace.dependencies]
 cainome-cairo-serde = "0.4.0"
+cairo-lang-diagnostics = "2.15.0"
 cairo-lang-macro = "0.2.1"
 cairo-lang-parser = "2.15.0"
+cairo-lang-primitive-token = "1"
 cairo-lang-starknet-classes = "2.15.0"
 cairo-lang-syntax = "2.15.0"
-cairo-lang-diagnostics = "2.15.0"
-cairo-lang-primitive-token = "1"
+const_format = "0.2.35"
 convert_case = "0.8.0"
+delegate = "0.13.5"
 hex = "0.4.3"
 indent = "0.1.1"
+itertools = "0.14.0"
 lambdaworks-math = "0.13.0"
 num-traits = { version = "0.2", default-features = false }
 primitive-types = { version = "0.14.0", features = ["serde"] }
+proc-macro2 = "1.0.106"
 serde = "1.0.228"
 serde_json = "1.0.145"
 starknet = "0.17.0"
 starknet-crypto = "0.8"
 starknet-types-core = "0.2.0"
 thiserror = "2.0.17"
-itertools = "0.14.0"
-const_format = "0.2.35"
 
 
 introspect_macros = { path = "packages/macros" }

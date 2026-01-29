@@ -1,4 +1,4 @@
-use super::{CairoCollectionFormat, CairoFormat};
+use super::{CairoCollectionFormat, CairoFormat, CodeBuffer};
 use crate::syntax::module::{
     Constant, Enum, ExternFunction, ExternType, FunctionDeclaration, FunctionSignature,
     FunctionWithBody, Impl, ImplAlias, ImplItem, InlineMacroItem, Item, Member, Module, Struct,
@@ -6,8 +6,8 @@ use crate::syntax::module::{
     UsePath, UsePathLeaf, UsePathSingle, Variant,
 };
 
-impl CairoFormat for Item {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Item {
+    fn cfmt(&self, buf: &mut T) {
         match self {
             Item::Constant(e) => e.cfmt(buf),
             Item::Module(e) => e.cfmt(buf),
@@ -27,8 +27,8 @@ impl CairoFormat for Item {
     }
 }
 
-impl CairoFormat for Struct {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Struct {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.visibility.cfmt(buf);
         self.name.cfmt_prefixed_str(buf, "struct ");
@@ -37,8 +37,8 @@ impl CairoFormat for Struct {
     }
 }
 
-impl CairoFormat for Member {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Member {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.visibility.cfmt(buf);
         self.name.cfmt(buf);
@@ -46,8 +46,8 @@ impl CairoFormat for Member {
     }
 }
 
-impl CairoFormat for Enum {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Enum {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.visibility.cfmt(buf);
         self.name.cfmt_prefixed_str(buf, "enum ");
@@ -56,8 +56,8 @@ impl CairoFormat for Enum {
     }
 }
 
-impl CairoFormat for Variant {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Variant {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.name.cfmt(buf);
         if let Some(ty) = &self.type_clause {
@@ -66,52 +66,53 @@ impl CairoFormat for Variant {
     }
 }
 
-impl CairoFormat for Constant {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Constant {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.visibility.cfmt(buf);
         self.name.cfmt_prefixed_str(buf, "const ");
         self.ty.cfmt_prefixed_str(buf, ": ");
         self.value.cfmt_prefixed_str(buf, " = ");
+        buf.push_token_char(';');
     }
 }
-impl CairoFormat for Module {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Module {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.visibility.cfmt(buf);
         self.name.cfmt_prefixed_str(buf, "mod ");
         match &self.body {
             Some(items) => items.cfmt_block_braced(buf),
-            None => buf.push(';'),
+            None => buf.push_token_char(';'),
         }
     }
 }
 
-impl CairoFormat for UseItem {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for UseItem {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.visibility.cfmt(buf);
-        buf.push_str("use ");
+        buf.push_token_str("use ");
         if self.dollar {
-            buf.push('$');
+            buf.push_token_char('$');
         }
         self.path.cfmt_suffixed(buf, ';');
     }
 }
 
-impl CairoFormat for UsePath {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for UsePath {
+    fn cfmt(&self, buf: &mut T) {
         match self {
             UsePath::Leaf(leaf) => leaf.cfmt(buf),
             UsePath::Single(single) => single.cfmt(buf),
             UsePath::Multi(multi) => multi.cfmt_csv_braced(buf),
-            UsePath::Star => buf.push('*'),
+            UsePath::Star => buf.push_token_char('*'),
         }
     }
 }
 
-impl CairoFormat for UsePathLeaf {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for UsePathLeaf {
+    fn cfmt(&self, buf: &mut T) {
         self.ident.cfmt(buf);
         if let Some(alias) = &self.alias {
             alias.cfmt_prefixed_str(buf, " as ");
@@ -119,15 +120,15 @@ impl CairoFormat for UsePathLeaf {
     }
 }
 
-impl CairoFormat for UsePathSingle {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for UsePathSingle {
+    fn cfmt(&self, buf: &mut T) {
         self.ident.cfmt_suffixed_str(buf, "::");
         self.path.cfmt(buf);
     }
 }
 
-impl CairoFormat for FunctionWithBody {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for FunctionWithBody {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.visibility.cfmt(buf);
         self.declaration.cfmt(buf);
@@ -135,10 +136,10 @@ impl CairoFormat for FunctionWithBody {
     }
 }
 
-impl CairoFormat for FunctionDeclaration {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for FunctionDeclaration {
+    fn cfmt(&self, buf: &mut T) {
         if self.is_const {
-            buf.push_str("const ");
+            buf.push_token_str("const ");
         }
         self.name.cfmt_prefixed_str(buf, "fn ");
         self.generic_params.cfmt(buf);
@@ -146,55 +147,56 @@ impl CairoFormat for FunctionDeclaration {
     }
 }
 
-impl CairoFormat for FunctionSignature {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for FunctionSignature {
+    fn cfmt(&self, buf: &mut T) {
         self.parameters.cfmt_csv_parenthesized(buf);
         if let Some(ret_type) = &self.return_type {
             ret_type.cfmt_prefixed_str(buf, " -> ");
         }
         if let Some(implicits) = &self.implicits_clause {
-            buf.push_str(" implicits");
+            buf.push_token_str(" implicits");
             implicits.cfmt_csv_parenthesized(buf);
         }
         if self.no_panic {
-            buf.push_str(" nopanic");
+            buf.push_token_str(" nopanic");
         }
     }
 }
 
-impl CairoFormat for ExternFunction {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for ExternFunction {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.visibility.cfmt(buf);
-        buf.push_str("extern ");
+        buf.push_token_str("extern ");
         self.declaration.cfmt_suffixed(buf, ';');
     }
 }
 
-impl CairoFormat for ExternType {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for ExternType {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.visibility.cfmt(buf);
-        self.name.cfmt_prefixed_str(buf, "extern type ");
+        buf.push_token_str("extern ");
+        self.name.cfmt_prefixed_str(buf, "type ");
         self.generic_params.cfmt_suffixed(buf, ';');
     }
 }
 
-impl CairoFormat for Trait {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Trait {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.visibility.cfmt(buf);
         self.name.cfmt_prefixed_str(buf, "trait ");
         self.generic_params.cfmt(buf);
         match &self.body {
             Some(items) => items.cfmt_block_braced(buf),
-            None => buf.push(';'),
+            None => buf.push_token_char(';'),
         }
     }
 }
 
-impl CairoFormat for TraitItem {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for TraitItem {
+    fn cfmt(&self, buf: &mut T) {
         match self {
             TraitItem::Function(e) => e.cfmt(buf),
             TraitItem::Type(e) => e.cfmt(buf),
@@ -205,44 +207,44 @@ impl CairoFormat for TraitItem {
     }
 }
 
-impl CairoFormat for TraitFunction {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for TraitFunction {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.declaration.cfmt(buf);
         match &self.body {
             Some(body) => body.cfmt_prefixed(buf, ' '),
-            None => buf.push(';'),
+            None => buf.push_token_char(';'),
         }
     }
 }
 
-impl CairoFormat for TraitType {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for TraitType {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.name.cfmt_prefixed_str(buf, "type ");
         self.generic_params.cfmt_suffixed(buf, ';');
     }
 }
 
-impl CairoFormat for TraitConstant {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for TraitConstant {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.name.cfmt_prefixed_str(buf, "const ");
         self.ty.cfmt_prefixed_str(buf, ": ");
-        buf.push(';');
+        buf.push_token_char(';');
     }
 }
 
-impl CairoFormat for TraitImpl {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for TraitImpl {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.name.cfmt_prefixed_str(buf, "impl ");
         self.trait_path.cfmt_suffixed(buf, ';');
     }
 }
 
-impl CairoFormat for Impl {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Impl {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.visibility.cfmt(buf);
         self.name.cfmt_prefixed_str(buf, "impl ");
@@ -250,13 +252,13 @@ impl CairoFormat for Impl {
         self.trait_path.cfmt_prefixed_str(buf, " of ");
         match &self.body {
             Some(items) => items.cfmt_block_braced(buf),
-            None => buf.push(';'),
+            None => buf.push_token_char(';'),
         }
     }
 }
 
-impl CairoFormat for ImplItem {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for ImplItem {
+    fn cfmt(&self, buf: &mut T) {
         match self {
             ImplItem::Function(e) => e.cfmt(buf),
             ImplItem::Type(e) => e.cfmt(buf),
@@ -274,8 +276,8 @@ impl CairoFormat for ImplItem {
     }
 }
 
-impl CairoFormat for TypeAlias {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for TypeAlias {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.visibility.cfmt(buf);
         self.name.cfmt_prefixed_str(buf, "type ");
@@ -284,8 +286,8 @@ impl CairoFormat for TypeAlias {
     }
 }
 
-impl CairoFormat for ImplAlias {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for ImplAlias {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.visibility.cfmt(buf);
         self.name.cfmt_prefixed_str(buf, "impl ");
@@ -294,8 +296,8 @@ impl CairoFormat for ImplAlias {
     }
 }
 
-impl CairoFormat for InlineMacroItem {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for InlineMacroItem {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.path.cfmt_suffixed(buf, '!');
         self.arguments.cfmt(buf);

@@ -24,3 +24,4 @@ introspect-types.workspace = true
 introspect-rust-macros.workspace = true
 itertools.workspace = true
 const_format = "0.2.35"
+proc-macro2.workspace = true

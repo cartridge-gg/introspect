@@ -1,19 +1,19 @@
-use super::{CairoCollectionFormat, CairoFormat};
+use super::{CairoCollectionFormat, CairoFormat, CodeBuffer};
 use crate::syntax::attribute::Attribute;
 
-impl CairoFormat for Attribute {
-    fn cfmt(&self, buf: &mut String) {
-        buf.push_str("#[");
+impl<T: CodeBuffer> CairoFormat<T> for Attribute {
+    fn cfmt(&self, buf: &mut T) {
+        buf.push_token_str("#[");
         self.path.cfmt(buf);
         if let Some(arguments) = &self.arguments {
             arguments.cfmt_csv_parenthesized(buf);
         }
-        buf.push(']');
+        buf.push_token_char(']');
     }
 }
 
-impl CairoFormat for Vec<Attribute> {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Vec<Attribute> {
+    fn cfmt(&self, buf: &mut T) {
         if !self.is_empty() {
             self.cfmt_terminated(buf, '\n');
         }

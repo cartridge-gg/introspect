@@ -26,9 +26,12 @@ impl CairoElementDef for IMember {
         let name = &self.name.as_cairo_byte_array();
         let attributes = &self.attributes.as_element_defs_span(i_path);
         match &self.type_def {
-            TypeDefVariant::Default => {
-                member_default_def_tpl(i_path, name, attributes, &self.ty.to_cairo())
-            }
+            TypeDefVariant::Default => member_default_def_tpl(
+                i_path,
+                name,
+                attributes,
+                &CairoFormat::<String>::to_cairo(&self.ty),
+            ),
             TypeDefVariant::TypeDef(type_def) => {
                 member_def_tpl(i_path, name, attributes, &type_def.as_type_def(i_path))
             }

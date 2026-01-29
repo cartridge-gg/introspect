@@ -30,7 +30,10 @@ impl TypeDefVariant {
     pub fn type_def(&self, ty: &Ty, i_path: &str) -> String {
         match self {
             TypeDefVariant::Default => {
-                format!("{i_path}::type_def_default::<{}>()", ty.to_cairo())
+                format!(
+                    "{i_path}::type_def_default::<{}>()",
+                    CairoFormat::<String>::to_cairo(ty)
+                )
             }
             TypeDefVariant::TypeDef(type_def) => type_def.as_type_def(i_path),
             TypeDefVariant::Fn(call) => call.clone(),
@@ -60,7 +63,7 @@ impl ITys for [&Ty] {
         self.iter()
             .unique()
             .filter(|t| !t.is_core_type())
-            .map(|t| collect_child_defs_tpl(i_path, &t.to_cairo()))
+            .map(|t| collect_child_defs_tpl(i_path, &CairoFormat::<String>::to_cairo(*t)))
             .join("\n")
     }
 }

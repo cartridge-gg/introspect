@@ -532,6 +532,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-syntax-parser"
+version = "0.1.2"
+dependencies = [
+ "cairo-lang-macro",
+ "cairo-lang-parser",
+ "cairo-lang-syntax",
+ "delegate",
+ "paste",
+ "salsa",
+ "thiserror 2.0.17",
+]
+
+[[package]]
 name = "cc"
 version = "1.2.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -762,6 +775,17 @@ name = "data-encoding"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
+
+[[package]]
+name = "delegate"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "780eb241654bf097afb00fc5f054a09b687dad862e485fdcf8399bb056565370"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.111",
+]
 
 [[package]]
 name = "deranged"
@@ -1500,6 +1524,7 @@ dependencies = [
  "introspect-types",
  "itertools",
  "paste",
+ "proc-macro2",
  "salsa",
  "starknet-types-core",
  "thiserror 2.0.17",
@@ -2053,9 +2078,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.103"
+version = "1.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ee95bc4ef87b8d5ba32e8b7714ccc834865276eab0aed5c9958d00ec45f49e8"
+checksum = "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934"
 dependencies = [
  "unicode-ident",
 ]

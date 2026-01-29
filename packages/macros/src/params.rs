@@ -1,7 +1,7 @@
 use std::ops::Deref;
 
 use crate::{
-    AstInto, CairoCollectionFormat, CairoFormat, FromAst,
+    AstInto, CairoCollectionFormat, CairoFormat, CodeBuffer, FromAst,
     typed_syntax_node_to_string_without_trivia, vec_from_element_list,
 };
 use cairo_lang_syntax::node::ast::OptionWrappedGenericParamList;
@@ -58,8 +58,8 @@ impl<'db> FromAst<'db, OptionWrappedGenericParamList<'db>> for GenericParams {
     }
 }
 
-impl CairoFormat for GenericParams {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for GenericParams {
+    fn cfmt(&self, buf: &mut T) {
         if !self.is_empty() {
             self.cfmt_csv_angled(buf);
         }

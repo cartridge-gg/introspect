@@ -24,4 +24,4 @@ pub use statement::{Condition, Pattern, Statement};
 pub use structs::{Member, Struct};
 
 pub mod fmt;
-pub use fmt::{CairoCollectionFormat, CairoFormat};
+pub use fmt::{CairoCollectionFormat, CairoFormat, CodeBuffer};

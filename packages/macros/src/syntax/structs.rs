@@ -1,9 +1,9 @@
 use crate::params::GenericParams;
 use crate::syntax::CairoFormat;
 use crate::{
-    AstInto, AstToString, AstTryInto, Attribute, AttributesTrait, CairoCollectionFormat, Derives,
-    FromAst, IntrospectError, IntrospectResult, ItemTrait, SyntaxItemTrait, TryFromAst, Ty,
-    Visibility, impl_attributes_trait, vec_try_from_element_list,
+    AstInto, AstToString, AstTryInto, Attribute, AttributesTrait, CairoCollectionFormat,
+    CodeBuffer, Derives, FromAst, IntrospectError, IntrospectResult, ItemTrait, SyntaxItemTrait,
+    TryFromAst, Ty, Visibility, impl_attributes_trait, vec_try_from_element_list,
 };
 use cairo_lang_syntax::node::ast::{ItemStruct, Member as MemberAst};
 use cairo_lang_syntax::node::kind::SyntaxKind;
@@ -73,8 +73,8 @@ impl<'db> FromAst<'db, ItemStruct<'db>> for Struct {
     }
 }
 
-impl CairoFormat for Struct {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Struct {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.derives.cfmt(buf);
         self.visibility.cfmt(buf);
@@ -84,8 +84,8 @@ impl CairoFormat for Struct {
     }
 }
 
-impl CairoFormat for Member {
-    fn cfmt(&self, buf: &mut String) {
+impl<T: CodeBuffer> CairoFormat<T> for Member {
+    fn cfmt(&self, buf: &mut T) {
         self.attributes.cfmt(buf);
         self.visibility.cfmt(buf);
         self.name.cfmt(buf);
