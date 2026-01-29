@@ -60,3 +60,4 @@ introspect_table_macros = { path = "packages/table_macros" }
 introspect-events = { path = "crates/events" }
 introspect-types = { path = "crates/types" }
 introspect-rust-macros = { path = "crates/macros" }
+cairo-syntax-parser = { path = "crates/cairo-syntax-parser" }

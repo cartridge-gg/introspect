@@ -7,8 +7,8 @@ use crate::type_def::{
 };
 use crate::utils::string_to_keccak_felt;
 use crate::{
-    AsCairoBytes, CairoElementDef, CairoElementDefs, CairoFormat, CairoTypeDef, Enum, IAttribute,
-    IntrospectError, IntrospectResult, ItemTrait, Ty, Variant,
+    AsCairoBytes, CairoElementDef, CairoElementDefs, CairoTypeDef, IAttribute, IntrospectError,
+    IntrospectResult, ItemTrait, Ty,
 };
 use starknet_types_core::felt::Felt;
 

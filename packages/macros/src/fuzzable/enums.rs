@@ -1,5 +1,5 @@
 use crate::fuzzable::FuzzableImpl;
-use crate::{Enum, Variant};
+use cairo_syntax_parser::{Enum, Variant};
 
 impl FuzzableImpl for Enum {
     fn fuzzable_body(&self) -> String {

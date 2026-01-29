@@ -111,6 +111,9 @@ macro_rules! syntax_type {
                 }
             }
         }
+
+        // Auto-implement traits based on field names
+        $($crate::syntax_type!(@impl_trait_for_field $struct_name, $field, $field_type);)*
     };
 
     // Without AST type override - use struct name
@@ -131,6 +134,9 @@ macro_rules! syntax_type {
                 }
             }
         }
+
+        // Auto-implement traits based on field names
+        $($crate::syntax_type!(@impl_trait_for_field $struct_name, $field, $field_type);)*
     };
 
     (@get_value $ast:ident, $db:ident, $field:ident, $method:ident) => {
@@ -140,6 +146,48 @@ macro_rules! syntax_type {
     (@get_value $ast:ident, $db:ident, $field:ident) => {
         crate::AstInto::ast_into($ast.$field($db), $db)
     };
+
+    // Check if field is "name" and implement NameTrait
+    (@impl_trait_for_field $struct_name:ident, name, $field_type:ty) => {
+        impl $crate::NameTrait for $struct_name {
+            fn name(&self) -> &str {
+                &self.name
+            }
+
+            fn set_name(&mut self, new_name: String) {
+                self.name = new_name;
+            }
+        }
+    };
+
+    // Check if field is "visibility" and implement VisibilityTrait
+    (@impl_trait_for_field $struct_name:ident, visibility, $field_type:ty) => {
+        impl $crate::VisibilityTrait for $struct_name {
+            fn visibility(&self) -> &$crate::Visibility {
+                &self.visibility
+            }
+
+            fn visibility_mut(&mut self) -> &mut $crate::Visibility {
+                &mut self.visibility
+            }
+        }
+    };
+
+    // Check if field is "attributes" and implement AttributesTrait
+    (@impl_trait_for_field $struct_name:ident, attributes, $field_type:ty) => {
+        impl $crate::AttributesTrait for $struct_name {
+            fn attributes(&self) -> &[$crate::Attribute] {
+                &self.attributes
+            }
+
+            fn attributes_mut(&mut self) -> &mut Vec<$crate::Attribute> {
+                &mut self.attributes
+            }
+        }
+    };
+
+    // Catch-all for other fields - do nothing
+    (@impl_trait_for_field $struct_name:ident, $field:ident, $field_type:ty) => {};
 }
 
 #[macro_export]

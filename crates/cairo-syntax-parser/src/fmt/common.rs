@@ -1,49 +1,89 @@
-use super::{CairoCollectionFormat, CairoFormat, CodeBuffer};
+use super::fmt::OptionSizeHint;
+use super::{CairoWrite, CairoSliceFormat};
 use crate::common::{Identifier, Modifier, Param, Visibility};
+use crate::fmt::fmt::SizeHint;
+use std::fmt::{Result, Write};
 
-impl<T: CodeBuffer> CairoFormat<T> for Identifier {
-    fn cfmt(&self, buf: &mut T) {
-        self.modifiers.cfmt(buf);
-        self.name.cfmt(buf);
+impl CairoWrite for Identifier {
+    fn cfmt<W: Write>(&self, buf: &mut W) -> Result {
+        self.modifiers.cfmt(buf)?;
+        self.name.cfmt(buf)
+    }
+    }
+impl SizeHint for  {
+    fn size_hint(&self) -> usize {
+        self.modifiers.cfmt_size_hint() + self.name.len()
     }
 }
 
-impl<T: CodeBuffer> CairoFormat<T> for Modifier {
-    fn cfmt(&self, buf: &mut T) {
+impl CairoWrite for Modifier {
+    fn cfmt<W: Write>(&self, buf: &mut W) -> Result {
         match self {
-            Modifier::Ref => buf.push_token_str("ref"),
-            Modifier::Mut => buf.push_token_str("mut"),
+            Modifier::Ref => buf.write_str("ref"),
+            Modifier::Mut => buf.write_str("mut"),
         }
     }
-}
-
-impl<T: CodeBuffer> CairoFormat<T> for Vec<Modifier> {
-    fn cfmt(&self, buf: &mut T) {
-        self.cfmt_terminated(buf, ' ');
+    }
+impl SizeHint for  {
+    fn size_hint(&self) -> usize {
+        3
     }
 }
 
-impl<T: CodeBuffer> CairoFormat<T> for Param {
-    fn cfmt(&self, buf: &mut T) {
-        self.modifiers.cfmt(buf);
-        self.name.cfmt(buf);
+impl CairoWrite for Vec<Modifier> {
+    fn cfmt<W: Write>(&self, buf: &mut W) -> Result {
+        self.cfmt_terminated(buf, ' ')
+    }
+    }
+impl SizeHint for  {
+    fn size_hint(&self) -> usize {
+        self.size_hint_slice::<1>()
+    }
+}
+
+impl CairoWrite for Param {
+    fn cfmt<W: Write>(&self, buf: &mut W) -> Result {
+        self.modifiers.cfmt(buf)?;
+        self.name.cfmt(buf)?;
         if let Some(type_clause) = &self.type_clause {
-            type_clause.cfmt_prefixed(buf, ':');
+            type_clause.cfmt_prefixed_str(buf, ": ")?;
         }
+        Ok(())
+    }
+    }
+impl SizeHint for  {
+    fn size_hint(&self) -> usize {
+        self.modifiers.cfmt_size_hint()
+            + self.name.cfmt_size_hint()
+            + self.type_clause.size_hint_option::<2, 0>()
     }
 }
 
-impl<T: CodeBuffer> CairoFormat<T> for Visibility {
-    fn cfmt(&self, buf: &mut T) {
+impl SizeHint for Vec<Param> {
+    fn size_hint(&self) -> usize {
+        self.size_hint_slice::<2>()
+    }
+}
+
+impl CairoWrite for Visibility {
+    fn cfmt<W: Write>(&self, buf: &mut W) -> Result {
         match self {
-            Visibility::Default => {}
+            Visibility::Default => Ok(()),
             Visibility::Pub(p) => {
-                buf.push_token_str("pub");
+                buf.write_str("pub")?;
                 if let Some(arg) = p {
-                    arg.cfmt_parenthesized(buf);
+                    arg.cfmt_parenthesized(buf)?;
                 }
-                buf.push_token_char(' ')
+                buf.write_char(' ')
             }
+        }
+    }
+    }
+impl SizeHint for  {
+    fn size_hint(&self) -> usize {
+        match self {
+            Visibility::Default => 0,
+            Visibility::Pub(arg) => 4 + arg.size_hint_option::<1, 0>(),
         }
     }
 }

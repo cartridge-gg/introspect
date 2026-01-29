@@ -1,4 +1,5 @@
-use crate::{CairoFormat, GenericParams};
+use crate::GenericParams;
+
 pub trait ItemTrait {
     fn name(&self) -> &str;
     fn generic_params(&self) -> &GenericParams;

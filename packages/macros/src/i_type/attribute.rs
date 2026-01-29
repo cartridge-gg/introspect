@@ -1,4 +1,5 @@
-use crate::{Attribute, AttributesTrait, IAttribute};
+use crate::IAttribute;
+use cairo_syntax_parser::{Attribute, AttributesTrait};
 
 pub enum AttributeVariant {
     Emit(IAttribute),
@@ -38,17 +39,17 @@ impl From<Attribute> for AttributeVariant {
     }
 }
 
-impl From<Attribute> for Vec<AttributeVariant> {
-    fn from(attr: Attribute) -> Self {
-        vec![AttributeVariant::Cairo(attr)]
-    }
-}
+// impl From<Attribute> for Vec<AttributeVariant> {
+//     fn from(attr: Attribute) -> Self {
+//         vec![AttributeVariant::Cairo(attr)]
+//     }
+// }
 
-impl<E> From<Attribute> for Result<Vec<AttributeVariant>, E> {
-    fn from(attr: Attribute) -> Self {
-        Ok(vec![AttributeVariant::Cairo(attr)])
-    }
-}
+// impl<E> From<Attribute> for Result<Vec<AttributeVariant>, E> {
+//     fn from(attr: Attribute) -> Self {
+//         Ok(vec![AttributeVariant::Cairo(attr)])
+//     }
+// }
 
 pub trait ParseAttribute<T> {
     type Error;

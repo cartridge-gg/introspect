@@ -1,5 +1,5 @@
 use crate::fuzzable::FuzzableImpl;
-use crate::{Member, Struct};
+use cairo_syntax_parser::{Member, Struct};
 use itertools::Itertools;
 
 impl FuzzableImpl for Struct {

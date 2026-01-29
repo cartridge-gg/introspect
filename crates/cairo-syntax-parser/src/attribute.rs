@@ -1,8 +1,10 @@
 use crate::{
-    Expr, ExprPath, Modifier, from_typed_syntax_node, syntax_enum, syntax_option, syntax_type,
-    terminal_to_string, typed_syntax_node_to_string_without_trivia, vec_from_element_list,
+    CairoFormat, Expr, ExprPath, Modifier, from_typed_syntax_node, syntax_enum, syntax_option,
+    syntax_type, terminal_to_string, typed_syntax_node_to_string_without_trivia,
+    vec_from_element_list,
 };
 use delegate::delegate;
+use std::mem;
 use std::ops::Deref;
 
 syntax_type! {
@@ -46,6 +48,8 @@ vec_from_element_list!(ArgListParenthesized.arguments, Arg);
 
 syntax_option! {OptionArgListParenthesized{ArgListParenthesized: Vec<Arg>}}
 
+const DERIVE_PATH: &str = "derive";
+
 impl Attribute {
     /// Get cached string representation of path (zero allocation)
     pub fn path_str(&self) -> &str {
@@ -54,6 +58,59 @@ impl Attribute {
 
     pub fn path_string(&self) -> String {
         self.path_str.clone()
+    }
+
+    pub fn get_derives(&self) -> Vec<String> {
+        if self.path_str == DERIVE_PATH {
+            if let Some(args) = &self.arguments {
+                return args
+                    .iter()
+                    .filter_map(Arg::as_unnamed)
+                    .map(|expr| expr.to_string())
+                    .collect();
+            }
+        }
+        vec![]
+    }
+
+    pub fn is_single_unnamed_arg(self) -> bool {
+        match &self.arguments {
+            Some(args) if args.len() == 1 => args[0].as_unnamed().is_some(),
+            _ => false,
+        }
+    }
+}
+
+pub trait AttributesTrait {
+    fn attributes_mut(&mut self) -> &mut Vec<Attribute>;
+    fn attributes(&self) -> &[Attribute];
+    fn has_attribute(&self, name: &str) -> bool {
+        self.attributes().iter().any(|attr| attr.path_str() == name)
+    }
+    fn has_name_only_attribute(&self, name: &str) -> bool {
+        self.attributes()
+            .iter()
+            .any(|attr| attr.path_str() == name && attr.arguments.is_none())
+    }
+    fn get_attribute(&self, name: &str) -> Option<&Attribute> {
+        self.attributes()
+            .iter()
+            .find(|attr| attr.path_str() == name)
+    }
+    fn update_attributes(&mut self, attributes: Vec<Attribute>) {
+        *self.attributes_mut() = attributes;
+    }
+    fn take_attributes(&mut self) -> Vec<Attribute> {
+        mem::take(self.attributes_mut())
+    }
+    fn push_attribute(&mut self, attribute: Attribute) {
+        self.attributes_mut().push(attribute);
+    }
+    fn derives(&self) -> Vec<String> {
+        self.attributes()
+            .iter()
+            .flat_map(|attr| attr.get_derives())
+            .collect()
     }
 }
 
@@ -72,6 +129,9 @@ impl Arg {
             pub fn to_unnamed(self) -> Option<Expr>;
             pub fn to_shorthand(self) -> Option<String>;
             pub fn to_named(self) -> Option<NamedArg>;
+            pub fn as_unnamed(&self) -> Option<&Expr>;
+            pub fn as_shorthand(&self) -> Option<&str>;
+            pub fn as_named(&self) -> Option<&NamedArg>;
         }
     }
 }

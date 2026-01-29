@@ -1517,6 +1517,7 @@ dependencies = [
  "cairo-lang-primitive-token",
  "cairo-lang-starknet-classes",
  "cairo-lang-syntax",
+ "cairo-syntax-parser",
  "const_format",
  "indent",
  "indoc",

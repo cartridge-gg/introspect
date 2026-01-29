@@ -2,9 +2,10 @@ use super::{IExtract, IntrospectItemTrait, TypeDefVariant, TypeModTrait};
 use crate::i_type::{ExtractAttributes, TypeModAndName};
 use crate::type_def::{member_def_tpl, member_default_def_tpl, struct_def_tpl};
 use crate::{
-    AsCairoBytes, CairoElementDef, CairoElementDefs, CairoFormat, CairoTypeDef, GenericParams,
-    IAttribute, IntrospectError, IntrospectResult, ItemTrait, Member, Struct, Ty,
+    AsCairoBytes, CairoElementDef, CairoElementDefs, CairoTypeDef, GenericParams, IAttribute,
+    IntrospectError, IntrospectResult, ItemTrait, Ty,
 };
+use cairo_syntax_parser::{CairoWrite, Member, Struct};
 
 pub struct IStruct {
     pub attributes: Vec<IAttribute>,
@@ -30,7 +31,7 @@ impl CairoElementDef for IMember {
                 i_path,
                 name,
                 attributes,
-                &CairoFormat::<String>::to_cairo(&self.ty),
+                &CairoWrite::<String>::to_cairo(&self.ty),
             ),
             TypeDefVariant::TypeDef(type_def) => {
                 member_def_tpl(i_path, name, attributes, &type_def.as_type_def(i_path))

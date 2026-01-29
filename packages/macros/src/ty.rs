@@ -1,9 +1,9 @@
-use crate::{
-    AstToString, AstTryInto, CairoCollectionFormat, CairoFormat, CodeBuffer, IntrospectError,
-    IntrospectResult, TryFromAst,
+use crate::{AstToString, IntrospectError as Error, IntrospectResult as Result};
+use cairo_syntax_parser::{
+    CairoWrite, CairoSliceFormat, Expr, ExprPath, FixedSizeArray as SynFixedSizeArray,
+    OptionSizeHint, SizeHint,
 };
-use cairo_lang_syntax::node::ast::{OptionTypeClause, TypeClause};
-use salsa::Database;
+use std::fmt::{Result as FmtResult, Write};
 
 const PRIMITIVE_TYPES: &[&str] = &[
     "felt252",
@@ -40,6 +40,12 @@ pub fn is_primitive_type(type_name: &str) -> bool {
 }
 
 #[derive(Clone, Debug, PartialEq, Hash, Eq)]
+pub enum Ty {
+    Item(TyItem),
+    Tuple(Vec<Ty>),
+    FixedArray(Box<FixedArray>),
+}
+#[derive(Clone, Debug, PartialEq, Hash, Eq)]
 pub struct FixedArray {
     pub ty: Ty,
     pub size: String,
@@ -51,11 +57,55 @@ pub struct TyItem {
     pub params: Option<Vec<Ty>>,
 }
 
-#[derive(Clone, Debug, PartialEq, Hash, Eq)]
-pub enum Ty {
-    Item(TyItem),
-    Tuple(Vec<Ty>),
-    FixedArray(Box<FixedArray>),
+impl TryFrom<Expr> for Ty {
+    type Error = Error;
+    fn try_from(expr: Expr) -> Result<Self> {
+        match expr {
+            Expr::Tuple(exprs) => exprs.try_into(),
+            Expr::FixedSizeArray(arr) => arr.try_into(),
+            Expr::Path(path) => path.try_into(),
+            Expr::Parenthesized(expr) => (*expr).try_into(),
+            _ => Error::FailedToParseType.into(),
+        }
+    }
+}
+
+impl TryFrom<Vec<Expr>> for Ty {
+    type Error = Error;
+    fn try_from(exprs: Vec<Expr>) -> Result<Self> {
+        exprs.iter().map(TryFrom::try_from).collect().map(Ty::Tuple)
+    }
+}
+
+impl TryFrom<SynFixedSizeArray> for FixedArray {
+    type Error = Error;
+    fn try_from(value: SynFixedSizeArray) -> Result<Self> {
+        Ok(FixedArray {
+            ty: Ty::from(*value.element),
+            size: value.size.to_string(),
+        })
+    }
+}
+
+impl TryFrom<SynFixedSizeArray> for Ty {
+    type Error = Error;
+    fn try_from(array: SynFixedSizeArray) -> Result<Self> {
+        FixedArray::try_from(array).map(|fa| Ty::FixedArray(Box::new(fa)))
+    }
+}
+
+impl TryFrom<ExprPath> for TyItem {
+    type Error = Error;
+    fn try_from(path: ExprPath) -> Result<Self> {
+        TyItem::parse(&path.to_string()).map_err(|_| Error::FailedToParseType)
+    }
+}
+
+impl TryFrom<ExprPath> for Ty {
+    type Error = Error;
+    fn try_from(path: ExprPath) -> Result<Self> {
+        TyItem::try_from(path).map(Ty::Item)
+    }
 }
 
 pub enum CairoPrimitiveType {
@@ -111,29 +161,29 @@ impl CairoPrimitiveType {
 }
 
 impl TyItem {
-    pub fn parse(type_str: &str) -> IntrospectResult<Self> {
-        if type_str.ends_with('>') {
-            let (name, types) =
-                parse_wrapped_types(type_str).ok_or(IntrospectError::FailedToParseType)?;
-            let params = types
-                .into_iter()
-                .map(Ty::parse)
-                .collect::<IntrospectResult<_>>()?;
-            Ok(Self {
-                name: name.to_string(),
-                params: Some(params),
-            })
-        } else {
-            Ok(Self {
-                name: type_str.to_string(),
-                params: None,
-            })
-        }
-    }
+    // pub fn parse(type_str: &str) -> IntrospectResult<Self> {
+    //     if type_str.ends_with('>') {
+    //         let (name, types) =
+    //             parse_wrapped_types(type_str).ok_or(IntrospectError::FailedToParseType)?;
+    //         let params = types
+    //             .into_iter()
+    //             .map(Ty::parse)
+    //             .collect::<IntrospectResult<_>>()?;
+    //         Ok(Self {
+    //             name: name.to_string(),
+    //             params: Some(params),
+    //         })
+    //     } else {
+    //         Ok(Self {
+    //             name: type_str.to_string(),
+    //             params: None,
+    //         })
+    //     }
+    // }
 
-    pub fn parse_ty(type_str: &str) -> IntrospectResult<Ty> {
-        Self::parse(type_str).map(Ty::Item)
-    }
+    // pub fn parse_ty(type_str: &str) -> IntrospectResult<Ty> {
+    //     Self::parse(type_str).map(Ty::Item)
+    // }
 
     pub fn is_core_type(&self) -> bool {
         match (self.name.as_str(), &self.params) {
@@ -149,48 +199,48 @@ impl TyItem {
     }
 }
 
-impl FixedArray {
-    pub fn parse(string: &str) -> IntrospectResult<Self> {
-        let (type_str, size) =
-            parse_fixed_array(string).ok_or(IntrospectError::FailedToParseType)?;
-        Ty::parse(type_str).map(|ty| Self {
-            ty,
-            size: size.to_string(),
-        })
-    }
-    pub fn parse_ty(string: &str) -> IntrospectResult<Ty> {
-        Self::parse(string).map(|fa| Ty::FixedArray(Box::new(fa)))
-    }
-}
+// impl FixedArray {
+//     pub fn parse(string: &str) -> IntrospectResult<Self> {
+//         let (type_str, size) =
+//             parse_fixed_array(string).ok_or(IntrospectError::FailedToParseType)?;
+//         Ty::parse(type_str).map(|ty| Self {
+//             ty,
+//             size: size.to_string(),
+//         })
+//     }
+//     pub fn parse_ty(string: &str) -> IntrospectResult<Ty> {
+//         Self::parse(string).map(|fa| Ty::FixedArray(Box::new(fa)))
+//     }
+// }
 
 impl Ty {
-    pub fn parse(type_str: &str) -> IntrospectResult<Self> {
-        let type_str = type_str.trim();
-        if type_str.starts_with('(') && type_str.ends_with(')') {
-            Ty::parse_list(type_str).map(Ty::Tuple)
-        } else if type_str.starts_with('[') && type_str.ends_with(']') {
-            FixedArray::parse_ty(type_str)
-        } else {
-            TyItem::parse(type_str).map(Ty::Item)
-        }
-    }
+    // pub fn parse(type_str: &str) -> IntrospectResult<Self> {
+    //     let type_str = type_str.trim();
+    //     if type_str.starts_with('(') && type_str.ends_with(')') {
+    //         Ty::parse_list(type_str).map(Ty::Tuple)
+    //     } else if type_str.starts_with('[') && type_str.ends_with(']') {
+    //         FixedArray::parse_ty(type_str)
+    //     } else {
+    //         TyItem::parse(type_str).map(Ty::Item)
+    //     }
+    // }
 
-    pub fn parse_list(type_str: &str) -> IntrospectResult<Vec<Self>> {
-        match parse_list(type_str) {
-            Some(types) => types
-                .into_iter()
-                .map(Ty::parse)
-                .collect::<IntrospectResult<Vec<_>>>(),
-            None => Err(IntrospectError::FailedToParseType),
-        }
-    }
+    // pub fn parse_list(type_str: &str) -> IntrospectResult<Vec<Self>> {
+    //     match parse_list(type_str) {
+    //         Some(types) => types
+    //             .into_iter()
+    //             .map(Ty::parse)
+    //             .collect::<IntrospectResult<Vec<_>>>(),
+    //         None => Err(IntrospectError::FailedToParseType),
+    //     }
+    // }
 
-    pub fn parse_wrapped(type_str: &str) -> IntrospectResult<(&str, Vec<Self>)> {
-        let (wrapper, types) =
-            parse_wrapped_types(type_str).ok_or(IntrospectError::FailedToParseType)?;
-        let parsed_types: IntrospectResult<Vec<Ty>> = types.into_iter().map(Ty::parse).collect();
-        parsed_types.map(|pts| (wrapper, pts))
-    }
+    // pub fn parse_wrapped(type_str: &str) -> IntrospectResult<(&str, Vec<Self>)> {
+    //     let (wrapper, types) =
+    //         parse_wrapped_types(type_str).ok_or(IntrospectError::FailedToParseType)?;
+    //     let parsed_types: IntrospectResult<Vec<Ty>> = types.into_iter().map(Ty::parse).collect();
+    //     parsed_types.map(|pts| (wrapper, pts))
+    // }
 
     pub fn get_primitive_type(&self) -> Option<CairoPrimitiveType> {
         match self {
@@ -244,92 +294,105 @@ impl Ty {
     }
 }
 
-impl<T: CodeBuffer> CairoFormat<T> for Ty {
-    fn cfmt(&self, buf: &mut T) {
+impl CairoWrite for Ty {
+    fn cfmt<W: Write>(&self, buf: &mut W) -> FmtResult {
         match self {
             Ty::Item(e) => e.cfmt(buf),
             Ty::Tuple(types) => types.cfmt_tuple(buf),
             Ty::FixedArray(fixed_array) => fixed_array.cfmt(buf),
         }
     }
+    fn cfmt_size_hint(&self) -> usize {
+        match self {
+            Ty::Item(e) => e.cfmt_size_hint(),
+            Ty::Tuple(types) => types.size_hint_tuple(),
+            Ty::FixedArray(fixed_array) => fixed_array.size_hint(),
+        }
+    }
 }
 
-impl<T: CodeBuffer> CairoFormat<T> for TyItem {
-    fn cfmt(&self, buf: &mut T) {
+impl CairoWrite for TyItem {
+    fn cfmt<W: Write>(&self, buf: &mut W) -> FmtResult {
         self.name.cfmt(buf);
         if let Some(params) = &self.params {
             params.cfmt_csv_angled(buf);
         }
     }
+    fn cfmt_size_hint(&self) -> usize {
+        self.name.size_hint() + self.params.size_hint_option::<2, 0>()
+    }
 }
 
-impl<T: CodeBuffer> CairoFormat<T> for FixedArray {
-    fn cfmt(&self, buf: &mut T) {
+impl CairoWrite for FixedArray {
+    fn cfmt<W: Write>(&self, buf: &mut W) -> FmtResult {
         self.ty.cfmt_prefixed(buf, '[');
         self.size.cfmt_prefixed_str(buf, "; ");
         buf.push_token_char(']');
     }
-}
-
-pub fn parse_wrapped_types(type_name: &str) -> Option<(&str, Vec<&str>)> {
-    let start = type_name.find('<').unwrap();
-    Some((&type_name[..start], parse_list(&type_name[start..])?))
-}
-
-pub fn parse_fixed_array(type_name: &str) -> Option<(&str, &str)> {
-    let mut splits = type_name[1..type_name.len() - 1].rsplitn(2, ';');
-    let len = splits.next()?.trim();
-    let inner_type = splits.last()?.trim();
-    Some((inner_type, len))
-}
-
-pub fn parse_list(type_name: &str) -> Option<Vec<&str>> {
-    let inner = &type_name[1..type_name.len() - 1];
-    let mut types: Vec<&str> = Vec::new();
-    let mut stack: Vec<char> = Vec::new();
-    let mut start = 0;
-
-    for (i, c) in inner.chars().enumerate() {
-        match c {
-            '(' => stack.push(')'),
-            '[' => stack.push(']'),
-            '<' => stack.push('>'),
-            '{' => stack.push('}'),
-            ')' | ']' | '>' | '}' => {
-                if stack.pop() != Some(c) {
-                    return None;
-                }
-            }
-            ',' if stack.is_empty() => {
-                types.push(inner[start..i].trim());
-                start = i + 1;
-            }
-            _ => {}
-        }
-    }
-
-    match stack.is_empty() {
-        true => {
-            if start < inner.len() {
-                types.push(inner[start..].trim());
-            }
-            Some(types)
-        }
-        false => None,
+    fn cfmt_size_hint(&self) -> usize {
+        self.ty.cfmt_size_hint() + self.size.len() + 4
     }
 }
 
-impl<'db> TryFromAst<'db, TypeClause<'db>> for Ty {
-    fn try_from_ast(ast: TypeClause<'db>, db: &'db dyn Database) -> IntrospectResult<Self> {
-        Ty::parse(&ast.to_string(db))
-    }
-}
+// pub fn parse_wrapped_types(type_name: &str) -> Option<(&str, Vec<&str>)> {
+//     let start = type_name.find('<').unwrap();
+//     Some((&type_name[..start], parse_list(&type_name[start..])?))
+// }
 
-impl<'db> TryFromAst<'db, OptionTypeClause<'db>> for Option<Ty> {
-    fn try_from_ast(ast: OptionTypeClause<'db>, db: &'db dyn Database) -> IntrospectResult<Self> {
-        match ast {
-            OptionTypeClause::Empty(_) => Ok(None),
-            OptionTypeClause::TypeClause(ty) => ty.ast_try_into(db).map(Some),
-        }
-    }
-}
+// pub fn parse_fixed_array(type_name: &str) -> Option<(&str, &str)> {
+//     let mut splits = type_name[1..type_name.len() - 1].rsplitn(2, ';');
+//     let len = splits.next()?.trim();
+//     let inner_type = splits.last()?.trim();
+//     Some((inner_type, len))
+// }
+
+// pub fn parse_list(type_name: &str) -> Option<Vec<&str>> {
+//     let inner = &type_name[1..type_name.len() - 1];
+//     let mut types: Vec<&str> = Vec::new();
+//     let mut stack: Vec<char> = Vec::new();
+//     let mut start = 0;
+
+//     for (i, c) in inner.chars().enumerate() {
+//         match c {
+//             '(' => stack.push(')'),
+//             '[' => stack.push(']'),
+//             '<' => stack.push('>'),
+//             '{' => stack.push('}'),
+//             ')' | ']' | '>' | '}' => {
+//                 if stack.pop() != Some(c) {
+//                     return None;
+//                 }
+//             }
+//             ',' if stack.is_empty() => {
+//                 types.push(inner[start..i].trim());
+//                 start = i + 1;
+//             }
+//             _ => {}
+//         }
+//     }
+
+//     match stack.is_empty() {
+//         true => {
+//             if start < inner.len() {
+//                 types.push(inner[start..].trim());
+//             }
+//             Some(types)
+//         }
+//         false => None,
+//     }
+// }
+
+// impl<'db> TryFromAst<'db, TypeClause<'db>> for Ty {
+//     fn try_from_ast(ast: TypeClause<'db>, db: &'db dyn Database) -> IntrospectResult<Self> {
+//         Ty::parse(&ast.to_string(db))
+//     }
+// }
+
+// impl<'db> TryFromAst<'db, OptionTypeClause<'db>> for Option<Ty> {
+//     fn try_from_ast(ast: OptionTypeClause<'db>, db: &'db dyn Database) -> IntrospectResult<Self> {
+//         match ast {
+//             OptionTypeClause::Empty(_) => Ok(None),
+//             OptionTypeClause::TypeClause(ty) => ty.ast_try_into(db).map(Some),
+//         }
+//     }
+// }

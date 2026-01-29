@@ -7,6 +7,16 @@ use crate::{
     syntax_terminal_enum, syntax_type, terminal_to_string, vec_from_element_list,
 };
 
+pub trait NameTrait {
+    fn name(&self) -> &str;
+    fn set_name(&mut self, new_name: String);
+}
+
+pub trait VisibilityTrait {
+    fn visibility(&self) -> &Visibility;
+    fn visibility_mut(&mut self) -> &mut Visibility;
+}
+
 syntax_type! {
     Param{
         modifiers: Vec<Modifier>,
