@@ -1,4 +1,4 @@
-use crate::{Attribute, ISerde, Introspect};
+use crate::{Attribute, ISerde};
 
 #[derive(Drop, PartialEq, Default, Debug)]
 pub enum TypeDef {
@@ -84,12 +84,6 @@ pub struct ResultDef {
     pub err: TypeDef,
 }
 
-#[generate_trait]
-pub impl MemberDefImpl of MemberDefTrait {
-    fn new<T, +Introspect<T>>(name: ByteArray, attributes: Span<Attribute>) -> MemberDef {
-        MemberDef { name, attributes, type_def: Introspect::<T>::type_def() }
-    }
-}
 
 pub mod selectors {
     pub const None: core::felt252 = 0;
@@ -312,6 +306,7 @@ impl TySerde of Serde<TypeDef> {
 
 
 impl TyISerde of ISerde<TypeDef> {
+    // const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @TypeDef, ref output: Array<felt252>) {
         match self {
             TypeDef::None | TypeDef::Felt252 | TypeDef::ShortUtf8 | TypeDef::Bytes31 |
@@ -454,7 +449,6 @@ impl BoxSerdeImpl<T, +Serde<T>> of Serde<Box<T>> {
     }
 }
 
-
 impl BoxPartialEq<T, +PartialEq<T>> of PartialEq<Box<T>> {
     #[inline]
     fn eq(lhs: @Box<T>, rhs: @Box<T>) -> bool {
@@ -464,6 +458,7 @@ impl BoxPartialEq<T, +PartialEq<T>> of PartialEq<Box<T>> {
 
 
 impl StructDefISerde of ISerde<StructDef> {
+    // const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @StructDef, ref output: Array<felt252>) {
         self.name.iserialize(ref output);
         self.attributes.iserialize(ref output);
@@ -479,6 +474,7 @@ impl StructDefISerde of ISerde<StructDef> {
 }
 
 impl MemberDefISerde of ISerde<MemberDef> {
+    // const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @MemberDef, ref output: Array<felt252>) {
         self.name.iserialize(ref output);
         self.attributes.iserialize(ref output);
@@ -495,6 +491,7 @@ impl MemberDefISerde of ISerde<MemberDef> {
 
 
 impl EnumDefISerde of ISerde<EnumDef> {
+    // const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @EnumDef, ref output: Array<felt252>) {
         self.name.iserialize(ref output);
         self.attributes.iserialize(ref output);
@@ -510,6 +507,7 @@ impl EnumDefISerde of ISerde<EnumDef> {
 }
 
 impl VariantDefISerde of ISerde<VariantDef> {
+    // const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @VariantDef, ref output: Array<felt252>) {
         output.append(*self.selector);
         self.name.iserialize(ref output);
@@ -528,6 +526,7 @@ impl VariantDefISerde of ISerde<VariantDef> {
 
 
 impl FixedArrayDefISerde of ISerde<FixedArrayDef> {
+    // const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @FixedArrayDef, ref output: Array<felt252>) {
         self.type_def.iserialize(ref output);
         output.append((*self.size).into());
@@ -541,6 +540,7 @@ impl FixedArrayDefISerde of ISerde<FixedArrayDef> {
 }
 
 impl ResultDefISerde of ISerde<ResultDef> {
+    // const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @ResultDef, ref output: Array<felt252>) {
         self.ok.iserialize(ref output);
         self.err.iserialize(ref output);

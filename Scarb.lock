@@ -2,10 +2,30 @@
 version = 1
 
 [[package]]
-name = "core_ext"
+name = "cgg_collection"
 version = "0.1.2"
 dependencies = [
- "snforge_std",
+ "cgg_snappable",
+]
+
+[[package]]
+name = "cgg_const_fns"
+version = "0.1.2"
+dependencies = [
+ "cgg_collection",
+]
+
+[[package]]
+name = "cgg_snappable"
+version = "0.1.2"
+
+[[package]]
+name = "cgg_utils"
+version = "0.1.2"
+dependencies = [
+ "cgg_collection",
+ "cgg_const_fns",
+ "cgg_snappable",
 ]
 
 [[package]]
@@ -33,21 +53,10 @@ name = "introspect_macros"
 version = "0.1.0"
 
 [[package]]
-name = "introspect_table"
-version = "0.1.2"
-dependencies = [
- "core_ext",
- "introspect_events",
- "introspect_test_utils",
- "introspect_types",
- "snforge_std",
-]
-
-[[package]]
 name = "introspect_test_utils"
 version = "0.1.2"
 dependencies = [
- "core_ext",
+ "cgg_utils",
  "introspect",
  "introspect_macros",
  "snforge_std",
@@ -57,8 +66,7 @@ dependencies = [
 name = "introspect_types"
 version = "0.1.2"
 dependencies = [
- "core_ext",
- "introspect_test_utils",
+ "cgg_utils",
  "snforge_std",
 ]
 
@@ -75,12 +83,4 @@ source = "registry+https://scarbs.xyz/"
 checksum = "sha256:5eae9444e31efdb72431bda696c2cf4ea98ee1475796ba8a3eb50c7279838d7f"
 dependencies = [
  "snforge_scarb_plugin",
-]
-
-[[package]]
-name = "test"
-version = "0.1.2"
-dependencies = [
- "introspect",
- "introspect_macros",
 ]

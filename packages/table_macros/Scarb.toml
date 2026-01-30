@@ -1,5 +1,0 @@
-[package]
-name = "introspect_table_macros"
-version = "0.1.0"
-
-[cairo-plugin]

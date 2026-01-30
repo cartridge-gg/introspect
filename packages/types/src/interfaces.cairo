@@ -1,4 +1,4 @@
-use crate::{Introspect, TypeDef};
+use crate::{IntrospectT, TypeDef};
 
 
 #[starknet::interface]
@@ -8,10 +8,10 @@ pub trait ITypeDefClassContract<TState> {
 
 #[starknet::embeddable]
 impl TypeDefContractImpl<
-    TContractState, T, +Introspect<T>,
+    TContractState, T, +IntrospectT<T>,
 > of ITypeDefClassContract<TContractState> {
     fn type_def(self: @TContractState) -> TypeDef {
-        Introspect::<T>::type_def()
+        IntrospectT::<T>::type_def()
     }
 }
 // #[starknet::interface]

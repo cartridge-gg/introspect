@@ -11,6 +11,7 @@ pub use variable::*;
 pub trait EmitEvent<T> {
     fn emit_event(self: @T);
 }
+use starknet::SyscallResultTrait;
 mod emit_event_impl {
     use starknet::SyscallResultTrait;
     pub impl EmitEventImpl<T, const SELECTOR: felt252, +starknet::Event<T>> of super::EmitEvent<T> {
@@ -21,4 +22,8 @@ mod emit_event_impl {
             starknet::syscalls::emit_event_syscall(keys.span(), data.span()).unwrap_syscall()
         }
     }
+}
+
+pub fn emit_ispec_event(key: felt252, data: Span<felt252>) {
+    starknet::syscalls::emit_event_syscall([key].span(), data).unwrap_syscall();
 }

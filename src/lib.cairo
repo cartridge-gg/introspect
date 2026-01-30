@@ -1,5 +1,5 @@
 pub use introspect_types::{
-    Attribute, ColumnDef, Entry, EnumDef, FixedArrayDef, ISerde, Introspect, MemberDef, PrimaryDef,
+    Attribute, ColumnDef, Entry, EnumDef, FixedArrayDef, ISerde, IntrospectT, MemberDef, PrimaryDef,
     PrimaryTrait, PrimaryTypeDef, ResultDef, StructDef, TypeDef, VariantDef,
 };
 pub mod m_utils {

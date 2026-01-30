@@ -1,12 +1,12 @@
 pub use crate::introspect::{add_child_def, hash_type_def};
 pub use crate::serde::iserialize_keyed_type;
 pub use crate::{
-    Attribute, ChildDefs, ColumnDef, EnumDef, FixedArrayDef, ISerde, Introspect, IntrospectRef,
+    Attribute, ChildDefs, ColumnDef, EnumDef, FixedArrayDef, ISerde, IntrospectT, IntrospectRef,
     MemberDef, PrimaryDef, PrimaryTrait, PrimaryTypeDef, ResultDef, StructDef, TypeDef, VariantDef,
 };
 
 #[inline]
-pub fn type_def_default<T, impl I: Introspect<T>>() -> TypeDef {
+pub fn type_def_default<T, impl I: IntrospectT<T>>() -> TypeDef {
     I::type_def()
 }
 
@@ -16,7 +16,7 @@ pub fn member_def(name: ByteArray, attributes: Span<Attribute>, type_def: TypeDe
 }
 
 #[inline]
-pub fn member_default_def<T, impl I: Introspect<T>>(
+pub fn member_default_def<T, impl I: IntrospectT<T>>(
     name: ByteArray, attributes: Span<Attribute>,
 ) -> MemberDef {
     MemberDef { name, type_def: I::type_def(), attributes }
@@ -44,10 +44,10 @@ pub fn variant_def(
 }
 
 #[inline]
-pub fn variant_default_def<T, +Introspect<T>>(
+pub fn variant_default_def<T, +IntrospectT<T>>(
     selector: felt252, name: ByteArray, attributes: Span<Attribute>,
 ) -> VariantDef {
-    VariantDef { selector, name, attributes, type_def: Introspect::<T>::type_def() }
+    VariantDef { selector, name, attributes, type_def: IntrospectT::<T>::type_def() }
 }
 
 #[inline(always)]
@@ -136,7 +136,7 @@ pub fn column_def(
 }
 
 #[inline]
-pub fn column_default_def<T, impl I: Introspect<T>>(
+pub fn column_default_def<T, impl I: IntrospectT<T>>(
     id: felt252, name: ByteArray, attributes: Span<Attribute>,
 ) -> ColumnDef {
     ColumnDef { id, name, attributes, type_def: I::type_def() }
@@ -153,6 +153,6 @@ pub fn ideserialize<T, impl I: ISerde<T>>(ref serialized: Span<felt252>) -> Opti
 }
 
 #[inline]
-pub fn collect_child_defs<T, impl I: Introspect<T>>(ref defs: ChildDefs) {
+pub fn collect_child_defs<T, impl I: IntrospectT<T>>(ref defs: ChildDefs) {
     I::collect_child_defs(ref defs);
 }

@@ -1,15 +1,7 @@
 [workspace]
 resolver = "2"
 
-members = [
-    "crates/types",
-    "crates/events",
-    "crates/macros",
-    "crates/cairo-syntax-parser",
-    "packages/macros",
-    "packages/table_macros",
-
-]
+members = ["crates/types", "crates/events", "crates/macros", "packages/macros"]
 exclude = ["crates/type_library"]
 
 [workspace.package]
@@ -56,8 +48,7 @@ thiserror = "2.0.17"
 
 
 introspect_macros = { path = "packages/macros" }
-introspect_table_macros = { path = "packages/table_macros" }
 introspect-events = { path = "crates/events" }
 introspect-types = { path = "crates/types" }
 introspect-rust-macros = { path = "crates/macros" }
-cairo-syntax-parser = { path = "crates/cairo-syntax-parser" }
+cairo-syntax-parser = { path = "../cairo-syntax-parser" }

@@ -1,7 +1,40 @@
 use core::poseidon;
 use poseidon::poseidon_hash_span;
-use crate::{Attribute, ISerde, Introspect, PrimaryDef, TypeDef};
+use crate::const_data::ConstData;
+use crate::{Attribute, ColumnDef, ISerde, Introspect, PrimaryDef, TypeDef};
 
+
+pub struct TableSchema {
+    pub id: felt252,
+    pub name: ByteArray,
+    pub attributes: Span<Attribute>,
+    pub primary: PrimaryDef,
+    pub columns: Span<ColumnDef>,
+}
+
+pub trait TableSchemaTrait {
+    fn append_table_schema<
+        N,
+        A,
+        impl NameToSpan: ToSpanTrait<N, felt252>,
+        impl AttrsToSpan: ToSpanTrait<A, felt252>,
+        +Drop<N>,
+        +Drop<A>,
+    >(
+        ref self: Array<felt252>,
+        id: felt252,
+        raw_name: N,
+        attributes: A,
+        primary: PrimaryDef,
+        columns: Span<ColumnDef>,
+    ) {
+        self.append(id);
+        self.append_span(NameToSpan::span(@raw_name));
+        self.append_span(AttrsToSpan::span(@attributes));
+        primary.type_def.iserialize(ref self);
+        columns.serialize(ref self);
+    }
+}
 
 pub trait Schema<T> {
     fn columns() -> Span<ColumnDef>;

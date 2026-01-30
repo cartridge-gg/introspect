@@ -45,6 +45,8 @@ pub mod selectors {
 }
 
 
+
+
 #[derive(Drop, starknet::Event, PartialEq, Debug)]
 pub enum DatabaseEvents {
     CreateFieldSet: CreateColumnSet,
@@ -444,6 +446,7 @@ pub struct IdTypeDef {
 }
 
 impl IdNameISerde of ISerde<IdName> {
+    const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @IdName, ref output: Array<felt252>) {
         output.append(*self.id);
         self.name.iserialize(ref output);
@@ -455,6 +458,7 @@ impl IdNameISerde of ISerde<IdName> {
 }
 
 impl IdTypeAttributesISerde of ISerde<IdTypeDef> {
+    const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @IdTypeDef, ref output: Array<felt252>) {
         output.append(*self.id);
         self.attributes.iserialize(ref output);

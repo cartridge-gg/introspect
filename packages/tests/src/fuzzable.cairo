@@ -1,5 +1,5 @@
+use cgg_utils::CollectionSplit;
 use core::fmt::Debug;
-use core_ext::CollectionSplit;
 pub use snforge_std::fuzzable::{Fuzzable, generate_arg};
 
 pub trait Fuzzy<T, +Debug<T>, +Drop<T>> {
@@ -26,15 +26,14 @@ pub trait Fuzzy<T, +Debug<T>, +Drop<T>> {
     }
     fn generate_fixed_array<
         const N: u32, +Serde<Span<T>>, +Serde<[T; N]>,
-    >() -> [
-        T
-    ; N] {
-        let mut output: Array<felt252> = Default::default();
-        Self::generate_span(N).serialize(ref output);
-        output.pop_front().unwrap();
-        let mut span = output.span();
-        Serde::<[T; N]>::deserialize(ref span).unwrap()
-    }
+    >() -> [T;
+        N] {
+            let mut output: Array<felt252> = Default::default();
+            Self::generate_span(N).serialize(ref output);
+            output.pop_front().unwrap();
+            let mut span = output.span();
+            Serde::<[T; N]>::deserialize(ref span).unwrap()
+        }
 }
 
 pub impl FuzzyImpl<T, impl F: Fuzzable<T>, +Drop<T>, +Debug<T>> of Fuzzy<T> {

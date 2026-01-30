@@ -1,5 +1,7 @@
 use introspect_types::ISerde;
 
+
+
 #[generate_trait]
 pub impl DrainSpanImpl<T, +Drop<T>> of DrainSpanTrait<T> {
     fn drain(ref self: Span<T>) -> Span<T> {

@@ -7,7 +7,6 @@ use cairo_lang_macro::TokenStream;
 use cairo_lang_parser::utils::SimpleParserDatabase;
 use cairo_lang_syntax::node::ast::SyntaxFile;
 
-//TODO: implement other module items.
 syntax_enum! {
     Item[ModuleItem]{
         Constant(Constant),

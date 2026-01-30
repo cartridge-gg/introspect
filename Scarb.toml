@@ -6,17 +6,12 @@ scarb-version = "2.15.0"
 repository = "https://github.com/cartridge-gg/introspect"
 name = "introspect"
 
-
 [workspace]
 members = [
     "packages/events",
     "packages/types",
     "packages/macros",
     "packages/tests",
-    "packages/table",
-    "packages/table_macro",
-    "tests/test_contract",
-    "packages/core_ext",
 ]
 
 
@@ -26,8 +21,7 @@ introspect_types = { path = "packages/types" }
 introspect_events = { path = "packages/events" }
 introspect_macros = { path = "packages/macros" }
 introspect_test_utils = { path = "packages/tests" }
-introspect_table_macros = { path = "packages/table_macros" }
-core_ext = { path = "packages/core_ext" }
+cgg_utils = { path = "../cairo_core_utils" }
 snforge_std = "0.54.0"
 assert_macros = "2.15.0"
 cairo_execute = "2.15.0"

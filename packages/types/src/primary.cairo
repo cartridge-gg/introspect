@@ -5,6 +5,12 @@ use crate::utils::SpanDefault;
 use crate::{Attribute, ISerde};
 
 
+pub trait PrimaryDefTrait {
+    const NAME_SIZE: u32;
+    const ATTRIBUTES_SIZE: u32;
+    const TYPE_DEF_SIZE: u32;
+}
+
 #[derive(Drop, Serde, PartialEq, Debug, Default)]
 pub struct PrimaryDef {
     pub name: ByteArray,
@@ -166,6 +172,7 @@ impl StorageBaseAddressPrimaryImpl =
     primary_unit_impl::IPrimaryImpl<StorageBaseAddress, PrimaryTypeDef::StorageBaseAddress>;
 
 pub impl PrimaryTypeDefISerde of ISerde<PrimaryTypeDef> {
+    // const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @PrimaryTypeDef, ref output: Array<felt252>) {
         output.append(self.selector());
         if let PrimaryTypeDef::Bytes31Encoded(encoding) = self {
@@ -222,6 +229,7 @@ pub impl PrimaryTypeDefISerde of ISerde<PrimaryTypeDef> {
 }
 
 pub impl PrimaryDefISerde of ISerde<PrimaryDef> {
+    // const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @PrimaryDef, ref output: Array<felt252>) {
         self.name.iserialize(ref output);
         self.attributes.iserialize(ref output);
