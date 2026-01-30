@@ -40,7 +40,7 @@ By adopting this SNIP, Cairo developers will be able to more easily make their o
 
 # Specification
 
-The standard consists of three parts: **types**, **events**, and **serialization**. The data model mimics those used by standard databases, oriented around "tables" and typed "columns," making it easy to mirror onchain data using any number of existing enterprise-grade storage solutions.
+The standard consists of three parts: **types**, **events**, and **serialization**. The data model mimics those used by standard databases, oriented around "tables" and typed "columns," making it easy to mirror onchain data using any number of existing production-ready storage solutions.
 
 The specification is designed to be **extendible**, supporting the addition of types and events not described in this spec. The minimum requirement is that indexers are able to parse data streams conforming to the specified wire format, and to be able to interpret the types and events described here.
 
@@ -48,7 +48,7 @@ The key words “MUST”, “MUST NOT”, “REQUIRED”, “SHALL”, “SHALL 
 
 ## Types
 
-Introspect defines several core types used to communicate onchain state changes. These include enumerations of primitive types, structs used for generic metadata, complex core types, custom core types used for application-specific data, and table definitions for defining columns and records. Some of these types mirror core Cairo types, in a struct format amenable to standard serialization.
+Introspect defines several core types used to communicate onchain state changes. These include enumerations of primitive types, structs used for generic metadata, complex core types, custom types used for application-specific data, and table definitions for defining storage schemas. Several of these types mirror standard Cairo types, but in a struct format enabling standard serialization.
 
 The `TypeDef` enum describes all data types initially supported by Introspect. Each variant represents either a primitive type or a composite type with associated structure.
 
@@ -122,7 +122,7 @@ enum TypeDef {
 
 ### Key Types
 
-A common database construct is the **primary key** which uniquely identifies a row. Any value used as a primary key MUST be representable using a single `Felt252`.
+A common database construct is the **primary key** which uniquely identifies a record. Any value used as a primary key MUST be representable using a single `Felt252`.
 
 The `PrimaryTypeDef` is a subset of `TypeDef` containing valid primary key types:
 
@@ -194,29 +194,29 @@ The following structs represent application-specific data:
 
 struct StructDef {
     name: ByteArray,
-    attributes: Span<Attribute>,
     members: Span<MemberDef>,
+    attributes: Span<Attribute>,
 }
 
 struct MemberDef {
     name: ByteArray,
-    attributes: Span<Attribute>,
     type_def: TypeDef,
+    attributes: Span<Attribute>,
 }
 
 // Defines enumeration types and variants
 
 struct EnumDef {
     name: ByteArray,
-    attributes: Span<Attribute>,
     variants: Span<VariantDef>,
+    attributes: Span<Attribute>,
 }
 
 struct VariantDef {
     selector: felt252,
     name: ByteArray,
-    attributes: Span<Attribute>,
     type_def: Option<TypeDef>,
+    attributes: Span<Attribute>,
 }
 ```
 
@@ -230,16 +230,16 @@ The following structs represent table column and data formats:
 struct ColumnDef {
     id: felt252,
     name: ByteArray,
-    attributes: Span<Attribute>,
     type_def: TypeDef,
+    attributes: Span<Attribute>,
 }
 
 // Defines a primary key in a table
 
 struct PrimaryDef {
     name: ByteArray,
-    attributes: Span<Attribute>,
     type_def: PrimaryTypeDef,
+    attributes: Span<Attribute>,
 }
 
 // Defines entry composed of a row and associated data
@@ -260,8 +260,8 @@ struct IdName {
 
 struct IdTypeDef {
     id: felt252,
-    attributes: Span<Attribute>,
     type_def: TypeDef,
+    attributes: Span<Attribute>,
 }
 ```
 
@@ -271,7 +271,19 @@ Events are a way for smart contracts to inform the outside world of any changes 
 
 The following events comprise a _vocabulary_ for defining onchain state structures and changes, enabling offchain indexers to build accurate representations of onchain state.
 
-All indexers implementing Introspect MUST support the following events. It is RECOMMENDED that contracts implementing Introspect use Starknet events to emit these updates, although alternatives like direct data dumps are acceptable.
+It is RECOMMENDED that contracts implementing Introspect use Starknet events to emit these updates, although alternatives like direct data dumps are acceptable.
+
+#### Data Model
+
+The following two graphics summarize the core database concepts which will be referenced repeatedly in the following event definitions.
+
+The first graphic shows various terms describing _elements of a table_, highlighting the relationships between concepts like rows, records, columns, and fields:
+
+![Table Elements](./assets/table-elements.png)
+
+The second graphic shows various terms describing _operations on a table_, highligting the relationships between names, types, and sets:
+
+![Table Operations](./assets/table-operations.png)
 
 ### Type Events
 
@@ -292,7 +304,10 @@ struct DeclareType {
 
 Events for table, column and row manipulation.
 
-> Events that apply to singular items have members expanded into the events for efficiency.
+> Events that apply to singular items have members expanded into the event for clarity.
+
+Indexers implementing Introspection MUST support all _creation_ events (events beginning with `Create`, `Add`, or `Insert`), and SHOULD support all _mutating_ events (events beginning with `Rename`, `Retype`, `Drop`, or `Delete`).
+This is to enable immutable databases to implement this SNIP.
 
 #### Definitions
 
@@ -307,7 +322,7 @@ The following terms are used to describe common database operations.
 
 #### Table Management
 
-Tables are one of the core concepts in Introspect's data model. Tables consist of **rows** of **records** with data in typed **columns**, corresponding closely to Cairo's notion of **structs** containing typed **members**.
+Tables are one of the core concepts in Introspection's data model. Tables consist of **rows** of **records** with data in typed **columns**, corresponding closely to Cairo's notion of **structs** containing typed **members**.
 
 **Common field meanings:**
 
@@ -364,7 +379,7 @@ Columns contain typed attributes of a record.
 - `table`: Matches `id` from [table events](#Table-Management)
 
 ```rust
-// Add a new column to a table
+// Add a new column to a table (note the expansion of `ColumnDef`)
 
 struct AddColumn {
     table: felt252,
@@ -469,8 +484,8 @@ Indices are supplemental data structures enabling fast querying of specific colu
 struct CreateIndex {
     table: felt252,
     id: felt252,
-    attributes: Span<Attribute>,
     columns: Span<felt252>,
+    attributes: Span<Attribute>,
 }
 
 // Drop an existing index from a table
@@ -482,7 +497,7 @@ struct DropIndex {
 ```
 
 Indexes can also be made using attributes on columns and tables.
-To crate an index for a single column an empty attribute with the name `create_index` `create_unique_index`can be used.
+To create an index for a single column an empty attribute with the name `create_index` or `create_unique_index` can be used.
 
 #### Column Set Management
 
@@ -640,8 +655,6 @@ struct DeletesFields {
     columns: Span<felt252>,
 }
 
-
-
 // Drop a set of fields from a record
 
 struct DeleteFieldSet {
@@ -678,6 +691,8 @@ struct DeletesFieldSets {
 ### Variable Events
 
 These events are for values that don't fit into the table/record model, such as global variables or configuration settings.
+
+All indexers implementing Introspection MUST support these events.
 
 Common field meanings:
 
@@ -970,7 +985,7 @@ struct CreateFieldGroup {
 
 This SNIP specifies **types** and **events** for describing application data, as well as a **serialization** scheme for efficient transmission. It is expected that most developers will not implement this specification themselves, but rather leverage higher level frameworks and libraries on the contract, indexer and client side.
 
-It is RECOMMENDED that libraries, frameworks, and tools will support the entire spec, but in cases in which they do not, each library/framework SHOULD clearly document which events they use and how they interpret them.
+It is RECOMMENDED that libraries, frameworks, and tools support the entire spec, but in cases in which they do not, each library or framework SHOULD clearly document which events they use and how they interpret them.
 
 Implementations MAY omit parts of the spec for optimization purposes, e.g. not allowing upgrades of database to allow for more efficient storage and querying.
 
@@ -1061,7 +1076,7 @@ struct ComplexStruct {
 ```
 
 > [!IMPORTANT]
-> To use the macro, all members must implement `Introspect`.
+> To use the macro, all interior members must also implement `Introspect`.
 
 ### `ISerde` and `ISerdeEnd`
 
@@ -1101,10 +1116,10 @@ impl CreateTableEvent of Event<CreateTable> {
         ref keys: Array<felt252>,
         ref data: Array<felt252>,
     ) {
-        keys.append(*self.id);                   // Keys use standard append
-        self.name.iserialize(ref data);          // Data uses ISerde
+        keys.append(*self.id);                     // Keys use standard append
+        self.name.iserialize(ref data);            // Data uses ISerde
         self.primary.iserialize(ref data);
-        self.attributes.iserialize_end(ref data); // Final field omits length
+        self.attributes.iserialize_end(ref data);  // Final field omits length
     }
 
     fn deserialize(
