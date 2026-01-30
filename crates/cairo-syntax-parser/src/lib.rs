@@ -14,7 +14,7 @@ pub use ast::{AstInto, AstToString, FromAst};
 pub use attribute::{Arg, ArgClause, Attribute, AttributesTrait, NamedArg};
 pub use common::{Identifier, Modifier, NameTrait, Param, Visibility, VisibilityTrait};
 pub use expr::{Expr, ExprPath, FixedSizeArray, PathSegment};
-pub use fmt::{CairoWrite, CairoSliceFormat, OptionSizeHint, SizeHint};
+pub use fmt::{CairoFormat, CairoWrite, CairoWriteSlice, OptionSizeHint, SizeHint, SizeHintSlice};
 pub use generic_param::GenericParam;
 pub use item::{Enum, Item, Member, Struct, Variant, items_from_token_stream};
 pub use statement::{Condition, Pattern, Statement};

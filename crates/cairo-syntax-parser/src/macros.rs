@@ -78,8 +78,8 @@ syntax_enum! {
 syntax_terminal_enum! {
     MacroRepetitionOperator{
         ZeroOrOne[TerminalQuestionMark],
-        OneOrMore[TerminalPlus],
         ZeroOrMore[TerminalMul],
+        OneOrMore[TerminalPlus],
         Missing[MacroRepetitionOperatorMissing],
     }
 }

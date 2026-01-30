@@ -17,7 +17,7 @@ impl GenericParams {
         let mut buf = String::new();
         if !self.is_empty() {
             buf.push_str("::");
-            self.cfmt_csv_angled(&mut buf);
+            self.cwrite_csv_angled(&mut buf);
         }
         buf
     }
@@ -57,9 +57,9 @@ impl<'db> FromAst<'db, OptionWrappedGenericParamList<'db>> for GenericParams {
 }
 
 impl CairoWrite for GenericParams {
-    fn cfmt(&self, buf: &mut String) {
+    fn cwrite(&self, buf: &mut String) {
         if !self.is_empty() {
-            self.cfmt_csv_angled(buf);
+            self.cwrite_csv_angled(buf);
         }
     }
 }

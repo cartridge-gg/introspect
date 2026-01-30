@@ -262,12 +262,12 @@ syntax_enum!(
     }
 );
 
-syntax_enum! {
-    BlockOrIf{
-        Block(Vec<Statement>),
-        If(IfExpr),
-    }
-}
+// syntax_enum! {
+//     BlockOrIf{
+//         Block(Vec<Statement>),
+//         If(IfExpr),
+//     }
+// }
 
 syntax_terminal_enum! {
     BinaryOp[BinaryOperator]{

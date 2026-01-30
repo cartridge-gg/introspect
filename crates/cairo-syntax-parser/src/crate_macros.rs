@@ -293,6 +293,11 @@ macro_rules! syntax_enum {
                 }
             }
         }
+        impl std::fmt::Display for $enum_name {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                $crate::CairoWrite::cwrite(self, f)
+            }
+        }
     };
 
     (@pat $ast_enum:ident $variant:ident [ $ast_variant:ident ] ( $ty:ty ) $e:ident) => {

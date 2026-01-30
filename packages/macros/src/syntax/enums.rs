@@ -63,22 +63,22 @@ impl<'db> FromAst<'db, ItemEnum<'db>> for Enum {
 }
 
 impl<T: CodeBuffer> CairoFormat<T> for Enum {
-    fn cfmt(&self, buf: &mut T) {
-        self.attributes.cfmt(buf);
-        self.derives.cfmt(buf);
-        self.visibility.cfmt(buf);
-        self.name.cfmt_prefixed_str(buf, "enum ");
-        self.generic_params.cfmt(buf);
-        self.variants.cfmt_csv_braced(buf);
+    fn cwrite(&self, buf: &mut T) {
+        self.attributes.cwrite(buf);
+        self.derives.cwrite(buf);
+        self.visibility.cwrite(buf);
+        self.name.cwrite_prefixed_str(buf, "enum ");
+        self.generic_params.cwrite(buf);
+        self.variants.cwrite_csv_braced(buf);
     }
 }
 
 impl<T: CodeBuffer> CairoFormat<T> for Variant {
-    fn cfmt(&self, buf: &mut T) {
-        self.attributes.cfmt(buf);
-        self.name.cfmt(buf);
+    fn cwrite(&self, buf: &mut T) {
+        self.attributes.cwrite(buf);
+        self.name.cwrite(buf);
         if let Some(ty) = &self.type_clause {
-            ty.cfmt_prefixed_str(buf, ": ");
+            ty.cwrite_prefixed_str(buf, ": ");
         }
     }
 }

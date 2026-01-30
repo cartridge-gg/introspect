@@ -29,10 +29,10 @@ pub struct IntrospectImpl {
 }
 
 impl CairoWrite for IntrospectImpl {
-    fn cfmt<W: Write>(&self, buf: &mut W) -> std::fmt::Result {}
+    fn cwrite<W: Write>(&self, buf: &mut W) -> std::fmt::Result {}
 }
 
 trait IntrospectImplFormat{
-    fn cfmt_introspect_impl<W: Write>(&self,  buf: &mut W)
+    fn cwrite_introspect_impl<W: Write>(&self,  buf: &mut W)
 }
         

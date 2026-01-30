@@ -58,12 +58,12 @@ impl From<Vec<String>> for Derives {
 }
 
 impl<T: CodeBuffer> CairoFormat<T> for Derives {
-    fn cfmt(&self, buf: &mut T) {
+    fn cwrite(&self, buf: &mut T) {
         if !self.is_empty() {
             buf.push_token_char('#');
             buf.push_token_char('[');
             buf.push_token_str("derive");
-            self.cfmt_csv_parenthesized(buf);
+            self.cwrite_csv_parenthesized(buf);
             buf.push_token_str("]\n");
         }
     }

@@ -1,6 +1,6 @@
 use crate::{AstToString, IntrospectError as Error, IntrospectResult as Result};
 use cairo_syntax_parser::{
-    CairoWrite, CairoSliceFormat, Expr, ExprPath, FixedSizeArray as SynFixedSizeArray,
+    CairoWriteSlice, CairoWrite, Expr, ExprPath, FixedSizeArray as SynFixedSizeArray,
     OptionSizeHint, SizeHint,
 };
 use std::fmt::{Result as FmtResult, Write};
@@ -295,16 +295,16 @@ impl Ty {
 }
 
 impl CairoWrite for Ty {
-    fn cfmt<W: Write>(&self, buf: &mut W) -> FmtResult {
+    fn cwrite<W: Write>(&self, buf: &mut W) -> FmtResult {
         match self {
-            Ty::Item(e) => e.cfmt(buf),
-            Ty::Tuple(types) => types.cfmt_tuple(buf),
-            Ty::FixedArray(fixed_array) => fixed_array.cfmt(buf),
+            Ty::Item(e) => e.cwrite(buf),
+            Ty::Tuple(types) => types.cwrite_tuple(buf),
+            Ty::FixedArray(fixed_array) => fixed_array.cwrite(buf),
         }
     }
-    fn cfmt_size_hint(&self) -> usize {
+    fn size_hint(&self) -> usize {
         match self {
-            Ty::Item(e) => e.cfmt_size_hint(),
+            Ty::Item(e) => e.size_hint(),
             Ty::Tuple(types) => types.size_hint_tuple(),
             Ty::FixedArray(fixed_array) => fixed_array.size_hint(),
         }
@@ -312,25 +312,25 @@ impl CairoWrite for Ty {
 }
 
 impl CairoWrite for TyItem {
-    fn cfmt<W: Write>(&self, buf: &mut W) -> FmtResult {
-        self.name.cfmt(buf);
+    fn cwrite<W: Write>(&self, buf: &mut W) -> FmtResult {
+        self.name.cwrite(buf);
         if let Some(params) = &self.params {
-            params.cfmt_csv_angled(buf);
+            params.cwrite_csv_angled(buf);
         }
     }
-    fn cfmt_size_hint(&self) -> usize {
+    fn size_hint(&self) -> usize {
         self.name.size_hint() + self.params.size_hint_option::<2, 0>()
     }
 }
 
 impl CairoWrite for FixedArray {
-    fn cfmt<W: Write>(&self, buf: &mut W) -> FmtResult {
-        self.ty.cfmt_prefixed(buf, '[');
-        self.size.cfmt_prefixed_str(buf, "; ");
+    fn cwrite<W: Write>(&self, buf: &mut W) -> FmtResult {
+        self.ty.cwrite_prefixed(buf, '[');
+        self.size.cwrite_prefixed_str(buf, "; ");
         buf.push_token_char(']');
     }
-    fn cfmt_size_hint(&self) -> usize {
-        self.ty.cfmt_size_hint() + self.size.len() + 4
+    fn size_hint(&self) -> usize {
+        self.ty.size_hint() + self.size.len() + 4
     }
 }
 

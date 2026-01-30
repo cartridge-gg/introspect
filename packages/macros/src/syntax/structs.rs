@@ -74,22 +74,22 @@ impl<'db> FromAst<'db, ItemStruct<'db>> for Struct {
 }
 
 impl<T: CodeBuffer> CairoFormat<T> for Struct {
-    fn cfmt(&self, buf: &mut T) {
-        self.attributes.cfmt(buf);
-        self.derives.cfmt(buf);
-        self.visibility.cfmt(buf);
-        self.name.cfmt_prefixed_str(buf, "struct ");
-        self.generic_params.cfmt(buf);
-        self.members.cfmt_csv_braced(buf);
+    fn cwrite(&self, buf: &mut T) {
+        self.attributes.cwrite(buf);
+        self.derives.cwrite(buf);
+        self.visibility.cwrite(buf);
+        self.name.cwrite_prefixed_str(buf, "struct ");
+        self.generic_params.cwrite(buf);
+        self.members.cwrite_csv_braced(buf);
     }
 }
 
 impl<T: CodeBuffer> CairoFormat<T> for Member {
-    fn cfmt(&self, buf: &mut T) {
-        self.attributes.cfmt(buf);
-        self.visibility.cfmt(buf);
-        self.name.cfmt(buf);
-        self.ty.cfmt_prefixed_str(buf, ": ");
+    fn cwrite(&self, buf: &mut T) {
+        self.attributes.cwrite(buf);
+        self.visibility.cwrite(buf);
+        self.name.cwrite(buf);
+        self.ty.cwrite_prefixed_str(buf, ": ");
     }
 }
 
