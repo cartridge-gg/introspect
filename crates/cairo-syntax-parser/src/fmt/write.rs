@@ -145,7 +145,16 @@ where
         Ok(())
     }
 
-    fn cwrite_concatenated_wrapped
+    fn cwrite_concatenated_wrapped<W: Write>(
+        &self,
+        buf: &mut W,
+        prefix: char,
+        suffix: char,
+    ) -> Result {
+        buf.write_char(prefix)?;
+        self.cwrite_concatenated(buf)?;
+        buf.write_char(suffix)
+    }
 
     fn cwrite_csv<W: Write>(&self, buf: &mut W) -> Result {
         self.cwrite_join(buf, ", ")
