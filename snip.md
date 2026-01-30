@@ -1005,7 +1005,7 @@ Implementations MAY omit parts of the spec for optimization purposes, e.g. not a
 
 ## Traits
 
-While this specification's _minimum_ requirement is emitting events with the correct structure, to make it easier to work with we recommend using traits for generating `TypeDef`s and serializing data. Our [reference implementation](https://github.com/cartridge-gg/introspect) provides these for all core Cairo and Starknet types, along with macros to generate them for custom structs and enums.
+While this specification's _minimum_ requirement is emitting events with the correct structure, to make it easier to work with we recommend using traits for generating `TypeDef`s and serializing data. Our [reference implementation](https://github.com/cartridge-gg/introspect) provides these for all core Cairo and Starknet types, along with macros to generate them for custom structs and enums. Although this is still in pre release and may change, it serves as a useful example of how to implement the spec.
 
 ### `Introspect`
 
