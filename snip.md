@@ -194,29 +194,29 @@ The following structs represent application-specific data:
 
 struct StructDef {
     name: ByteArray,
-    members: Span<MemberDef>,
     attributes: Span<Attribute>,
+    members: Span<MemberDef>,
 }
 
 struct MemberDef {
     name: ByteArray,
-    type_def: TypeDef,
     attributes: Span<Attribute>,
+    type_def: TypeDef,
 }
 
 // Defines enumeration types and variants
 
 struct EnumDef {
     name: ByteArray,
-    variants: Span<VariantDef>,
     attributes: Span<Attribute>,
+    variants: Span<VariantDef>,
 }
 
 struct VariantDef {
     selector: felt252,
     name: ByteArray,
-    type_def: Option<TypeDef>,
     attributes: Span<Attribute>,
+    type_def: Option<TypeDef>,
 }
 ```
 
@@ -230,16 +230,16 @@ The following structs represent table column and data formats:
 struct ColumnDef {
     id: felt252,
     name: ByteArray,
-    type_def: TypeDef,
     attributes: Span<Attribute>,
+    type_def: TypeDef,
 }
 
 // Defines a primary key in a table
 
 struct PrimaryDef {
     name: ByteArray,
-    type_def: PrimaryTypeDef,
     attributes: Span<Attribute>,
+    type_def: PrimaryTypeDef,
 }
 
 // Defines entry composed of a row and associated data
@@ -260,8 +260,8 @@ struct IdName {
 
 struct IdTypeDef {
     id: felt252,
-    type_def: TypeDef,
     attributes: Span<Attribute>,
+    type_def: TypeDef,
 }
 ```
 
@@ -273,13 +273,15 @@ The following events comprise a _vocabulary_ for defining onchain state structur
 
 It is RECOMMENDED that contracts implementing Introspect use Starknet events to emit these updates, although alternatives like direct data dumps are acceptable.
 
-#### Data Model
-
 The following two graphics summarize the core database concepts which will be referenced repeatedly in the following event definitions.
+
+#### Table Elements
 
 The first graphic shows various terms describing _elements of a table_, highlighting the relationships between concepts like rows, records, columns, and fields:
 
 ![Table Elements](./assets/table-elements.png)
+
+#### Table Operations
 
 The second graphic shows various terms describing _operations on a table_, highligting the relationships between names, types, and sets:
 
@@ -484,8 +486,8 @@ Indices are supplemental data structures enabling fast querying of specific colu
 struct CreateIndex {
     table: felt252,
     id: felt252,
-    columns: Span<felt252>,
     attributes: Span<Attribute>,
+    columns: Span<felt252>,
 }
 
 // Drop an existing index from a table
