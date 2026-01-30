@@ -324,9 +324,13 @@ The following terms are used to describe common database operations.
 
 Tables are one of the core concepts in Introspection's data model. Tables consist of **rows** of **records** with data in typed **columns**, corresponding closely to Cairo's notion of **structs** containing typed **members**.
 
+To support databasing, indexers are REQUIRED to support table creation events (`CreateTable`, `CreateTableWithColumns`, `CreateTableFromClassHash`). Indexers MAY also support the following events vents for table, column and row manipulation.
+
 **Common field meanings:**
 
 - `id`: Unique table identifier
+
+##### Table Creation Events (REQUIRED)
 
 ```rust
 // Create or update a table with a given name, attributes and columns
@@ -355,6 +359,12 @@ struct CreateTableFromClass {
     class_hash: felt252,
 }
 
+
+```
+
+Indexers MAY also support the following events for table, column and row manipulation.
+
+```rust
 // Rename an existing table
 
 struct RenameTable {
@@ -515,6 +525,8 @@ struct CreateColumnSet {
 #### Record Manipulation
 
 Stored in tables, **records** are the data of an application, identified by a unique primary key.
+
+Indexers suppoting databasing SHOULD support these events for inserting, updating, and deleting records and fields.
 
 **Common field meanings:**
 
@@ -692,7 +704,7 @@ struct DeletesFieldSets {
 
 These events are for values that don't fit into the table/record model, such as global variables or configuration settings.
 
-All indexers implementing Introspection MUST support these events.
+All indexers implementing value Introspection MUST support these events.
 
 Common field meanings:
 
