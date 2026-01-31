@@ -1,5 +1,37 @@
 use core::poseidon::hades_permutation;
 
+// pub trait ConstFelts<const SIZE: u32> {
+//     const DATA: [felt252; SIZE];
+//     fn append(ref output: Array<felt252>);
+// }
+
+// pub trait AppendFixed<const SIZE: u32, const DATA: [felt252; SIZE]> {
+//     fn append_fixed<impl ToSpan: ToSpanTrait<[felt252; SIZE], felt252>>(ref output:
+//     Array<felt252>);
+// }
+
+pub fn append_const_felts<
+    const DATA: [felt252; SIZE],
+    const SIZE: u32,
+    impl ToSpan: ToSpanTrait<[felt252; SIZE], felt252>,
+>(
+    ref output: Array<felt252>,
+) {
+    output.append_span(ToSpan::span(@DATA));
+}
+
+
+// impl ConstFeltsImpl<
+//     const SIZE: u32,
+//     const DATA: [felt252; SIZE],
+//     impl ToSpan: ToSpanTrait<[felt252; SIZE], felt252>,
+// > of ConstFelts<SIZE> {
+//     const DATA: [felt252; SIZE] = DATA;
+//     fn append(ref output: Array<felt252>) {
+//         output.append_span(ToSpan::span(@Self::DATA));
+//     }
+// }
+
 pub impl SpanDefault<T, +Drop<T>> of Default<Span<T>> {
     fn default() -> Span<T> {
         ArrayTrait::new().span()

@@ -33,7 +33,7 @@ pub const B31_PARTIAL_14B: felt252 = B31_1 + (SHIFT_30B * 14);
 pub const B31_PARTIAL_15B: felt252 = B31_1 + (SHIFT_30B * 15);
 pub const B31_PARTIAL_16B: felt252 = B31_1 + (SHIFT_30B * 16);
 
-pub const fn partial_terminator<const SIZE: u8>() -> felt252 {
+pub const fn as_partial_terminator<const SIZE: u8>(word: felt252) -> felt252 {
     B31_3 + (SHIFT_30B * SIZE.into())
 }
 

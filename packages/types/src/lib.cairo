@@ -1,10 +1,10 @@
 pub mod attribute;
-// pub mod column;
+pub mod column;
 pub mod const_data;
 pub mod entry;
 // pub mod interfaces;
 pub mod introspect;
-// pub mod m_utils;
+pub mod m_utils;
 pub mod primary;
 // pub mod schema;
 pub mod serde;
