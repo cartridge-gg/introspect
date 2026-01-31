@@ -968,7 +968,7 @@ Used for non-final fields. Serializes using optimized `ByteArray`/`Attribute` en
 
 Used for the final field when it contains complex types (e.g., `Span<Attribute>`). Serializes using optimized `ByteArray`/`Attribute` encoding but omits the length prefix.
 
-**Result:** 1 fewer felts per event.
+**Result:** between 1 and 3 fewer felts per event.
 
 #### 3. No serialization
 
