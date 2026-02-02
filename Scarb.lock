@@ -9,7 +9,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "cgg_const_fns"
+name = "cgg_poseidon"
 version = "0.1.2"
 dependencies = [
  "cgg_collection",
@@ -20,12 +20,21 @@ name = "cgg_snappable"
 version = "0.1.2"
 
 [[package]]
+name = "cgg_test_utils"
+version = "0.1.2"
+dependencies = [
+ "cgg_collection",
+ "snforge_std",
+]
+
+[[package]]
 name = "cgg_utils"
 version = "0.1.2"
 dependencies = [
  "cgg_collection",
- "cgg_const_fns",
+ "cgg_poseidon",
  "cgg_snappable",
+ "cgg_test_utils",
 ]
 
 [[package]]
@@ -34,7 +43,6 @@ version = "0.1.2"
 dependencies = [
  "introspect_events",
  "introspect_macros",
- "introspect_test_utils",
  "introspect_types",
  "snforge_std",
 ]
@@ -43,7 +51,6 @@ dependencies = [
 name = "introspect_events"
 version = "0.1.2"
 dependencies = [
- "introspect_test_utils",
  "introspect_types",
  "snforge_std",
 ]
@@ -57,8 +64,7 @@ name = "introspect_test_utils"
 version = "0.1.2"
 dependencies = [
  "cgg_utils",
- "introspect",
- "introspect_macros",
+ "introspect_types",
  "snforge_std",
 ]
 
@@ -67,6 +73,7 @@ name = "introspect_types"
 version = "0.1.2"
 dependencies = [
  "cgg_utils",
+ "introspect_test_utils",
  "snforge_std",
 ]
 

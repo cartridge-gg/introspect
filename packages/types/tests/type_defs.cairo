@@ -1,167 +1,7 @@
 use core::integer::u512;
 use core::nullable::null;
-use introspect_types::TypeDef;
-use introspect_types::introspect::{ChildDefs, Struct, StructDef, TypeDefTrait};
-use introspect_types::serde::as_partial_terminator;
-// use introspect_types::introspect::{Felt252Def, Member, Struct, TypeDefTrait, U8Def};
-// use introspect_types::serde::partial_terminator;
-use introspect_types::{ISerde};
+use introspect_types::{ChildDefs, EnumDef, ISerde, ISerdeByteArray, StructDef, TypeDef, structured};
 use starknet::{ClassHash, ContractAddress, EthAddress};
-
-// impl MyStructMember_a of MemberDef<felt252, 1, 0> {
-//     const NAME: [felt252; 1] = ['a' + partial_terminator::<1>()];
-//     const ATTRIBUTES: [felt252; 0] = [];
-//     const ATTRIBUTES_COUNT: u32 = 0; // name size + type size + attributes count + attributes
-// test_type_def_traitSIZE: u32 = 1 + 1 + 0 ();
-// }
-
-// impl MyStructMember_b of MemberDef<u8, 1, 0> {
-//     const NAME: [felt252; 1] = ['b' + partial_terminator::<1>()];
-//     const ATTRIBUTES: [felt252; 0] = [];
-//     const ATTRIBUTES_COUNT: u32 = 0; // name size + type size + attributes count + attributes
-// test_type_def_traitSIZE: u32 = 1 + 1 + 0 ();
-// }
-
-trait Foo {
-    const VALUE: felt252;
-}
-
-impl AFoo of Foo {
-    const VALUE: felt252 = 42;
-}
-
-impl AnotherFoo<impl F: Foo> of Foo {
-    const VALUE: felt252 = F::VALUE + 1;
-}
-
-trait Bar<const SIZE: u32> {
-    const DATAS: [felt252; SIZE];
-    fn get_span() -> Span<felt252> {
-        Self::DATAS.span()
-    }
-}
-
-impl ABar of Bar<0> {
-    const DATAS: [felt252; 0] = [];
-}
-
-// #[test]
-// fn test() {
-//     let data = ABar::get_span();
-//     println!("{:?}", data);
-// }
-
-// const MyStructMember_a: [felt252; 2] = [as_partial_terminator::<1>('a'), 0];
-// const MyStructMember_b: [felt252; 2] = [as_partial_terminator::<1>('b'), 0];
-
-fn make_my_struct_def() -> TypeDef {
-    TypeDef::Struct(
-        introspect_types::type_def::StructDef {
-            name: "MyStruct",
-            attributes: [].span(),
-            members: [
-                introspect_types::type_def::MemberDef {
-                    name: "a",
-                    attributes: [].span(),
-                    type_def: TypeDef::Tuple(
-                        [
-                            TypeDef::Felt252, TypeDef::U128,
-                            TypeDef::Option(BoxTrait::new(TypeDef::Felt252)),
-                        ]
-                            .span(),
-                    ),
-                },
-                introspect_types::type_def::MemberDef {
-                    name: "b", attributes: [].span(), type_def: TypeDef::U8,
-                },
-            ]
-                .span(),
-        },
-    )
-}
-
-
-// mod MyStructMember {
-//     pub impl a of introspect_types::introspect::MemberDef<1, 0> {
-//         const NAME_SIZE: u32 = 1;
-//         const NAME: [felt252; Self::NAME_SIZE] = [
-//             introspect_types::serde::as_partial_terminator::<1>('a')
-//         ];
-//         const ATTRIBUTES_COUNT: u32 = 0;
-//         const ATTRIBUTES_SIZE: u32 = 0;
-//         const ATTRIBUTES: [felt252; Self::ATTRIBUTES_SIZE] = [];
-//         type Type = (felt252, u128, Option<felt252>);
-//     }
-//     pub impl b of introspect_types::introspect::MemberDef<1, 0> {
-//         const NAME_SIZE: u32 = 1;
-//         const NAME: [felt252; Self::NAME_SIZE] = [
-//             introspect_types::serde::as_partial_terminator::<1>('b')
-//         ];
-//         const ATTRIBUTES_COUNT: u32 = 0;
-//         const ATTRIBUTES_SIZE: u32 = 0;
-//         const ATTRIBUTES: [felt252; Self::ATTRIBUTES_SIZE] = [];
-//         type Type = u8;
-//     }
-// }
-
-mod MyStructMember {
-    pub impl a of introspect_types::introspect::MemberDef<2> {
-        const META_SIZE: u32 = 2;
-        const META_DATA: [felt252; Self::META_SIZE] = [
-            introspect_types::serde::as_partial_terminator::<1>('a'), 0,
-        ];
-        type Type = (felt252, u128, Option<felt252>);
-    }
-    pub impl b of introspect_types::introspect::MemberDef<2> {
-        const META_SIZE: u32 = 2;
-        const META_DATA: [felt252; Self::META_SIZE] = [
-            introspect_types::serde::as_partial_terminator::<1>('b'), 0,
-        ];
-        type Type = u8;
-    }
-}
-
-impl MyStructDef of StructDef<MyStruct, 1, 0> {
-    const NAME: [felt252; 1] = [as_partial_terminator::<8>('MyStruct')];
-    const ATTRIBUTES_COUNT: u32 = 0;
-    const ATTRIBUTES: [felt252; 0] = [];
-    const MEMBERS_COUNT: u32 = 2;
-    const MEMBERS_SIZE: u32 = MyStructMember::a::SIZE() + MyStructMember::b::SIZE();
-    const REF: bool = false;
-    fn serialize_members(ref output: Array<felt252>) {
-        MyStructMember::a::serialize_member(ref output);
-        MyStructMember::b::serialize_member(ref output);
-    }
-    fn collect_child_defs(ref defs: ChildDefs) {
-        MyStructMember::a::collect_member_child_defs(ref defs);
-        MyStructMember::b::collect_member_child_defs(ref defs);
-    }
-    fn serialize_defs(ref output: Array<felt252>, ref defs: ChildDefs) {
-        MyStructMember::a::serialize_member_defs(ref output, ref defs);
-        MyStructMember::b::serialize_member_defs(ref output, ref defs);
-    }
-}
-
-impl MyOtherStructDef of StructDef<MyOtherStruct, 1, 0> {
-    const NAME: [felt252; 1] = [as_partial_terminator::<13>('MyOtherStruct')];
-    const ATTRIBUTES_COUNT: u32 = 0;
-    const ATTRIBUTES: [felt252; 0] = [];
-    const MEMBERS_COUNT: u32 = 2;
-    const MEMBERS_SIZE: u32 = MyStructMember::a::SIZE() + MyStructMember::b::SIZE();
-    const REF: bool = true;
-    fn serialize_members(ref output: Array<felt252>) {
-        MyStructMember::a::serialize_member(ref output);
-        MyStructMember::b::serialize_member(ref output);
-    }
-    fn collect_child_defs(ref defs: ChildDefs) {
-        MyStructMember::a::collect_member_child_defs(ref defs);
-        MyStructMember::b::collect_member_child_defs(ref defs);
-    }
-    fn serialize_defs(ref output: Array<felt252>, ref defs: ChildDefs) {
-        MyStructMember::a::serialize_member_defs(ref output, ref defs);
-        MyStructMember::b::serialize_member_defs(ref output, ref defs);
-    }
-}
 
 struct MyStruct {
     a: (felt252, u128, Option<felt252>),
@@ -173,14 +13,138 @@ struct MyOtherStruct {
     b: u8,
 }
 
-fn test_type_def_trait<T, const REF: bool, impl TD: TypeDefTrait<T, REF>>(expected: ByteArray) {
+enum MyEnum {
+    Variant1,
+    Variant2: (felt252, u128, Option<felt252>),
+}
+
+
+fn make_my_struct_def() -> structured::TypeDef {
+    structured::TypeDef::Struct(
+        structured::StructDef {
+            name: "MyStruct",
+            attributes: [].span(),
+            members: [
+                structured::MemberDef {
+                    name: "a",
+                    attributes: [].span(),
+                    type_def: structured::TypeDef::Tuple(
+                        [
+                            structured::TypeDef::Felt252, structured::TypeDef::U128,
+                            structured::TypeDef::Option(
+                                BoxTrait::new(structured::TypeDef::Felt252),
+                            ),
+                        ]
+                            .span(),
+                    ),
+                },
+                structured::MemberDef {
+                    name: "b", attributes: [].span(), type_def: structured::TypeDef::U8,
+                },
+            ]
+                .span(),
+        },
+    )
+}
+
+mod MyStructMember {
+    use introspect_types::ISerdeByteArray;
+    pub impl a of introspect_types::MemberDef<2> {
+        const META_DATA: [felt252; 2] = ['a'.partial_terminator(1), 0];
+        type Type = (felt252, u128, Option<felt252>);
+    }
+    pub impl b of introspect_types::MemberDef<2> {
+        const META_DATA: [felt252; 2] = ['b'.partial_terminator(1), 0];
+        type Type = u8;
+    }
+}
+
+impl MyStructDef of StructDef<MyStruct, 1, 0> {
+    const NAME: [felt252; 1] = ['MyStruct'.partial_terminator(8)];
+    const ATTRIBUTES_COUNT: u32 = 0;
+    const ATTRIBUTES: [felt252; 0] = [];
+    const MEMBERS_COUNT: u32 = 2;
+    const MEMBERS_SIZE: u32 = MyStructMember::a::SIZE() + MyStructMember::b::SIZE();
+    const REF: bool = false;
+    fn serialize_members(ref output: Array<felt252>) {
+        MyStructMember::a::serialize(ref output);
+        MyStructMember::b::serialize(ref output);
+    }
+    fn collect_member_children(ref children: ChildDefs) {
+        MyStructMember::a::collect_children(ref children);
+        MyStructMember::b::collect_children(ref children);
+    }
+    fn serialize_members_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+        MyStructMember::a::serialize_with_children(ref type_def, ref children);
+        MyStructMember::b::serialize_with_children(ref type_def, ref children);
+    }
+}
+
+impl MyOtherStructDef of StructDef<MyOtherStruct, 1, 0> {
+    const NAME: [felt252; 1] = ['MyOtherStruct'.partial_terminator(13)];
+    const ATTRIBUTES_COUNT: u32 = 0;
+    const ATTRIBUTES: [felt252; 0] = [];
+    const MEMBERS_COUNT: u32 = 2;
+    const MEMBERS_SIZE: u32 = MyStructMember::a::SIZE() + MyStructMember::b::SIZE();
+    const REF: bool = true;
+    fn serialize_members(ref output: Array<felt252>) {
+        MyStructMember::a::serialize(ref output);
+        MyStructMember::b::serialize(ref output);
+    }
+    fn collect_member_children(ref children: ChildDefs) {
+        MyStructMember::a::collect_children(ref children);
+        MyStructMember::b::collect_children(ref children);
+    }
+    fn serialize_members_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+        MyStructMember::a::serialize_with_children(ref type_def, ref children);
+        MyStructMember::b::serialize_with_children(ref type_def, ref children);
+    }
+}
+
+mod MyEnumVariant {
+    pub use introspect_types::ISerdeByteArray;
+    pub impl Variant1 of introspect_types::VariantDef<2> {
+        const SELECTOR: felt252 = selector!("Variant1");
+        const META_DATA: [felt252; 2] = ['Variant1'.partial_terminator(8), 0];
+        type Type = ();
+    }
+    pub impl Variant2 of introspect_types::VariantDef<2> {
+        const SELECTOR: felt252 = selector!("Variant2");
+        const META_DATA: [felt252; 2] = ['Variant2'.partial_terminator(8), 0];
+        type Type = (felt252, u128, Option<felt252>);
+    }
+}
+
+impl MyEnumDef of EnumDef<MyEnum, 1, 0> {
+    const NAME: [felt252; 1] = ['MyEnum'.partial_terminator(6)];
+    const ATTRIBUTES_COUNT: u32 = 0;
+    const ATTRIBUTES: [felt252; 0] = [];
+    const VARIANTS_COUNT: u32 = 2;
+    const VARIANTS_SIZE: u32 = MyEnumVariant::Variant1::SIZE() + MyEnumVariant::Variant2::SIZE();
+    const REF: bool = false;
+    fn serialize_variants(ref output: Array<felt252>) {
+        MyEnumVariant::Variant1::serialize(ref output);
+        MyEnumVariant::Variant2::serialize(ref output);
+    }
+    fn collect_variant_children(ref children: ChildDefs) {
+        MyEnumVariant::Variant1::collect_children(ref children);
+        MyEnumVariant::Variant2::collect_children(ref children);
+    }
+    fn serialize_variants_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+        MyEnumVariant::Variant1::serialize_with_children(ref type_def, ref children);
+        MyEnumVariant::Variant2::serialize_with_children(ref type_def, ref children);
+    }
+}
+
+
+fn test_type_def_trait<T, const REF: bool, impl TD: TypeDef<T, REF>>(expected: ByteArray) {
     let mut output: Array<felt252> = Default::default();
-    TD::serialize_type_def(ref output);
+    TD::serialize(ref output);
     // assert_eq!(output.len(), TypeDef::SIZE);
     let mut data = output.span();
     println!("---------------------------------------");
     println!("{:?}", expected);
-    match ISerde::<TypeDef>::ideserialize(ref data) {
+    match ISerde::<structured::TypeDef>::ideserialize(ref data) {
         Some(type_def) => { println!("{:?}", type_def); },
         None => {
             println!("{:?}", output);
@@ -231,6 +195,7 @@ fn type_def_tests() {
     test_type_def_trait::<(felt252, u8, u16, ByteArray)>("(felt252, u8, u16, ByteArray)");
     test_type_def_trait::<MyStruct>("MyStruct");
     test_type_def_trait::<MyOtherStruct, false>("MyOtherStruct");
+    test_type_def_trait::<MyEnum>("MyEnum");
 }
 
 #[test]

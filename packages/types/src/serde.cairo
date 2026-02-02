@@ -16,25 +16,14 @@ pub const SHIFT_30B: felt252 = 256_u256.pow(30).try_into().unwrap();
 pub const SHIFT_30B_U256: u256 = 256_u256.pow(30);
 pub const B30_MASK: u256 = 256_u256.pow(30) - 1;
 
-pub const B31_PARTIAL_1B: felt252 = B31_1 + SHIFT_30B;
-pub const B31_PARTIAL_2B: felt252 = B31_1 + (SHIFT_30B * 2);
-pub const B31_PARTIAL_3B: felt252 = B31_1 + (SHIFT_30B * 3);
-pub const B31_PARTIAL_4B: felt252 = B31_1 + (SHIFT_30B * 4);
-pub const B31_PARTIAL_5B: felt252 = B31_1 + (SHIFT_30B * 5);
-pub const B31_PARTIAL_6B: felt252 = B31_1 + (SHIFT_30B * 6);
-pub const B31_PARTIAL_7B: felt252 = B31_1 + (SHIFT_30B * 7);
-pub const B31_PARTIAL_8B: felt252 = B31_1 + (SHIFT_30B * 8);
-pub const B31_PARTIAL_9B: felt252 = B31_1 + (SHIFT_30B * 9);
-pub const B31_PARTIAL_10B: felt252 = B31_1 + (SHIFT_30B * 10);
-pub const B31_PARTIAL_11B: felt252 = B31_1 + (SHIFT_30B * 11);
-pub const B31_PARTIAL_12B: felt252 = B31_1 + (SHIFT_30B * 12);
-pub const B31_PARTIAL_13B: felt252 = B31_1 + (SHIFT_30B * 13);
-pub const B31_PARTIAL_14B: felt252 = B31_1 + (SHIFT_30B * 14);
-pub const B31_PARTIAL_15B: felt252 = B31_1 + (SHIFT_30B * 15);
-pub const B31_PARTIAL_16B: felt252 = B31_1 + (SHIFT_30B * 16);
+pub const EMPTY_TERMINATOR: felt252 = B31_3;
 
-pub const fn as_partial_terminator<const SIZE: u8>(word: felt252) -> felt252 {
-    B31_3 + (SHIFT_30B * SIZE.into())
+pub const fn partial_terminator(word: felt252, size: felt252) -> felt252 {
+    B31_3 + (SHIFT_30B * size) + word
+}
+
+pub const fn full_terminator(word: felt252) -> felt252 {
+    B31_2 + word
 }
 
 impl SizeAdd of Add<Option<usize>> {
@@ -84,7 +73,7 @@ pub impl SizeImpl of SizeTrait {
 }
 
 pub trait ISerde<T> {
-    // const SIZE_HINT: Option<usize>;
+    const SIZE_HINT: Option<usize>;
     fn iserialize(self: @T, ref output: Array<felt252>);
     fn iserialize_inline(
         self: @T,
@@ -99,12 +88,12 @@ pub trait ISerde<T> {
 }
 
 pub trait ISerdeConst {
-    // const SIZE_HINT: Option<usize>;
+    const SIZE_HINT: Option<usize>;
     fn iserialize(ref output: Array<felt252>);
 }
 
 impl ISerdeNone of ISerdeConst {
-    // const SIZE_HINT: Option<usize> = None;
+    const SIZE_HINT: Option<usize> = None;
     fn iserialize(ref output: Array<felt252>) {
         output.append(0)
     }
@@ -124,7 +113,7 @@ pub fn iserialize_keyed_type<T, +ISerde<T>>(id: felt252, value: @T, ref output: 
 
 pub mod into_felt252 {
     pub impl ISerdeImpl<T, +Copy<T>, +Into<T, felt252>, +TryInto<felt252, T>> of super::ISerde<T> {
-        // const SIZE_HINT: Option<usize> = Some(1);
+        const SIZE_HINT: Option<usize> = Some(1);
         fn iserialize(self: @T, ref output: Array<felt252>) {
             output.append((*self).into());
         }
@@ -137,7 +126,7 @@ pub mod into_felt252 {
 
 pub mod empty {
     pub impl ISerdeImpl<T, +Default<T>> of super::ISerde<T> {
-        // const SIZE_HINT: Option<usize> = Some(0);
+        const SIZE_HINT: Option<usize> = Some(0);
         fn iserialize(self: @T, ref output: Array<felt252>) {}
         fn ideserialize(ref serialized: Span<felt252>) -> Option<T> {
             Some(Default::default())
@@ -147,7 +136,7 @@ pub mod empty {
 
 
 pub impl Felt252ISerde of ISerde<felt252> {
-    // const SIZE_HINT: Option<usize> = Some(1);
+    const SIZE_HINT: Option<usize> = Some(1);
     fn iserialize(self: @felt252, ref output: Array<felt252>) {
         output.append(*self);
     }
@@ -176,7 +165,7 @@ pub impl ContractAddressISerde = into_felt252::ISerdeImpl<ContractAddress>;
 pub impl EthAddressISerde = into_felt252::ISerdeImpl<EthAddress>;
 
 pub impl U256ISerde of ISerde<u256> {
-    // const SIZE_HINT: Option<usize> = Some(2);
+    const SIZE_HINT: Option<usize> = Some(2);
     fn iserialize(self: @u256, ref output: Array<felt252>) {
         output.append((*self.low).into());
         output.append((*self.high).into());
@@ -189,7 +178,7 @@ pub impl U256ISerde of ISerde<u256> {
 }
 
 pub impl U512ISerde of ISerde<u512> {
-    // const SIZE_HINT: Option<usize> = Some(4);
+    const SIZE_HINT: Option<usize> = Some(4);
     fn iserialize(self: @u512, ref output: Array<felt252>) {
         output.append((*self.limb0).into());
         output.append((*self.limb1).into());
@@ -208,6 +197,12 @@ pub impl U512ISerde of ISerde<u512> {
 
 #[generate_trait]
 pub impl ByteArrayISerdeImpl of ISerdeByteArray {
+    const fn partial_terminator(self: felt252, size: felt252) -> felt252 {
+        partial_terminator(self, size)
+    }
+    const fn full_terminator(self: felt252) -> felt252 {
+        full_terminator(self)
+    }
     fn iserialize_and_last(self: @ByteArray, ref output: Array<felt252>) -> felt252 {
         let mut data: Array<felt252> = Default::default();
         self.serialize(ref data);
@@ -219,11 +214,11 @@ pub impl ByteArrayISerdeImpl of ISerdeByteArray {
                 output.append(data.pop_front().unwrap());
             }
             if size.is_zero() {
-                return data.pop_front().unwrap() + B31_2;
+                return data.pop_front().unwrap().full_terminator();
             }
             output.append(data.pop_front().unwrap());
         }
-        word + B31_3 + (SHIFT_30B * size)
+        word.partial_terminator(size)
     }
 
     fn ideserialize_and_last(ref serialized: Span<felt252>) -> Option<(Array<felt252>, felt252)> {
@@ -261,7 +256,7 @@ pub impl ByteArrayISerdeImpl of ISerdeByteArray {
 /// 1 bit in the 31st byte indicates if there are more felts to come (0 = more, 1 = last):
 /// In a partial byte, the size is stored in the 30th byte (0-30)
 pub impl ByteArrayISerde of ISerde<ByteArray> {
-    // const SIZE_HINT: Option<usize> = None;
+    const SIZE_HINT: Option<usize> = None;
     fn iserialize(self: @ByteArray, ref output: Array<felt252>) {
         output.append(self.iserialize_and_last(ref output));
     }
@@ -272,7 +267,7 @@ pub impl ByteArrayISerde of ISerde<ByteArray> {
 }
 
 pub impl OptionTISerde<T, impl S: ISerde<T>> of ISerde<Option<T>> {
-    // const SIZE_HINT: Option<usize> = S::SIZE_HINT.add_checked(1);
+    const SIZE_HINT: Option<usize> = S::SIZE_HINT.add_checked(1);
     fn iserialize(self: @Option<T>, ref output: Array<felt252>) {
         match self {
             Option::Some(value) => {
@@ -295,7 +290,7 @@ pub impl OptionTISerde<T, impl S: ISerde<T>> of ISerde<Option<T>> {
 pub impl ResultISerde<
     Ok, Err, impl SOk: ISerde<Ok>, impl SErr: ISerde<Err>,
 > of ISerde<Result<Ok, Err>> {
-    // const SIZE_HINT: Option<usize> = SOk::SIZE_HINT.matches(SErr::SIZE_HINT).increment();
+    const SIZE_HINT: Option<usize> = SOk::SIZE_HINT.matches(SErr::SIZE_HINT).increment();
     fn iserialize(self: @Result<Ok, Err>, ref output: Array<felt252>) {
         match self {
             Result::Ok(value) => {
@@ -319,7 +314,7 @@ pub impl ResultISerde<
 }
 
 pub impl FromNullableResultTISerde<T, impl S: ISerde<T>> of ISerde<FromNullableResult<T>> {
-    // const SIZE_HINT: Option<usize> = S::SIZE_HINT.increment();
+    const SIZE_HINT: Option<usize> = S::SIZE_HINT.increment();
     fn iserialize(self: @FromNullableResult<T>, ref output: Array<felt252>) {
         match self {
             FromNullableResult::NotNull(value) => {
@@ -341,7 +336,7 @@ pub impl FromNullableResultTISerde<T, impl S: ISerde<T>> of ISerde<FromNullableR
 }
 
 pub impl NullableTISerde<T, impl S: ISerde<T>> of ISerde<Nullable<T>> {
-    // const SIZE_HINT: Option<usize> = S::SIZE_HINT.increment();
+    const SIZE_HINT: Option<usize> = S::SIZE_HINT.increment();
     fn iserialize(self: @Nullable<T>, ref output: Array<felt252>) {
         match match_nullable(self.as_snapshot()) {
             FromNullableResult::NotNull(value) => {
@@ -361,7 +356,7 @@ pub impl NullableTISerde<T, impl S: ISerde<T>> of ISerde<Nullable<T>> {
 }
 
 pub impl ArrayTISerde<T, impl S: ISerde<T>, +Drop<T>> of ISerde<Array<T>> {
-    // const SIZE_HINT: Option<usize> = None;
+    const SIZE_HINT: Option<usize> = None;
     fn iserialize(self: @Array<T>, ref output: Array<felt252>) {
         output.append(self.len().into());
         for item in self {
@@ -379,7 +374,7 @@ pub impl ArrayTISerde<T, impl S: ISerde<T>, +Drop<T>> of ISerde<Array<T>> {
 }
 
 pub impl SpanTISerde<T, impl S: ISerde<T>, +Drop<T>> of ISerde<Span<T>> {
-    // const SIZE_HINT: Option<usize> = None;
+    const SIZE_HINT: Option<usize> = None;
     fn iserialize(self: @Span<T>, ref output: Array<felt252>) {
         output.append(self.len().into());
         for item in self {
@@ -393,7 +388,7 @@ pub impl SpanTISerde<T, impl S: ISerde<T>, +Drop<T>> of ISerde<Span<T>> {
 
 
 pub impl BoxTISerde<T, impl S: ISerde<T>> of ISerde<Box<T>> {
-    // const SIZE_HINT: Option<usize> = S::SIZE_HINT;
+    const SIZE_HINT: Option<usize> = S::SIZE_HINT;
     fn iserialize(self: @Box<T>, ref output: Array<felt252>) {
         S::iserialize(self.as_snapshot().unbox(), ref output);
     }
@@ -403,7 +398,7 @@ pub impl BoxTISerde<T, impl S: ISerde<T>> of ISerde<Box<T>> {
 }
 
 pub trait ISerializeTuple<T> {
-    // const SIZE_HINT: Option<usize>;
+    const SIZE_HINT: Option<usize>;
     fn iserialize_tuple(self: T, ref output: Array<felt252>);
 }
 
@@ -412,7 +407,7 @@ pub trait IDeserializeTuple<T> {
 }
 
 pub impl ISerializeTuple1<T0, impl S0: ISerde<T0>, +Drop<T0>> of ISerializeTuple<(T0,)> {
-    // const SIZE_HINT: Option<usize> = S0::SIZE_HINT;
+    const SIZE_HINT: Option<usize> = S0::SIZE_HINT;
     fn iserialize_tuple(self: (T0,), ref output: Array<felt252>) {
         let (val0,) = self;
         S0::iserialize(@val0, ref output);
@@ -433,7 +428,7 @@ impl ISerdeTupleNext<
     +Drop<CS::Rest>,
     +Drop<CS::Head>,
 > of ISerializeTuple<T> {
-    // const SIZE_HINT: Option<usize> = IH::SIZE_HINT + IR::SIZE_HINT;
+    const SIZE_HINT: Option<usize> = IH::SIZE_HINT + IR::SIZE_HINT;
     fn iserialize_tuple(self: T, ref output: Array<felt252>) {
         let (head, rest) = CS::split_head(self);
         ISerde::<CS::Head>::iserialize(@head, ref output);
@@ -489,7 +484,7 @@ impl TupleISerde<
     impl S: ISerializeTuple<SF::SnapForward>,
     impl D: IDeserializeTuple<T>,
 > of ISerde<T> {
-    // const SIZE_HINT: Option<usize> = S::SIZE_HINT;
+    const SIZE_HINT: Option<usize> = S::SIZE_HINT;
     fn iserialize(self: @T, ref output: Array<felt252>) {
         S::iserialize_tuple(self.snap_forward(), ref output);
     }
@@ -507,7 +502,7 @@ pub impl FixedArrayTNISerde<
     +Drop<T>,
     -TypeEqual<[T; SIZE], [T; 0]>,
 > of ISerde<[T; SIZE]> {
-    // const SIZE_HINT: Option<usize> = S::SIZE_HINT.mul_checked(SIZE);
+    const SIZE_HINT: Option<usize> = S::SIZE_HINT.mul_checked(SIZE);
     fn iserialize(self: @[T; SIZE], ref output: Array<felt252>) {
         for item in self {
             S::iserialize(item, ref output);
@@ -520,7 +515,7 @@ pub impl FixedArrayTNISerde<
 
 
 impl SSISerde<T, +ISerde<T>, +Drop<T>> of ISerde<@T> {
-    // const SIZE_HINT: Option<usize> = ISerde::<T>::SIZE_HINT;
+    const SIZE_HINT: Option<usize> = ISerde::<T>::SIZE_HINT;
     fn iserialize(self: @@T, ref output: Array<felt252>) {
         ISerde::<T>::iserialize(*self, ref output);
     }

@@ -1,6 +1,6 @@
-use introspect::Entry;
+use cgg_utils::testing::Fuzzy;
+use introspect_types::Entry;
 use snforge_std::fuzzable::Fuzzable;
-use super::Fuzzy;
 
 
 pub impl IdDataFuzzable of Fuzzable<Entry> {

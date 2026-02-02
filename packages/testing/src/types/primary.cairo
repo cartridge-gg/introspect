@@ -1,7 +1,7 @@
-use introspect::{PrimaryDef, PrimaryTypeDef};
+use cgg_utils::testing::{Fuzzy, random_snake_string};
+use introspect_types::structured::{PrimaryDef, PrimaryTypeDef};
 use snforge_std::fuzzable::{Fuzzable, generate_arg};
-use crate::{Fuzzy, random_snake_string};
-
+use super::attribute::FuzzableAttribute;
 
 pub impl PrimaryTypeDefFuzzable of Fuzzable<PrimaryTypeDef> {
     fn blank() -> PrimaryTypeDef {

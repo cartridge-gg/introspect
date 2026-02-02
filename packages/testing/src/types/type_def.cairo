@@ -1,7 +1,9 @@
-use introspect::{EnumDef, FixedArrayDef, MemberDef, ResultDef, StructDef, TypeDef, VariantDef};
-use introspect_test_utils::{
+use cgg_utils::testing::{
     ByteArrayExt, FuzzableMaxDepth, FuzzableMaxDepthNode, FuzzableMaxDepthNodeImpl, Fuzzy,
     random_pascal_string, random_snake_string,
+};
+pub use introspect_types::structured::{
+    EnumDef, FixedSizeArrayDef, MemberDef, ResultDef, StructDef, TypeDef, VariantDef,
 };
 use snforge_std::fuzzable::{Fuzzable, generate_arg};
 use super::attribute::FuzzableAttribute;
@@ -97,13 +99,15 @@ impl TypeDefFuzzableNode of FuzzableMaxDepthNode<TypeDef> {
 
 pub impl TypeDefFuzzable = FuzzableMaxDepthNodeImpl<TypeDef, TypeDefFuzzableNode>;
 
-impl FixedArrayFuzzable of FuzzableMaxDepth<FixedArrayDef> {
-    fn generate(depth_rem: u32) -> FixedArrayDef {
-        FixedArrayDef { type_def: TypeDefFuzzable::generate(depth_rem), size: generate_arg(0, 16) }
+pub impl FixedArrayFuzzable of FuzzableMaxDepth<FixedSizeArrayDef> {
+    fn generate(depth_rem: u32) -> FixedSizeArrayDef {
+        FixedSizeArrayDef {
+            type_def: TypeDefFuzzable::generate(depth_rem), size: generate_arg(0, 16),
+        }
     }
 }
 
-impl ResultFuzzable of FuzzableMaxDepth<ResultDef> {
+pub impl ResultFuzzable of FuzzableMaxDepth<ResultDef> {
     fn generate(depth_rem: u32) -> ResultDef {
         ResultDef {
             ok: TypeDefFuzzable::generate(depth_rem), err: TypeDefFuzzable::generate(depth_rem),
@@ -111,7 +115,7 @@ impl ResultFuzzable of FuzzableMaxDepth<ResultDef> {
     }
 }
 
-impl StructDefFuzzable of FuzzableMaxDepth<StructDef> {
+pub impl StructDefFuzzable of FuzzableMaxDepth<StructDef> {
     fn generate(depth_rem: u32) -> StructDef {
         StructDef {
             name: random_pascal_string(31, 4),
@@ -121,7 +125,7 @@ impl StructDefFuzzable of FuzzableMaxDepth<StructDef> {
     }
 }
 
-impl MemberDefFuzzable of FuzzableMaxDepth<MemberDef> {
+pub impl MemberDefFuzzable of FuzzableMaxDepth<MemberDef> {
     fn generate(depth_rem: u32) -> MemberDef {
         MemberDef {
             name: random_snake_string(31, 4),
@@ -132,7 +136,7 @@ impl MemberDefFuzzable of FuzzableMaxDepth<MemberDef> {
 }
 
 
-impl VariantDefFuzzable of FuzzableMaxDepth<VariantDef> {
+pub impl VariantDefFuzzable of FuzzableMaxDepth<VariantDef> {
     fn generate(depth_rem: u32) -> VariantDef {
         let name = random_pascal_string(31, 4);
         let selector = name.selector();
@@ -145,7 +149,7 @@ impl VariantDefFuzzable of FuzzableMaxDepth<VariantDef> {
     }
 }
 
-impl EnumDefFuzzable of FuzzableMaxDepth<EnumDef> {
+pub impl EnumDefFuzzable of FuzzableMaxDepth<EnumDef> {
     fn generate(depth_rem: u32) -> EnumDef {
         let variants_count = generate_arg(1, 10);
         EnumDef {

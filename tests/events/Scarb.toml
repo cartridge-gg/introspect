@@ -10,7 +10,6 @@ repository.workspace = true
 [dependencies]
 starknet.workspace = true
 introspect_events.workspace = true
-introspect_test_utils.workspace = true
 cairo_execute.workspace = true
 
 [dev-dependencies]

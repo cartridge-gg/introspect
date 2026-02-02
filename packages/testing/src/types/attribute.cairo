@@ -1,5 +1,5 @@
-use introspect::Attribute;
-use introspect_test_utils::{RandomCairoDisplayable, random_snake_string};
+use cgg_utils::testing::{FuzzyImpl, RandomCairoDisplayable, random_snake_string};
+pub use introspect_types::structured::Attribute;
 use snforge_std::fuzzable::{Fuzzable, FuzzableBool};
 
 
