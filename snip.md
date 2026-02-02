@@ -326,9 +326,13 @@ The following terms are used to describe common database operations.
 
 Tables are one of the core concepts in Introspection's data model. Tables consist of **rows** of **records** with data in typed **columns**, corresponding closely to Cairo's notion of **structs** containing typed **members**.
 
+To support databasing, indexers are REQUIRED to support table creation events (`CreateTable`, `CreateTableWithColumns`, `CreateTableFromClassHash`). Indexers MAY also support the following events vents for table, column and row manipulation.
+
 **Common field meanings:**
 
 - `id`: Unique table identifier
+
+##### Table Creation Events (REQUIRED)
 
 ```rust
 // Create or update a table with a given name, attributes and columns
@@ -357,6 +361,12 @@ struct CreateTableFromClass {
     class_hash: felt252,
 }
 
+
+```
+
+Indexers MAY also support the following events for table, column and row manipulation.
+
+```rust
 // Rename an existing table
 
 struct RenameTable {
@@ -517,6 +527,8 @@ struct CreateColumnSet {
 #### Record Manipulation
 
 Stored in tables, **records** are the data of an application, identified by a unique primary key.
+
+Indexers suppoting databasing SHOULD support these events for inserting, updating, and deleting records and fields.
 
 **Common field meanings:**
 
@@ -694,7 +706,7 @@ struct DeletesFieldSets {
 
 These events are for values that don't fit into the table/record model, such as global variables or configuration settings.
 
-All indexers implementing Introspection MUST support these events.
+All indexers implementing value Introspection MUST support these events.
 
 Common field meanings:
 
@@ -956,7 +968,7 @@ Used for non-final fields. Serializes using optimized `ByteArray`/`Attribute` en
 
 Used for the final field when it contains complex types (e.g., `Span<Attribute>`). Serializes using optimized `ByteArray`/`Attribute` encoding but omits the length prefix.
 
-**Result:** 1 fewer felts per event.
+**Result:** between 1 and 3 fewer felts per event.
 
 #### 3. No serialization
 
@@ -993,7 +1005,7 @@ Implementations MAY omit parts of the spec for optimization purposes, e.g. not a
 
 ## Traits
 
-While this specification's _minimum_ requirement is emitting events with the correct structure, to make it easier to work with we recommend using traits for generating `TypeDef`s and serializing data. Our [reference implementation](https://github.com/cartridge-gg/introspect) provides these for all core Cairo and Starknet types, along with macros to generate them for custom structs and enums.
+While this specification's _minimum_ requirement is emitting events with the correct structure, to make it easier to work with we recommend using traits for generating `TypeDef`s and serializing data. Our [reference implementation](https://github.com/cartridge-gg/introspect) provides these for all core Cairo and Starknet types, along with macros to generate them for custom structs and enums. Although this is still in pre release and may change, it serves as a useful example of how to implement the spec.
 
 ### `Introspect`
 
