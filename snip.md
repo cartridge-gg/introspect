@@ -16,7 +16,7 @@ created: 2025-10-28
 
 This SNIP proposes a standardized collection of **types** and **events** for describing onchain data, as well as a compact **serialization** scheme for wire transmission, enabling the development of _generic indexers_ for _efficiently parsing_ data from _arbitrary contracts_.
 
-# Rationale
+# Motivation
 
 One of the challenges of blockchain application development is making chain data accessible to clients. Many applications adopt the pattern of creating offchain replicas ("indexes") of onchain state, but without a shared standard most applications end up "rolling their own" non-interoperable tools for representing, fetching, storing, and serving onchain data. This leads to duplicated efforts and creates a high barrier to entry for new developers.
 
