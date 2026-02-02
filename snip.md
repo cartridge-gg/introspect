@@ -7,7 +7,7 @@ discussions-to: The url pointing to the official discussion thread
 status: Draft
 type: Standards Track
 category: SRC
-created: 2025-10-28
+created: 2026-02-02
 ---
 
 <!-- Refer to: <https://github.com/starknet-io/SNIPs/blob/main/SNIPS/snip-1.md> -->
