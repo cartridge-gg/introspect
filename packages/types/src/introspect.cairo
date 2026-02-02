@@ -1,5 +1,6 @@
 use cgg_utils::{CollectionSplit, IsTuple};
 use core::integer::u512;
+use core::poseidon::poseidon_hash_span;
 use starknet::storage_access::StorageBaseAddress;
 use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
 use crate::type_def::selectors;
@@ -13,9 +14,7 @@ pub struct ChildDef {
 
 pub type ChildDefs = Array<ChildDef>;
 
-pub fn add_child_def<T, impl TD: TypeDefTrait<T, false>>(
-    ref defs: ChildDefs, hash: felt252, type_def_span: Span<felt252>,
-) {
+pub fn add_child_def(ref defs: ChildDefs, hash: felt252, type_def_span: Span<felt252>) {
     let mut n = 0;
     let len = defs.len();
     while n != len {
@@ -27,6 +26,33 @@ pub fn add_child_def<T, impl TD: TypeDefTrait<T, false>>(
     defs.append(ChildDef { id: hash, type_def: type_def_span });
 }
 
+
+#[derive(PartialEq, Debug, Drop)]
+pub enum KnownType {
+    Primitive: felt252,
+    Ref: felt252,
+    None,
+}
+
+pub fn is_known_type_def(type_def_span: Span<felt252>) -> KnownType {
+    match type_def_span.len() {
+        0 => panic!("Type Def cannot be empty"),
+        1 => KnownType::Primitive(*type_def_span[0]),
+        2 => match *type_def_span[0] {
+            'ref' => KnownType::Ref(*type_def_span[1]),
+            _ => KnownType::None,
+        },
+        _ => KnownType::None,
+    }
+}
+
+pub fn hash_type_def_span(type_def_span: Span<felt252>) -> felt252 {
+    match is_known_type_def(type_def_span) {
+        KnownType::Primitive(id) | KnownType::Ref(id) => id,
+        KnownType::None => poseidon_hash_span(type_def_span),
+    }
+}
+
 pub trait TypeDefTrait<T, const REF: bool> {
     const SIZE: u32;
     fn serialize_type_def(ref output: Array<felt252>);
@@ -35,6 +61,13 @@ pub trait TypeDefTrait<T, const REF: bool> {
         ref output: Array<felt252>, ref defs: ChildDefs,
     ) {
         Self::serialize_type_def(ref output);
+    }
+    fn serialized_type_def() -> Span<
+        felt252,
+    > {
+        let mut output: Array<felt252> = Default::default();
+        Self::serialize_type_def(ref output);
+        output.span()
     }
 }
 
@@ -47,10 +80,43 @@ pub enum AsReference {
 impl TypeTraitRef<T, impl TD: TypeDefTrait<T, true>> of TypeDefTrait<T, false> {
     const SIZE: u32 = 2;
     fn serialize_type_def(ref output: Array<felt252>) {
-        output.append(selectors::Ref);
+        let type_def = TD::serialized_type_def();
+        match is_known_type_def(type_def) {
+            KnownType::Primitive(id) => { output.append(id); },
+            KnownType::Ref(id) => {
+                output.append(selectors::Ref);
+                output.append(id);
+            },
+            KnownType::None => {
+                output.append(selectors::Ref);
+                output.append(hash_type_def_span(type_def));
+            },
+        }
     }
     fn collect_child_defs(ref defs: ChildDefs) {
         Self::collect_child_defs(ref defs);
+        let type_def = TD::serialized_type_def();
+        if is_known_type_def(type_def) == KnownType::None {
+            let id = hash_type_def_span(type_def);
+            add_child_def(ref defs, id, type_def);
+        }
+    }
+    fn serialize_defs(ref output: Array<felt252>, ref defs: ChildDefs) {
+        let type_def = TD::serialized_type_def();
+
+        match is_known_type_def(type_def) {
+            KnownType::Primitive(id) => { output.append(id); },
+            KnownType::Ref(id) => {
+                output.append(selectors::Ref);
+                output.append(id);
+            },
+            KnownType::None => {
+                output.append(selectors::Ref);
+                let id = hash_type_def_span(type_def);
+                output.append(id);
+                defs.append(ChildDef { id, type_def });
+            },
+        }
     }
 }
 
@@ -150,21 +216,21 @@ impl ResultDef<
 }
 
 
-pub fn append_member<
-    const NAME_SIZE: u32,
-    const ATTRIBUTES_SIZE: u32,
-    impl MD: MemberDef<NAME_SIZE, ATTRIBUTES_SIZE>,
-    impl NameToSpan: ToSpanTrait<[felt252; NAME_SIZE], felt252>,
-    impl AttrsToSpan: ToSpanTrait<[felt252; ATTRIBUTES_SIZE], felt252>,
-    impl TypeDef: TypeDefTrait<MD::Type, false>,
->(
-    ref output: Array<felt252>,
-) {
-    output.append_span(NameToSpan::span(@MD::NAME));
-    output.append(MD::ATTRIBUTES_COUNT.into());
-    output.append_span(AttrsToSpan::span(@MD::ATTRIBUTES));
-    TypeDef::serialize_type_def(ref output);
-}
+// pub fn append_member<
+//     const NAME_SIZE: u32,
+//     const ATTRIBUTES_SIZE: u32,
+//     impl MD: MemberDef<NAME_SIZE, ATTRIBUTES_SIZE>,
+//     impl NameToSpan: ToSpanTrait<[felt252; NAME_SIZE], felt252>,
+//     impl AttrsToSpan: ToSpanTrait<[felt252; ATTRIBUTES_SIZE], felt252>,
+//     impl TypeDef: TypeDefTrait<MD::Type, false>,
+// >(
+//     ref output: Array<felt252>,
+// ) {
+//     output.append_span(NameToSpan::span(@MD::NAME));
+//     output.append(MD::ATTRIBUTES_COUNT.into());
+//     output.append_span(AttrsToSpan::span(@MD::ATTRIBUTES));
+//     TypeDef::serialize_type_def(ref output);
+// }
 // pub fn append_member_as_ref<
 //     const SIZE: u32,
 //     const DATA: [felt252; SIZE],
@@ -182,23 +248,59 @@ pub fn append_member<
 //     fn serialize_member(ref output: Array<felt252>);
 // }
 
-// TODO: Fix once compiler supports fixed array sizes as self
-pub trait MemberDef<const NAME_SIZE: u32, const ATTRIBUTES_SIZE: u32> {
-    const NAME_SIZE: u32;
-    const NAME: [felt252; NAME_SIZE];
-    const ATTRIBUTES_COUNT: u32;
-    const ATTRIBUTES_SIZE: u32;
-    const ATTRIBUTES: [felt252; ATTRIBUTES_SIZE];
+// TODO: Fix once compiler supports fixed array sizes as size 0
+// pub trait MemberDef<const NAME_SIZE: u32, const ATTRIBUTES_SIZE: u32> {
+//     const NAME_SIZE: u32;
+//     const NAME: [felt252; NAME_SIZE];
+//     const ATTRIBUTES_COUNT: u32;
+//     const ATTRIBUTES_SIZE: u32;
+//     const ATTRIBUTES: [felt252; ATTRIBUTES_SIZE];
+//     type Type;
+//     // const fn SIZE<
+//     //     impl TD: TypeDefTrait<Self::Type, false>,
+//     // >() -> u32 {
+//     //     Self::NAME_SIZE + Self::ATTRIBUTES_SIZE + 2 + TypeDefTrait::<Self::Type>::SIZE
+//     // }
+//     fn serialize_member<impl TD: TypeDefTrait<Self::Type, false>>(
+//         ref output: Array<felt252>,
+//     ) {
+//         output.append_span(Self::NAME.span());
+//         output.append(Self::ATTRIBUTES_COUNT.into());
+//         // output.append_span(Self::ATTRIBUTES.span());
+//         TD::serialize_type_def(ref output);
+//     }
+//     fn collect_member_child_defs<impl TD: TypeDefTrait<Self::Type, false>>(
+//         ref defs: ChildDefs,
+//     ) {
+//         TD::collect_child_defs(ref defs);
+//     }
+// }
+
+pub trait MemberDef<const META_SIZE: u32> {
+    const META_SIZE: u32;
+    const META_DATA: [felt252; META_SIZE];
     type Type;
     const fn SIZE<
         impl TD: TypeDefTrait<Self::Type, false>,
     >() -> u32 {
-        Self::NAME_SIZE + Self::ATTRIBUTES_SIZE + 2 + TypeDefTrait::<Self::Type>::SIZE
+        Self::META_SIZE + TypeDefTrait::<Self::Type>::SIZE
+    }
+    fn serialize_member<impl TD: TypeDefTrait<Self::Type, false>>(
+        ref output: Array<felt252>,
+    ) {
+        output.append_span(Self::META_DATA.span());
+        TD::serialize_type_def(ref output);
     }
     fn collect_member_child_defs<impl TD: TypeDefTrait<Self::Type, false>>(
         ref defs: ChildDefs,
     ) {
         TD::collect_child_defs(ref defs);
+    }
+    fn serialize_member_defs<impl TD: TypeDefTrait<Self::Type, false>>(
+        ref output: Array<felt252>, ref defs: ChildDefs,
+    ) {
+        output.append_span(Self::META_DATA.span());
+        TD::serialize_defs(ref output, ref defs);
     }
 }
 
@@ -272,6 +374,14 @@ impl StructDefImpl<
     fn collect_child_defs(ref defs: ChildDefs) {
         S::collect_child_defs(ref defs);
     }
+    fn serialize_defs(ref output: Array<felt252>, ref defs: ChildDefs) {
+        output.append(selectors::Struct);
+        output.append_span(NameToSpan::span(@S::NAME));
+        output.append(S::ATTRIBUTES_COUNT.into());
+        output.append_span(AttrsToSpan::span(@S::ATTRIBUTES));
+        output.append(S::MEMBERS_COUNT.into());
+        S::serialize_defs(ref output, ref defs);
+    }
 }
 
 // impl StructDefImpl<T, impl S: Struct<T>> of TypeDefTrait<T, false> {
@@ -284,45 +394,76 @@ impl StructDefImpl<
 //     }
 // }
 
-pub trait Variant {
-    impl TypeDef: TypeDefTrait;
+pub trait Variant<const META_SIZE: u32> {
     const SELECTOR: felt252;
-    const NAME_SIZE: u32;
-    const NAME: [felt252; Self::NAME_SIZE];
-    const ATTRIBUTES_SIZE: u32;
-    const ATTRIBUTES_COUNT: u32;
-    const ATTRIBUTES: [felt252; Self::ATTRIBUTES_SIZE];
-    const HASH: felt252;
-    fn serialize_variant(
+    const META_SIZE: u32;
+    const META_DATA: [felt252; META_SIZE];
+    type Type;
+    const fn SIZE<
+        impl TD: TypeDefTrait<Self::Type, false>,
+    >() -> u32 {
+        1 + Self::META_SIZE + TypeDefTrait::<Self::Type>::SIZE
+    }
+    fn serialize_member<impl TD: TypeDefTrait<Self::Type, false>>(
         ref output: Array<felt252>,
     ) {
-        Self::serialize_variant_selector(ref output);
-        Self::serialize_variant_name(ref output);
-        Self::serialize_variant_attributes(ref output);
-        Self::serialize_variant_type_def(ref output);
-    }
-    fn serialize_variant_selector(ref output: Array<felt252>) {
         output.append(Self::SELECTOR);
+        output.append_span(Self::META_DATA.span());
+        TD::serialize_type_def(ref output);
     }
-    fn serialize_variant_name<impl NameToSpan: ToSpanTrait<[felt252; Self::NAME_SIZE], felt252>>(
-        ref output: Array<felt252>,
+    fn collect_member_child_defs<impl TD: TypeDefTrait<Self::Type, false>>(
+        ref defs: ChildDefs,
     ) {
-        output.append_span(NameToSpan::span(@Self::NAME));
+        TD::collect_child_defs(ref defs);
     }
-    fn serialize_variant_attributes<
-        impl AttrsToSpan: ToSpanTrait<[felt252; Self::ATTRIBUTES_SIZE], felt252>,
-    >(
-        ref output: Array<felt252>,
+    fn serialize_member_defs<impl TD: TypeDefTrait<Self::Type, false>>(
+        ref output: Array<felt252>, ref defs: ChildDefs,
     ) {
-        output.append(Self::ATTRIBUTES_COUNT.into());
-        output.append_span(AttrsToSpan::span(@Self::ATTRIBUTES));
-    }
-    fn serialize_variant_type_def(
-        ref output: Array<felt252>,
-    ) {
-        Self::TypeDef::serialize_type_def(ref output);
+        output.append(Self::SELECTOR);
+        output.append_span(Self::META_DATA.span());
+        TD::serialize_defs(ref output, ref defs);
     }
 }
+
+// pub trait Variant {
+//     impl TypeDef: TypeDefTrait;
+//     const SELECTOR: felt252;
+//     const NAME_SIZE: u32;
+//     const NAME: [felt252; Self::NAME_SIZE];
+//     const ATTRIBUTES_SIZE: u32;
+//     const ATTRIBUTES_COUNT: u32;
+//     const ATTRIBUTES: [felt252; Self::ATTRIBUTES_SIZE];
+//     const HASH: felt252;
+//     fn serialize_variant(
+//         ref output: Array<felt252>,
+//     ) {
+//         Self::serialize_variant_selector(ref output);
+//         Self::serialize_variant_name(ref output);
+//         Self::serialize_variant_attributes(ref output);
+//         Self::serialize_variant_type_def(ref output);
+//     }
+//     fn serialize_variant_selector(ref output: Array<felt252>) {
+//         output.append(Self::SELECTOR);
+//     }
+//     fn serialize_variant_name<impl NameToSpan: ToSpanTrait<[felt252; Self::NAME_SIZE], felt252>>(
+//         ref output: Array<felt252>,
+//     ) {
+//         output.append_span(NameToSpan::span(@Self::NAME));
+//     }
+//     fn serialize_variant_attributes<
+//         impl AttrsToSpan: ToSpanTrait<[felt252; Self::ATTRIBUTES_SIZE], felt252>,
+//     >(
+//         ref output: Array<felt252>,
+//     ) {
+//         output.append(Self::ATTRIBUTES_COUNT.into());
+//         output.append_span(AttrsToSpan::span(@Self::ATTRIBUTES));
+//     }
+//     fn serialize_variant_type_def(
+//         ref output: Array<felt252>,
+//     ) {
+//         Self::TypeDef::serialize_type_def(ref output);
+//     }
+// }
 
 pub trait Enum<T> {
     const NAME_SIZE: u32;
