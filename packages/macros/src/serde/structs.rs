@@ -1,31 +1,38 @@
-use itertools::Itertools;
-
-use crate::serde::{ISERDE_DESERIALIZE_CALL, ISERDE_SERIALIZE_CALL, ToISerdeImpl};
+use crate::serde::CWriteISerde;
 use crate::{IMember, IStruct};
+use cairo_syntax_parser::CairoWriteSlice;
+use std::fmt::{Result as FmtResult, Write};
 
-impl ToISerdeImpl for IStruct {
-    fn serialize_body(&self) -> String {
+impl CWriteISerde for IStruct {
+    fn cwrite_iserialize<W: Write>(&self, buf: &mut W, i_path: &str) -> FmtResult {
         self.members
             .iter()
-            .map(IMember::serialize_member)
-            .join("\n")
+            .map(|m| m.serialize_member(buf, i_path))
+            .collect::<FmtResult>()
     }
-    fn deserialize_body(&self) -> String {
-        let members: Vec<_> = self.members.iter().map(|m| m.name.as_str()).collect();
-        members.iter().cloned().map(deserialize_member).join("\n")
-            + &format!("\nSome({}{{{}}})", self.name, members.join(","))
-    }
-}
 
-pub fn deserialize_member(name: &str) -> String {
-    format!("let {name} = {ISERDE_DESERIALIZE_CALL}(ref serialized)?;")
+    fn cwrite_ideserialize<W: Write>(&self, buf: &mut W, i_path: &str) -> FmtResult {
+        self.members
+            .iter()
+            .map(|m| m.deserialize_member(buf, i_path))
+            .collect::<FmtResult>()?;
+        write!(buf, "Some({}", self.name)?;
+        let names = self
+            .members
+            .iter()
+            .map(|m| m.name.as_str())
+            .collect::<Vec<&str>>();
+        names.cwrite_csv_braced(buf)?;
+        buf.write_str(")")
+    }
 }
 
 impl IMember {
-    pub fn serialize_member(&self) -> String {
-        format!("{ISERDE_SERIALIZE_CALL}(self.{}, ref output);", self.name)
+    pub fn serialize_member<W: Write>(&self, buf: &mut W, i_path: &str) -> FmtResult {
+        writeln!(buf, "{i_path}::iserialize(self.{}, ref output);", self.name)
     }
-    pub fn deserialize_member(&self) -> String {
-        deserialize_member(&self.name)
+    pub fn deserialize_member<W: Write>(&self, buf: &mut W, i_path: &str) -> FmtResult {
+        let name = &self.name;
+        writeln!(buf, "let {name} = {i_path}::ideserialize(ref serialized)?;")
     }
 }

@@ -1,0 +1,30 @@
+[package]
+name = "introspect_macros_tests"
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+scarb-version.workspace = true
+repository.workspace = true
+experimental-features = [
+    "associated_item_constraints",
+    "negative_impls",
+    "user_defined_inline_macros",
+]
+
+[dependencies]
+starknet.workspace = true
+
+
+[dev-dependencies]
+cgg_utils.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+introspect.path = "../.."
+introspect_macros.path = "../../packages/macros"
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
+snforge.workspace = true
+
+[lib]

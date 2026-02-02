@@ -1,9 +1,5 @@
-pub use crate::column::ColumnDef;
 pub use crate::serde::iserialize_keyed_type;
-pub use crate::{
-    EnumDef, FixedSizeArrayDef, ISerde, MemberDef, PrimaryDef, ResultDef, StructDef, TypeDef,
-    VariantDef,
-};
+pub use crate::{ChildDefs, EnumDef, ISerde, MemberDef, ResultDef, StructDef, TypeDef, VariantDef};
 
 #[inline]
 pub fn iserialize<T, impl I: ISerde<T>>(value: @T, ref output: Array<felt252>) {

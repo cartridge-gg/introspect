@@ -35,3 +35,9 @@ pub enum IntrospectError {
 }
 
 pub type IntrospectResult<T> = std::result::Result<T, IntrospectError>;
+
+impl<T> From<IntrospectError> for Result<T, IntrospectError> {
+    fn from(e: IntrospectError) -> Self {
+        Result::<T, IntrospectError>::Err(e)
+    }
+}

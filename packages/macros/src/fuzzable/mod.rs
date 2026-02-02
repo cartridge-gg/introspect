@@ -2,9 +2,10 @@ pub mod enums;
 pub mod structs;
 pub mod utils;
 
-use crate::utils::str_to_token_stream;
-use crate::{Item, ItemTrait, SyntaxItemTrait, Ty};
+use crate::Ty;
+use crate::i_type::IntrospectItemTrait;
 use cairo_lang_macro::{ProcMacroResult, TokenStream, derive_macro};
+use cairo_syntax_parser::{Item, str_to_token_stream};
 use itertools::Itertools;
 
 const FUZZABLE_IMPL_TEMPLATE: &str = include_str!("../../templates/fuzzable_impl.cairo");
@@ -19,7 +20,7 @@ fn Fuzzable(token_stream: TokenStream) -> ProcMacroResult {
     ProcMacroResult::new(str_to_token_stream(&string))
 }
 
-trait FuzzableImpl: ItemTrait {
+trait FuzzableImpl: IntrospectItemTrait {
     fn as_fuzzable_impl(&self) -> String {
         FUZZABLE_IMPL_TEMPLATE
             .replace("{{name}}", self.name())
@@ -39,6 +40,7 @@ impl FuzzableImpl for Item {
         match self {
             Item::Struct(s) => s.fuzzable_body(),
             Item::Enum(e) => e.fuzzable_body(),
+            _ => panic!("Fuzzable can only be derived for structs and enums"),
         }
     }
 }

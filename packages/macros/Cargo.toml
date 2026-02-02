@@ -9,15 +9,16 @@ crate-type = ["cdylib", "lib"]
 
 [dependencies]
 cairo-lang-macro.workspace = true
-salsa = "0.24.0"
-thiserror.workspace = true
+cairo-lang-starknet-classes.workspace = true
+cairo-syntax-parser.workspace = true
+const_format = "0.2.35"
 indent.workspace = true
 indoc = "2.0.7"
-paste = "1.0"
-starknet-types-core.workspace = true
-introspect-types.workspace = true
 introspect-rust-macros.workspace = true
+introspect-types.workspace = true
 itertools.workspace = true
-const_format = "0.2.35"
+paste = "1.0"
 proc-macro2.workspace = true
-cairo-syntax-parser.workspace = true
+salsa = "0.24.0"
+starknet-types-core.workspace = true
+thiserror.workspace = true

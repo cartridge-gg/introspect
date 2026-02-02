@@ -1,5 +1,79 @@
-use crate::IAttribute;
-use cairo_syntax_parser::{Attribute, AttributesTrait};
+use crate::i_type::byte_array::{byte_array_felt_len, bytes_to_byte_array_felts, string_to_felts};
+use crate::{IntrospectError, IntrospectResult};
+use cairo_syntax_parser::{Attribute, AttributesTrait, CairoWrite, CairoWriteSlice};
+use std::fmt::{Result as FmtResult, Write};
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct IAttribute {
+    pub name: String,
+    pub data: Option<Vec<u8>>,
+}
+
+impl IAttribute {
+    pub fn new_empty(name: String) -> Self {
+        IAttribute { name, data: None }
+    }
+    pub fn cairo_size(&self) -> u32 {
+        byte_array_felt_len(&self.name)
+            + match &self.data {
+                Some(data) => (data.len() as u32).div_ceil(31),
+                None => 0,
+            }
+    }
+}
+
+pub trait IAttributesTrait {
+    fn cwrite_const_attributes<W: Write>(&self, buf: &mut W) -> FmtResult;
+    fn size(&self) -> u32;
+    fn cwrite_attribute_count<W: Write>(&self, buf: &mut W) -> FmtResult;
+}
+
+impl IAttributesTrait for [IAttribute] {
+    fn cwrite_const_attributes<W: Write>(&self, buf: &mut W) -> FmtResult {
+        let total_size: u32 = self.size();
+        write!(buf, "const ATTRIBUTES: [felt252; {total_size}] = ")?;
+        self.cwrite_csv_bracketed(buf)?;
+        buf.write_str(";\n")
+    }
+    fn size(&self) -> u32 {
+        self.iter().map(IAttribute::cairo_size).sum()
+    }
+    fn cwrite_attribute_count<W: Write>(&self, buf: &mut W) -> FmtResult {
+        let count = self.len();
+        write!(buf, "const ATTRIBUTES_COUNT: u32 = {count};\n")
+    }
+}
+
+impl CairoWrite for IAttribute {
+    fn cwrite<W: Write>(&self, buf: &mut W) -> FmtResult {
+        let (name_felts, final_felt) = string_to_felts(&self.name);
+        name_felts.cwrite_terminated(buf, ',')?;
+        write_terminal_name_byte31(buf, final_felt, self.data.is_some())?;
+        if let Some(data) = &self.data {
+            buf.write_char(',')?;
+            let (data_felts, final_data_felt) = bytes_to_byte_array_felts(data);
+            data_felts.cwrite_terminated(buf, ',')?;
+            write_terminal_name_byte31(buf, final_data_felt, false)?;
+        }
+        Ok(())
+    }
+}
+
+fn write_terminal_name_byte31<W: Write>(buf: &mut W, bytes: &[u8], data: bool) -> FmtResult {
+    let first_byte = if data { 0x06 } else { 0x02 };
+    if bytes.len() == 31 {
+        write!(buf, "0x{first_byte:02x}",)?;
+    } else {
+        write!(buf, "0x{:02x}{:02x}", first_byte + 1, bytes.len())?;
+        (0..31 - bytes.len())
+            .map(|_| buf.write_str("00"))
+            .collect::<FmtResult>()?;
+    }
+    bytes
+        .iter()
+        .map(|b| write!(buf, "{b:02x}"))
+        .collect::<FmtResult>()
+}
 
 pub enum AttributeVariant {
     Emit(IAttribute),
@@ -24,6 +98,24 @@ impl AttributeVariant {
     }
     pub fn lazy_i_attributes<E>(name: String, data: Option<Vec<u8>>) -> Result<Vec<Self>, E> {
         Ok(vec![AttributeVariant::Emit(IAttribute { name, data })])
+    }
+}
+
+pub trait AttributeParse {
+    fn as_variant_vec(self) -> IntrospectResult<Vec<AttributeVariant>>;
+    fn to_single_unnamed_arg(&self) -> IntrospectResult<String>;
+}
+
+impl AttributeParse for Attribute {
+    fn as_variant_vec(self) -> IntrospectResult<Vec<AttributeVariant>> {
+        Ok(vec![AttributeVariant::Cairo(self)])
+    }
+    fn to_single_unnamed_arg(&self) -> IntrospectResult<String> {
+        self.get_single_unnamed_arg()
+            .ok_or(IntrospectError::InvalidIntrospectAttributeFormat(
+                self.path_str().to_string(),
+            ))
+            .map(|expr| expr.to_string())
     }
 }
 

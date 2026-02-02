@@ -48,11 +48,12 @@ fn make_my_struct_def() -> structured::TypeDef {
 }
 
 mod MyStructMember {
-    use introspect_types::ISerdeByteArray;
+    use super::*;
     pub impl a of introspect_types::MemberDef<2> {
         const META_DATA: [felt252; 2] = ['a'.partial_terminator(1), 0];
         type Type = (felt252, u128, Option<felt252>);
     }
+
     pub impl b of introspect_types::MemberDef<2> {
         const META_DATA: [felt252; 2] = ['b'.partial_terminator(1), 0];
         type Type = u8;

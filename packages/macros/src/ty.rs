@@ -1,7 +1,6 @@
-use crate::{AstToString, IntrospectError as Error, IntrospectResult as Result};
+use crate::{IntrospectError as Error, IntrospectResult as Result};
 use cairo_syntax_parser::{
-    CairoWriteSlice, CairoWrite, Expr, ExprPath, FixedSizeArray as SynFixedSizeArray,
-    OptionSizeHint, SizeHint,
+    CairoWrite, CairoWriteSlice, Expr, ExprPath, FixedSizeArray as SynFixedSizeArray,
 };
 use std::fmt::{Result as FmtResult, Write};
 
@@ -53,50 +52,57 @@ pub struct FixedArray {
 
 #[derive(Clone, Debug, PartialEq, Hash, Eq)]
 pub struct TyItem {
+    pub path: ExprPath,
     pub name: String,
     pub params: Option<Vec<Ty>>,
 }
 
-impl TryFrom<Expr> for Ty {
+impl TryFrom<&Expr> for Ty {
     type Error = Error;
-    fn try_from(expr: Expr) -> Result<Self> {
+    fn try_from(expr: &Expr) -> Result<Self> {
         match expr {
-            Expr::Tuple(exprs) => exprs.try_into(),
+            Expr::Tuple(exprs) => exprs_to_tys(exprs).map(Ty::Tuple),
             Expr::FixedSizeArray(arr) => arr.try_into(),
             Expr::Path(path) => path.try_into(),
-            Expr::Parenthesized(expr) => (*expr).try_into(),
+            Expr::Parenthesized(expr) => expr.try_into(),
             _ => Error::FailedToParseType.into(),
         }
     }
 }
 
-impl TryFrom<Vec<Expr>> for Ty {
+fn exprs_to_tys(exprs: &[Expr]) -> Result<Vec<Ty>> {
+    exprs
+        .iter()
+        .map(TryFrom::try_from)
+        .collect::<Result<Vec<Ty>>>()
+}
+
+impl TryFrom<&SynFixedSizeArray> for FixedArray {
     type Error = Error;
-    fn try_from(exprs: Vec<Expr>) -> Result<Self> {
-        exprs.iter().map(TryFrom::try_from).collect().map(Ty::Tuple)
+    fn try_from(value: &SynFixedSizeArray) -> Result<Self> {
+        if let Some(size_expr) = &value.size {
+            if value.exprs.len() == 1 {
+                return Ok(FixedArray {
+                    ty: Ty::try_from(&value.exprs[0])?,
+                    size: size_expr.to_string(),
+                });
+            }
+        }
+        Err(Error::FailedToParseType)
     }
 }
 
-impl TryFrom<SynFixedSizeArray> for FixedArray {
+impl TryFrom<&SynFixedSizeArray> for Ty {
     type Error = Error;
-    fn try_from(value: SynFixedSizeArray) -> Result<Self> {
-        Ok(FixedArray {
-            ty: Ty::from(*value.element),
-            size: value.size.to_string(),
-        })
-    }
-}
-
-impl TryFrom<SynFixedSizeArray> for Ty {
-    type Error = Error;
-    fn try_from(array: SynFixedSizeArray) -> Result<Self> {
+    fn try_from(array: &SynFixedSizeArray) -> Result<Ty> {
         FixedArray::try_from(array).map(|fa| Ty::FixedArray(Box::new(fa)))
     }
 }
 
 impl TryFrom<ExprPath> for TyItem {
     type Error = Error;
-    fn try_from(path: ExprPath) -> Result<Self> {
+    fn try_from(path: ExprPath) -> Result<TyItem> {
+        match ExprPath
         TyItem::parse(&path.to_string()).map_err(|_| Error::FailedToParseType)
     }
 }
@@ -302,24 +308,15 @@ impl CairoWrite for Ty {
             Ty::FixedArray(fixed_array) => fixed_array.cwrite(buf),
         }
     }
-    fn size_hint(&self) -> usize {
-        match self {
-            Ty::Item(e) => e.size_hint(),
-            Ty::Tuple(types) => types.size_hint_tuple(),
-            Ty::FixedArray(fixed_array) => fixed_array.size_hint(),
-        }
-    }
 }
 
 impl CairoWrite for TyItem {
     fn cwrite<W: Write>(&self, buf: &mut W) -> FmtResult {
         self.name.cwrite(buf);
         if let Some(params) = &self.params {
-            params.cwrite_csv_angled(buf);
+            params.cwrite_csv_angled(buf)?;
         }
-    }
-    fn size_hint(&self) -> usize {
-        self.name.size_hint() + self.params.size_hint_option::<2, 0>()
+        Ok(())
     }
 }
 
@@ -327,72 +324,6 @@ impl CairoWrite for FixedArray {
     fn cwrite<W: Write>(&self, buf: &mut W) -> FmtResult {
         self.ty.cwrite_prefixed(buf, '[');
         self.size.cwrite_prefixed_str(buf, "; ");
-        buf.push_token_char(']');
-    }
-    fn size_hint(&self) -> usize {
-        self.ty.size_hint() + self.size.len() + 4
+        buf.push_token_char(']')
     }
 }
-
-// pub fn parse_wrapped_types(type_name: &str) -> Option<(&str, Vec<&str>)> {
-//     let start = type_name.find('<').unwrap();
-//     Some((&type_name[..start], parse_list(&type_name[start..])?))
-// }
-
-// pub fn parse_fixed_array(type_name: &str) -> Option<(&str, &str)> {
-//     let mut splits = type_name[1..type_name.len() - 1].rsplitn(2, ';');
-//     let len = splits.next()?.trim();
-//     let inner_type = splits.last()?.trim();
-//     Some((inner_type, len))
-// }
-
-// pub fn parse_list(type_name: &str) -> Option<Vec<&str>> {
-//     let inner = &type_name[1..type_name.len() - 1];
-//     let mut types: Vec<&str> = Vec::new();
-//     let mut stack: Vec<char> = Vec::new();
-//     let mut start = 0;
-
-//     for (i, c) in inner.chars().enumerate() {
-//         match c {
-//             '(' => stack.push(')'),
-//             '[' => stack.push(']'),
-//             '<' => stack.push('>'),
-//             '{' => stack.push('}'),
-//             ')' | ']' | '>' | '}' => {
-//                 if stack.pop() != Some(c) {
-//                     return None;
-//                 }
-//             }
-//             ',' if stack.is_empty() => {
-//                 types.push(inner[start..i].trim());
-//                 start = i + 1;
-//             }
-//             _ => {}
-//         }
-//     }
-
-//     match stack.is_empty() {
-//         true => {
-//             if start < inner.len() {
-//                 types.push(inner[start..].trim());
-//             }
-//             Some(types)
-//         }
-//         false => None,
-//     }
-// }
-
-// impl<'db> TryFromAst<'db, TypeClause<'db>> for Ty {
-//     fn try_from_ast(ast: TypeClause<'db>, db: &'db dyn Database) -> IntrospectResult<Self> {
-//         Ty::parse(&ast.to_string(db))
-//     }
-// }
-
-// impl<'db> TryFromAst<'db, OptionTypeClause<'db>> for Option<Ty> {
-//     fn try_from_ast(ast: OptionTypeClause<'db>, db: &'db dyn Database) -> IntrospectResult<Self> {
-//         match ast {
-//             OptionTypeClause::Empty(_) => Ok(None),
-//             OptionTypeClause::TypeClause(ty) => ty.ast_try_into(db).map(Some),
-//         }
-//     }
-// }

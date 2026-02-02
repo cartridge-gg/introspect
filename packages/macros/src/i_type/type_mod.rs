@@ -1,7 +1,8 @@
 use super::ToTypeDefVariant;
+use super::attribute::AttributeParse;
 use crate::i_type::{AttributeParser, AttributeVariant, TypeDefVariant};
-use crate::ty::CairoPrimitiveType;
-use crate::{Attribute, AttributesTrait, IntrospectError, IntrospectResult, Ty};
+use crate::{IntrospectError, IntrospectResult};
+use cairo_syntax_parser::{Attribute, AttributesTrait};
 use introspect_rust_macros::macro_attributes;
 use introspect_types::{ByteArrayEncodedDef, Bytes31EncodedDef, TypeDef};
 use std::mem;
@@ -33,12 +34,14 @@ pub trait TypeModMemberTrait {
         match attribute.path_str() {
             "raw" => match &attribute.arguments {
                 None => Some(self.set_type_mod(TypeMod::Raw)),
-                _ => Some(attribute.format_err()),
+                _ => Some(Err(IntrospectError::InvalidIntrospectAttributeFormat(
+                    "raw".to_string(),
+                ))),
             },
             "encoded" => Some(
                 attribute
-                    .single_unnamed_arg()
-                    .and_then(|e| self.set_type_mod(TypeMod::Encoded(e))),
+                    .to_single_unnamed_arg()
+                    .and_then(|e| self.set_type_mod(TypeMod::Encoded(e.to_string()))),
             ),
             _ => None,
         }
@@ -47,28 +50,22 @@ pub trait TypeModMemberTrait {
 
 pub trait TypeModTrait: Sized {
     fn get_type_mod(self) -> TypeMod;
-    fn get_type_def(self, ty: &Ty) -> IntrospectResult<TypeDefVariant> {
+    fn get_type_def(self, ty: &str) -> IntrospectResult<TypeDefVariant> {
         match self.get_type_mod() {
-            TypeMod::Raw => match ty.get_primitive_type() {
-                Some(CairoPrimitiveType::ByteArray) => {
-                    Ok(TypeDefVariant::TypeDef(TypeDef::ByteArray))
-                }
-                Some(CairoPrimitiveType::Bytes31) => Ok(TypeDefVariant::TypeDef(TypeDef::Bytes31)),
+            TypeMod::Raw => match ty {
+                "ByteArray" => Ok(TypeDefVariant::TypeDef(TypeDef::ByteArray)),
+                "bytes31" => Ok(TypeDefVariant::TypeDef(TypeDef::Bytes31)),
                 _ => Err(IntrospectError::UnsupportedRawType),
             },
-            TypeMod::Encoded(encoded) => match ty.get_primitive_type() {
-                Some(CairoPrimitiveType::ByteArray) => {
-                    Ok(ByteArrayEncodedDef::new(encoded).to_type_def_variant())
-                }
-                Some(CairoPrimitiveType::Bytes31) => {
-                    Ok(Bytes31EncodedDef::new(encoded).to_type_def_variant())
-                }
+            TypeMod::Encoded(encoded) => match ty {
+                "ByteArray" => Ok(ByteArrayEncodedDef::new(encoded).to_type_def_variant()),
+                "bytes31" => Ok(Bytes31EncodedDef::new(encoded).to_type_def_variant()),
                 _ => Err(IntrospectError::UnsupportedEncodedType),
             },
             _ => Ok(TypeDefVariant::Default),
         }
     }
-    fn get_type_def_option(self, ty: &Option<Ty>) -> IntrospectResult<TypeDefVariant> {
+    fn get_type_def_option(self, ty: &Option<String>) -> IntrospectResult<TypeDefVariant> {
         match ty {
             Some(t) => self.get_type_def(t),
             None => Ok(TypeDefVariant::Default),
@@ -99,7 +96,7 @@ where
         attribute: Attribute,
     ) -> IntrospectResult<Vec<AttributeVariant>> {
         match self.extract_type_mod_return_empty(&attribute) {
-            None => attribute.into(),
+            None => attribute.as_variant_vec(),
             Some(res) => res,
         }
     }
@@ -136,8 +133,8 @@ impl<SyntaxType: AttributesTrait> AttributeParser<SyntaxType> for TypeModAndName
             return r.map_err(From::from);
         }
         match attribute.path_str() {
-            "name" => self.set_name_return_empty(attribute.single_unnamed_arg()?),
-            _ => attribute.into(),
+            "name" => self.set_name_return_empty(attribute.to_single_unnamed_arg()?),
+            _ => attribute.as_variant_vec(),
         }
     }
 }

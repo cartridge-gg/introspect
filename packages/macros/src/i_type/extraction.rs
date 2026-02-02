@@ -1,12 +1,4 @@
-use crate::{Arg, AttributeCallType, IntrospectError, SyntaxItemTrait};
-use cairo_lang_macro::TokenStream;
-use salsa::Database;
-
-pub trait IExtractor {
-    type Error;
-    fn get_attribute_call_type(&self) -> &AttributeCallType;
-    fn derive_call_error(&self) -> Self::Error;
-}
+use cairo_syntax_parser::Arg;
 
 pub trait IExtract
 where
@@ -113,34 +105,18 @@ impl<T> IExtractable for T {
     }
 }
 
-pub trait IExtractFromTokenStream
-where
-    Self: Sized,
-{
-    type Error: From<IntrospectError>;
-    fn iextract_from_file_node(
-        db: &dyn Database,
-        node: cairo_lang_syntax::node::SyntaxNode,
-    ) -> Result<Self, Self::Error>;
-    fn iextract_from_token_stream(token_stream: TokenStream) -> Result<Self, Self::Error> {
-        let db = cairo_lang_parser::utils::SimpleParserDatabase::default();
-        let (node, _diagnostics) = db.parse_virtual_with_diagnostics(token_stream.clone());
-        Self::iextract_from_file_node(&db, node)
-    }
-}
-
-impl<I> IExtractFromTokenStream for I
-where
-    I: IExtract,
-    I::SyntaxType: SyntaxItemTrait,
-    I::Error: From<IntrospectError>,
-{
-    type Error = I::Error;
-    fn iextract_from_file_node(
-        db: &dyn Database,
-        node: cairo_lang_syntax::node::SyntaxNode,
-    ) -> Result<Self, Self::Error> {
-        let mut item = I::SyntaxType::from_file_node(db, node)?;
-        I::iextract(&mut item)
-    }
-}
+// impl<I> IExtractFromTokenStream for I
+// where
+//     I: IExtract,
+//     I::SyntaxType: SyntaxItemTrait,
+//     I::Error: From<IntrospectError>,
+// {
+//     type Error = I::Error;
+//     fn iextract_from_file_node(
+//         db: &dyn Database,
+//         node: cairo_lang_syntax::node::SyntaxNode,
+//     ) -> Result<Self, Self::Error> {
+//         let mut item = I::SyntaxType::from_file_node(db, node)?;
+//         I::iextract(&mut item)
+//     }
+// }

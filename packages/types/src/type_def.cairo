@@ -125,6 +125,7 @@ pub mod selectors {
     pub const Nullable: core::felt252 = 'nullable';
 }
 
+
 impl TypeTraitRef<T, impl TD: TypeDef<T, true>> of TypeDef<T, false> {
     const SIZE: u32 = 2;
     fn serialize(ref output: Array<felt252>) {
@@ -301,7 +302,8 @@ impl StructDefImpl<
     impl NameToSpan: ToSpanTrait<[felt252; NAME_SIZE], felt252>,
     impl AttrsToSpan: ToSpanTrait<[felt252; ATTRIBUTES_SIZE], felt252>,
 > of TypeDef<T, Struct::REF> {
-    const SIZE: u32 = Struct::MEMBERS_SIZE + NAME_SIZE + ATTRIBUTES_SIZE + 2;
+    // const SIZE: u32 = Struct::MEMBERS_SIZE + NAME_SIZE + ATTRIBUTES_SIZE + 2;
+    const SIZE: u32 = NAME_SIZE + ATTRIBUTES_SIZE + 2;
     fn serialize(ref output: Array<felt252>) {
         output.append(selectors::Struct);
         output.append_span(NameToSpan::span(@Struct::NAME));
@@ -332,7 +334,8 @@ impl EnumDefImpl<
     impl NameToSpan: ToSpanTrait<[felt252; NAME_SIZE], felt252>,
     impl AttrsToSpan: ToSpanTrait<[felt252; ATTRIBUTES_SIZE], felt252>,
 > of TypeDef<T, Enum::REF> {
-    const SIZE: u32 = Enum::VARIANTS_SIZE + NAME_SIZE + ATTRIBUTES_SIZE + 2;
+    // const SIZE: u32 = Enum::VARIANTS_SIZE + NAME_SIZE + ATTRIBUTES_SIZE + 2;
+    const SIZE: u32 = NAME_SIZE + ATTRIBUTES_SIZE + 2;
     fn serialize(ref output: Array<felt252>) {
         output.append(selectors::Enum);
         output.append_span(NameToSpan::span(@Enum::NAME));
@@ -397,25 +400,25 @@ impl NextTupleDefImpl<
 pub trait MemberDef<const META_SIZE: u32> {
     const META_DATA: [felt252; META_SIZE];
     type Type;
-    const fn SIZE<impl TD: TypeDef<Self::Type, false>>() -> u32 {
-        META_SIZE + TD::SIZE
+    impl TD: TypeDef<Self::Type, false>;
+
+    const fn SIZE() -> u32 {
+        META_SIZE + Self::TD::SIZE
     }
-    fn serialize<impl TD: TypeDef<Self::Type, false>>(
+    fn serialize(
         ref output: Array<felt252>,
     ) {
         output.append_span(Self::META_DATA.span());
-        TD::serialize(ref output);
+        Self::TD::serialize(ref output);
     }
-    fn collect_children<impl TD: TypeDef<Self::Type, false>>(
-        ref children: ChildDefs,
-    ) {
-        TD::collect_children(ref children);
+    fn collect_children(ref children: ChildDefs) {
+        Self::TD::collect_children(ref children);
     }
-    fn serialize_with_children<impl TD: TypeDef<Self::Type, false>>(
+    fn serialize_with_children(
         ref type_def: Array<felt252>, ref child_defs: ChildDefs,
     ) {
         type_def.append_span(Self::META_DATA.span());
-        TD::serialize_with_children(ref type_def, ref child_defs);
+        Self::TD::serialize_with_children(ref type_def, ref child_defs);
     }
 }
 
@@ -424,7 +427,7 @@ pub trait StructDef<T, const NAME_SIZE: u32, const ATTRIBUTES_SIZE: u32> {
     const ATTRIBUTES_COUNT: u32;
     const ATTRIBUTES: [felt252; ATTRIBUTES_SIZE];
     const MEMBERS_COUNT: u32;
-    const MEMBERS_SIZE: u32;
+    // const MEMBERS_SIZE: u32;
     const REF: bool;
     fn serialize_members(ref output: Array<felt252>);
     fn collect_member_children(ref children: ChildDefs) {}
@@ -465,7 +468,7 @@ pub trait EnumDef<T, const NAME_SIZE: u32, const ATTRIBUTES_SIZE: u32> {
     const ATTRIBUTES_COUNT: u32;
     const ATTRIBUTES: [felt252; ATTRIBUTES_SIZE];
     const VARIANTS_COUNT: u32;
-    const VARIANTS_SIZE: u32;
+    // const VARIANTS_SIZE: u32;
     const REF: bool;
     fn serialize_variants(ref output: Array<felt252>);
     fn collect_variant_children(ref children: ChildDefs) {}

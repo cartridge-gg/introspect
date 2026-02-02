@@ -1,74 +1,38 @@
-use super::{IExtract, IntrospectItemTrait, TypeDefVariant, TypeModTrait};
+use super::{IExtract, TypeDefVariant, TypeModTrait};
 use crate::i_type::{ExtractAttributes, TypeModAndName};
-use crate::type_def::{member_def_tpl, member_default_def_tpl, struct_def_tpl};
-use crate::{
-    AsCairoBytes, CairoElementDef, CairoElementDefs, CairoTypeDef, GenericParams, IAttribute,
-    IntrospectError, IntrospectResult, ItemTrait, Ty,
-};
-use cairo_syntax_parser::{CairoWrite, Member, Struct};
+use crate::item::ItemTrait;
+use crate::{IAttribute, IntrospectError, IntrospectResult};
+use cairo_syntax_parser::{GenericParam, GenericParamsTrait, Member, NameTrait, Struct};
 
 pub struct IStruct {
     pub attributes: Vec<IAttribute>,
     pub name: String,
-    pub generic_params: GenericParams,
+    pub generic_params: Option<Vec<GenericParam>>,
     pub members: Vec<IMember>,
 }
+
+impl NameTrait for IStruct {
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn set_name(&mut self, new_name: String) {
+        self.name = new_name;
+    }
+}
+impl GenericParamsTrait for IStruct {
+    fn generic_params(&self) -> &Option<Vec<GenericParam>> {
+        &self.generic_params
+    }
+}
+
+impl ItemTrait for IStruct {}
 
 pub struct IMember {
     pub field: String,
     pub name: String,
     pub attributes: Vec<IAttribute>,
-    pub ty: Ty,
+    pub ty: String,
     pub type_def: TypeDefVariant,
-}
-
-impl CairoElementDef for IMember {
-    fn as_element_def(&self, i_path: &str) -> String {
-        let name = &self.name.as_cairo_byte_array();
-        let attributes = &self.attributes.as_element_defs_span(i_path);
-        match &self.type_def {
-            TypeDefVariant::Default => member_default_def_tpl(
-                i_path,
-                name,
-                attributes,
-                &CairoWrite::<String>::to_cairo(&self.ty),
-            ),
-            TypeDefVariant::TypeDef(type_def) => {
-                member_def_tpl(i_path, name, attributes, &type_def.as_type_def(i_path))
-            }
-            TypeDefVariant::Fn(call) => member_def_tpl(i_path, name, attributes, call),
-        }
-    }
-}
-
-impl CairoElementDef for IStruct {
-    fn as_element_def(&self, i_path: &str) -> String {
-        struct_def_tpl(
-            i_path,
-            &self.name.as_cairo_byte_array(),
-            &self.attributes.as_element_defs_span(i_path),
-            &self.members.as_element_defs_span(i_path),
-        )
-    }
-}
-
-impl ItemTrait for IStruct {
-    fn name(&self) -> &str {
-        &self.name
-    }
-    fn generic_params(&self) -> &GenericParams {
-        &self.generic_params
-    }
-}
-
-impl IntrospectItemTrait for IStruct {
-    type ModuleType = Struct;
-    fn kind(&self) -> &str {
-        "Struct"
-    }
-    fn child_types(&self) -> Vec<&Ty> {
-        self.members.iter().map(|m| &m.ty).collect()
-    }
 }
 
 impl IExtract for IMember {
@@ -76,12 +40,13 @@ impl IExtract for IMember {
     type Error = IntrospectError;
     fn iextract(member: &mut Member) -> IntrospectResult<IMember> {
         let (TypeModAndName { type_mod, name }, intro_attrs) = member.extract_attributes()?;
+        let ty = member.ty.to_string();
         Ok(IMember {
             name: name.unwrap_or_else(|| member.name.clone()),
             field: member.name.clone(),
-            ty: member.ty.clone(),
             attributes: intro_attrs,
-            type_def: type_mod.get_type_def(&member.ty)?,
+            type_def: type_mod.get_type_def(&ty)?,
+            ty: ty,
         })
     }
 }
