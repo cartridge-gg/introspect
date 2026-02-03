@@ -1,5 +1,10 @@
-pub use crate::serde::iserialize_keyed_type;
-pub use crate::{ChildDefs, EnumDef, ISerde, MemberDef, ResultDef, StructDef, TypeDef, VariantDef};
+pub use crate::serde::{ISerde, iserialize_keyed_type};
+pub use crate::type_def::custom::{
+    AsInline, AsRef, ByteArrayDef, ByteArrayEncoded, Bytes31Def, Bytes31Encoded,
+};
+pub use crate::type_def::{
+    ChildDefs, CompoundDef, DefaultToRef, FieldDef, ResultDef, TypeDef, Utf8StringDef,
+};
 
 #[inline]
 pub fn iserialize<T, impl I: ISerde<T>>(value: @T, ref output: Array<felt252>) {

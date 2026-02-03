@@ -14,7 +14,7 @@ pub trait CWriteISerde: ItemTrait {
         let instantiated_name = self.instantiated_name();
         write!(buf, "impl {name}ISerde")?;
         self.write_generics_with_traits(buf, &["Drop", &format!("{i_path}::ISerde")])?;
-        writeln!(buf, "of {i_path}::ISerde<{instantiated_name}>{{")?;
+        writeln!(buf, " of {i_path}::ISerde<{instantiated_name}>{{")?;
         writeln!(
             buf,
             "fn iserialize(self: @{instantiated_name}, ref output: Array<felt252>) {{"

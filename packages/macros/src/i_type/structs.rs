@@ -1,5 +1,6 @@
 use super::{IExtract, TypeDefVariant, TypeModTrait};
-use crate::i_type::{ExtractAttributes, TypeModAndName};
+use crate::i_type::item::{IFieldTrait, IFieldsTrait};
+use crate::i_type::{ExtractAttributes, IAttributesTrait, TypeModAndName};
 use crate::item::ItemTrait;
 use crate::{IAttribute, IntrospectError, IntrospectResult};
 use cairo_syntax_parser::{GenericParam, GenericParamsTrait, Member, NameTrait, Struct};
@@ -25,7 +26,42 @@ impl GenericParamsTrait for IStruct {
     }
 }
 
-impl ItemTrait for IStruct {}
+impl IAttributesTrait for IStruct {
+    fn iattributes(&self) -> &[IAttribute] {
+        &self.attributes
+    }
+}
+
+impl IAttributesTrait for IMember {
+    fn iattributes(&self) -> &[IAttribute] {
+        &self.attributes
+    }
+}
+
+impl IFieldTrait for IMember {
+    fn field(&self) -> &str {
+        &self.field
+    }
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn ty(&self) -> &str {
+        &self.ty
+    }
+}
+
+impl IFieldsTrait for IStruct {
+    type Field = IMember;
+    fn fields(&self) -> &[Self::Field] {
+        &self.members
+    }
+}
+
+impl ItemTrait for IStruct {
+    fn type_selector(&self) -> &'static str {
+        "'struct'"
+    }
+}
 
 pub struct IMember {
     pub field: String,

@@ -1,23 +1,7 @@
 use core::integer::u512;
 use core::nullable::null;
-use introspect_types::{ChildDefs, EnumDef, ISerde, ISerdeByteArray, StructDef, TypeDef, structured};
+use introspect_types::{ChildDef, ISerde, TypeDef, structured};
 use starknet::{ClassHash, ContractAddress, EthAddress};
-
-struct MyStruct {
-    a: (felt252, u128, Option<felt252>),
-    b: u8,
-}
-
-struct MyOtherStruct {
-    a: (felt252, u128, Option<felt252>),
-    b: u8,
-}
-
-enum MyEnum {
-    Variant1,
-    Variant2: (felt252, u128, Option<felt252>),
-}
-
 
 fn make_my_struct_def() -> structured::TypeDef {
     structured::TypeDef::Struct(
@@ -28,18 +12,28 @@ fn make_my_struct_def() -> structured::TypeDef {
                 structured::MemberDef {
                     name: "a",
                     attributes: [].span(),
-                    type_def: structured::TypeDef::Tuple(
-                        [
-                            structured::TypeDef::Felt252, structured::TypeDef::U128,
-                            structured::TypeDef::Option(
-                                BoxTrait::new(structured::TypeDef::Felt252),
-                            ),
-                        ]
-                            .span(),
+                    type_def: structured::TypeDef::Array(
+                        structured::TypeDef::Array(structured::TypeDef::Felt252.into()).into(),
                     ),
                 },
                 structured::MemberDef {
-                    name: "b", attributes: [].span(), type_def: structured::TypeDef::U8,
+                    name: "b",
+                    attributes: [].span(),
+                    type_def: structured::TypeDef::Option(structured::TypeDef::Felt252.into()),
+                },
+                structured::MemberDef {
+                    name: "c", attributes: [].span(), type_def: structured::TypeDef::Utf8String,
+                },
+                structured::MemberDef {
+                    name: "d",
+                    attributes: [].span(),
+                    type_def: structured::TypeDef::Tuple(
+                        [
+                            structured::TypeDef::U8, structured::TypeDef::U16,
+                            structured::TypeDef::U32,
+                        ]
+                            .span(),
+                    ),
                 },
             ]
                 .span(),
@@ -47,100 +41,141 @@ fn make_my_struct_def() -> structured::TypeDef {
     )
 }
 
-mod MyStructMember {
-    use super::*;
-    pub impl a of introspect_types::MemberDef<2> {
-        const META_DATA: [felt252; 2] = ['a'.partial_terminator(1), 0];
-        type Type = (felt252, u128, Option<felt252>);
-    }
 
-    pub impl b of introspect_types::MemberDef<2> {
-        const META_DATA: [felt252; 2] = ['b'.partial_terminator(1), 0];
-        type Type = u8;
-    }
+#[derive(Drop)]
+struct MyStruct {
+    a: Array<Span<felt252>>,
+    b: Option<felt252>,
+    c: ByteArray,
+    d: (u8, u16, u32),
 }
 
-impl MyStructDef of StructDef<MyStruct, 1, 0> {
-    const NAME: [felt252; 1] = ['MyStruct'.partial_terminator(8)];
+impl MyStructAsRef of introspect_types::m_utils::DefaultToRef<MyStruct>;
+impl Tuple_U8U16U32_AsRef of introspect_types::m_utils::DefaultToRef<(u8, u16, u32)>;
+
+
+#[derive(Drop)]
+enum MyEnum {
+    Variant1,
+    Variant2: u8,
+    Variant3: (felt252, felt252, Option<felt252>),
+}
+
+
+impl MyStruct_a_Def =
+    introspect_types::m_utils::FieldDef<
+        Array<Span<felt252>>,
+        _,
+        { [0x0301000000000000000000000000000000000000000000000000000000000061, 0] },
+    >;
+impl MyStruct_b_Def =
+    introspect_types::m_utils::FieldDef<
+        Option<felt252>,
+        _,
+        { [0x0301000000000000000000000000000000000000000000000000000000000062, 0] },
+    >;
+impl MyStruct_c_Def =
+    introspect_types::m_utils::FieldDef<
+        ByteArray, _, { [0x0301000000000000000000000000000000000000000000000000000000000063, 0] },
+    >;
+impl MyStruct_d_Def =
+    introspect_types::m_utils::FieldDef<
+        (u8, u16, u32),
+        _,
+        { [0x0301000000000000000000000000000000000000000000000000000000000064, 0] },
+        introspect_types::m_utils::AsInline,
+    >;
+pub impl MyStructTypeDef of introspect_types::m_utils::CompoundDef<MyStruct, 1, 0> {
+    const DEF_SELECTOR: felt252 = 'struct';
+    const NAME: [felt252; 1] = [0x0308000000000000000000000000000000000000000000004d79537472756374];
     const ATTRIBUTES_COUNT: u32 = 0;
     const ATTRIBUTES: [felt252; 0] = [];
-    const MEMBERS_COUNT: u32 = 2;
-    const MEMBERS_SIZE: u32 = MyStructMember::a::SIZE() + MyStructMember::b::SIZE();
-    const REF: bool = false;
-    fn serialize_members(ref output: Array<felt252>) {
-        MyStructMember::a::serialize(ref output);
-        MyStructMember::b::serialize(ref output);
+    const FIELDS_COUNT: u32 = 4;
+    fn serialize_fields(ref output: Array<felt252>) {
+        MyStruct_a_Def::serialize(ref output);
+        MyStruct_b_Def::serialize(ref output);
+        MyStruct_c_Def::serialize(ref output);
+        MyStruct_d_Def::serialize(ref output);
     }
-    fn collect_member_children(ref children: ChildDefs) {
-        MyStructMember::a::collect_children(ref children);
-        MyStructMember::b::collect_children(ref children);
+    fn collect_field_children(ref children: introspect_types::m_utils::ChildDefs) {
+        MyStruct_a_Def::collect_children(ref children);
+        MyStruct_b_Def::collect_children(ref children);
+        MyStruct_c_Def::collect_children(ref children);
+        MyStruct_d_Def::collect_children(ref children);
     }
-    fn serialize_members_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
-        MyStructMember::a::serialize_with_children(ref type_def, ref children);
-        MyStructMember::b::serialize_with_children(ref type_def, ref children);
+    fn serialize_fields_with_children(
+        ref type_def: Array<felt252>, ref children: introspect_types::m_utils::ChildDefs,
+    ) {
+        MyStruct_a_Def::serialize_with_children(ref type_def, ref children);
+        MyStruct_b_Def::serialize_with_children(ref type_def, ref children);
+        MyStruct_c_Def::serialize_with_children(ref type_def, ref children);
+        MyStruct_d_Def::serialize_with_children(ref type_def, ref children);
     }
 }
 
-impl MyOtherStructDef of StructDef<MyOtherStruct, 1, 0> {
-    const NAME: [felt252; 1] = ['MyOtherStruct'.partial_terminator(13)];
+impl MyEnum_Variant1_Def =
+    introspect_types::m_utils::FieldDef<
+        (),
+        _,
+        {
+            [
+                0x0156f5ce477021d6111ecb5192d2b252a0bbdb2d3ee7d2a0aaceb5a2077ee46a,
+                0x03080000000000000000000000000000000000000000000056617269616e7431, 0,
+            ]
+        },
+    >;
+impl MyEnum_Variant2_Def =
+    introspect_types::m_utils::FieldDef<
+        u8,
+        _,
+        {
+            [
+                0x00661273ab485bcba4e353e1e878530864b9c295d01d1d297fa4626f24604c0a,
+                0x03080000000000000000000000000000000000000000000056617269616e7432, 0,
+            ]
+        },
+    >;
+impl MyEnum_Variant3_Def =
+    introspect_types::m_utils::FieldDef<
+        (felt252, felt252, Option<felt252>),
+        _,
+        {
+            [
+                0x02f4bf2d068042c60eec062e9b09dd41231cba010b7cf12fabf3ba39c9de8dd4,
+                0x03080000000000000000000000000000000000000000000056617269616e7433, 0,
+            ]
+        },
+    >;
+pub impl MyEnumTypeDef of introspect_types::m_utils::CompoundDef<MyEnum, 1, 0> {
+    const DEF_SELECTOR: felt252 = 'enum';
+    const NAME: [felt252; 1] = [0x03060000000000000000000000000000000000000000000000004d79456e756d];
     const ATTRIBUTES_COUNT: u32 = 0;
     const ATTRIBUTES: [felt252; 0] = [];
-    const MEMBERS_COUNT: u32 = 2;
-    const MEMBERS_SIZE: u32 = MyStructMember::a::SIZE() + MyStructMember::b::SIZE();
-    const REF: bool = true;
-    fn serialize_members(ref output: Array<felt252>) {
-        MyStructMember::a::serialize(ref output);
-        MyStructMember::b::serialize(ref output);
+    const FIELDS_COUNT: u32 = 3;
+    fn serialize_fields(ref output: Array<felt252>) {
+        MyEnum_Variant1_Def::serialize(ref output);
+        MyEnum_Variant2_Def::serialize(ref output);
+        MyEnum_Variant3_Def::serialize(ref output);
     }
-    fn collect_member_children(ref children: ChildDefs) {
-        MyStructMember::a::collect_children(ref children);
-        MyStructMember::b::collect_children(ref children);
+    fn collect_field_children(ref children: introspect_types::m_utils::ChildDefs) {
+        MyEnum_Variant1_Def::collect_children(ref children);
+        MyEnum_Variant2_Def::collect_children(ref children);
+        MyEnum_Variant3_Def::collect_children(ref children);
     }
-    fn serialize_members_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
-        MyStructMember::a::serialize_with_children(ref type_def, ref children);
-        MyStructMember::b::serialize_with_children(ref type_def, ref children);
-    }
-}
-
-mod MyEnumVariant {
-    pub use introspect_types::ISerdeByteArray;
-    pub impl Variant1 of introspect_types::VariantDef<2> {
-        const SELECTOR: felt252 = selector!("Variant1");
-        const META_DATA: [felt252; 2] = ['Variant1'.partial_terminator(8), 0];
-        type Type = ();
-    }
-    pub impl Variant2 of introspect_types::VariantDef<2> {
-        const SELECTOR: felt252 = selector!("Variant2");
-        const META_DATA: [felt252; 2] = ['Variant2'.partial_terminator(8), 0];
-        type Type = (felt252, u128, Option<felt252>);
-    }
-}
-
-impl MyEnumDef of EnumDef<MyEnum, 1, 0> {
-    const NAME: [felt252; 1] = ['MyEnum'.partial_terminator(6)];
-    const ATTRIBUTES_COUNT: u32 = 0;
-    const ATTRIBUTES: [felt252; 0] = [];
-    const VARIANTS_COUNT: u32 = 2;
-    const VARIANTS_SIZE: u32 = MyEnumVariant::Variant1::SIZE() + MyEnumVariant::Variant2::SIZE();
-    const REF: bool = false;
-    fn serialize_variants(ref output: Array<felt252>) {
-        MyEnumVariant::Variant1::serialize(ref output);
-        MyEnumVariant::Variant2::serialize(ref output);
-    }
-    fn collect_variant_children(ref children: ChildDefs) {
-        MyEnumVariant::Variant1::collect_children(ref children);
-        MyEnumVariant::Variant2::collect_children(ref children);
-    }
-    fn serialize_variants_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
-        MyEnumVariant::Variant1::serialize_with_children(ref type_def, ref children);
-        MyEnumVariant::Variant2::serialize_with_children(ref type_def, ref children);
+    fn serialize_fields_with_children(
+        ref type_def: Array<felt252>, ref children: introspect_types::m_utils::ChildDefs,
+    ) {
+        MyEnum_Variant1_Def::serialize_with_children(ref type_def, ref children);
+        MyEnum_Variant2_Def::serialize_with_children(ref type_def, ref children);
+        MyEnum_Variant3_Def::serialize_with_children(ref type_def, ref children);
     }
 }
 
 
-fn test_type_def_trait<T, const REF: bool, impl TD: TypeDef<T, REF>>(expected: ByteArray) {
+fn test_type_def_trait<T, impl TD: TypeDef<T>>(expected: ByteArray) {
     let mut output: Array<felt252> = Default::default();
-    TD::serialize(ref output);
+    let mut children = Default::default();
+    TD::serialize_with_children(ref output, ref children);
     // assert_eq!(output.len(), TypeDef::SIZE);
     let mut data = output.span();
     println!("---------------------------------------");
@@ -151,6 +186,18 @@ fn test_type_def_trait<T, const REF: bool, impl TD: TypeDef<T, REF>>(expected: B
             println!("{:?}", output);
             panic!("Failed to deserialize type def");
         },
+    }
+    if children.len() > 0 {
+        for ChildDef { id, type_def: mut data } in children {
+            println!("Child ID: {:?}", id);
+            match ISerde::<structured::TypeDef>::ideserialize(ref data) {
+                Some(type_def) => { println!("{:?}", type_def); },
+                None => {
+                    println!("{:?}", output);
+                    panic!("Failed to deserialize type def");
+                },
+            }
+        }
     }
 }
 
@@ -195,7 +242,6 @@ fn type_def_tests() {
     test_type_def_trait::<(felt252, u8, u16)>("(felt252, u8, u16)");
     test_type_def_trait::<(felt252, u8, u16, ByteArray)>("(felt252, u8, u16, ByteArray)");
     test_type_def_trait::<MyStruct>("MyStruct");
-    test_type_def_trait::<MyOtherStruct, false>("MyOtherStruct");
     test_type_def_trait::<MyEnum>("MyEnum");
 }
 

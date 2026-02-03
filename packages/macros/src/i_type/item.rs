@@ -45,4 +45,28 @@ impl GenericParamsTrait for IntrospectItem {
     }
 }
 
-impl ItemTrait for IntrospectItem {}
+impl ItemTrait for IntrospectItem {
+    fn type_selector(&self) -> &'static str {
+        match self {
+            IntrospectItem::Struct(s) => s.type_selector(),
+            IntrospectItem::Enum(e) => e.type_selector(),
+        }
+    }
+}
+
+pub trait IFieldTrait {
+    fn field(&self) -> &str;
+    fn name(&self) -> &str;
+    fn ty(&self) -> &str;
+}
+
+pub trait IFieldsTrait {
+    type Field: IFieldTrait;
+    fn fields(&self) -> &[Self::Field];
+    fn field_fields(&self) -> Vec<&str> {
+        self.fields()
+            .iter()
+            .map(IFieldTrait::field)
+            .collect::<Vec<&str>>()
+    }
+}

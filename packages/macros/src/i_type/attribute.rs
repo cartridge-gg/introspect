@@ -23,24 +23,25 @@ impl IAttribute {
 }
 
 pub trait IAttributesTrait {
-    fn cwrite_const_attributes<W: Write>(&self, buf: &mut W) -> FmtResult;
-    fn size(&self) -> u32;
-    fn cwrite_attribute_count<W: Write>(&self, buf: &mut W) -> FmtResult;
+    fn iattributes(&self) -> &[IAttribute];
+    fn cwrite_const_attributes<W: Write>(&self, buf: &mut W) -> FmtResult {
+        let total_size: u32 = self.iattributes_size();
+        write!(buf, "const ATTRIBUTES: [felt252; {total_size}] = ")?;
+        self.iattributes().cwrite_csv_bracketed(buf)?;
+        buf.write_str(";\n")
+    }
+    fn iattributes_size(&self) -> u32 {
+        self.iattributes().iter().map(IAttribute::cairo_size).sum()
+    }
+    fn cwrite_attribute_count<W: Write>(&self, buf: &mut W) -> FmtResult {
+        let count = self.iattributes().len();
+        write!(buf, "const ATTRIBUTES_COUNT: u32 = {count};\n")
+    }
 }
 
 impl IAttributesTrait for [IAttribute] {
-    fn cwrite_const_attributes<W: Write>(&self, buf: &mut W) -> FmtResult {
-        let total_size: u32 = self.size();
-        write!(buf, "const ATTRIBUTES: [felt252; {total_size}] = ")?;
-        self.cwrite_csv_bracketed(buf)?;
-        buf.write_str(";\n")
-    }
-    fn size(&self) -> u32 {
-        self.iter().map(IAttribute::cairo_size).sum()
-    }
-    fn cwrite_attribute_count<W: Write>(&self, buf: &mut W) -> FmtResult {
-        let count = self.len();
-        write!(buf, "const ATTRIBUTES_COUNT: u32 = {count};\n")
+    fn iattributes(&self) -> &[IAttribute] {
+        self
     }
 }
 

@@ -1,6 +1,7 @@
 use super::{IExtract, TypeDefVariant};
 use crate::i_type::attribute::ExtractAttributes;
-use crate::i_type::{TypeModAndName, TypeModTrait};
+use crate::i_type::item::{IFieldTrait, IFieldsTrait};
+use crate::i_type::{IAttributesTrait, TypeModAndName, TypeModTrait};
 use crate::item::ItemTrait;
 use crate::utils::string_to_keccak_felt;
 use crate::{IAttribute, IntrospectError, IntrospectResult};
@@ -38,7 +39,42 @@ impl GenericParamsTrait for IEnum {
     }
 }
 
-impl ItemTrait for IEnum {}
+impl IAttributesTrait for IEnum {
+    fn iattributes(&self) -> &[IAttribute] {
+        &self.attributes
+    }
+}
+
+impl IAttributesTrait for IVariant {
+    fn iattributes(&self) -> &[IAttribute] {
+        &self.attributes
+    }
+}
+
+impl IFieldTrait for IVariant {
+    fn field(&self) -> &str {
+        &self.field
+    }
+    fn name(&self) -> &str {
+        &self.name
+    }
+    fn ty(&self) -> &str {
+        self.ty.as_deref().unwrap_or("()")
+    }
+}
+
+impl IFieldsTrait for IEnum {
+    type Field = IVariant;
+    fn fields(&self) -> &[Self::Field] {
+        &self.variants
+    }
+}
+
+impl ItemTrait for IEnum {
+    fn type_selector(&self) -> &'static str {
+        "'enum'"
+    }
+}
 
 impl IExtract for IVariant {
     type SyntaxType = Variant;

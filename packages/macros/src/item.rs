@@ -1,6 +1,7 @@
 use cairo_syntax_parser::{CairoWriteSlice, GenericParamsTrait, NameTrait};
 use std::fmt::{Result as FmtResult, Write};
 pub trait ItemTrait: GenericParamsTrait + NameTrait {
+    fn type_selector(&self) -> &'static str;
     fn write_name<W: Write>(&self, buf: &mut W) -> FmtResult {
         buf.write_str(self.name())
     }

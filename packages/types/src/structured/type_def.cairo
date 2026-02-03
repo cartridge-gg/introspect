@@ -45,6 +45,12 @@ pub enum TypeDef {
     Custom: ByteArray,
 }
 
+impl TypeDefIntoBox of Into<TypeDef, Box<TypeDef>> {
+    fn into(self: TypeDef) -> Box<TypeDef> {
+        BoxTrait::new(self)
+    }
+}
+
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct StructDef {
     pub name: ByteArray,

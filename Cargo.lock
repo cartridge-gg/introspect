@@ -541,6 +541,7 @@ dependencies = [
  "delegate",
  "paste",
  "salsa",
+ "starknet-types-core",
  "thiserror 2.0.17",
 ]
 

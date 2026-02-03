@@ -2,7 +2,7 @@ use cairo_syntax_parser::CairoWriteSlice;
 use std::fmt::{Result as FmtResult, Write};
 
 pub trait CWriteIBytes {
-    fn to_serialized_bytes<W: Write>(&self, buf: &mut W) -> FmtResult;
+    fn to_iserialized_bytes<W: Write>(&self, buf: &mut W) -> FmtResult;
     fn to_const_byte_array<W: Write>(&self, buf: &mut W, name: &str) -> FmtResult;
 }
 
@@ -20,16 +20,19 @@ pub fn string_to_felts(s: &str) -> (&[[u8; 31]], &[u8]) {
     bytes_to_byte_array_felts(s.as_bytes())
 }
 
-impl CWriteIBytes for String {
-    fn to_serialized_bytes<W: Write>(&self, buf: &mut W) -> FmtResult {
-        let (felts, final_felt) = string_to_felts(self);
+impl<T> CWriteIBytes for T
+where
+    T: AsRef<str>,
+{
+    fn to_iserialized_bytes<W: Write>(&self, buf: &mut W) -> FmtResult {
+        let (felts, final_felt) = string_to_felts(self.as_ref());
         felts.cwrite_terminated(buf, ',')?;
         write_terminal_byte31(buf, final_felt)
     }
     fn to_const_byte_array<W: Write>(&self, buf: &mut W, name: &str) -> FmtResult {
-        let size = self.len().div_ceil(31);
+        let size = self.as_ref().len().div_ceil(31);
         write!(buf, "const {name}: [felt252; {size}] = [")?;
-        self.to_serialized_bytes(buf)?;
+        self.to_iserialized_bytes(buf)?;
         buf.write_str("];\n")
     }
 }
