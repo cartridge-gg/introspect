@@ -35,7 +35,7 @@ impl TupleIntoEntry of Into<(felt252, Span<felt252>), Entry> {
 }
 
 impl EntryISerde of ISerde<Entry> {
-    // const SIZE_HINT: Option<u32> = None;
+    const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @Entry, ref output: Array<felt252>) {
         output.append(*self.row);
         self.data.iserialize(ref output);
@@ -45,5 +45,8 @@ impl EntryISerde of ISerde<Entry> {
         let row = *serialized.pop_front()?;
         let data = ISerde::ideserialize(ref serialized)?;
         Some(Entry { row, data })
+    }
+    fn iserialized_size(self: @Entry) -> u32 {
+        1 + self.data.iserialized_size()
     }
 }

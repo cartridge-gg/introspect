@@ -69,4 +69,7 @@ pub trait IFieldsTrait {
             .map(IFieldTrait::field)
             .collect::<Vec<&str>>()
     }
+    fn field_tys(&self) -> Vec<&str> {
+        self.fields().iter().map(|v| v.ty()).collect()
+    }
 }

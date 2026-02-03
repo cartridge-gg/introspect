@@ -9,12 +9,16 @@ mod structs;
 pub trait CWriteISerde: ItemTrait {
     fn cwrite_iserialize<W: Write>(&self, buf: &mut W, i_path: &str) -> FmtResult;
     fn cwrite_ideserialize<W: Write>(&self, buf: &mut W, i_path: &str) -> FmtResult;
+    fn cwrite_isize<W: Write>(&self, buf: &mut W, i_path: &str) -> FmtResult;
+    fn cwrite_size_hint<W: Write>(&self, buf: &mut W, i_path: &str) -> FmtResult;
     fn cwrite_iserde_impl<W: Write>(&self, buf: &mut W, i_path: &str) -> FmtResult {
         let name = self.name();
         let instantiated_name = self.instantiated_name();
         write!(buf, "impl {name}ISerde")?;
         self.write_generics_with_traits(buf, &["Drop", &format!("{i_path}::ISerde")])?;
         writeln!(buf, " of {i_path}::ISerde<{instantiated_name}>{{")?;
+        buf.write_str("const SIZE_HINT: Option<usize> =")?;
+        self.cwrite_size_hint(buf, i_path)?;
         writeln!(
             buf,
             "fn iserialize(self: @{instantiated_name}, ref output: Array<felt252>) {{"
@@ -25,6 +29,11 @@ pub trait CWriteISerde: ItemTrait {
             "}}\nfn ideserialize(ref serialized: Span<felt252>) -> Option<{instantiated_name}> {{"
         )?;
         self.cwrite_ideserialize(buf, i_path)?;
+        writeln!(
+            buf,
+            "}}\nfn iserialized_size(self: @{instantiated_name}) -> u32 {{"
+        )?;
+        self.cwrite_isize(buf, i_path)?;
         buf.write_str("\n}\n}")
     }
     fn iserde_impl_to_string(&self, i_path: &str) -> String {
@@ -45,6 +54,18 @@ impl CWriteISerde for IntrospectItem {
         match self {
             IntrospectItem::Struct(s) => s.cwrite_ideserialize(buf, i_path),
             IntrospectItem::Enum(e) => e.cwrite_ideserialize(buf, i_path),
+        }
+    }
+    fn cwrite_size_hint<W: Write>(&self, buf: &mut W, i_path: &str) -> FmtResult {
+        match self {
+            IntrospectItem::Struct(s) => s.cwrite_size_hint(buf, i_path),
+            IntrospectItem::Enum(e) => e.cwrite_size_hint(buf, i_path),
+        }
+    }
+    fn cwrite_isize<W: Write>(&self, buf: &mut W, i_path: &str) -> FmtResult {
+        match self {
+            IntrospectItem::Struct(s) => s.cwrite_isize(buf, i_path),
+            IntrospectItem::Enum(e) => e.cwrite_isize(buf, i_path),
         }
     }
 }

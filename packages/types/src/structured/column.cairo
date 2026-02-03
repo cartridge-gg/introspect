@@ -1,5 +1,5 @@
-use crate::serialized::TypeDefTrait;
-use crate::{Attribute, ISerde, TypeDef};
+use crate::ISerde;
+use super::{Attribute, TypeDef};
 
 #[derive(Drop, Serde, PartialEq, Debug)]
 pub struct ColumnDef {
@@ -23,5 +23,11 @@ impl ColumnDefISerde of ISerde<ColumnDef> {
         let attributes = ISerde::ideserialize(ref serialized)?;
         let type_def = ISerde::ideserialize(ref serialized)?;
         Some(ColumnDef { id, name, attributes, type_def })
+    }
+    fn iserialized_size(self: @ColumnDef) -> u32 {
+        1
+            + self.name.iserialized_size()
+            + self.attributes.iserialized_size()
+            + self.type_def.iserialized_size()
     }
 }

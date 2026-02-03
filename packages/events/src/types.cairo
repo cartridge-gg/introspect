@@ -1,4 +1,5 @@
-use introspect_types::{ChildDef, ISerde, TypeDef};
+use introspect_types::structured::TypeDef;
+use introspect_types::{ChildDef, ISerde};
 use starknet::Event;
 use crate::emit_event_impl;
 use crate::utils::{DrainSpanTrait, VerifyEventDeserializeTrait};

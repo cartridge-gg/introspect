@@ -1,7 +1,8 @@
 use core::integer::u512;
 use core::nullable::null;
-use introspect_types::{ChildDef, ISerde, TypeDef, structured};
+use introspect_types::{ChildDef, ChildDefs, ISerde, TypeDef, structured};
 use starknet::{ClassHash, ContractAddress, EthAddress};
+
 
 fn make_my_struct_def() -> structured::TypeDef {
     structured::TypeDef::Struct(
@@ -41,13 +42,14 @@ fn make_my_struct_def() -> structured::TypeDef {
     )
 }
 
-
-#[derive(Drop)]
+#[derive(Drop, Table)]
 struct MyStruct {
     a: Array<Span<felt252>>,
     b: Option<felt252>,
     c: ByteArray,
-    d: (u8, u16, u32),
+    id: (u8, u16, u32),
+    e: (u8, u16, u32),
+    f: (u8, u16, u32),
 }
 
 impl MyStructAsRef of introspect_types::m_utils::DefaultToRef<MyStruct>;
@@ -387,4 +389,22 @@ fn iserde() {
 //     const VALUE: felt252 = ThatHasAConstImpl::VALUE + 1;
 // }
 
+#[inline]
+pub fn serialise_column_with_meta<
+    const ID: felt252, const SIZE: u32, const DATA: [felt252; SIZE], T, impl TD: TypeDef<T>,
+>(
+    ref type_def: Array<felt252>, ref children: ChildDefs,
+) {
+    type_def.append_span(DATA.span());
+    TD::serialize_with_children(ref type_def, ref children);
+}
 
+#[test]
+fn test() {
+    let mut type_def: Array<felt252> = Default::default();
+    let mut children: ChildDefs = Default::default();
+    const DATA: [felt252; 4] = [1, 2, 3, 69];
+    serialise_column_with_meta::<123, _, { [1, 2, 3] }, felt252>(ref type_def, ref children);
+    println!("{type_def:?}");
+    println!("{DATA:?}")
+}

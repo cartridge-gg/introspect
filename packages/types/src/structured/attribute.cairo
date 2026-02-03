@@ -34,7 +34,7 @@ pub fn attribute_data(name: ByteArray, data: ByteArray) -> Attribute {
 
 
 pub impl ISerdeAttribute of ISerde<Attribute> {
-    // const SIZE_HINT: Option<u32> = None;
+    const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @Attribute, ref output: Array<felt252>) {
         match self.data {
             Option::Some(data) => {
@@ -54,5 +54,12 @@ pub impl ISerdeAttribute of ISerde<Attribute> {
             (None, last)
         };
         Some(Attribute { name: ISerdeByteArray::ideserialize_from_parts(name_data, last)?, data })
+    }
+    fn iserialized_size(self: @Attribute) -> u32 {
+        self.name.iserialized_size()
+            + match self.data {
+                Option::Some(data) => data.iserialized_size(),
+                Option::None => 0,
+            }
     }
 }

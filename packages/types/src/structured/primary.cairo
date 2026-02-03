@@ -173,7 +173,7 @@ impl StorageBaseAddressPrimaryImpl =
     primary_unit_impl::IPrimaryImpl<StorageBaseAddress, PrimaryTypeDef::StorageBaseAddress>;
 
 pub impl PrimaryTypeDefISerde of ISerde<PrimaryTypeDef> {
-    // const SIZE_HINT: Option<u32> = None;
+    const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @PrimaryTypeDef, ref output: Array<felt252>) {
         output.append(self.selector());
         if let PrimaryTypeDef::Bytes31Encoded(encoding) = self {
@@ -227,10 +227,16 @@ pub impl PrimaryTypeDefISerde of ISerde<PrimaryTypeDef> {
             Option::None
         }
     }
+    fn iserialized_size(self: @PrimaryTypeDef) -> u32 {
+        match self {
+            PrimaryTypeDef::Bytes31Encoded(encoding) => 1 + encoding.iserialized_size(),
+            _ => 1,
+        }
+    }
 }
 
 pub impl PrimaryDefISerde of ISerde<PrimaryDef> {
-    // const SIZE_HINT: Option<u32> = None;
+    const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @PrimaryDef, ref output: Array<felt252>) {
         self.name.iserialize(ref output);
         self.attributes.iserialize(ref output);
@@ -242,6 +248,11 @@ pub impl PrimaryDefISerde of ISerde<PrimaryDef> {
         let attributes = ISerde::ideserialize(ref serialized)?;
         let type_def = PrimaryTypeDefISerde::ideserialize(ref serialized)?;
         Some(PrimaryDef { name, attributes, type_def })
+    }
+    fn iserialized_size(self: @PrimaryDef) -> u32 {
+        self.name.iserialized_size()
+            + self.attributes.iserialized_size()
+            + self.type_def.iserialized_size()
     }
 }
 

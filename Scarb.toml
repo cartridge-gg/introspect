@@ -8,7 +8,7 @@ name = "introspect"
 
 [workspace]
 members = [
-    # "packages/events",
+    "packages/events",
     "packages/types",
     "packages/macros",
     "packages/macros_tests",
@@ -19,7 +19,7 @@ members = [
 [workspace.dependencies]
 starknet = "2.15.0"
 introspect_types = { path = "packages/types" }
-# introspect_events = { path = "packages/events" }
+introspect_events = { path = "packages/events" }
 introspect_macros = { path = "packages/macros" }
 introspect_test_utils = { path = "packages/testing" }
 cgg_utils = { path = "../cairo_core_utils" }
@@ -43,7 +43,7 @@ edition.workspace = true
 [dependencies]
 starknet.workspace = true
 introspect_types.workspace = true
-# introspect_events.workspace = true
+introspect_events.workspace = true
 introspect_macros.workspace = true
 
 [dev-dependencies]

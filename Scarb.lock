@@ -41,7 +41,16 @@ dependencies = [
 name = "introspect"
 version = "0.1.2"
 dependencies = [
+ "introspect_events",
  "introspect_macros",
+ "introspect_types",
+ "snforge_std",
+]
+
+[[package]]
+name = "introspect_events"
+version = "0.1.2"
+dependencies = [
  "introspect_types",
  "snforge_std",
 ]

@@ -477,7 +477,6 @@ impl NextTupleDefImpl<
     }
 }
 
-
 pub trait CompoundDef<T, const NAME_SIZE: u32, const ATTRIBUTES_SIZE: u32> {
     const DEF_SELECTOR: felt252;
     const NAME: [felt252; NAME_SIZE];

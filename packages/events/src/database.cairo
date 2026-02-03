@@ -1,5 +1,6 @@
+use introspect_types::structured::{Attribute, ColumnDef, PrimaryDef, PrimaryTypeDef, TypeDef};
 use introspect_types::utils::SpanDefault;
-use introspect_types::{Attribute, ColumnDef, Entry, ISerde, PrimaryDef, PrimaryTypeDef, TypeDef};
+use introspect_types::{Entry, ISerde};
 use starknet::Event;
 use crate::utils::{DrainSpanTrait, ISerdeEnd, VerifyEventDeserializeTrait};
 use super::emit_event_impl;
@@ -43,8 +44,6 @@ pub mod selectors {
     pub const DeletesFieldSet: felt252 = selector!("DeletesFieldSet");
     pub const DeletesFieldSets: felt252 = selector!("DeletesFieldSets");
 }
-
-
 
 
 #[derive(Drop, starknet::Event, PartialEq, Debug)]
@@ -455,6 +454,9 @@ impl IdNameISerde of ISerde<IdName> {
     fn ideserialize(ref serialized: Span<felt252>) -> Option<IdName> {
         Some(IdName { id: *serialized.pop_front()?, name: ISerde::ideserialize(ref serialized)? })
     }
+    fn iserialized_size(self: @IdName) -> u32 {
+        1 + self.name.iserialized_size()
+    }
 }
 
 impl IdTypeAttributesISerde of ISerde<IdTypeDef> {
@@ -473,6 +475,9 @@ impl IdTypeAttributesISerde of ISerde<IdTypeDef> {
                 type_def: ISerde::ideserialize(ref serialized)?,
             },
         )
+    }
+    fn iserialized_size(self: @IdTypeDef) -> u32 {
+        1 + self.attributes.iserialized_size() + self.type_def.iserialized_size()
     }
 }
 
