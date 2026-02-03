@@ -1,10 +1,9 @@
 use super::{IExtract, TypeDefVariant, TypeModTrait};
-use crate::i_type::{
-    ExtractAttributes, IAttributesTrait, IFieldTrait, IFieldsTrait, INameTrait, ITyTrait,
-    TypeModAndName,
-};
 use crate::item::ItemTrait;
-use crate::{IAttribute, IntrospectError, IntrospectResult};
+use crate::{
+    ExtractAttributes, IAttribute, IAttributesTrait, IFieldTrait, IFieldsTrait, INameTrait,
+    ITyTrait, IntrospectError, IntrospectResult, TypeModAndName,
+};
 use cairo_syntax_parser::{GenericParam, GenericParamsTrait, Member, Struct};
 
 pub struct IStruct {

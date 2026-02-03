@@ -1,105 +1,57 @@
-pub fn parse_byte_to_cairo_byte(byte: &u8) -> String {
-    match byte {
-        32 => " ".to_string(),
-        33 => "!".to_string(),
-        35 => "#".to_string(),
-        36 => "$".to_string(),
-        37 => "%".to_string(),
-        38 => "&".to_string(),
-        39 => "'".to_string(),
-        40 => "(".to_string(),
-        41 => ")".to_string(),
-        42 => "*".to_string(),
-        43 => "+".to_string(),
-        44 => ",".to_string(),
-        45 => "-".to_string(),
-        46 => ".".to_string(),
-        47 => "/".to_string(),
-        48 => "0".to_string(),
-        49 => "1".to_string(),
-        50 => "2".to_string(),
-        51 => "3".to_string(),
-        52 => "4".to_string(),
-        53 => "5".to_string(),
-        54 => "6".to_string(),
-        55 => "7".to_string(),
-        56 => "8".to_string(),
-        57 => "9".to_string(),
-        58 => ":".to_string(),
-        59 => ";".to_string(),
-        60 => "<".to_string(),
-        61 => "=".to_string(),
-        62 => ">".to_string(),
-        63 => "?".to_string(),
-        64 => "@".to_string(),
-        65 => "A".to_string(),
-        66 => "B".to_string(),
-        67 => "C".to_string(),
-        68 => "D".to_string(),
-        69 => "E".to_string(),
-        70 => "F".to_string(),
-        71 => "G".to_string(),
-        72 => "H".to_string(),
-        73 => "I".to_string(),
-        74 => "J".to_string(),
-        75 => "K".to_string(),
-        76 => "L".to_string(),
-        77 => "M".to_string(),
-        78 => "N".to_string(),
-        79 => "O".to_string(),
-        80 => "P".to_string(),
-        81 => "Q".to_string(),
-        82 => "R".to_string(),
-        83 => "S".to_string(),
-        84 => "T".to_string(),
-        85 => "U".to_string(),
-        86 => "V".to_string(),
-        87 => "W".to_string(),
-        88 => "X".to_string(),
-        89 => "Y".to_string(),
-        90 => "Z".to_string(),
-        91 => "[".to_string(),
-        93 => "]".to_string(),
-        94 => "^".to_string(),
-        95 => "_".to_string(),
-        96 => "`".to_string(),
-        97 => "a".to_string(),
-        98 => "b".to_string(),
-        99 => "c".to_string(),
-        100 => "d".to_string(),
-        101 => "e".to_string(),
-        102 => "f".to_string(),
-        103 => "g".to_string(),
-        104 => "h".to_string(),
-        105 => "i".to_string(),
-        106 => "j".to_string(),
-        107 => "k".to_string(),
-        108 => "l".to_string(),
-        109 => "m".to_string(),
-        110 => "n".to_string(),
-        111 => "o".to_string(),
-        112 => "p".to_string(),
-        113 => "q".to_string(),
-        114 => "r".to_string(),
-        115 => "s".to_string(),
-        116 => "t".to_string(),
-        117 => "u".to_string(),
-        118 => "v".to_string(),
-        119 => "w".to_string(),
-        120 => "x".to_string(),
-        121 => "y".to_string(),
-        122 => "z".to_string(),
-        123 => "{".to_string(),
-        124 => "|".to_string(),
-        125 => "}".to_string(),
-        126 => "~".to_string(),
-        _ => format!("\\x{:02x}", byte),
+use cairo_syntax_parser::CairoWriteSlice;
+use std::fmt::{Result as FmtResult, Write};
+
+pub trait CWriteIBytes {
+    fn to_iserialized_bytes<W: Write>(&self, buf: &mut W) -> FmtResult;
+    fn to_const_byte_array<W: Write>(&self, buf: &mut W, name: &str) -> FmtResult;
+}
+
+pub fn bytes_to_byte_array_felts(bytes: &[u8]) -> (&[[u8; 31]], &[u8]) {
+    let (full, partial) = bytes.as_chunks::<31>();
+    if partial.is_empty() {
+        let last = full.len() - 1;
+        (&full[..last], &full[last])
+    } else {
+        (full, partial)
     }
 }
 
-pub fn parse_bytes_to_cairo_byte_array<T: AsRef<[u8]>>(data: T) -> String {
-    data.as_ref()
-        .into_iter()
-        .map(parse_byte_to_cairo_byte)
-        .collect()
+pub fn string_to_felts(s: &str) -> (&[[u8; 31]], &[u8]) {
+    bytes_to_byte_array_felts(s.as_bytes())
+}
+
+impl<T> CWriteIBytes for T
+where
+    T: AsRef<str>,
+{
+    fn to_iserialized_bytes<W: Write>(&self, buf: &mut W) -> FmtResult {
+        let (felts, final_felt) = string_to_felts(self.as_ref());
+        felts.cwrite_terminated(buf, ',')?;
+        write_terminal_byte31(buf, final_felt)
+    }
+    fn to_const_byte_array<W: Write>(&self, buf: &mut W, name: &str) -> FmtResult {
+        let size = self.as_ref().len().div_ceil(31);
+        write!(buf, "const {name}: [felt252; {size}] = [")?;
+        self.to_iserialized_bytes(buf)?;
+        buf.write_str("];\n")
+    }
+}
+
+pub fn write_terminal_byte31<W: Write>(buf: &mut W, bytes: &[u8]) -> FmtResult {
+    if bytes.len() == 31 {
+        write!(buf, "0x02")?;
+    } else {
+        write!(buf, "0x03{:02x}", bytes.len())?;
+        (0..30 - bytes.len())
+            .map(|_| buf.write_str("00"))
+            .collect::<FmtResult>()?;
+    }
+    bytes
+        .iter()
+        .map(|b| write!(buf, "{b:02x}"))
+        .collect::<FmtResult>()
+}
+
+pub fn byte_array_felt_len(string: &str) -> u32 {
+    (string.len() as u32).div_ceil(31)
 }

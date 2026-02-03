@@ -1,9 +1,10 @@
 use super::{IEnum, IExtract, IStruct};
+use crate::i_type::{IAttributesTrait, INameTrait};
 use crate::item::ItemTrait;
 use crate::{IntrospectError, IntrospectResult};
 use cairo_lang_macro::TokenStream;
 use cairo_syntax_parser::item::item_from_token_stream;
-use cairo_syntax_parser::{GenericParam, GenericParamsTrait, Item, NameTrait};
+use cairo_syntax_parser::{GenericParam, GenericParamsTrait, Item};
 
 pub enum IntrospectItem {
     Struct(IStruct),
@@ -21,17 +22,11 @@ impl IntrospectItem {
     }
 }
 
-impl NameTrait for IntrospectItem {
+impl INameTrait for IntrospectItem {
     fn name(&self) -> &str {
         match self {
             IntrospectItem::Struct(s) => &s.name(),
             IntrospectItem::Enum(e) => &e.name(),
-        }
-    }
-    fn set_name(&mut self, new_name: String) {
-        match self {
-            IntrospectItem::Struct(s) => s.set_name(new_name),
-            IntrospectItem::Enum(e) => e.set_name(new_name),
         }
     }
 }
@@ -45,31 +40,20 @@ impl GenericParamsTrait for IntrospectItem {
     }
 }
 
+impl IAttributesTrait for IntrospectItem {
+    fn iattributes(&self) -> &[crate::IAttribute] {
+        match self {
+            IntrospectItem::Struct(s) => s.iattributes(),
+            IntrospectItem::Enum(e) => e.iattributes(),
+        }
+    }
+}
+
 impl ItemTrait for IntrospectItem {
     fn type_selector(&self) -> &'static str {
         match self {
             IntrospectItem::Struct(s) => s.type_selector(),
             IntrospectItem::Enum(e) => e.type_selector(),
         }
-    }
-}
-
-pub trait IFieldTrait {
-    fn field(&self) -> &str;
-    fn name(&self) -> &str;
-    fn ty(&self) -> &str;
-}
-
-pub trait IFieldsTrait {
-    type Field: IFieldTrait;
-    fn fields(&self) -> &[Self::Field];
-    fn field_fields(&self) -> Vec<&str> {
-        self.fields()
-            .iter()
-            .map(IFieldTrait::field)
-            .collect::<Vec<&str>>()
-    }
-    fn field_tys(&self) -> Vec<&str> {
-        self.fields().iter().map(|v| v.ty()).collect()
     }
 }

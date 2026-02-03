@@ -1,6 +1,5 @@
-use crate::IStruct;
-use crate::i_type::item::IFieldsTrait;
 use crate::serde::CWriteISerde;
+use crate::{IFieldsTrait, IStruct};
 use cairo_syntax_parser::CairoWriteSlice;
 use std::fmt::{Result as FmtResult, Write};
 

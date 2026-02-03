@@ -1,11 +1,11 @@
 use super::{IExtract, TypeDefVariant};
-use crate::i_type::attribute::ExtractAttributes;
-use crate::i_type::{
-    IAttributesTrait, IFieldTrait, IFieldsTrait, INameTrait, ITyTrait, TypeModAndName, TypeModTrait,
-};
+use crate::attribute::ExtractAttributes;
 use crate::item::ItemTrait;
 use crate::utils::string_to_keccak_felt;
-use crate::{IAttribute, IntrospectError, IntrospectResult};
+use crate::{
+    IAttribute, IAttributesTrait, IFieldTrait, IFieldsTrait, INameTrait, ITyTrait, IntrospectError,
+    IntrospectResult, TypeModAndName, TypeModTrait,
+};
 use cairo_syntax_parser::{Enum, GenericParam, GenericParamsTrait, Variant};
 use starknet_types_core::felt::Felt;
 

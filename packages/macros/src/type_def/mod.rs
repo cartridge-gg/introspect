@@ -2,15 +2,14 @@ pub mod derive;
 pub mod enums;
 pub mod structs;
 
-use crate::IntrospectItem;
-use crate::i_type::attribute::IAttributesTrait;
-use crate::i_type::byte_array::CWriteIBytes;
-use crate::i_type::{IFieldTrait, IFieldsTrait};
+use crate::attribute::IAttributesTrait;
+use crate::byte_array::CWriteIBytes;
 use crate::item::ItemTrait;
-use cairo_syntax_parser::{CairoWriteSlice, NameTrait};
+use crate::traits::MetaDataTrait;
+use crate::{IFieldTrait, IFieldsTrait, INameTrait, ITyTrait, IntrospectItem};
 use std::fmt::{Result as FmtResult, Write};
 
-pub trait TypeDefField: IAttributesTrait + IFieldTrait {
+pub trait TypeDefField: IAttributesTrait + IFieldTrait + MetaDataTrait + ITyTrait {
     fn cwrite_pre_meta_data<W: Write>(&self, _buf: &mut W) -> FmtResult {
         Ok(())
     }
@@ -27,13 +26,7 @@ pub trait TypeDefField: IAttributesTrait + IFieldTrait {
             "impl {impl_name}{generics_with_traits} = {i_path}::FieldDef<{ty}, _, {{["
         )?;
         self.cwrite_pre_meta_data(buf)?;
-        self.name().to_iserialized_bytes(buf)?;
-        let attribute_count = self.iattributes().len();
-        write!(buf, ", {attribute_count}")?;
-        if attribute_count > 0 {
-            buf.write_char(',')?;
-            self.iattributes().cwrite_csv(buf)?;
-        }
+        self.cwrite_meta_data(buf)?;
         buf.write_str("]}>;\n")
     }
 }
@@ -68,8 +61,8 @@ pub trait CWriteTypeDef {
 }
 impl<T> CWriteTypeDef for T
 where
-    T: NameTrait + IAttributesTrait + IFieldsTrait + ItemTrait,
-    <T as IFieldsTrait>::Field: TypeDefField,
+    T: INameTrait + IAttributesTrait + IFieldsTrait + ItemTrait + INameTrait,
+    <T as IFieldsTrait>::Field: TypeDefField + INameTrait,
 {
     fn cwrite_type_def<W: Write>(
         &self,

@@ -1,6 +1,5 @@
-use crate::i_type::{IFieldTrait, IFieldsTrait};
 use crate::serde::CWriteISerde;
-use crate::{IEnum, IVariant};
+use crate::{IEnum, IFieldsTrait, ITyTrait, IVariant};
 use std::fmt::{Result as FmtResult, Write};
 
 impl CWriteISerde for IEnum {

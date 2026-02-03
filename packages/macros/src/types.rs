@@ -1,0 +1,53 @@
+pub use super::{IEnum, IExtract, IMember, IStruct, IVariant};
+use crate::IntrospectResult;
+use introspect_types::{ItemDefTrait, TypeDef};
+
+#[derive(Clone, Debug, Default)]
+pub enum TypeDefVariant {
+    #[default]
+    Default,
+    TypeDef(TypeDef),
+    Fn(String),
+}
+
+pub trait ExtractTypeDef {
+    type MacroAttribute;
+    fn extract_type_def(
+        &self,
+        ty: &String,
+        attributes: &[Self::MacroAttribute],
+    ) -> IntrospectResult<TypeDefVariant>;
+    fn extract_option_type_def(
+        &self,
+        ty: &Option<String>,
+        attributes: &[Self::MacroAttribute],
+    ) -> IntrospectResult<TypeDefVariant>;
+}
+
+// impl TypeDefVariant {
+//     pub fn type_def(&self, ty: &Ty, i_path: &str) -> String {
+//         match self {
+//             TypeDefVariant::Default => {
+//                 format!(
+//                     "{i_path}::type_def_default::<{}>()",
+//                     CairoFormat::<String>::to_cairo(ty)
+//                 )
+//             }
+//             TypeDefVariant::TypeDef(type_def) => type_def.as_type_def(i_path),
+//             TypeDefVariant::Fn(call) => call.clone(),
+//         }
+//     }
+// }
+
+pub trait ToTypeDefVariant: ItemDefTrait + Sized {
+    fn to_type_def_variant(self) -> TypeDefVariant;
+}
+
+impl<T> ToTypeDefVariant for T
+where
+    T: ItemDefTrait + Sized,
+{
+    fn to_type_def_variant(self) -> TypeDefVariant {
+        TypeDefVariant::TypeDef(self.wrap_to_type_def())
+    }
+}
