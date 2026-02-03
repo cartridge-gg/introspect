@@ -19,7 +19,7 @@ pub use error::{IntrospectError, IntrospectResult};
 pub use extraction::{IExtract, IExtractWith, IExtractable};
 pub use item::IntrospectItem;
 pub use structs::{IMember, IStruct};
-pub use traits::{IFieldTrait, IFieldsTrait, INameTrait, ITyTrait};
+pub use traits::{IFieldTrait, IFieldsTrait, INameTrait, ITyTrait, MetaDataTrait};
 pub use type_mod::{TypeMod, TypeModAndName, TypeModMemberTrait, TypeModTrait};
 pub use types::{ExtractTypeDef, ToTypeDefVariant, TypeDefVariant};
 
