@@ -105,6 +105,7 @@ impl AttributeVariant {
 pub trait AttributeParse {
     fn as_variant_vec(self) -> IntrospectResult<Vec<AttributeVariant>>;
     fn to_single_unnamed_arg(&self) -> IntrospectResult<String>;
+    fn to_single_unnamed_arg_string(&self) -> IntrospectResult<String>;
 }
 
 impl AttributeParse for Attribute {
@@ -117,6 +118,11 @@ impl AttributeParse for Attribute {
                 self.path_str().to_string(),
             ))
             .map(|expr| expr.to_string())
+    }
+    fn to_single_unnamed_arg_string(&self) -> IntrospectResult<String> {
+        self.get_single_unnamed_arg_string().ok_or(
+            IntrospectError::InvalidIntrospectAttributeFormat(self.path_str().to_string()),
+        )
     }
 }
 

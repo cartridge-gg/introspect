@@ -1,6 +1,6 @@
 use crate::IAttributesTrait;
 use crate::byte_array::CWriteIBytes;
-use cairo_syntax_parser::CairoWriteSlice;
+use cairo_syntax_parser::{CairoWriteSlice, Slice};
 use std::fmt::{Result as FmtResult, Write};
 
 pub trait INameTrait {
@@ -26,6 +26,17 @@ pub trait IFieldsTrait {
     }
     fn field_tys(&self) -> Vec<&str> {
         self.fields().iter().map(ITyTrait::ty).collect()
+    }
+}
+
+impl<T> IFieldsTrait for T
+where
+    T: Slice,
+    T::Element: IFieldTrait + ITyTrait,
+{
+    type Field = T::Element;
+    fn fields(&self) -> &[Self::Field] {
+        self.elements()
     }
 }
 
