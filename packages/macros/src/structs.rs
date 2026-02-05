@@ -1,0 +1,104 @@
+use super::{IExtract, TypeDefVariant, TypeModTrait};
+use crate::item::ItemTrait;
+use crate::{
+    ExtractAttributes, IAttribute, IAttributesTrait, IFieldTrait, IFieldsTrait, INameTrait,
+    ITyTrait, IntrospectError, IntrospectResult, TypeModAndName,
+};
+use cairo_syntax_parser::{GenericParam, GenericParamsTrait, Member, Struct};
+
+pub struct IStruct {
+    pub attributes: Vec<IAttribute>,
+    pub name: String,
+    pub generic_params: Option<Vec<GenericParam>>,
+    pub members: Vec<IMember>,
+}
+
+pub struct IMember {
+    pub field: String,
+    pub name: String,
+    pub attributes: Vec<IAttribute>,
+    pub ty: String,
+    pub type_def: TypeDefVariant,
+}
+
+impl INameTrait for IStruct {
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+impl GenericParamsTrait for IStruct {
+    fn generic_params(&self) -> &Option<Vec<GenericParam>> {
+        &self.generic_params
+    }
+}
+
+impl IAttributesTrait for IStruct {
+    fn iattributes(&self) -> &[IAttribute] {
+        &self.attributes
+    }
+}
+
+impl INameTrait for IMember {
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+impl IAttributesTrait for IMember {
+    fn iattributes(&self) -> &[IAttribute] {
+        &self.attributes
+    }
+}
+
+impl IFieldTrait for IMember {
+    fn field(&self) -> &str {
+        &self.field
+    }
+}
+impl ITyTrait for IMember {
+    fn ty(&self) -> &str {
+        &self.ty
+    }
+}
+
+impl IFieldsTrait for IStruct {
+    type Field = IMember;
+    fn fields(&self) -> &[Self::Field] {
+        &self.members
+    }
+}
+
+impl ItemTrait for IStruct {
+    fn type_selector(&self) -> &'static str {
+        "'struct'"
+    }
+}
+
+impl IExtract for IMember {
+    type SyntaxType = Member;
+    type Error = IntrospectError;
+    fn iextract(member: &mut Member) -> IntrospectResult<IMember> {
+        let (TypeModAndName { type_mod, name }, intro_attrs) = member.extract_attributes()?;
+        let ty = member.ty.to_string();
+        Ok(IMember {
+            name: name.unwrap_or_else(|| member.name.clone()),
+            field: member.name.clone(),
+            attributes: intro_attrs,
+            type_def: type_mod.get_type_def(&ty)?,
+            ty: ty,
+        })
+    }
+}
+
+impl IExtract for IStruct {
+    type SyntaxType = Struct;
+    type Error = IntrospectError;
+    fn iextract(item: &mut Struct) -> IntrospectResult<IStruct> {
+        Ok(IStruct {
+            attributes: vec![],
+            name: item.name.clone(),
+            generic_params: item.generic_params.clone(),
+            members: IMember::iextracts(&mut item.members)?,
+        })
+    }
+}

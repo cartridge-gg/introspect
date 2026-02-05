@@ -1,37 +1,26 @@
-pub mod as_cairo;
-pub mod ast;
-pub mod ast_macros;
+pub mod attribute;
 pub mod byte_array;
+pub mod enums;
 pub mod error;
-pub mod fuzzable;
-pub mod i_type;
-pub mod inline;
-pub mod introspect;
+pub mod extraction;
 pub mod item;
-pub mod manager;
-pub mod params;
 pub mod serde;
-pub mod syntax;
-pub mod table;
-pub mod ty;
+pub mod structs;
+pub mod traits;
 pub mod type_def;
+pub mod type_mod;
+pub mod types;
 pub mod utils;
-// pub use as_cairo::{AsCairo, AsCairoBytes, AsCairoWith, CollectionsAsCairo};
-pub use as_cairo::AsCairoBytes;
-pub use ast::{AstInto, AstToString, AstTryInto, FromAst, TryFromAst};
+pub use attribute::{
+    AttributeParser, AttributeVariant, ExtractAttributes, IAttribute, IAttributesTrait,
+};
+pub use enums::{IEnum, IVariant};
 pub use error::{IntrospectError, IntrospectResult};
-pub use i_type::{IEnum, IItem, IMember, IStruct, IVariant};
-pub use item::ItemTrait;
-pub use params::GenericParams;
-pub use syntax::{
-    Arg, ArgClause, Attribute, AttributesTrait, CairoCollectionFormat, CairoFormat, Derives, Enum,
-    Item, Member, Modifier, Struct, SyntaxItemTrait, Variant, Visibility,
-};
-pub use ty::Ty;
-pub use type_def::{
-    CairoElementDef, CairoElementDefWith, CairoElementDefs, CairoElementDefsWith, CairoTypeDef,
-};
-pub use utils::AttributeCallType;
+pub use extraction::{IExtract, IExtractWith, IExtractable};
+pub use item::IntrospectItem;
+pub use structs::{IMember, IStruct};
+pub use traits::{IFieldTrait, IFieldsTrait, INameTrait, ITyTrait, MetaDataTrait};
+pub use type_mod::{TypeMod, TypeModAndName, TypeModMemberTrait, TypeModTrait};
+pub use types::{ExtractTypeDef, ToTypeDefVariant, TypeDefVariant};
 
 pub const I_PATH: &str = "introspect::m_utils";
-pub type IAttribute = introspect_types::Attribute;

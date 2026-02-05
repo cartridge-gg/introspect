@@ -1,59 +1,59 @@
-use super::{IEnum, IStruct};
-use crate::i_type::{IExtract, ITys};
-use crate::params::GenericParams;
-use crate::{IntrospectError, IntrospectResult, Item, ItemTrait, Ty};
-pub trait IntrospectItemTrait {
-    type ModuleType;
-    fn kind(&self) -> &str;
-    fn child_types(&self) -> Vec<&Ty>;
-    fn child_defs(&self, i_path: &str) -> String {
-        self.child_types().collect_child_defs(i_path)
-    }
-}
+use super::{IEnum, IExtract, IStruct};
+use crate::i_type::{IAttributesTrait, INameTrait};
+use crate::item::ItemTrait;
+use crate::{IntrospectError, IntrospectResult};
+use cairo_lang_macro::TokenStream;
+use cairo_syntax_parser::item::item_from_token_stream;
+use cairo_syntax_parser::{GenericParam, GenericParamsTrait, Item};
 
-pub enum IItem {
+pub enum IntrospectItem {
     Struct(IStruct),
     Enum(IEnum),
 }
 
-impl ItemTrait for IItem {
+impl IntrospectItem {
+    pub fn from_token_stream(token_stream: TokenStream) -> IntrospectResult<Self> {
+        let item = item_from_token_stream(token_stream);
+        match item {
+            Item::Struct(mut s) => IStruct::iextract(&mut s).map(IntrospectItem::Struct),
+            Item::Enum(mut e) => IEnum::iextract(&mut e).map(IntrospectItem::Enum),
+            _ => Err(IntrospectError::UnsupportedItem(item.kind().to_string())),
+        }
+    }
+}
+
+impl INameTrait for IntrospectItem {
     fn name(&self) -> &str {
         match self {
-            IItem::Struct(s) => s.name(),
-            IItem::Enum(e) => e.name(),
-        }
-    }
-    fn generic_params(&self) -> &GenericParams {
-        match self {
-            IItem::Struct(s) => s.generic_params(),
-            IItem::Enum(e) => e.generic_params(),
+            IntrospectItem::Struct(s) => &s.name(),
+            IntrospectItem::Enum(e) => &e.name(),
         }
     }
 }
 
-impl IntrospectItemTrait for IItem {
-    type ModuleType = Item;
-    fn kind(&self) -> &str {
+impl GenericParamsTrait for IntrospectItem {
+    fn generic_params(&self) -> &Option<Vec<GenericParam>> {
         match self {
-            IItem::Struct(s) => s.kind(),
-            IItem::Enum(e) => e.kind(),
-        }
-    }
-    fn child_types(&self) -> Vec<&Ty> {
-        match self {
-            IItem::Struct(s) => s.child_types(),
-            IItem::Enum(e) => e.child_types(),
+            IntrospectItem::Struct(s) => s.generic_params(),
+            IntrospectItem::Enum(e) => e.generic_params(),
         }
     }
 }
 
-impl IExtract for IItem {
-    type SyntaxType = Item;
-    type Error = IntrospectError;
-    fn iextract(item: &mut Item) -> IntrospectResult<IItem> {
-        match item {
-            Item::Struct(s) => IStruct::iextract(s).map(IItem::Struct),
-            Item::Enum(e) => IEnum::iextract(e).map(IItem::Enum),
+impl IAttributesTrait for IntrospectItem {
+    fn iattributes(&self) -> &[crate::IAttribute] {
+        match self {
+            IntrospectItem::Struct(s) => s.iattributes(),
+            IntrospectItem::Enum(e) => e.iattributes(),
+        }
+    }
+}
+
+impl ItemTrait for IntrospectItem {
+    fn type_selector(&self) -> &'static str {
+        match self {
+            IntrospectItem::Struct(s) => s.type_selector(),
+            IntrospectItem::Enum(e) => e.type_selector(),
         }
     }
 }

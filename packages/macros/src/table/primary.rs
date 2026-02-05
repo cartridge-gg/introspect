@@ -1,6 +1,7 @@
 use crate::i_type::TypeDefVariant;
 use crate::type_def::CairoElementDef;
-use crate::{AsCairoBytes, CairoFormat, IAttribute, IntrospectError, Ty};
+use crate::{AsCairoBytes, IAttribute, IntrospectError, Ty};
+use cairo_syntax_parser::CairoWrite;
 use introspect_types::PrimaryTypeDef;
 
 #[derive(Clone, Debug)]
@@ -39,7 +40,10 @@ impl PrimaryTypeDefVariant {
     pub fn type_def(&self, ty: &Ty, i_path: &str) -> String {
         match self {
             PrimaryTypeDefVariant::Default => {
-                format!("{i_path}::primary_type_def::<{}>()", ty.to_cairo())
+                format!(
+                    "{i_path}::primary_type_def::<{}>()",
+                    CairoWrite::<String>::to_cairo(ty)
+                )
             }
             PrimaryTypeDefVariant::TypeDef(type_def) => type_def.as_element_def(i_path),
             PrimaryTypeDefVariant::Fn(call) => call.clone(),

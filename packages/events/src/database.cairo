@@ -1,5 +1,6 @@
+use introspect_types::structured::{Attribute, ColumnDef, PrimaryDef, PrimaryTypeDef, TypeDef};
 use introspect_types::utils::SpanDefault;
-use introspect_types::{Attribute, ColumnDef, Entry, ISerde, PrimaryDef, PrimaryTypeDef, TypeDef};
+use introspect_types::{Entry, ISerde};
 use starknet::Event;
 use crate::utils::{DrainSpanTrait, ISerdeEnd, VerifyEventDeserializeTrait};
 use super::emit_event_impl;
@@ -444,6 +445,7 @@ pub struct IdTypeDef {
 }
 
 impl IdNameISerde of ISerde<IdName> {
+    const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @IdName, ref output: Array<felt252>) {
         output.append(*self.id);
         self.name.iserialize(ref output);
@@ -452,9 +454,13 @@ impl IdNameISerde of ISerde<IdName> {
     fn ideserialize(ref serialized: Span<felt252>) -> Option<IdName> {
         Some(IdName { id: *serialized.pop_front()?, name: ISerde::ideserialize(ref serialized)? })
     }
+    fn iserialized_size(self: @IdName) -> u32 {
+        1 + self.name.iserialized_size()
+    }
 }
 
 impl IdTypeAttributesISerde of ISerde<IdTypeDef> {
+    const SIZE_HINT: Option<u32> = None;
     fn iserialize(self: @IdTypeDef, ref output: Array<felt252>) {
         output.append(*self.id);
         self.attributes.iserialize(ref output);
@@ -469,6 +475,9 @@ impl IdTypeAttributesISerde of ISerde<IdTypeDef> {
                 type_def: ISerde::ideserialize(ref serialized)?,
             },
         )
+    }
+    fn iserialized_size(self: @IdTypeDef) -> u32 {
+        1 + self.attributes.iserialized_size() + self.type_def.iserialized_size()
     }
 }
 

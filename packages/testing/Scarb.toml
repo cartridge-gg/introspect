@@ -1,0 +1,23 @@
+[package]
+name = "introspect_test_utils"
+version.workspace = true
+edition.workspace = true
+cairo-version.workspace = true
+scarb-version.workspace = true
+repository.workspace = true
+experimental-features = ["associated_item_constraints", "negative_impls"]
+
+[dependencies]
+starknet.workspace = true
+snforge_std.workspace = true
+assert_macros.workspace = true
+introspect_types.workspace = true
+cgg_utils.workspace = true
+
+[dev-dependencies]
+
+[tool]
+fmt.workspace = true
+scarb.workspace = true
+
+[lib]

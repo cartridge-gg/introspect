@@ -13,7 +13,7 @@ experimental-features = [
 
 [dependencies]
 starknet.workspace = true
-core_ext.workspace = true
+cgg_utils.workspace = true
 
 [dev-dependencies]
 snforge_std.workspace = true

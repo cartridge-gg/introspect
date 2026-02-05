@@ -1,93 +1,190 @@
-use crate::{Attribute, ISerde, Introspect};
+use cgg_utils::{CollectionSplit, IsTuple};
+use core::integer::u512;
+use core::poseidon::poseidon_hash_span;
+use starknet::storage_access::StorageBaseAddress;
+use starknet::{ClassHash, ContractAddress, EthAddress, StorageAddress};
 
-#[derive(Drop, PartialEq, Default, Debug)]
-pub enum TypeDef {
-    #[default]
-    None,
-    Felt252,
-    ShortUtf8,
-    Bytes31,
-    Bytes31Encoded: ByteArray,
-    Bool,
-    U8,
-    U16,
-    U32,
-    U64,
-    U128,
-    U256,
-    U512,
-    I8,
-    I16,
-    I32,
-    I64,
-    I128,
-    ClassHash,
-    ContractAddress,
-    EthAddress,
-    StorageAddress,
-    StorageBaseAddress,
-    ByteArray,
-    Utf8String,
-    ByteArrayEncoded: ByteArray,
-    Tuple: Span<TypeDef>,
-    Array: Box<TypeDef>,
-    FixedArray: Box<FixedArrayDef>,
-    Felt252Dict: Box<TypeDef>,
-    Struct: StructDef,
-    Enum: EnumDef,
-    Option: Box<TypeDef>,
-    Result: Box<ResultDef>,
-    Nullable: Box<TypeDef>,
-    Ref: felt252,
-    Custom: ByteArray,
+
+pub trait TypeDef<T> {
+    const SIZE: u32;
+    fn serialize(ref output: Array<felt252>);
+    fn collect_children(ref children: ChildDefs);
+    fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs);
+    fn to_span() -> Span<
+        felt252,
+    > {
+        let mut output: Array<felt252> = Default::default();
+        Self::serialize(ref output);
+        output.span()
+    }
+    fn to_span_with_children(
+        ref children: ChildDefs,
+    ) -> Span<
+        felt252,
+    > {
+        let mut output: Array<felt252> = Default::default();
+        Self::serialize_with_children(ref output, ref children);
+        output.span()
+    }
 }
 
-#[derive(Drop, Serde, PartialEq, Debug)]
-pub struct StructDef {
-    pub name: ByteArray,
-    pub attributes: Span<Attribute>,
-    pub members: Span<MemberDef>,
+pub trait DefaultToRef<T>;
+
+pub trait TypeDefRef<T> {
+    const SIZE: u32;
+    fn serialize(ref output: Array<felt252>);
+    fn collect_children(ref children: ChildDefs);
+    fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs);
+    fn to_span() -> Span<
+        felt252,
+    > {
+        let mut output: Array<felt252> = Default::default();
+        Self::serialize(ref output);
+        output.span()
+    }
+    fn to_span_with_children(
+        ref children: ChildDefs,
+    ) -> Span<
+        felt252,
+    > {
+        let mut output: Array<felt252> = Default::default();
+        Self::serialize_with_children(ref output, ref children);
+        output.span()
+    }
 }
 
-#[derive(Drop, Serde, PartialEq, Debug)]
-pub struct MemberDef {
-    pub name: ByteArray,
-    pub attributes: Span<Attribute>,
-    pub type_def: TypeDef,
+pub trait TypeDefInline<T> {
+    const SIZE: u32;
+    fn serialize(ref output: Array<felt252>);
+    fn collect_children(ref children: ChildDefs);
+    fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs);
+    fn to_span() -> Span<
+        felt252,
+    > {
+        let mut output: Array<felt252> = Default::default();
+        Self::serialize(ref output);
+        output.span()
+    }
+    fn to_span_with_children(
+        ref children: ChildDefs,
+    ) -> Span<
+        felt252,
+    > {
+        let mut output: Array<felt252> = Default::default();
+        Self::serialize_with_children(ref output, ref children);
+        output.span()
+    }
 }
 
 
-#[derive(Drop, Serde, PartialEq, Debug)]
-pub struct EnumDef {
-    pub name: ByteArray,
-    pub attributes: Span<Attribute>,
-    pub variants: Span<VariantDef>,
+impl TypeDefInlineImpl<T, impl TD: TypeDefInline<T>, -DefaultToRef<T>> of TypeDef<T> {
+    const SIZE: u32 = TD::SIZE;
+    fn serialize(ref output: Array<felt252>) {
+        TD::serialize(ref output);
+    }
+    fn collect_children(ref children: ChildDefs) {
+        TD::collect_children(ref children);
+    }
+    fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+        TD::serialize_with_children(ref type_def, ref children);
+    }
 }
 
-#[derive(Drop, Serde, PartialEq, Debug)]
-pub struct VariantDef {
-    pub selector: felt252,
-    pub name: ByteArray,
-    pub attributes: Span<Attribute>,
-    pub type_def: TypeDef,
+
+impl RefDefDefaultImpl<T, impl TD: TypeDefRef<T>, +DefaultToRef<T>> of TypeDef<T> {
+    const SIZE: u32 = TD::SIZE;
+    fn serialize(ref output: Array<felt252>) {
+        TD::serialize(ref output);
+    }
+    fn collect_children(ref children: ChildDefs) {
+        TD::collect_children(ref children);
+    }
+    fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+        TD::serialize_with_children(ref type_def, ref children);
+    }
 }
 
-#[derive(Drop, Serde, PartialEq, Debug)]
-pub struct FixedArrayDef {
-    pub type_def: TypeDef,
-    pub size: u32,
+
+impl TypeDefRefImpl<T, impl TD: TypeDefInline<T>> of TypeDefRef<T> {
+    const SIZE: u32 = 2;
+    fn serialize(ref output: Array<felt252>) {
+        let type_def = TD::to_span();
+        match is_known_type_def(type_def) {
+            KnownType::Primitive(id) => { output.append(id); },
+            KnownType::Ref(id) => {
+                output.append(selectors::Ref);
+                output.append(id);
+            },
+            KnownType::None => {
+                output.append(selectors::Ref);
+                output.append(poseidon_hash_span(type_def));
+            },
+        }
+    }
+    fn collect_children(ref children: ChildDefs) {
+        TD::collect_children(ref children);
+        let type_def = TD::to_span();
+        if is_known_type_def(type_def) == KnownType::None {
+            let id = poseidon_hash_span(type_def);
+            children.add_child_def(id, type_def);
+        }
+    }
+    fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+        let child_def = TD::to_span_with_children(ref children);
+        match is_known_type_def(child_def) {
+            KnownType::Primitive(id) => { type_def.append(id); },
+            KnownType::Ref(id) => {
+                type_def.append(selectors::Ref);
+                type_def.append(id);
+            },
+            KnownType::None => {
+                type_def.append(selectors::Ref);
+                let id = poseidon_hash_span(child_def);
+                type_def.append(id);
+                children.append(ChildDef { id, type_def: child_def });
+            },
+        }
+    }
 }
 
-#[derive(Drop, Serde, PartialEq, Debug)]
-pub struct ResultDef {
-    pub ok: TypeDef,
-    pub err: TypeDef,
-}
 
 #[generate_trait]
-pub impl MemberDefImpl of MemberDefTrait {
-    fn new<T, +Introspect<T>>(name: ByteArray, attributes: Span<Attribute>) -> MemberDef {
-        MemberDef { name, attributes, type_def: Introspect::<T>::type_def() }
+pub impl ChildDefsImpl of ChildDefsTrait {
+    fn add_child_def(ref self: ChildDefs, hash: felt252, type_def_span: Span<felt252>) {
+        for child in self.span() {
+            if *child.id == hash {
+                return;
+            }
+        }
+        self.append(ChildDef { id: hash, type_def: type_def_span });
+    }
+}
+
+
+#[derive(Drop)]
+pub struct ChildDef {
+    pub id: felt252,
+    pub type_def: Span<felt252>,
+}
+
+pub type ChildDefs = Array<ChildDef>;
+
+#[derive(PartialEq, Debug, Drop)]
+pub enum KnownType {
+    Primitive: felt252,
+    Ref: felt252,
+    None,
+}
+
+pub fn is_known_type_def(type_def_span: Span<felt252>) -> KnownType {
+    match type_def_span.len() {
+        0 => panic!("Type Def cannot be empty"),
+        1 => KnownType::Primitive(*type_def_span[0]),
+        2 => match *type_def_span[0] {
+            'ref' => KnownType::Ref(*type_def_span[1]),
+            _ => KnownType::None,
+        },
+        _ => KnownType::None,
     }
 }
 
@@ -131,424 +228,295 @@ pub mod selectors {
     pub const Nullable: core::felt252 = 'nullable';
 }
 
-pub trait SelectorTrait<T> {
-    const fn selector(self: @T) -> felt252 nopanic;
-}
 
-impl TypeDefSelector of SelectorTrait<TypeDef> {
-    const fn selector(self: @TypeDef) -> felt252 nopanic {
-        match self {
-            TypeDef::None => selectors::None,
-            TypeDef::Felt252 => selectors::felt252,
-            TypeDef::ShortUtf8 => selectors::ShortUtf8,
-            TypeDef::Bytes31 => selectors::bytes31,
-            TypeDef::Bytes31Encoded(_) => selectors::bytes31Encoded,
-            TypeDef::Bool => selectors::bool,
-            TypeDef::U8 => selectors::u8,
-            TypeDef::U16 => selectors::u16,
-            TypeDef::U32 => selectors::u32,
-            TypeDef::U64 => selectors::u64,
-            TypeDef::U128 => selectors::u128,
-            TypeDef::U256 => selectors::u256,
-            TypeDef::U512 => selectors::u512,
-            TypeDef::I8 => selectors::i8,
-            TypeDef::I16 => selectors::i16,
-            TypeDef::I32 => selectors::i32,
-            TypeDef::I64 => selectors::i64,
-            TypeDef::I128 => selectors::i128,
-            TypeDef::ClassHash => selectors::ClassHash,
-            TypeDef::ContractAddress => selectors::ContractAddress,
-            TypeDef::EthAddress => selectors::EthAddress,
-            TypeDef::StorageAddress => selectors::StorageAddress,
-            TypeDef::StorageBaseAddress => selectors::StorageBaseAddress,
-            TypeDef::ByteArray => selectors::ByteArray,
-            TypeDef::Utf8String => selectors::Utf8String,
-            TypeDef::ByteArrayEncoded(_) => selectors::ByteArrayEncoded,
-            TypeDef::Tuple(_) => selectors::Tuple,
-            TypeDef::Array(_) => selectors::Array,
-            TypeDef::FixedArray(_) => selectors::FixedArray,
-            TypeDef::Felt252Dict(_) => selectors::Felt252Dict,
-            TypeDef::Struct(_) => selectors::Struct,
-            TypeDef::Enum(_) => selectors::Enum,
-            TypeDef::Ref(_) => selectors::Ref,
-            TypeDef::Custom(_) => selectors::Custom,
-            TypeDef::Option(_) => selectors::Option,
-            TypeDef::Result(_) => selectors::Result,
-            TypeDef::Nullable(_) => selectors::Nullable,
+pub mod impls {
+    use super::ChildDefs;
+    pub impl Primary<T, const ID: felt252> of super::TypeDefInline<T> {
+        const SIZE: u32 = 1;
+        fn serialize(ref output: Array<felt252>) {
+            output.append(ID);
+        }
+        fn collect_children(ref children: super::ChildDefs) {}
+        fn serialize_with_children(ref type_def: Array<felt252>, ref children: super::ChildDefs) {
+            Self::serialize(ref type_def);
+        }
+    }
+
+    pub impl Nested<
+        const SELECTOR: felt252, Wrapper, Inner, impl TD: super::TypeDef<Inner>,
+    > of super::TypeDefInline<Wrapper> {
+        const SIZE: u32 = TD::SIZE + 1;
+        fn serialize(ref output: Array<felt252>) {
+            output.append(SELECTOR);
+            TD::serialize(ref output);
+        }
+        fn collect_children(ref children: ChildDefs) {
+            TD::collect_children(ref children);
+        }
+        fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+            type_def.append(SELECTOR);
+            TD::serialize_with_children(ref type_def, ref children);
         }
     }
 }
 
-
-impl TySerde of Serde<TypeDef> {
-    fn serialize(self: @TypeDef, ref output: Array<felt252>) {
-        match self {
-            TypeDef::None | TypeDef::Felt252 | TypeDef::ShortUtf8 | TypeDef::Bytes31 |
-            TypeDef::Bool | TypeDef::U8 | TypeDef::U16 | TypeDef::U32 | TypeDef::U64 |
-            TypeDef::U128 | TypeDef::U256 | TypeDef::U512 | TypeDef::I8 | TypeDef::I16 |
-            TypeDef::I32 | TypeDef::I64 | TypeDef::I128 | TypeDef::ClassHash |
-            TypeDef::ContractAddress | TypeDef::EthAddress | TypeDef::StorageAddress |
-            TypeDef::ByteArray | TypeDef::Utf8String |
-            TypeDef::StorageBaseAddress => { output.append(self.selector()); },
-            TypeDef::Ref(t) => {
-                output.append(self.selector());
-                output.append(*t);
-            },
-            TypeDef::Custom(t) | TypeDef::Bytes31Encoded(t) |
-            TypeDef::ByteArrayEncoded(t) => {
-                output.append(self.selector());
-                t.serialize(ref output)
-            },
-            TypeDef::Nullable(t) | TypeDef::Array(t) | TypeDef::Option(t) |
-            TypeDef::Felt252Dict(t) => {
-                output.append(self.selector());
-                Serde::serialize(t, ref output);
-            },
-            TypeDef::Tuple(t) => {
-                output.append(selectors::Tuple);
-                Serde::serialize(t, ref output);
-            },
-            TypeDef::FixedArray(t) => {
-                output.append(selectors::FixedArray);
-                Serde::serialize(t, ref output);
-            },
-            TypeDef::Struct(t) => {
-                output.append(selectors::Struct);
-                Serde::serialize(t, ref output);
-            },
-            TypeDef::Enum(t) => {
-                output.append(selectors::Enum);
-                Serde::serialize(t, ref output);
-            },
-            TypeDef::Result(t) => {
-                output.append(selectors::Result);
-                Serde::serialize(t, ref output);
-            },
+pub mod custom {
+    use super::{ChildDefs, TypeDef, TypeDefInline, TypeDefRef, impls, selectors};
+    pub impl ByteArrayDef = impls::Primary<ByteArray, selectors::ByteArray>;
+    pub impl Bytes31Def = impls::Primary<bytes31, selectors::bytes31>;
+    pub impl ByteArrayEncoded<
+        const SIZE: u32, const ENCODING: [felt252; SIZE],
+    > of TypeDef<ByteArray> {
+        const SIZE: u32 = SIZE + 1;
+        fn serialize(ref output: Array<felt252>) {
+            output.append(selectors::ByteArrayEncoded);
+            output.append_span(ENCODING.span());
+        }
+        fn collect_children(ref children: ChildDefs) {}
+        fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+            Self::serialize(ref type_def);
+        }
+    }
+    pub impl Bytes31Encoded<const SIZE: u32, const ENCODING: [felt252; SIZE]> of TypeDef<bytes31> {
+        const SIZE: u32 = SIZE + 1;
+        fn serialize(ref output: Array<felt252>) {
+            output.append(selectors::bytes31Encoded);
+            output.append_span(ENCODING.span());
+        }
+        fn collect_children(ref children: ChildDefs) {}
+        fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+            Self::serialize(ref type_def);
         }
     }
 
-    fn deserialize(ref serialized: Span<felt252>) -> Option<TypeDef> {
-        let tag = *serialized.pop_front()?;
+    pub impl AsRef<T, impl RD: TypeDefRef<T>> of TypeDef<T> {
+        const SIZE: u32 = RD::SIZE;
+        fn serialize(ref output: Array<felt252>) {
+            RD::serialize(ref output);
+        }
+        fn collect_children(ref children: ChildDefs) {
+            RD::collect_children(ref children);
+        }
+        fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+            RD::serialize_with_children(ref type_def, ref children);
+        }
+    }
 
-        if tag == 0 {
-            Option::Some(TypeDef::None)
-        } else if tag == selectors::felt252 {
-            Option::Some(TypeDef::Felt252)
-        } else if tag == selectors::ShortUtf8 {
-            Option::Some(TypeDef::ShortUtf8)
-        } else if tag == selectors::bytes31 {
-            Option::Some(TypeDef::Bytes31)
-        } else if tag == selectors::bytes31Encoded {
-            Option::Some(TypeDef::Bytes31Encoded(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::bool {
-            Option::Some(TypeDef::Bool)
-        } else if tag == selectors::u8 {
-            Option::Some(TypeDef::U8)
-        } else if tag == selectors::u16 {
-            Option::Some(TypeDef::U16)
-        } else if tag == selectors::u32 {
-            Option::Some(TypeDef::U32)
-        } else if tag == selectors::u64 {
-            Option::Some(TypeDef::U64)
-        } else if tag == selectors::u128 {
-            Option::Some(TypeDef::U128)
-        } else if tag == selectors::u256 {
-            Option::Some(TypeDef::U256)
-        } else if tag == selectors::u512 {
-            Option::Some(TypeDef::U512)
-        } else if tag == selectors::i8 {
-            Option::Some(TypeDef::I8)
-        } else if tag == selectors::i16 {
-            Option::Some(TypeDef::I16)
-        } else if tag == selectors::i32 {
-            Option::Some(TypeDef::I32)
-        } else if tag == selectors::i64 {
-            Option::Some(TypeDef::I64)
-        } else if tag == selectors::i128 {
-            Option::Some(TypeDef::I128)
-        } else if tag == selectors::ClassHash {
-            Option::Some(TypeDef::ClassHash)
-        } else if tag == selectors::ContractAddress {
-            Option::Some(TypeDef::ContractAddress)
-        } else if tag == selectors::EthAddress {
-            Option::Some(TypeDef::EthAddress)
-        } else if tag == selectors::StorageAddress {
-            Option::Some(TypeDef::StorageAddress)
-        } else if tag == selectors::StorageBaseAddress {
-            Option::Some(TypeDef::StorageBaseAddress)
-        } else if tag == selectors::ByteArray {
-            Option::Some(TypeDef::ByteArray)
-        } else if tag == selectors::Utf8String {
-            Option::Some(TypeDef::Utf8String)
-        } else if tag == selectors::ByteArrayEncoded {
-            Option::Some(TypeDef::ByteArrayEncoded(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Tuple {
-            Option::Some(TypeDef::Tuple(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Array {
-            Option::Some(TypeDef::Array(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::FixedArray {
-            Option::Some(TypeDef::FixedArray(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Felt252Dict {
-            Option::Some(TypeDef::Felt252Dict(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Struct {
-            Option::Some(TypeDef::Struct(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Enum {
-            Option::Some(TypeDef::Enum(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Ref {
-            Option::Some(TypeDef::Ref(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Custom {
-            Option::Some(TypeDef::Custom(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Option {
-            Option::Some(TypeDef::Option(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Result {
-            Option::Some(TypeDef::Result(Serde::deserialize(ref serialized)?))
-        } else if tag == selectors::Nullable {
-            Option::Some(TypeDef::Nullable(Serde::deserialize(ref serialized)?))
-        } else {
-            Option::None
+    pub impl AsInline<T, impl TD: TypeDefInline<T>> of TypeDef<T> {
+        const SIZE: u32 = TD::SIZE;
+        fn serialize(ref output: Array<felt252>) {
+            TD::serialize(ref output);
+        }
+        fn collect_children(ref children: ChildDefs) {
+            TD::collect_children(ref children);
+        }
+        fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+            TD::serialize_with_children(ref type_def, ref children);
         }
     }
 }
 
+pub impl VoidDef = impls::Primary<(), selectors::None>;
+pub impl Felt252Def = impls::Primary<felt252, selectors::felt252>;
+pub impl BoolDef = impls::Primary<bool, selectors::bool>;
+pub impl U8Def = impls::Primary<u8, selectors::u8>;
+pub impl U16Def = impls::Primary<u16, selectors::u16>;
+pub impl U32Def = impls::Primary<u32, selectors::u32>;
+pub impl U64Def = impls::Primary<u64, selectors::u64>;
+pub impl U128Def = impls::Primary<u128, selectors::u128>;
+pub impl U256Def = impls::Primary<u256, selectors::u256>;
+pub impl U512Def = impls::Primary<u512, selectors::u512>;
+pub impl I8Def = impls::Primary<i8, selectors::i8>;
+pub impl I16Def = impls::Primary<i16, selectors::i16>;
+pub impl I32Def = impls::Primary<i32, selectors::i32>;
+pub impl I64Def = impls::Primary<i64, selectors::i64>;
+pub impl I128Def = impls::Primary<i128, selectors::i128>;
+pub impl ShortUtf8Def = impls::Primary<bytes31, selectors::ShortUtf8>;
+pub impl ClassHashDef = impls::Primary<ClassHash, selectors::ClassHash>;
+pub impl ContractAddressDef = impls::Primary<ContractAddress, selectors::ContractAddress>;
+pub impl EthAddressDef = impls::Primary<EthAddress, selectors::EthAddress>;
+pub impl StorageAddressDef = impls::Primary<StorageAddress, selectors::StorageAddress>;
+pub impl StorageBaseAddressDef = impls::Primary<StorageBaseAddress, selectors::StorageBaseAddress>;
+pub impl Utf8StringDef = impls::Primary<ByteArray, selectors::Utf8String>;
 
-impl TyISerde of ISerde<TypeDef> {
-    fn iserialize(self: @TypeDef, ref output: Array<felt252>) {
-        match self {
-            TypeDef::None | TypeDef::Felt252 | TypeDef::ShortUtf8 | TypeDef::Bytes31 |
-            TypeDef::Bool | TypeDef::U8 | TypeDef::U16 | TypeDef::U32 | TypeDef::U64 |
-            TypeDef::U128 | TypeDef::U256 | TypeDef::U512 | TypeDef::I8 | TypeDef::I16 |
-            TypeDef::I32 | TypeDef::I64 | TypeDef::I128 | TypeDef::ClassHash |
-            TypeDef::ContractAddress | TypeDef::EthAddress | TypeDef::StorageAddress |
-            TypeDef::ByteArray | TypeDef::Utf8String |
-            TypeDef::StorageBaseAddress => { output.append(self.selector()); },
-            TypeDef::Ref(t) => {
-                output.append(self.selector());
-                output.append(*t);
-            },
-            TypeDef::Custom(t) | TypeDef::Bytes31Encoded(t) |
-            TypeDef::ByteArrayEncoded(t) => {
-                output.append(self.selector());
-                t.iserialize(ref output)
-            },
-            TypeDef::Nullable(t) | TypeDef::Array(t) | TypeDef::Option(t) |
-            TypeDef::Felt252Dict(t) => {
-                output.append(self.selector());
-                ISerde::iserialize(t, ref output);
-            },
-            TypeDef::Tuple(t) => {
-                output.append(selectors::Tuple);
-                ISerde::iserialize(t, ref output);
-            },
-            TypeDef::FixedArray(t) => {
-                output.append(selectors::FixedArray);
-                ISerde::iserialize(t, ref output);
-            },
-            TypeDef::Struct(t) => {
-                output.append(selectors::Struct);
-                ISerde::iserialize(t, ref output);
-            },
-            TypeDef::Enum(t) => {
-                output.append(selectors::Enum);
-                ISerde::iserialize(t, ref output);
-            },
-            TypeDef::Result(t) => {
-                output.append(selectors::Result);
-                ISerde::iserialize(t, ref output);
-            },
-        }
+
+pub impl FixedSizeArrayDef<T, const SIZE: u32, impl TD: TypeDef<T>> of TypeDef<[T; SIZE]> {
+    const SIZE: u32 = TD::SIZE + 2;
+    fn serialize(ref output: Array<felt252>) {
+        output.append(selectors::FixedArray);
+        TD::serialize(ref output);
+        output.append(SIZE.into());
     }
+    fn collect_children(ref children: ChildDefs) {
+        TD::collect_children(ref children);
+    }
+    fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+        type_def.append(selectors::FixedArray);
+        TD::serialize_with_children(ref type_def, ref children);
+        type_def.append(SIZE.into());
+    }
+}
+pub impl ArrayDef<T, impl TD: TypeDef<T>> = impls::Nested<selectors::Array, Array<T>, T, TD>;
+pub impl SpanDef<T, impl TD: TypeDef<T>> = impls::Nested<selectors::Array, Span<T>, T, TD>;
+pub impl OptionDef<T, impl TD: TypeDef<T>> = impls::Nested<selectors::Option, Option<T>, T, TD>;
+pub impl NullableDef<T, impl TD: TypeDef<T>> =
+    impls::Nested<selectors::Nullable, Nullable<T>, T, TD>;
 
-    fn ideserialize(ref serialized: Span<felt252>) -> Option<TypeDef> {
-        let tag = *serialized.pop_front()?;
 
-        if tag == 0 {
-            Option::Some(TypeDef::None)
-        } else if tag == selectors::felt252 {
-            Option::Some(TypeDef::Felt252)
-        } else if tag == selectors::ShortUtf8 {
-            Option::Some(TypeDef::ShortUtf8)
-        } else if tag == selectors::bytes31 {
-            Option::Some(TypeDef::Bytes31)
-        } else if tag == selectors::bytes31Encoded {
-            Option::Some(TypeDef::Bytes31Encoded(ISerde::ideserialize(ref serialized)?))
-        } else if tag == selectors::bool {
-            Option::Some(TypeDef::Bool)
-        } else if tag == selectors::u8 {
-            Option::Some(TypeDef::U8)
-        } else if tag == selectors::u16 {
-            Option::Some(TypeDef::U16)
-        } else if tag == selectors::u32 {
-            Option::Some(TypeDef::U32)
-        } else if tag == selectors::u64 {
-            Option::Some(TypeDef::U64)
-        } else if tag == selectors::u128 {
-            Option::Some(TypeDef::U128)
-        } else if tag == selectors::u256 {
-            Option::Some(TypeDef::U256)
-        } else if tag == selectors::u512 {
-            Option::Some(TypeDef::U512)
-        } else if tag == selectors::i8 {
-            Option::Some(TypeDef::I8)
-        } else if tag == selectors::i16 {
-            Option::Some(TypeDef::I16)
-        } else if tag == selectors::i32 {
-            Option::Some(TypeDef::I32)
-        } else if tag == selectors::i64 {
-            Option::Some(TypeDef::I64)
-        } else if tag == selectors::i128 {
-            Option::Some(TypeDef::I128)
-        } else if tag == selectors::ClassHash {
-            Option::Some(TypeDef::ClassHash)
-        } else if tag == selectors::ContractAddress {
-            Option::Some(TypeDef::ContractAddress)
-        } else if tag == selectors::EthAddress {
-            Option::Some(TypeDef::EthAddress)
-        } else if tag == selectors::StorageAddress {
-            Option::Some(TypeDef::StorageAddress)
-        } else if tag == selectors::StorageBaseAddress {
-            Option::Some(TypeDef::StorageBaseAddress)
-        } else if tag == selectors::ByteArray {
-            Option::Some(TypeDef::ByteArray)
-        } else if tag == selectors::Utf8String {
-            Option::Some(TypeDef::Utf8String)
-        } else if tag == selectors::ByteArrayEncoded {
-            Option::Some(TypeDef::ByteArrayEncoded(ISerde::ideserialize(ref serialized)?))
-        } else if tag == selectors::Tuple {
-            Option::Some(TypeDef::Tuple(ISerde::ideserialize(ref serialized)?))
-        } else if tag == selectors::Array {
-            Option::Some(TypeDef::Array(ISerde::ideserialize(ref serialized)?))
-        } else if tag == selectors::FixedArray {
-            Option::Some(TypeDef::FixedArray(ISerde::ideserialize(ref serialized)?))
-        } else if tag == selectors::Felt252Dict {
-            Option::Some(TypeDef::Felt252Dict(ISerde::ideserialize(ref serialized)?))
-        } else if tag == selectors::Struct {
-            Option::Some(TypeDef::Struct(ISerde::ideserialize(ref serialized)?))
-        } else if tag == selectors::Enum {
-            Option::Some(TypeDef::Enum(ISerde::ideserialize(ref serialized)?))
-        } else if tag == selectors::Ref {
-            Option::Some(TypeDef::Ref(ISerde::ideserialize(ref serialized)?))
-        } else if tag == selectors::Custom {
-            Option::Some(TypeDef::Custom(ISerde::ideserialize(ref serialized)?))
-        } else if tag == selectors::Option {
-            Option::Some(TypeDef::Option(ISerde::ideserialize(ref serialized)?))
-        } else if tag == selectors::Result {
-            Option::Some(TypeDef::Result(ISerde::ideserialize(ref serialized)?))
-        } else if tag == selectors::Nullable {
-            Option::Some(TypeDef::Nullable(ISerde::ideserialize(ref serialized)?))
-        } else {
-            Option::None
-        }
+pub impl BoxDef<T, impl TD: TypeDef<T>> of TypeDef<Box<T>> {
+    const SIZE: u32 = TD::SIZE;
+    fn serialize(ref output: Array<felt252>) {
+        TD::serialize(ref output);
+    }
+    fn collect_children(ref children: ChildDefs) {
+        TD::collect_children(ref children);
+    }
+    fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+        TD::serialize_with_children(ref type_def, ref children);
     }
 }
 
-impl BoxSerdeImpl<T, +Serde<T>> of Serde<Box<T>> {
-    fn serialize(self: @Box<T>, ref output: Array<felt252>) {
-        Serde::<T>::serialize(self.as_snapshot().unbox(), ref output);
+pub impl ResultDef<T, E, impl TD: TypeDef<T>, impl ED: TypeDef<E>> of TypeDefInline<Result<T, E>> {
+    const SIZE: u32 = TD::SIZE + ED::SIZE + 1;
+    fn serialize(ref output: Array<felt252>) {
+        output.append(selectors::Result);
+        TD::serialize(ref output);
+        ED::serialize(ref output);
     }
-
-    fn deserialize(ref serialized: Span<felt252>) -> Option<Box<T>> {
-        match Serde::<T>::deserialize(ref serialized) {
-            Option::Some(t) => Option::Some(BoxTrait::new(t)),
-            Option::None => Option::None,
-        }
+    fn collect_children(ref children: ChildDefs) {
+        TD::collect_children(ref children);
+        ED::collect_children(ref children);
     }
-}
-
-
-impl BoxPartialEq<T, +PartialEq<T>> of PartialEq<Box<T>> {
-    #[inline]
-    fn eq(lhs: @Box<T>, rhs: @Box<T>) -> bool {
-        PartialEq::<T>::eq(lhs.as_snapshot().unbox(), rhs.as_snapshot().unbox())
+    fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+        type_def.append(selectors::Result);
+        TD::serialize_with_children(ref type_def, ref children);
+        ED::serialize_with_children(ref type_def, ref children);
     }
 }
 
-
-impl StructDefISerde of ISerde<StructDef> {
-    fn iserialize(self: @StructDef, ref output: Array<felt252>) {
-        self.name.iserialize(ref output);
-        self.attributes.iserialize(ref output);
-        self.members.iserialize(ref output);
+pub impl TupleDefImpl<T, impl TD: TupleDefTrait<T>, impl Tuple: IsTuple<T>> of TypeDefInline<T> {
+    const SIZE: u32 = TD::SIZE + 2;
+    fn serialize(ref output: Array<felt252>) {
+        output.append(selectors::Tuple);
+        output.append(Tuple::SIZE.into());
+        TD::serialize(ref output);
     }
-
-    fn ideserialize(ref serialized: Span<felt252>) -> Option<StructDef> {
-        let name = ISerde::ideserialize(ref serialized)?;
-        let attributes = ISerde::ideserialize(ref serialized)?;
-        let members = ISerde::ideserialize(ref serialized)?;
-        Some(StructDef { name, attributes, members })
+    fn collect_children(ref children: ChildDefs) {
+        TD::collect_children(ref children);
     }
-}
-
-impl MemberDefISerde of ISerde<MemberDef> {
-    fn iserialize(self: @MemberDef, ref output: Array<felt252>) {
-        self.name.iserialize(ref output);
-        self.attributes.iserialize(ref output);
-        self.type_def.iserialize(ref output);
-    }
-
-    fn ideserialize(ref serialized: Span<felt252>) -> Option<MemberDef> {
-        let name = ISerde::ideserialize(ref serialized)?;
-        let attributes = ISerde::ideserialize(ref serialized)?;
-        let type_def = ISerde::ideserialize(ref serialized)?;
-        Some(MemberDef { name, attributes, type_def })
+    fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+        type_def.append(selectors::Tuple);
+        type_def.append(Tuple::SIZE.into());
+        TD::serialize_with_children(ref type_def, ref children);
     }
 }
 
-
-impl EnumDefISerde of ISerde<EnumDef> {
-    fn iserialize(self: @EnumDef, ref output: Array<felt252>) {
-        self.name.iserialize(ref output);
-        self.attributes.iserialize(ref output);
-        self.variants.iserialize(ref output);
+impl CompoundDefImpl<
+    T,
+    const NAME_SIZE: u32,
+    const ATTRIBUTES_SIZE: u32,
+    impl Def: CompoundDef<T, NAME_SIZE, ATTRIBUTES_SIZE>,
+    impl NameToSpan: ToSpanTrait<[felt252; NAME_SIZE], felt252>,
+    impl AttrsToSpan: ToSpanTrait<[felt252; ATTRIBUTES_SIZE], felt252>,
+> of TypeDefInline<T> {
+    const SIZE: u32 = NAME_SIZE + ATTRIBUTES_SIZE + 2;
+    fn serialize(ref output: Array<felt252>) {
+        output.append(Def::DEF_SELECTOR);
+        output.append_span(NameToSpan::span(@Def::NAME));
+        output.append(Def::ATTRIBUTES_COUNT.into());
+        output.append_span(AttrsToSpan::span(@Def::ATTRIBUTES));
+        output.append(Def::FIELDS_COUNT.into());
+        Def::serialize_fields(ref output);
     }
-
-    fn ideserialize(ref serialized: Span<felt252>) -> Option<EnumDef> {
-        let name = ISerde::ideserialize(ref serialized)?;
-        let attributes = ISerde::ideserialize(ref serialized)?;
-        let variants = ISerde::ideserialize(ref serialized)?;
-        Some(EnumDef { name, attributes, variants })
+    fn collect_children(ref children: ChildDefs) {
+        Def::collect_field_children(ref children);
     }
-}
-
-impl VariantDefISerde of ISerde<VariantDef> {
-    fn iserialize(self: @VariantDef, ref output: Array<felt252>) {
-        output.append(*self.selector);
-        self.name.iserialize(ref output);
-        self.attributes.iserialize(ref output);
-        self.type_def.iserialize(ref output);
-    }
-
-    fn ideserialize(ref serialized: Span<felt252>) -> Option<VariantDef> {
-        let selector = *serialized.pop_front()?;
-        let name = ISerde::ideserialize(ref serialized)?;
-        let attributes = ISerde::ideserialize(ref serialized)?;
-        let type_def = ISerde::ideserialize(ref serialized)?;
-        Some(VariantDef { selector, name, attributes, type_def })
+    fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+        type_def.append(Def::DEF_SELECTOR);
+        type_def.append_span(NameToSpan::span(@Def::NAME));
+        type_def.append(Def::ATTRIBUTES_COUNT.into());
+        type_def.append_span(AttrsToSpan::span(@Def::ATTRIBUTES));
+        type_def.append(Def::FIELDS_COUNT.into());
+        Def::serialize_fields_with_children(ref type_def, ref children);
     }
 }
 
-
-impl FixedArrayDefISerde of ISerde<FixedArrayDef> {
-    fn iserialize(self: @FixedArrayDef, ref output: Array<felt252>) {
-        self.type_def.iserialize(ref output);
-        output.append((*self.size).into());
+trait TupleDefTrait<T> {
+    const SIZE: u32;
+    fn serialize(ref output: Array<felt252>);
+    fn collect_children(ref children: ChildDefs);
+    fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs);
+}
+impl TupleSize1Impl<T, impl HD: TypeDef<T>> of TupleDefTrait<(T,)> {
+    const SIZE: u32 = HD::SIZE;
+    fn serialize(ref output: Array<felt252>) {
+        HD::serialize(ref output);
     }
-
-    fn ideserialize(ref serialized: Span<felt252>) -> Option<FixedArrayDef> {
-        let type_def = ISerde::ideserialize(ref serialized)?;
-        let size: u32 = (*serialized.pop_front()?).try_into()?;
-        Some(FixedArrayDef { type_def, size })
+    fn collect_children(ref children: ChildDefs) {
+        HD::collect_children(ref children);
+    }
+    fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+        HD::serialize_with_children(ref type_def, ref children);
+    }
+}
+impl NextTupleDefImpl<
+    T, impl CS: CollectionSplit<T>, impl HD: TypeDef<CS::Head>, impl RD: TupleDefTrait<CS::Rest>,
+> of TupleDefTrait<T> {
+    const SIZE: u32 = HD::SIZE + RD::SIZE;
+    fn serialize(ref output: Array<felt252>) {
+        HD::serialize(ref output);
+        RD::serialize(ref output);
+    }
+    fn collect_children(ref children: ChildDefs) {
+        HD::collect_children(ref children);
+        RD::collect_children(ref children);
+    }
+    fn serialize_with_children(ref type_def: Array<felt252>, ref children: ChildDefs) {
+        HD::serialize_with_children(ref type_def, ref children);
+        RD::serialize_with_children(ref type_def, ref children);
     }
 }
 
-impl ResultDefISerde of ISerde<ResultDef> {
-    fn iserialize(self: @ResultDef, ref output: Array<felt252>) {
-        self.ok.iserialize(ref output);
-        self.err.iserialize(ref output);
-    }
+pub trait CompoundDef<T, const NAME_SIZE: u32, const ATTRIBUTES_SIZE: u32> {
+    const DEF_SELECTOR: felt252;
+    const NAME: [felt252; NAME_SIZE];
+    const ATTRIBUTES_COUNT: u32;
+    const ATTRIBUTES: [felt252; ATTRIBUTES_SIZE];
+    const FIELDS_COUNT: u32;
+    // const FIELDS_SIZE: u32;
+    fn serialize_fields(ref output: Array<felt252>);
+    fn collect_field_children(ref children: ChildDefs) {}
+    fn serialize_fields_with_children(ref type_def: Array<felt252>, ref children: ChildDefs);
+}
 
-    fn ideserialize(ref serialized: Span<felt252>) -> Option<ResultDef> {
-        let ok = ISerde::ideserialize(ref serialized)?;
-        let err = ISerde::ideserialize(ref serialized)?;
-        Some(ResultDef { ok, err })
+pub trait FieldDefTrait<const META_SIZE: u32> {
+    const META_DATA: [felt252; META_SIZE];
+    type Type;
+    impl TD: TypeDef<Self::Type>;
+    const fn SIZE() -> u32 {
+        META_SIZE + Self::TD::SIZE
     }
+    fn serialize(
+        ref output: Array<felt252>,
+    ) {
+        output.append_span(Self::META_DATA.span());
+        Self::TD::serialize(ref output);
+    }
+    fn collect_children(ref children: ChildDefs) {
+        Self::TD::collect_children(ref children);
+    }
+    fn serialize_with_children(
+        ref type_def: Array<felt252>, ref child_defs: ChildDefs,
+    ) {
+        type_def.append_span(Self::META_DATA.span());
+        Self::TD::serialize_with_children(ref type_def, ref child_defs);
+    }
+}
+
+pub impl FieldDef<
+    T, const META_SIZE: u32, const META_DATA: [felt252; META_SIZE], impl TD: TypeDef<T>,
+> of FieldDefTrait<META_SIZE> {
+    const META_DATA: [felt252; META_SIZE] = META_DATA;
+    type Type = T;
+    impl TD = TD;
 }

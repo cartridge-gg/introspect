@@ -1,8 +1,7 @@
-use introspect_test_utils::fuzzable;
-use introspect_types::TypeDef;
+use introspect_types::structured::TypeDef;
 use super::iserde_test;
 
-impl TypeDefFuzzable = fuzzable::TypeDefFuzzableToDepth<10>;
+impl TypeDefFuzzable = introspect_test_utils::types::TypeDefFuzzableToDepth<10>;
 
 
 #[test]

@@ -532,6 +532,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "cairo-syntax-parser"
+version = "0.1.0"
+dependencies = [
+ "cairo-lang-macro",
+ "cairo-lang-parser",
+ "cairo-lang-syntax",
+ "delegate",
+ "paste",
+ "salsa",
+ "smallvec",
+ "starknet-types-core",
+ "thiserror 2.0.17",
+]
+
+[[package]]
 name = "cc"
 version = "1.2.50"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -762,6 +777,17 @@ name = "data-encoding"
 version = "2.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
+
+[[package]]
+name = "delegate"
+version = "0.13.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "780eb241654bf097afb00fc5f054a09b687dad862e485fdcf8399bb056565370"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.111",
+]
 
 [[package]]
 name = "deranged"
@@ -1401,12 +1427,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "indent"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9f1a0777d972970f204fdf8ef319f1f4f8459131636d7e3c96c5d59570d0fa6"
-
-[[package]]
 name = "indexmap"
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1487,37 +1507,11 @@ dependencies = [
 name = "introspect_macros"
 version = "0.1.0"
 dependencies = [
- "cairo-lang-diagnostics",
  "cairo-lang-macro",
- "cairo-lang-parser",
- "cairo-lang-primitive-token",
  "cairo-lang-starknet-classes",
- "cairo-lang-syntax",
- "const_format",
- "indent",
- "indoc",
+ "cairo-syntax-parser",
  "introspect-rust-macros",
  "introspect-types",
- "itertools",
- "paste",
- "salsa",
- "starknet-types-core",
- "thiserror 2.0.17",
-]
-
-[[package]]
-name = "introspect_table_macros"
-version = "0.1.0"
-dependencies = [
- "cairo-lang-macro",
- "cairo-lang-parser",
- "cairo-lang-starknet-classes",
- "cairo-lang-syntax",
- "indent",
- "indoc",
- "introspect-rust-macros",
- "introspect-types",
- "introspect_macros",
  "itertools",
  "salsa",
  "starknet-types-core",
@@ -1779,9 +1773,9 @@ dependencies = [
 
 [[package]]
 name = "ndarray"
-version = "0.17.1"
+version = "0.17.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c7c9125e8f6f10c9da3aad044cc918cf8784fa34de857b1aa68038eb05a50a9"
+checksum = "520080814a7a6b4a6e9070823bb24b4531daac8c4627e08ba5de8c5ef2f2752d"
 dependencies = [
  "matrixmultiply",
  "num-complex",
@@ -1980,9 +1974,9 @@ checksum = "f59e70c4aef1e55797c2e8fd94a4f2a973fc972cfde0e0b05f683667b0cd39dd"
 
 [[package]]
 name = "portable-atomic-util"
-version = "0.2.4"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d8a2f0d8d040d7848a709caf78912debcc3f33ee4b3cac47d73d1e1069e83507"
+checksum = "7a9db96d7fa8782dd8c15ce32ffe8680bbd1e978a43bf51a34d39483540495f5"
 dependencies = [
  "portable-atomic",
 ]
@@ -2053,9 +2047,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.103"
+version = "1.0.106"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5ee95bc4ef87b8d5ba32e8b7714ccc834865276eab0aed5c9958d00ec45f49e8"
+checksum = "8fd00f0bb2e90d81d1044c2b32617f68fcb9fa3bb7640c23e9c748e53fb30934"
 dependencies = [
  "unicode-ident",
 ]
@@ -2741,9 +2735,9 @@ checksum = "e320a6c5ad31d271ad523dcf3ad13e2767ad8b1cb8f047f75a8aeaf8da139da2"
 
 [[package]]
 name = "siphasher"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "56199f7ddabf13fe5074ce809e7d3f42b42ae711800501b5b16ea82ad029c39d"
+checksum = "b2aa850e253778c88a04c3d7323b043aeda9d3e30d5971937c1855769763678e"
 
 [[package]]
 name = "slab"

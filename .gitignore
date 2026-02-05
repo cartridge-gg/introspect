@@ -1,12 +1,5 @@
 target/
 .snfoundry_cache/
 .vscode/
-.VSCodeCounter/2026-01-29_18-26-12/details.md
-.VSCodeCounter/2026-01-29_18-26-12/diff-details.md
-.VSCodeCounter/2026-01-29_18-26-12/diff.csv
-.VSCodeCounter/2026-01-29_18-26-12/diff.md
-.VSCodeCounter/2026-01-29_18-26-12/diff.txt
-.VSCodeCounter/2026-01-29_18-26-12/results.csv
-.VSCodeCounter/2026-01-29_18-26-12/results.json
-.VSCodeCounter/2026-01-29_18-26-12/results.md
-.VSCodeCounter/2026-01-29_18-26-12/results.txt
+.VSCodeCounter/
+
