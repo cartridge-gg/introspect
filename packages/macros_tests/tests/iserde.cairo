@@ -8,6 +8,7 @@ struct MyStruct<T> {
 
 #[derive(Drop, ISerde, TypeDef)]
 struct MyStruct0 {}
+
 #[derive(Drop, ISerde, TypeDef)]
 struct MyStruct1 {
     a: Array<Span<felt252>>,

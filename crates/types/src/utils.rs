@@ -6,7 +6,11 @@ use lambdaworks_math::unsigned_integer::montgomery::MontgomeryAlgorithms;
 use primitive_types::{U256, U512};
 use starknet_types_core::felt::Felt;
 
-pub type FeltIterator = dyn Iterator<Item = Felt> + Send + Sync;
+// pub type FeltIterator = dyn Iterator<Item = Felt> + Send + Sync;
+
+pub trait FeltIterator: Iterator<Item = Felt> {}
+
+impl<T: Iterator<Item = Felt>> FeltIterator for T {}
 
 pub fn bytes31_to_hex_string<T: AsRef<[u8]>>(bytes: T) -> String {
     assert!(bytes.as_ref().len() == 31, "Input must be 31 bytes long");
@@ -53,11 +57,11 @@ pub const fn ascii_str_to_limbs(s: &str) -> [u64; 4] {
     .limbs
 }
 
-pub fn pop_primitive<T: TryFrom<Felt>>(data: &mut FeltIterator) -> Option<T> {
+pub fn pop_primitive<T: TryFrom<Felt>, I: FeltIterator>(data: &mut I) -> Option<T> {
     data.next()?.try_into().ok()
 }
 
-pub fn read_serialized_felt_array(data: &mut FeltIterator) -> Option<Vec<Felt>> {
+pub fn read_serialized_felt_array<I: FeltIterator>(data: &mut I) -> Option<Vec<Felt>> {
     let len = pop_primitive(data)?;
     (0..len)
         .into_iter()
@@ -79,30 +83,30 @@ pub fn felt_to_bytes31(felt: Felt) -> Option<[u8; 31]> {
     }
 }
 
-pub fn pop_bytes31(data: &mut FeltIterator) -> Option<[u8; 31]> {
+pub fn pop_bytes31<I: FeltIterator>(data: &mut I) -> Option<[u8; 31]> {
     felt_to_bytes31(data.next()?)
 }
 
-pub fn pop_short_utf8(data: &mut FeltIterator) -> Option<String> {
+pub fn pop_short_utf8<I: FeltIterator>(data: &mut I) -> Option<String> {
     felt_to_utf8_string(data.next()?)
 }
 
-pub fn pop_u256(data: &mut FeltIterator) -> Option<U256> {
+pub fn pop_u256<I: FeltIterator>(data: &mut I) -> Option<U256> {
     match [
-        pop_primitive::<Felt>(data)?.to_be_digits(),
-        pop_primitive::<Felt>(data)?.to_be_digits(),
+        pop_primitive::<Felt, I>(data)?.to_be_digits(),
+        pop_primitive::<Felt, I>(data)?.to_be_digits(),
     ] {
         [[0, 0, l2, l1], [0, 0, h2, h1]] => Some(U256([h2, h1, l2, l1])),
         _ => None,
     }
 }
 
-pub fn pop_u512(data: &mut FeltIterator) -> Option<U512> {
+pub fn pop_u512<I: FeltIterator>(data: &mut I) -> Option<U512> {
     match [
-        pop_primitive::<Felt>(data)?.to_be_digits(),
-        pop_primitive::<Felt>(data)?.to_be_digits(),
-        pop_primitive::<Felt>(data)?.to_be_digits(),
-        pop_primitive::<Felt>(data)?.to_be_digits(),
+        pop_primitive::<Felt, I>(data)?.to_be_digits(),
+        pop_primitive::<Felt, I>(data)?.to_be_digits(),
+        pop_primitive::<Felt, I>(data)?.to_be_digits(),
+        pop_primitive::<Felt, I>(data)?.to_be_digits(),
     ] {
         [
             [0, 0, limb0h, limb0l],
@@ -116,7 +120,7 @@ pub fn pop_u512(data: &mut FeltIterator) -> Option<U512> {
     }
 }
 
-pub fn deserialize_byte_array(data: &mut FeltIterator) -> Option<Vec<u8>> {
+pub fn deserialize_byte_array<I: FeltIterator>(data: &mut I) -> Option<Vec<u8>> {
     let len = data.next()?.try_into().ok()?;
 
     let mut bytes: Vec<Bytes31> = Vec::with_capacity(len);
@@ -136,15 +140,15 @@ pub fn deserialize_byte_array(data: &mut FeltIterator) -> Option<Vec<u8>> {
     )
 }
 
-pub fn deserialize_byte_array_string(data: &mut FeltIterator) -> Option<String> {
+pub fn deserialize_byte_array_string<I: FeltIterator>(data: &mut I) -> Option<String> {
     deserialize_byte_array(data).map(|bytes| String::from_utf8_lossy(&bytes).to_string())
 }
 
-pub fn ideserialize_byte_array(data: &mut FeltIterator) -> Option<Vec<u8>> {
+pub fn ideserialize_byte_array<I: FeltIterator>(data: &mut I) -> Option<Vec<u8>> {
     ideserialize_byte_array_with_last(data).map(|(bytes, _)| bytes)
 }
 
-pub fn ideserialize_byte_array_with_last(data: &mut FeltIterator) -> Option<(Vec<u8>, u8)> {
+pub fn ideserialize_byte_array_with_last<I: FeltIterator>(data: &mut I) -> Option<(Vec<u8>, u8)> {
     let mut bytes = Vec::new();
     loop {
         let felt_bytes = data.next()?.to_bytes_be();
@@ -160,7 +164,7 @@ pub fn ideserialize_byte_array_with_last(data: &mut FeltIterator) -> Option<(Vec
     }
 }
 
-pub fn ideserialize_utf8_string(data: &mut FeltIterator) -> Option<String> {
+pub fn ideserialize_utf8_string<I: FeltIterator>(data: &mut I) -> Option<String> {
     let byte_array = ideserialize_byte_array(data)?;
     String::from_utf8_lossy(&byte_array).into_owned().into()
 }

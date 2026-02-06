@@ -13,9 +13,12 @@ introspect_types.workspace = true
 [dev-dependencies]
 snforge_std.workspace = true
 assert_macros.workspace = true
+introspect_test_utils.workspace = true
+cgg_utils.workspace = true
 
 [tool]
 fmt.workspace = true
 scarb.workspace = true
+snforge.workspace = true
 
 [lib]

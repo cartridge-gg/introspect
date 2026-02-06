@@ -51,4 +51,5 @@ introspect_macros = { path = "packages/macros" }
 introspect-events = { path = "crates/events" }
 introspect-types = { path = "crates/types" }
 introspect-rust-macros = { path = "crates/macros" }
-cairo-syntax-parser = { path = "../cairo-syntax-parser" }
+
+cairo-syntax-parser = { git = "https://github.com/cartridge-gg/cairo-syntax-parser", branch = "main" }

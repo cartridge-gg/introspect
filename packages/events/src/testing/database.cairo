@@ -1,4 +1,5 @@
-use introspect::events::database::{
+use cgg_utils::testing::{ByteArrayExt, Fuzzy, random_pascal_string, random_snake_string};
+use introspect_events::database::{
     AddColumn, AddColumns, CreateColumnSet, CreateIndex, CreateTable, CreateTableFromClass,
     CreateTableFromContract, DeleteField, DeleteFieldSet, DeleteFieldSets, DeleteFields,
     DeleteRecord, DeleteRecords, DeletesField, DeletesFieldSet, DeletesFieldSets, DeletesFields,
@@ -7,9 +8,11 @@ use introspect::events::database::{
     InsertsFieldSets, InsertsFields, RenameColumn, RenameColumns, RenamePrimary, RenameTable,
     RetypeColumn, RetypeColumns, RetypePrimary,
 };
-use crate::{ByteArrayExt, random_pascal_string, random_snake_string};
-use super::schema::generate_column_attributes;
-use super::{Fuzzable, FuzzableExtColumnDef, Fuzzy, TypeDefFuzzable};
+use introspect_test_utils::types::{
+    EntryFuzzable, FuzzableAttribute, FuzzableExtColumnDef, PrimaryDefFuzzable,
+    PrimaryTypeDefFuzzable, TypeDefFuzzable, generate_column_attributes,
+};
+use snforge_std::fuzzable::Fuzzable;
 
 
 pub impl IdNameFuzzable of Fuzzable<IdName> {

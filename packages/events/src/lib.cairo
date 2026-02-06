@@ -7,6 +7,10 @@ pub use database::*;
 pub use types::*;
 pub use variable::*;
 
+#[cfg(target: 'test')]
+pub mod testing {
+    pub mod database;
+}
 
 pub trait EmitEvent<T> {
     fn emit(self: @T);

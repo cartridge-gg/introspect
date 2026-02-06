@@ -48,6 +48,11 @@ introspect_macros.workspace = true
 
 [dev-dependencies]
 snforge_std.workspace = true
+introspect_test_utils.workspace = true
+introspect_types.workspace = true
+introspect_events.workspace = true
+introspect_macros.workspace = true
+cgg_utils.workspace = true
 
 [scripts]
 test = "snforge test"

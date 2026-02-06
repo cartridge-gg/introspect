@@ -12,7 +12,8 @@ starknet.workspace = true
 snforge_std.workspace = true
 assert_macros.workspace = true
 introspect_types.workspace = true
-cgg_utils.workspace = true
+cgg_utils = { workspace = true }
+
 
 [dev-dependencies]
 

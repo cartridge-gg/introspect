@@ -1,9 +1,8 @@
-use introspect::{Attribute, ColumnDef, TypeDef};
-use introspect_test_utils::{ByteArrayExt, random_pascal_string};
+use cgg_utils::testing::{ByteArrayExt, Fuzzy, FuzzyImpl, random_pascal_string};
+pub use introspect_types::structured::ColumnDef;
 use snforge_std::fuzzable::{Fuzzable, FuzzableBool};
-use crate::Fuzzy;
-use super::FuzzyImpl;
 use super::type_def::TypeDefFuzzable;
+use super::{Attribute, TypeDef};
 
 
 pub fn generate_column_attributes() -> Span<Attribute> {

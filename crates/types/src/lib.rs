@@ -1,17 +1,22 @@
 pub mod attribute;
+pub mod deserialize;
+pub mod deserialize_def;
 pub mod iserde;
 pub mod json;
 pub mod parser;
 pub mod reference;
 pub mod schema;
+pub mod serde;
 pub mod type_def;
 pub mod utils;
 pub mod value;
 pub use attribute::Attribute;
-pub use iserde::{ISerde, ISerdeEnd, ISerdeItem};
+pub use deserialize::CairoDeserialize;
+pub use iserde::CairoISerde;
 pub use parser::{DefaultParser, ToValue};
 pub use reference::{DerefDefTrait, GetRefTypeDef};
-pub use schema::{ColumnDef, ColumnInfo, PrimaryDef, PrimaryTypeDef, RecordParser, TableSchema};
+pub use schema::{ColumnDef, ColumnInfo, PrimaryDef, PrimaryTypeDef, TableSchema};
+pub use serde::CairoSerde;
 pub use type_def::{
     ArrayDef, ByteArrayDeserialization, ByteArrayEncodedDef, Bytes31EncodedDef, CustomDef,
     ElementDef, EnumDef, Felt252DictDef, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef,

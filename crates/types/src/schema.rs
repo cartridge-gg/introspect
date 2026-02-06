@@ -8,96 +8,29 @@ use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TableSchema {
-    pub id: Felt,
-    pub name: String,
-    pub attributes: Vec<Attribute>,
-    pub primary: PrimaryDef,
-    pub columns: Vec<ColumnDef>,
-}
-
-pub trait RecordParser {
-    fn to_record(
-        &self,
-        schema: &TableSchema,
-        primary: Felt,
-        data: &mut FeltIterator,
-    ) -> Option<Record>;
-    fn to_record_values(
-        &self,
-        schema: &TableSchema,
-        primary: Felt,
-        data: &mut FeltIterator,
-    ) -> Option<RecordValues>;
-}
-
-impl RecordParser for DefaultParser {
-    fn to_record(
-        &self,
-        schema: &TableSchema,
-        primary: Felt,
-        data: &mut FeltIterator,
-    ) -> Option<Record> {
-        Some(Record {
-            table_id: schema.id.clone(),
-            table_name: schema.name.clone(),
-            attributes: schema.attributes.clone(),
-            primary: schema.primary.to_primary(primary)?,
-            fields: self.to_value(&schema.columns, data)?,
-        })
-    }
-
-    fn to_record_values(
-        &self,
-        schema: &TableSchema,
-        primary: Felt,
-        data: &mut FeltIterator,
-    ) -> Option<RecordValues> {
-        Some(RecordValues {
-            primary: schema.primary.type_def.to_primary_value(primary)?,
-            fields: schema
-                .columns
-                .iter()
-                .map(|col| self.to_value(&col.type_def, data))
-                .collect::<Option<Vec<_>>>()?,
-        })
-    }
-}
-
-impl TableSchema {
-    pub fn new(
-        id: Felt,
-        name: String,
-        attributes: Vec<Attribute>,
-        primary: PrimaryDef,
-        columns: Vec<ColumnDef>,
-    ) -> Self {
-        TableSchema {
-            id,
-            name,
-            attributes,
-            primary,
-            columns,
-        }
-    }
-
-    pub fn to_schema_info(&self) -> SchemaInfo {
-        SchemaInfo {
-            table_id: self.id.clone(),
-            table_name: self.name.clone(),
-            attributes: self.attributes.clone(),
-            primary: PrimaryInfo {
-                name: self.primary.name.clone(),
-                attributes: self.primary.attributes.clone(),
-            },
-            columns: self
-                .columns
-                .iter()
-                .map(ColumnInfo::from)
-                .collect::<Vec<_>>(),
-        }
-    }
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
+pub enum PrimaryTypeDef {
+    #[default]
+    Felt252,
+    ShortUtf8,
+    Bytes31,
+    Bytes31Encoded(Bytes31EncodedDef),
+    Bool,
+    U8,
+    U16,
+    U32,
+    U64,
+    U128,
+    I8,
+    I16,
+    I32,
+    I64,
+    I128,
+    ClassHash,
+    ContractAddress,
+    EthAddress,
+    StorageAddress,
+    StorageBaseAddress,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -136,31 +69,97 @@ pub struct PrimaryInfo {
     pub name: String,
     pub attributes: Vec<Attribute>,
 }
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
-pub enum PrimaryTypeDef {
-    #[default]
-    Felt252,
-    ShortUtf8,
-    Bytes31,
-    Bytes31Encoded(Bytes31EncodedDef),
-    Bool,
-    U8,
-    U16,
-    U32,
-    U64,
-    U128,
-    I8,
-    I16,
-    I32,
-    I64,
-    I128,
-    ClassHash,
-    ContractAddress,
-    EthAddress,
-    StorageAddress,
-    StorageBaseAddress,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TableSchema {
+    pub id: Felt,
+    pub name: String,
+    pub attributes: Vec<Attribute>,
+    pub primary: PrimaryDef,
+    pub columns: Vec<ColumnDef>,
 }
+
+// pub trait RecordParser {
+//     fn to_record(
+//         &self,
+//         schema: &TableSchema,
+//         primary: Felt,
+//         data: &mut FeltIterator,
+//     ) -> Option<Record>;
+//     fn to_record_values(
+//         &self,
+//         schema: &TableSchema,
+//         primary: Felt,
+//         data: &mut FeltIterator,
+//     ) -> Option<RecordValues>;
+// }
+
+// impl RecordParser for DefaultParser {
+//     fn to_record<I: FeltIterator>(
+//         &self,
+//         schema: &TableSchema,
+//         primary: Felt,
+//         data: &mut I,
+//     ) -> Option<Record> {
+//         Some(Record {
+//             table_id: schema.id.clone(),
+//             table_name: schema.name.clone(),
+//             attributes: schema.attributes.clone(),
+//             primary: schema.primary.to_primary(primary)?,
+//             fields: self.to_value(&schema.columns, data)?,
+//         })
+//     }
+
+//     fn to_record_values<I: FeltIterator>(
+//         &self,
+//         schema: &TableSchema,
+//         primary: Felt,
+//         data: &mut I,
+//     ) -> Option<RecordValues> {
+//         Some(RecordValues {
+//             primary: schema.primary.type_def.to_primary_value(primary)?,
+//             fields: schema
+//                 .columns
+//                 .iter()
+//                 .map(|col| self.to_value(&col.type_def, data))
+//                 .collect::<Option<Vec<_>>>()?,
+//         })
+//     }
+// }
+
+// impl TableSchema {
+//     pub fn new(
+//         id: Felt,
+//         name: String,
+//         attributes: Vec<Attribute>,
+//         primary: PrimaryDef,
+//         columns: Vec<ColumnDef>,
+//     ) -> Self {
+//         TableSchema {
+//             id,
+//             name,
+//             attributes,
+//             primary,
+//             columns,
+//         }
+//     }
+
+//     pub fn to_schema_info(&self) -> SchemaInfo {
+//         SchemaInfo {
+//             table_id: self.id.clone(),
+//             table_name: self.name.clone(),
+//             attributes: self.attributes.clone(),
+//             primary: PrimaryInfo {
+//                 name: self.primary.name.clone(),
+//                 attributes: self.primary.attributes.clone(),
+//             },
+//             columns: self
+//                 .columns
+//                 .iter()
+//                 .map(ColumnInfo::from)
+//                 .collect::<Vec<_>>(),
+//         }
+//     }
+// }
 
 impl ElementDef for PrimaryTypeDef {}
 impl ElementDef for PrimaryDef {}
@@ -186,35 +185,35 @@ impl<T: AsRef<ColumnDef>> From<T> for ColumnInfo {
     }
 }
 
-impl TryFrom<TypeDef> for PrimaryTypeDef {
-    type Error = ();
+// impl TryFrom<TypeDef> for PrimaryTypeDef {
+//     type Error = ();
 
-    fn try_from(value: TypeDef) -> Result<Self, Self::Error> {
-        match value {
-            TypeDef::Felt252 => Ok(PrimaryTypeDef::Felt252),
-            TypeDef::ShortUtf8 => Ok(PrimaryTypeDef::ShortUtf8),
-            TypeDef::Bytes31 => Ok(PrimaryTypeDef::Bytes31),
-            TypeDef::Bytes31Encoded(encoding) => Ok(PrimaryTypeDef::Bytes31Encoded(encoding)),
-            TypeDef::Bool => Ok(PrimaryTypeDef::Bool),
-            TypeDef::U8 => Ok(PrimaryTypeDef::U8),
-            TypeDef::U16 => Ok(PrimaryTypeDef::U16),
-            TypeDef::U32 => Ok(PrimaryTypeDef::U32),
-            TypeDef::U64 => Ok(PrimaryTypeDef::U64),
-            TypeDef::U128 => Ok(PrimaryTypeDef::U128),
-            TypeDef::I8 => Ok(PrimaryTypeDef::I8),
-            TypeDef::I16 => Ok(PrimaryTypeDef::I16),
-            TypeDef::I32 => Ok(PrimaryTypeDef::I32),
-            TypeDef::I64 => Ok(PrimaryTypeDef::I64),
-            TypeDef::I128 => Ok(PrimaryTypeDef::I128),
-            TypeDef::ClassHash => Ok(PrimaryTypeDef::ClassHash),
-            TypeDef::ContractAddress => Ok(PrimaryTypeDef::ContractAddress),
-            TypeDef::EthAddress => Ok(PrimaryTypeDef::EthAddress),
-            TypeDef::StorageAddress => Ok(PrimaryTypeDef::StorageAddress),
-            TypeDef::StorageBaseAddress => Ok(PrimaryTypeDef::StorageBaseAddress),
-            _ => Err(()),
-        }
-    }
-}
+//     fn try_from(value: TypeDef) -> Result<Self, Self::Error> {
+//         match value {
+//             TypeDef::Felt252 => Ok(PrimaryTypeDef::Felt252),
+//             TypeDef::ShortUtf8 => Ok(PrimaryTypeDef::ShortUtf8),
+//             TypeDef::Bytes31 => Ok(PrimaryTypeDef::Bytes31),
+//             TypeDef::Bytes31Encoded(encoding) => Ok(PrimaryTypeDef::Bytes31Encoded(encoding)),
+//             TypeDef::Bool => Ok(PrimaryTypeDef::Bool),
+//             TypeDef::U8 => Ok(PrimaryTypeDef::U8),
+//             TypeDef::U16 => Ok(PrimaryTypeDef::U16),
+//             TypeDef::U32 => Ok(PrimaryTypeDef::U32),
+//             TypeDef::U64 => Ok(PrimaryTypeDef::U64),
+//             TypeDef::U128 => Ok(PrimaryTypeDef::U128),
+//             TypeDef::I8 => Ok(PrimaryTypeDef::I8),
+//             TypeDef::I16 => Ok(PrimaryTypeDef::I16),
+//             TypeDef::I32 => Ok(PrimaryTypeDef::I32),
+//             TypeDef::I64 => Ok(PrimaryTypeDef::I64),
+//             TypeDef::I128 => Ok(PrimaryTypeDef::I128),
+//             TypeDef::ClassHash => Ok(PrimaryTypeDef::ClassHash),
+//             TypeDef::ContractAddress => Ok(PrimaryTypeDef::ContractAddress),
+//             TypeDef::EthAddress => Ok(PrimaryTypeDef::EthAddress),
+//             TypeDef::StorageAddress => Ok(PrimaryTypeDef::StorageAddress),
+//             TypeDef::StorageBaseAddress => Ok(PrimaryTypeDef::StorageBaseAddress),
+//             _ => Err(()),
+//         }
+//     }
+// }
 
 impl PrimaryTypeDef {
     pub fn item_name(&self) -> &str {
@@ -271,6 +270,13 @@ impl PrimaryTypeDef {
 }
 
 impl PrimaryDef {
+    pub fn new(name: String, attributes: Vec<Attribute>, type_def: PrimaryTypeDef) -> Self {
+        PrimaryDef {
+            name,
+            attributes,
+            type_def,
+        }
+    }
     pub fn to_primary(&self, felt: Felt) -> Option<Primary> {
         Some(Primary {
             name: self.name.clone(),

@@ -3,7 +3,7 @@ use introspect_types::Entry;
 use snforge_std::fuzzable::Fuzzable;
 
 
-pub impl IdDataFuzzable of Fuzzable<Entry> {
+pub impl EntryFuzzable of Fuzzable<Entry> {
     fn blank() -> Entry {
         Default::default()
     }
