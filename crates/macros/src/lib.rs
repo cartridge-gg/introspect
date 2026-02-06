@@ -1,5 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
+use starknet_core::utils::get_selector_from_name;
 use syn::{Fields, Ident, ItemStruct, LitStr, parse_macro_input};
 
 /// Attribute macro that automatically converts all fields to `Option<T>` and generates

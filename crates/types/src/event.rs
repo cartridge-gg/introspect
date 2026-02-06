@@ -1,17 +1,17 @@
-use crate::deserialize::CairoDeserializer;
 use crate::felt::IntoFeltSource;
-use crate::{DecodeError, DecodeResult, FeltSource, ascii_str_to_limbs};
+use crate::{DecodeError, DecodeResult, FeltSource};
+pub use introspect_rust_macros::selector_raw;
 use starknet_types_core::felt::Felt;
 
 #[macro_export]
 macro_rules! cairo_event_name_and_selector {
     ($name:literal) => {
         const NAME: &'static str = $name;
-        const SELECTOR_RAW: [u64; 4] = introspect_rust_macros::selector_raw!($name);
+        const SELECTOR_RAW: [u64; 4] = $crate::event::selector_raw!($name);
     };
 }
 
-pub trait CairoEvent<D: CairoDeserializer>
+pub trait CairoEvent<D>
 where
     Self: Sized,
 {
