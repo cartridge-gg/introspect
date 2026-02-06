@@ -1485,6 +1485,7 @@ dependencies = [
  "paste",
  "proc-macro2",
  "quote",
+ "starknet-core",
  "syn 2.0.114",
 ]
 
@@ -1494,6 +1495,7 @@ version = "0.1.2"
 dependencies = [
  "convert_case 0.8.0",
  "hex",
+ "introspect-rust-macros",
  "lambdaworks-math",
  "num-traits",
  "primitive-types 0.14.0",

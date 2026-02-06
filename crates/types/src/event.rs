@@ -3,10 +3,11 @@ use crate::felt::IntoFeltSource;
 use crate::{DecodeError, DecodeResult, FeltSource, ascii_str_to_limbs};
 use starknet_types_core::felt::Felt;
 
-macro_rules! impl_event_name {
+#[macro_export]
+macro_rules! cairo_event_name_and_selector {
     ($name:literal) => {
         const NAME: &'static str = $name;
-        const SELECTOR_RAW: [u64; 4] = introspect_rust_macros::selector_raw!($name).to_raw();
+        const SELECTOR_RAW: [u64; 4] = introspect_rust_macros::selector_raw!($name);
     };
 }
 
