@@ -1,6 +1,9 @@
 pub mod attribute;
+pub mod decode_error;
 pub mod deserialize;
 pub mod deserialize_def;
+pub mod event;
+pub mod felt;
 pub mod iserde;
 pub mod json;
 pub mod parser;
@@ -11,9 +14,14 @@ pub mod type_def;
 pub mod utils;
 pub mod value;
 pub use attribute::Attribute;
-pub use deserialize::CairoDeserialize;
+pub use decode_error::{ByteArrayError, DecodeError, DecodeResult};
+pub use deserialize::{
+    CairoDeserialize, CairoDeserializer, felt_to_bytes31_bytes, felt_to_utf8_string,
+};
+pub use event::CairoEvent;
+pub use felt::{FeltIterator, FeltSource, IntoFeltSource, SliceFeltSource, VecFeltSource};
 pub use iserde::CairoISerde;
-pub use parser::{DefaultParser, ToValue};
+pub use parser::ParseValue;
 pub use reference::{DerefDefTrait, GetRefTypeDef};
 pub use schema::{ColumnDef, ColumnInfo, PrimaryDef, PrimaryTypeDef, TableSchema};
 pub use serde::CairoSerde;
@@ -23,9 +31,7 @@ pub use type_def::{
     OptionDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
 };
 pub use utils::{
-    FeltIterator, ascii_str_to_felt, ascii_str_to_limbs, bytes31_to_hex_string,
-    deserialize_byte_array, deserialize_byte_array_string, felt_to_bytes31, felt_to_hex_string,
-    pop_bytes31, pop_primitive, pop_short_utf8, pop_u256, pop_u512, read_serialized_felt_array,
+    ResultInto, ascii_str_to_felt, ascii_str_to_limbs, bytes31_to_hex_string, felt_to_hex_string,
 };
 pub use value::{
     CairoOption, CairoResult, Custom, Encoded31Bytes, EncodedBytes, Enum, Field, Member, Nullable,

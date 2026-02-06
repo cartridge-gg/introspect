@@ -1,23 +1,45 @@
-use std::vec::IntoIter;
-
-use crate::FeltIterator;
 use crate::deserialize::{CairoDeserialize, CairoDeserializer};
+use crate::felt::IntoFeltSource;
+use crate::{DecodeResult, FeltSource};
 use starknet_types_core::felt::Felt;
 
-pub struct CairoSerde<I: FeltIterator>(pub I);
+pub struct CairoSerde<F: FeltSource>(pub F);
 
-impl From<Vec<Felt>> for CairoSerde<IntoIter<Felt>> {
-    fn from(felts: Vec<Felt>) -> Self {
-        CairoSerde(felts.into_iter())
+impl<I: FeltSource> CairoSerde<I> {
+    pub fn new(iterator: I) -> Self {
+        CairoSerde(iterator)
     }
 }
 
-impl<I: FeltIterator> CairoDeserializer for CairoSerde<I> {
-    fn next_felt(&mut self) -> Option<Felt> {
+impl<'a, S: FeltSource + ?Sized> CairoSerde<&'a mut S> {
+    #[inline]
+    pub fn from_mut(source: &'a mut S) -> Self {
+        Self(source)
+    }
+}
+
+impl<T: IntoFeltSource> From<T> for CairoSerde<T::Source> {
+    fn from(source: T) -> Self {
+        CairoSerde(source.into_source())
+    }
+}
+
+impl<I: FeltSource> CairoDeserializer for CairoSerde<I> {
+    fn next_felt(&mut self) -> DecodeResult<Felt> {
         self.0.next()
     }
-    fn next_array<T: CairoDeserialize<Self>>(&mut self) -> Option<Vec<T>> {
-        let len = self.next_usize()?;
+    fn next_array<T: CairoDeserialize<Self>>(&mut self) -> DecodeResult<Vec<T>> {
+        let len = self.next_u32()?;
         (0..len).map(|_| T::deserialize(self)).collect()
+    }
+}
+
+impl<I: FeltSource> FeltSource for CairoSerde<I> {
+    fn next(&mut self) -> Result<Felt, crate::DecodeError> {
+        self.0.next()
+    }
+
+    fn position(&self) -> usize {
+        self.0.position()
     }
 }

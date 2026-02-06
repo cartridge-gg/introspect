@@ -6,7 +6,6 @@ version.workspace = true
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-cainome-cairo-serde.workspace = true
 convert_case.workspace = true
 num-traits.workspace = true
 primitive-types.workspace = true
@@ -15,5 +14,9 @@ serde.workspace = true
 starknet-types-core.workspace = true
 lambdaworks-math.workspace = true
 hex.workspace = true
+thiserror.workspace = true
+starknet.workspace = true
+introspect-rust-macros.workspace = true
+
 
 [dev-dependencies]

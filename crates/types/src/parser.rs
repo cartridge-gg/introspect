@@ -1,254 +1,296 @@
-use crate::deserialize::CairoDeserializer;
-use crate::type_def::{
-    ByteArrayDeserialization, ByteArrayEncodedDef, FixedArrayDef, MemberDef, StructDef, TypeDef,
-};
+use crate::deserialize::{Bytes31, CairoDeserializer};
+use crate::type_def::{ByteArrayEncodedDef, FixedArrayDef, MemberDef, StructDef, TypeDef};
+use crate::utils::ResultInto;
 use crate::value::{Enum, Nullable, Value};
 use crate::{
     ArrayDef, Bytes31EncodedDef, CairoOption, CairoResult, ColumnDef, Custom, CustomDef,
-    Encoded31Bytes, EncodedBytes, EnumDef, Field, Member, NullableDef, OptionDef, ResultDef,
-    Struct, TupleDef, felt_to_bytes31,
+    DecodeError, Encoded31Bytes, EncodedBytes, EnumDef, Field, Member, NullableDef, OptionDef,
+    ResultDef, Struct, TupleDef,
 };
-
 use starknet_types_core::felt::Felt;
+use thiserror::Error;
 
-pub struct DefaultParser {
-    byte_array_mode: ByteArrayDeserialization,
+#[derive(Debug, Error)]
+pub enum TypeParserError {
+    #[error(transparent)]
+    Decode(#[from] DecodeError),
+
+    #[error("type not supported: {0}")]
+    UnsupportedType(&'static str),
+
+    #[error("unimplemented: {0}")]
+    Unimplemented(&'static str),
+
+    #[error("invalid enum selector for {enum_name}: {selector:?}")]
+    InvalidEnumSelector { enum_name: String, selector: Felt },
+
+    #[error("Cannot parse an un expaneded Ref type. ")]
+    RefNotSupported,
+
+    #[error("unknown custom encoding: {0}")]
+    UnknownEncoding(String),
+
+    #[error("invalid array length for {what}: {len} (max {max:?})")]
+    InvalidLength {
+        what: &'static str,
+        len: usize,
+        max: Option<usize>,
+    },
+
+    #[error("invariant violation: {0}")]
+    InvariantViolation(&'static str),
 }
 
-// impl DefaultParser {
-//     pub fn read_byte_array(&self, data: &mut FeltIterator) -> Option<Vec<u8>> {
-//         match self.byte_array_mode {
-//             ByteArrayDeserialization::Serde => deserialize_byte_array(data),
-//             ByteArrayDeserialization::ISerde => ideserialize_byte_array(data),
-//         }
-//     }
-//     pub fn read_utf8_array(&self, data: &mut FeltIterator) -> Option<String> {
-//         let byte_array = self.read_byte_array(data)?;
-//         String::from_utf8_lossy(&byte_array).into_owned().into()
-//     }
-// }
+impl TypeParserError {
+    #[inline]
+    pub fn decode(e: DecodeError) -> Self {
+        Self::Decode(e)
+    }
 
-pub trait TypeParser<D: CairoDeserializer> {
+    #[inline]
+    pub fn unsupported_type(ty: &'static str) -> Self {
+        Self::UnsupportedType(ty)
+    }
+
+    #[inline]
+    pub fn unimplemented(what: &'static str) -> Self {
+        Self::Unimplemented(what)
+    }
+
+    #[inline]
+    pub fn invalid_enum_selector(enum_name: impl Into<String>, selector: Felt) -> Self {
+        Self::InvalidEnumSelector {
+            enum_name: enum_name.into(),
+            selector,
+        }
+    }
+
+    #[inline]
+    pub fn unknown_encoding(enc: impl Into<String>) -> Self {
+        Self::UnknownEncoding(enc.into())
+    }
+
+    #[inline]
+    pub fn invalid_length(what: &'static str, len: usize, max: Option<usize>) -> Self {
+        Self::InvalidLength { what, len, max }
+    }
+
+    #[inline]
+    pub fn invariant(msg: &'static str) -> Self {
+        Self::InvariantViolation(msg)
+    }
+}
+pub type TypeParserResult<T> = Result<T, TypeParserError>;
+
+pub trait ParseValues<D: CairoDeserializer> {
     type Value;
-    fn to_values(&self, deserializer: &mut D) -> Option<Vec<Self::Value>>;
+    fn parse_values(&self, deserializer: &mut D) -> TypeParserResult<Vec<Self::Value>>;
 }
 
-impl<T: ToValue<D>, D: CairoDeserializer> TypeParser<D> for Vec<T> {
-    type Value = <T as ToValue<D>>::Value;
-    fn to_values(&self, deserializer: &mut D) -> Option<Vec<Self::Value>> {
+impl<T: ParseValue<D>, D: CairoDeserializer> ParseValues<D> for Vec<T> {
+    type Value = <T as ParseValue<D>>::Value;
+    fn parse_values(&self, deserializer: &mut D) -> TypeParserResult<Vec<Self::Value>> {
         self.iter()
-            .map(|item| item.to_value(deserializer))
-            .collect::<Option<Vec<Self::Value>>>()
+            .map(|item| item.parse(deserializer))
+            .collect::<TypeParserResult<Vec<Self::Value>>>()
     }
 }
 
-pub trait ToValue<D: CairoDeserializer> {
+pub trait ParseValue<D: CairoDeserializer> {
     type Value;
-    fn to_value(&self, deserializer: &mut D) -> Option<Self::Value>;
-    fn to_value_boxed(&self, deserializer: &mut D) -> Option<Box<Self::Value>> {
-        self.to_value(deserializer).map(Box::new)
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<Self::Value>;
+    fn parse_value_boxed(&self, deserializer: &mut D) -> TypeParserResult<Box<Self::Value>> {
+        self.parse(deserializer).map(Box::new)
     }
-    fn to_multiple_value(&self, deserializer: &mut D, count: usize) -> Option<Vec<Self::Value>> {
+    fn parse_multiple_values(
+        &self,
+        deserializer: &mut D,
+        count: usize,
+    ) -> TypeParserResult<Vec<Self::Value>> {
         (0..count)
             .into_iter()
-            .map(|_| self.to_value(deserializer))
+            .map(|_| self.parse(deserializer))
             .collect()
     }
-    // fn to_value_multiple<I: FeltIterator>(
-    //     &self,
-    //     item: &T,
-    //     data: &mut I,
-    //     count: usize,
-    // ) -> Option<Vec<Self::Value>> {
-    //     (0..count)
-    //         .into_iter()
-    //         .map(|_| self.to_value(item, data))
-    //         .collect()
-    // }
 }
 
-impl<D: CairoDeserializer> ToValue<D> for TypeDef {
+impl<D: CairoDeserializer> ParseValue<D> for TypeDef {
     type Value = Value;
-    fn to_value(&self, deserializer: &mut D) -> Option<Value> {
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<Value> {
         match self {
-            TypeDef::None => Some(Value::None),
-            TypeDef::Felt252 => deserializer.next_felt().map(Value::Felt252),
+            TypeDef::None => Ok(Value::None),
+            TypeDef::Felt252 => Ok(Value::Felt252(deserializer.next_felt()?)),
             TypeDef::ShortUtf8 => deserializer
                 .next_bytes31()
-                .map(|b| b.to_string())
-                .map(Value::ShortUtf8),
-            TypeDef::Bytes31 => deserializer
-                .next_bytes31()
-                .map(Into::into)
-                .map(Value::Bytes31),
-            TypeDef::Bytes31Encoded(b) => b.to_value(deserializer).map(Value::Bytes31Encoded),
-            TypeDef::Bool => deserializer.next_bool().map(Value::Bool),
-            TypeDef::U8 => deserializer.next_u8().map(Value::U8),
-            TypeDef::U16 => deserializer.next_u16().map(Value::U16),
-            TypeDef::U32 => deserializer.next_u32().map(Value::U32),
-            TypeDef::U64 => deserializer.next_u64().map(Value::U64),
-            TypeDef::U128 => deserializer.next_u128().map(Value::U128),
-            TypeDef::U256 => deserializer.next_u256().map(Value::U256),
-            TypeDef::U512 => deserializer.next_u512().map(Value::U512),
-            TypeDef::I8 => deserializer.next_i8().map(Value::I8),
-            TypeDef::I16 => deserializer.next_i16().map(Value::I16),
-            TypeDef::I32 => deserializer.next_i32().map(Value::I32),
-            TypeDef::I64 => deserializer.next_i64().map(Value::I64),
-            TypeDef::I128 => deserializer.next_i128().map(Value::I128),
-            TypeDef::ClassHash => deserializer.next_felt().map(Value::ClassHash),
-            TypeDef::ContractAddress => deserializer.next_felt().map(Value::ContractAddress),
-            TypeDef::EthAddress => deserializer.next_felt().map(Value::EthAddress),
-            TypeDef::StorageAddress => deserializer.next_felt().map(Value::StorageAddress),
-            TypeDef::StorageBaseAddress => deserializer.next_felt().map(Value::StorageBaseAddress),
-            TypeDef::ByteArray => deserializer.next_byte_array_bytes().map(Value::ByteArray),
-            TypeDef::Utf8String => deserializer.next_string().map(Value::Utf8String),
-            TypeDef::ByteArrayEncoded(bae) => {
-                bae.to_value(deserializer).map(Value::ByteArrayEncoded)
+                .map_into(|b| Value::ShortUtf8(b.to_string())),
+            TypeDef::Bytes31 => deserializer.next_bytes31_bytes().map_into(Value::Bytes31),
+            TypeDef::Bytes31Encoded(b) => b.parse(deserializer).map(Value::Bytes31Encoded),
+            TypeDef::Bool => deserializer.next_bool().map_into(Value::Bool),
+            TypeDef::U8 => deserializer.next_u8().map_into(Value::U8),
+            TypeDef::U16 => deserializer.next_u16().map_into(Value::U16),
+            TypeDef::U32 => deserializer.next_u32().map_into(Value::U32),
+            TypeDef::U64 => deserializer.next_u64().map_into(Value::U64),
+            TypeDef::U128 => deserializer.next_u128().map_into(Value::U128),
+            TypeDef::U256 => deserializer.next_u256().map_into(Value::U256),
+            TypeDef::U512 => deserializer.next_u512().map_into(Value::U512),
+            TypeDef::I8 => deserializer.next_i8().map_into(Value::I8),
+            TypeDef::I16 => deserializer.next_i16().map_into(Value::I16),
+            TypeDef::I32 => deserializer.next_i32().map_into(Value::I32),
+            TypeDef::I64 => deserializer.next_i64().map_into(Value::I64),
+            TypeDef::I128 => deserializer.next_i128().map_into(Value::I128),
+            TypeDef::ClassHash => deserializer.next_felt().map_into(Value::ClassHash),
+            TypeDef::ContractAddress => deserializer.next_felt().map_into(Value::ContractAddress),
+            TypeDef::EthAddress => deserializer.next_felt().map_into(Value::EthAddress),
+            TypeDef::StorageAddress => deserializer.next_felt().map_into(Value::StorageAddress),
+            TypeDef::StorageBaseAddress => {
+                deserializer.next_felt().map_into(Value::StorageBaseAddress)
             }
-            TypeDef::Tuple(tuple) => tuple.to_value(deserializer).map(Value::Tuple),
-            TypeDef::Array(a) => a.to_value(deserializer).map(Value::Array),
-            TypeDef::FixedArray(fa) => fa.to_value(deserializer).map(Value::FixedArray),
-            TypeDef::Felt252Dict(_ty) => None,
-            TypeDef::Struct(s) => s.to_value(deserializer).map(Value::Struct),
-            TypeDef::Enum(e) => e.to_value_boxed(deserializer).map(Value::Enum),
-            TypeDef::Ref(_) => None,
-            TypeDef::Custom(custom) => custom.to_value(deserializer).map(Value::Custom),
-            TypeDef::Option(option) => option.to_value_boxed(deserializer).map(Value::Option),
-            TypeDef::Result(_r) => None,
-            TypeDef::Nullable(_ty) => None,
+            TypeDef::ByteArray => deserializer
+                .next_byte_array_bytes()
+                .map_into(Value::ByteArray),
+            TypeDef::Utf8String => deserializer.next_string().map_into(Value::Utf8String),
+            TypeDef::ByteArrayEncoded(bae) => bae.parse(deserializer).map(Value::ByteArrayEncoded),
+            TypeDef::Tuple(tuple) => tuple.parse(deserializer).map(Value::Tuple),
+            TypeDef::Array(a) => a.parse(deserializer).map(Value::Array),
+            TypeDef::FixedArray(fa) => fa.parse(deserializer).map(Value::FixedArray),
+            TypeDef::Felt252Dict(_ty) => Err(TypeParserError::Unimplemented("Felt252Dict")), // TODO: implement Felt252Dict parsing
+            TypeDef::Struct(s) => s.parse(deserializer).map(Value::Struct),
+            TypeDef::Enum(e) => e.parse_value_boxed(deserializer).map(Value::Enum),
+            TypeDef::Ref(_) => Err(TypeParserError::RefNotSupported), // TODO: implement Ref parsing
+            TypeDef::Custom(custom) => custom.parse(deserializer).map(Value::Custom),
+            TypeDef::Option(option) => option.parse_value_boxed(deserializer).map(Value::Option),
+            TypeDef::Result(r) => r.parse_value_boxed(deserializer).map(Value::Result),
+            TypeDef::Nullable(nullable) => nullable
+                .parse_value_boxed(deserializer)
+                .map(Value::Nullable),
         }
     }
 }
 
-impl<D: CairoDeserializer> ToValue<D> for MemberDef {
+impl<D: CairoDeserializer> ParseValue<D> for MemberDef {
     type Value = Member;
-    fn to_value(&self, deserializer: &mut D) -> Option<Member> {
-        Some(Member {
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<Member> {
+        Ok(Member {
             name: self.name.clone(),
             attributes: self.attributes.clone(),
-            value: self.type_def.to_value(deserializer)?,
+            value: self.type_def.parse(deserializer)?,
         })
     }
 }
 
-impl<D: CairoDeserializer> ToValue<D> for StructDef {
+impl<D: CairoDeserializer> ParseValue<D> for StructDef {
     type Value = Struct;
-    fn to_value(&self, deserializer: &mut D) -> Option<Struct> {
-        Some(Struct {
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<Struct> {
+        Ok(Struct {
             name: self.name.clone(),
             attributes: self.attributes.clone(),
-            members: self.members.to_values(deserializer)?,
+            members: self.members.parse_values(deserializer)?,
         })
     }
 }
 
-impl<D: CairoDeserializer> ToValue<D> for ArrayDef {
+impl<D: CairoDeserializer> ParseValue<D> for ArrayDef {
     type Value = Vec<Value>;
-    fn to_value(&self, deserializer: &mut D) -> Option<Vec<Value>> {
-        let count = deserializer.next_usize()?;
-        self.type_def.to_multiple_value(deserializer, count)
-    }
-}
-
-impl<D: CairoDeserializer> ToValue<D> for FixedArrayDef {
-    type Value = Vec<Value>;
-    fn to_value(&self, deserializer: &mut D) -> Option<Vec<Value>> {
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<Vec<Value>> {
+        let count = deserializer.next_u32()?;
         self.type_def
-            .to_multiple_value(deserializer, self.size as usize)
+            .parse_multiple_values(deserializer, count as usize)
     }
 }
 
-impl<D: CairoDeserializer> ToValue<D> for TupleDef {
+impl<D: CairoDeserializer> ParseValue<D> for FixedArrayDef {
     type Value = Vec<Value>;
-    fn to_value(&self, deserializer: &mut D) -> Option<Vec<Value>> {
-        self.elements.to_values(deserializer)
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<Vec<Value>> {
+        self.type_def
+            .parse_multiple_values(deserializer, self.size as usize)
     }
 }
 
-impl<D: CairoDeserializer> ToValue<D> for EnumDef {
-    type Value = Enum;
-    fn to_value(&self, deserializer: &mut D) -> Option<Enum> {
-        let selector = deserializer.next_felt()?;
-        let field = self.variants.get(&selector)?;
+impl<D: CairoDeserializer> ParseValue<D> for TupleDef {
+    type Value = Vec<Value>;
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<Vec<Value>> {
+        self.elements.parse_values(deserializer)
+    }
+}
 
-        Some(Enum {
+impl<D: CairoDeserializer> ParseValue<D> for EnumDef {
+    type Value = Enum;
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<Enum> {
+        let selector = deserializer.next_felt()?;
+        let field = self
+            .variants
+            .get(&selector)
+            .ok_or(TypeParserError::InvalidEnumSelector {
+                enum_name: self.name.clone(),
+                selector,
+            })?;
+
+        Ok(Enum {
             name: self.name.clone(),
             attributes: self.attributes.clone(),
             variant: field.name.clone(),
             variant_attributes: field.attributes.clone(),
-            value: field.type_def.to_value(deserializer)?,
+            value: field.type_def.parse(deserializer)?,
         })
     }
 }
 
-impl<D: CairoDeserializer> ToValue<D> for OptionDef {
+impl<D: CairoDeserializer> ParseValue<D> for OptionDef {
     type Value = CairoOption<Value>;
-    fn to_value(&self, deserializer: &mut D) -> Option<CairoOption<Value>> {
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<CairoOption<Value>> {
         match deserializer.next_option_is_some()? {
-            true => self.type_def.to_value(deserializer).map(CairoOption::Some),
-            false => Some(CairoOption::None),
+            true => self.type_def.parse(deserializer).map(CairoOption::Some),
+            false => Ok(CairoOption::None),
         }
     }
 }
 
-impl<D: CairoDeserializer> ToValue<D> for ResultDef {
+impl<D: CairoDeserializer> ParseValue<D> for ResultDef {
     type Value = CairoResult<Value, Value>;
-    fn to_value(&self, deserializer: &mut D) -> Option<CairoResult<Value, Value>> {
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<CairoResult<Value, Value>> {
         match deserializer.next_result_is_ok()? {
-            true => self.ok.to_value(deserializer).map(CairoResult::Ok),
-            false => self.err.to_value(deserializer).map(CairoResult::Err),
+            true => self.ok.parse(deserializer).map(CairoResult::Ok),
+            false => self.err.parse(deserializer).map(CairoResult::Err),
         }
     }
 }
 
-impl<D: CairoDeserializer> ToValue<D> for NullableDef {
+impl<D: CairoDeserializer> ParseValue<D> for NullableDef {
     type Value = Nullable;
-    fn to_value(&self, deserializer: &mut D) -> Option<Nullable> {
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<Nullable> {
         match deserializer.next_nullable_is_null()? {
-            false => self.type_def.to_value(deserializer).map(Nullable::NotNull),
-            true => Some(Nullable::Null),
+            false => self.type_def.parse(deserializer).map(Nullable::NotNull),
+            true => Ok(Nullable::Null),
         }
     }
 }
 
-impl<D: CairoDeserializer> ToValue<D> for CustomDef {
+impl<D: CairoDeserializer> ParseValue<D> for CustomDef {
     type Value = Custom;
-    fn to_value(&self, deserializer: &mut D) -> Option<Custom> {
-        Some(Custom {
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<Custom> {
+        Ok(Custom {
             encoding: self.encoding.clone(),
             values: deserializer.next_array()?,
         })
     }
 }
 
-impl<D: CairoDeserializer> ToValue<D> for ColumnDef {
-    type Value = Field;
-    fn to_value(&self, deserializer: &mut D) -> Option<Field> {
-        Some(Field {
-            id: self.id.clone(),
-            name: self.name.clone(),
-            attributes: self.attributes.clone(),
-            value: self.type_def.to_value(deserializer)?,
+impl<D: CairoDeserializer> ParseValue<D> for ByteArrayEncodedDef {
+    type Value = EncodedBytes;
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<Self::Value> {
+        let bytes = deserializer.next_byte_array_bytes()?;
+        Ok(EncodedBytes {
+            encoding: self.encoding.clone(),
+            bytes,
         })
     }
 }
 
-impl<D: CairoDeserializer> ToValue<D> for ByteArrayEncodedDef {
-    type Value = EncodedBytes;
-    fn to_value(&self, deserializer: &mut D) -> Option<Self::Value> {
-        deserializer
-            .next_byte_array_bytes()
-            .map(|bytes| EncodedBytes {
-                encoding: self.encoding.clone(),
-                bytes,
-            })
-    }
-}
-
-impl<D: CairoDeserializer> ToValue<D> for Bytes31EncodedDef {
+impl<D: CairoDeserializer> ParseValue<D> for Bytes31EncodedDef {
     type Value = Encoded31Bytes;
-    fn to_value(&self, deserializer: &mut D) -> Option<Self::Value> {
-        deserializer.next_bytes31().map(|bytes| Encoded31Bytes {
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<Self::Value> {
+        let bytes = deserializer.next_bytes31()?;
+        Ok(Encoded31Bytes {
             encoding: self.encoding.clone(),
             bytes: bytes.into(),
         })
@@ -256,10 +298,23 @@ impl<D: CairoDeserializer> ToValue<D> for Bytes31EncodedDef {
 }
 
 impl Bytes31EncodedDef {
-    pub fn to_encoded_bytes_31(&self, felt: Felt) -> Option<Encoded31Bytes> {
-        Some(Encoded31Bytes {
+    pub fn to_encoded_bytes_31(&self, felt: Felt) -> TypeParserResult<Encoded31Bytes> {
+        let bytes31: Bytes31 = felt.try_into()?;
+        Ok(Encoded31Bytes {
             encoding: self.encoding.clone(),
-            bytes: felt_to_bytes31(felt)?,
+            bytes: bytes31.into(),
+        })
+    }
+}
+
+impl<D: CairoDeserializer> ParseValue<D> for ColumnDef {
+    type Value = Field;
+    fn parse(&self, deserializer: &mut D) -> TypeParserResult<Field> {
+        Ok(Field {
+            id: self.id.clone(),
+            name: self.name.clone(),
+            attributes: self.attributes.clone(),
+            value: self.type_def.parse(deserializer)?,
         })
     }
 }

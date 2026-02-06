@@ -1,8 +1,8 @@
-use crate::parser::DefaultParser;
-use crate::utils::felt_to_utf8_string;
+use crate::deserialize::{CairoDeserializer, FeltToPrimitive};
+use crate::parser::{ParseValues, TypeParserResult};
 use crate::{
-    Attribute, Bytes31EncodedDef, ElementDef, FeltIterator, Primary, PrimaryValue, Record,
-    RecordValues, ToValue, TypeDef, felt_to_bytes31,
+    Attribute, Bytes31EncodedDef, ElementDef, Primary, PrimaryValue, Record, ResultInto, TypeDef,
+    felt_to_bytes31_bytes, felt_to_utf8_string,
 };
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
@@ -78,88 +78,56 @@ pub struct TableSchema {
     pub columns: Vec<ColumnDef>,
 }
 
-// pub trait RecordParser {
-//     fn to_record(
-//         &self,
-//         schema: &TableSchema,
-//         primary: Felt,
-//         data: &mut FeltIterator,
-//     ) -> Option<Record>;
-//     fn to_record_values(
-//         &self,
-//         schema: &TableSchema,
-//         primary: Felt,
-//         data: &mut FeltIterator,
-//     ) -> Option<RecordValues>;
-// }
+impl TableSchema {
+    pub fn new(
+        id: Felt,
+        name: String,
+        attributes: Vec<Attribute>,
+        primary: PrimaryDef,
+        columns: Vec<ColumnDef>,
+    ) -> Self {
+        TableSchema {
+            id,
+            name,
+            attributes,
+            primary,
+            columns,
+        }
+    }
 
-// impl RecordParser for DefaultParser {
-//     fn to_record<I: FeltIterator>(
-//         &self,
-//         schema: &TableSchema,
-//         primary: Felt,
-//         data: &mut I,
-//     ) -> Option<Record> {
-//         Some(Record {
-//             table_id: schema.id.clone(),
-//             table_name: schema.name.clone(),
-//             attributes: schema.attributes.clone(),
-//             primary: schema.primary.to_primary(primary)?,
-//             fields: self.to_value(&schema.columns, data)?,
-//         })
-//     }
+    pub fn to_record<D: CairoDeserializer>(
+        &self,
+        primary_id: Felt,
+        data: &mut D,
+    ) -> TypeParserResult<Record> {
+        let primary = self.primary.to_primary(primary_id)?;
+        let fields = self.columns.parse_values(data)?;
+        Ok(Record {
+            table_id: self.id.clone(),
+            table_name: self.name.clone(),
+            attributes: self.attributes.clone(),
+            primary,
+            fields,
+        })
+    }
 
-//     fn to_record_values<I: FeltIterator>(
-//         &self,
-//         schema: &TableSchema,
-//         primary: Felt,
-//         data: &mut I,
-//     ) -> Option<RecordValues> {
-//         Some(RecordValues {
-//             primary: schema.primary.type_def.to_primary_value(primary)?,
-//             fields: schema
-//                 .columns
-//                 .iter()
-//                 .map(|col| self.to_value(&col.type_def, data))
-//                 .collect::<Option<Vec<_>>>()?,
-//         })
-//     }
-// }
-
-// impl TableSchema {
-//     pub fn new(
-//         id: Felt,
-//         name: String,
-//         attributes: Vec<Attribute>,
-//         primary: PrimaryDef,
-//         columns: Vec<ColumnDef>,
-//     ) -> Self {
-//         TableSchema {
-//             id,
-//             name,
-//             attributes,
-//             primary,
-//             columns,
-//         }
-//     }
-
-//     pub fn to_schema_info(&self) -> SchemaInfo {
-//         SchemaInfo {
-//             table_id: self.id.clone(),
-//             table_name: self.name.clone(),
-//             attributes: self.attributes.clone(),
-//             primary: PrimaryInfo {
-//                 name: self.primary.name.clone(),
-//                 attributes: self.primary.attributes.clone(),
-//             },
-//             columns: self
-//                 .columns
-//                 .iter()
-//                 .map(ColumnInfo::from)
-//                 .collect::<Vec<_>>(),
-//         }
-//     }
-// }
+    pub fn to_schema_info(&self) -> SchemaInfo {
+        SchemaInfo {
+            table_id: self.id.clone(),
+            table_name: self.name.clone(),
+            attributes: self.attributes.clone(),
+            primary: PrimaryInfo {
+                name: self.primary.name.clone(),
+                attributes: self.primary.attributes.clone(),
+            },
+            columns: self
+                .columns
+                .iter()
+                .map(ColumnInfo::from)
+                .collect::<Vec<_>>(),
+        }
+    }
+}
 
 impl ElementDef for PrimaryTypeDef {}
 impl ElementDef for PrimaryDef {}
@@ -241,30 +209,32 @@ impl PrimaryTypeDef {
         }
     }
 
-    pub fn to_primary_value(&self, felt: Felt) -> Option<PrimaryValue> {
+    pub fn to_primary_value(&self, felt: Felt) -> TypeParserResult<PrimaryValue> {
         match self {
-            PrimaryTypeDef::Felt252 => Some(PrimaryValue::Felt252(felt)),
-            PrimaryTypeDef::ShortUtf8 => felt_to_utf8_string(felt).map(PrimaryValue::ShortUtf8),
-            PrimaryTypeDef::Bytes31 => felt_to_bytes31(felt).map(PrimaryValue::Bytes31),
+            PrimaryTypeDef::Felt252 => Ok(PrimaryValue::Felt252(felt)),
+            PrimaryTypeDef::ShortUtf8 => {
+                felt_to_utf8_string(felt).map_into(PrimaryValue::ShortUtf8)
+            }
+            PrimaryTypeDef::Bytes31 => felt_to_bytes31_bytes(felt).map_into(PrimaryValue::Bytes31),
             PrimaryTypeDef::Bytes31Encoded(e) => e
                 .to_encoded_bytes_31(felt)
                 .map(PrimaryValue::Bytes31Encoded),
-            PrimaryTypeDef::Bool => Some(PrimaryValue::Bool(!felt.is_zero())),
-            PrimaryTypeDef::U8 => felt.try_into().ok().map(PrimaryValue::U8),
-            PrimaryTypeDef::U16 => felt.try_into().ok().map(PrimaryValue::U16),
-            PrimaryTypeDef::U32 => felt.try_into().ok().map(PrimaryValue::U32),
-            PrimaryTypeDef::U64 => felt.try_into().ok().map(PrimaryValue::U64),
-            PrimaryTypeDef::U128 => felt.try_into().ok().map(PrimaryValue::U128),
-            PrimaryTypeDef::I8 => felt.try_into().ok().map(PrimaryValue::I8),
-            PrimaryTypeDef::I16 => felt.try_into().ok().map(PrimaryValue::I16),
-            PrimaryTypeDef::I32 => felt.try_into().ok().map(PrimaryValue::I32),
-            PrimaryTypeDef::I64 => felt.try_into().ok().map(PrimaryValue::I64),
-            PrimaryTypeDef::I128 => felt.try_into().ok().map(PrimaryValue::I128),
-            PrimaryTypeDef::ClassHash => Some(PrimaryValue::ClassHash(felt)),
-            PrimaryTypeDef::ContractAddress => Some(PrimaryValue::ContractAddress(felt)),
-            PrimaryTypeDef::EthAddress => Some(PrimaryValue::EthAddress(felt)),
-            PrimaryTypeDef::StorageAddress => Some(PrimaryValue::StorageAddress(felt)),
-            PrimaryTypeDef::StorageBaseAddress => Some(PrimaryValue::StorageBaseAddress(felt)),
+            PrimaryTypeDef::Bool => Ok(PrimaryValue::Bool(!felt.is_zero())),
+            PrimaryTypeDef::U8 => felt.to_primitive().map_into(PrimaryValue::U8),
+            PrimaryTypeDef::U16 => felt.to_primitive().map_into(PrimaryValue::U16),
+            PrimaryTypeDef::U32 => felt.to_primitive().map_into(PrimaryValue::U32),
+            PrimaryTypeDef::U64 => felt.to_primitive().map_into(PrimaryValue::U64),
+            PrimaryTypeDef::U128 => felt.to_primitive().map_into(PrimaryValue::U128),
+            PrimaryTypeDef::I8 => felt.to_primitive().map_into(PrimaryValue::I8),
+            PrimaryTypeDef::I16 => felt.to_primitive().map_into(PrimaryValue::I16),
+            PrimaryTypeDef::I32 => felt.to_primitive().map_into(PrimaryValue::I32),
+            PrimaryTypeDef::I64 => felt.to_primitive().map_into(PrimaryValue::I64),
+            PrimaryTypeDef::I128 => felt.to_primitive().map_into(PrimaryValue::I128),
+            PrimaryTypeDef::ClassHash => Ok(PrimaryValue::ClassHash(felt)),
+            PrimaryTypeDef::ContractAddress => Ok(PrimaryValue::ContractAddress(felt)),
+            PrimaryTypeDef::EthAddress => Ok(PrimaryValue::EthAddress(felt)),
+            PrimaryTypeDef::StorageAddress => Ok(PrimaryValue::StorageAddress(felt)),
+            PrimaryTypeDef::StorageBaseAddress => Ok(PrimaryValue::StorageBaseAddress(felt)),
         }
     }
 }
@@ -277,15 +247,15 @@ impl PrimaryDef {
             type_def,
         }
     }
-    pub fn to_primary(&self, felt: Felt) -> Option<Primary> {
-        Some(Primary {
+    pub fn to_primary(&self, felt: Felt) -> TypeParserResult<Primary> {
+        Ok(Primary {
             name: self.name.clone(),
             attributes: self.attributes.clone(),
             value: self.type_def.to_primary_value(felt)?,
         })
     }
 
-    pub fn to_primary_value(&self, felt: Felt) -> Option<PrimaryValue> {
+    pub fn to_primary_value(&self, felt: Felt) -> TypeParserResult<PrimaryValue> {
         self.type_def.to_primary_value(felt)
     }
 

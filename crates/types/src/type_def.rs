@@ -9,7 +9,6 @@ pub enum ByteArrayDeserialization {
     Serde,
     ISerde,
 }
-
 pub struct Utf8String(pub String);
 pub struct ByteArray(pub Vec<u8>);
 

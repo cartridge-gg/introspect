@@ -1492,7 +1492,6 @@ dependencies = [
 name = "introspect-types"
 version = "0.1.2"
 dependencies = [
- "cainome-cairo-serde",
  "convert_case 0.8.0",
  "hex",
  "lambdaworks-math",
@@ -1500,7 +1499,9 @@ dependencies = [
  "primitive-types 0.14.0",
  "serde",
  "serde_json",
+ "starknet",
  "starknet-types-core",
+ "thiserror 2.0.18",
 ]
 
 [[package]]

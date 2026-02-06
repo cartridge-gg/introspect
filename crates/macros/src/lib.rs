@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{Fields, Ident, ItemStruct, parse_macro_input};
+use syn::{Fields, Ident, ItemStruct, LitStr, parse_macro_input};
 
 /// Attribute macro that automatically converts all fields to `Option<T>` and generates
 /// `set_*` and getter methods that check if the field is already set.
@@ -115,4 +115,21 @@ pub fn macro_attributes(_attr: TokenStream, item: TokenStream) -> TokenStream {
     };
 
     TokenStream::from(expanded)
+}
+
+#[proc_macro]
+pub fn selector_raw(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as LitStr);
+
+    let str_value = input.value();
+
+    let selector_value = get_selector_from_name(&str_value).expect("invalid selector name");
+    let selector_raw = selector_value.to_raw();
+
+    format!(
+        "[{}, {}, {}, {}]",
+        selector_raw[0], selector_raw[1], selector_raw[2], selector_raw[3],
+    )
+    .parse()
+    .unwrap()
 }
