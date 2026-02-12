@@ -19,14 +19,17 @@ where
     const SELECTOR_RAW: [u64; 4];
     const SELECTOR: Felt = Felt::from_raw(Self::SELECTOR_RAW);
 
-    fn deserialize<K: FeltSource, E: FeltSource>(keys: &mut K, data: &mut E) -> DecodeResult<Self>;
-    fn deserialize_complete<K: IntoFeltSource, E: IntoFeltSource>(
-        keys: K,
-        data: E,
+    fn deserialize_event<K: FeltSource, E: FeltSource>(
+        keys: &mut K,
+        data: &mut E,
+    ) -> DecodeResult<Self>;
+    fn deserialize_and_verify_event<K: FeltSource, E: FeltSource>(
+        keys: &mut K,
+        data: &mut E,
     ) -> DecodeResult<Self> {
         let mut keys = keys.into_source();
         let mut data = data.into_source();
-        Self::deserialize(&mut keys, &mut data)?.verify_eof(&mut keys, &mut data)
+        Self::deserialize_event(&mut keys, &mut data)?.verify_eof(&mut keys, &mut data)
     }
     fn verify_eof<K: FeltSource, E: FeltSource>(
         self,
@@ -40,5 +43,11 @@ where
             }
             (Err(e), _) | (_, Err(e)) => Err(e),
         }
+    }
+    fn deserialize_and_verify_event_enum<K: FeltSource, E: FeltSource, T: From<Self>>(
+        keys: &mut K,
+        data: &mut E,
+    ) -> DecodeResult<T> {
+        Self::deserialize_and_verify_event(keys, data).map(Into::into)
     }
 }
