@@ -1,588 +1,621 @@
+use crate::event::CairoDeserializeRemaining;
+
 use super::{
     AddColumn, AddColumns, CreateColumnSet, CreateIndex, CreateTable, CreateTableFromClass,
     CreateTableFromContract, DeleteField, DeleteFieldSet, DeleteFieldSets, DeleteFields,
     DeleteRecord, DeleteRecords, DeletesField, DeletesFieldSet, DeletesFieldSets, DeletesFields,
-    DropColumn, DropColumns, DropIndex, DropTable, Entry, IdName, IdTypeDef, InsertField,
-    InsertFieldSet, InsertFieldSets, InsertFields, InsertRecord, InsertRecords, InsertsField,
-    InsertsFieldSet, InsertsFieldSets, InsertsFields, RenameColumn, RenameColumns, RenamePrimary,
-    RenameTable, RetypeColumn, RetypeColumns, RetypePrimary,
+    DropColumn, DropColumns, DropIndex, DropTable, InsertField, InsertFieldSet, InsertFieldSets,
+    InsertFields, InsertRecord, InsertRecords, InsertsField, InsertsFieldSet, InsertsFieldSets,
+    InsertsFields, RenameColumn, RenameColumns, RenamePrimary, RenameTable, RetypeColumn,
+    RetypeColumns, RetypePrimary,
 };
-use crate::event::EventTrait;
 use introspect_types::schema::{PrimaryDef, PrimaryTypeDef};
-use introspect_types::utils::ideserialize_utf8_string;
 use introspect_types::{
-    Attribute, ColumnDef, FeltIterator, ISerde, ISerdeEnd, TypeDef, ascii_str_to_limbs,
+    Attribute, CairoDeserialize, CairoDeserializer, CairoEvent, DecodeResult, FeltSource, TypeDef,
+    cairo_event_name_and_selector,
 };
 use starknet_types_core::felt::Felt;
 
-impl EventTrait for CreateColumnSet {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateFieldSet");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let id = event_data.next()?;
-        let columns = event_data.collect();
-        CreateColumnSet { id, columns }.verify_keys(event_keys)
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for CreateColumnSet
+{
+    cairo_event_name_and_selector!("CreateFieldSet");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let id = event_data.next_felt()?;
+        let columns = event_data.deserialize_remaining()?;
+        Ok(CreateColumnSet { id, columns })
     }
 }
 
-impl EventTrait for CreateTable {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateTable");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let id = event_data.next()?;
-        let name = ideserialize_utf8_string(event_data)?;
-        let attributes = Vec::<Attribute>::ideserialize(event_data)?;
-        let primary = PrimaryDef::ideserialize(event_data)?;
-        let columns = ColumnDef::ideserialize_end(event_data)?;
-        CreateTable {
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for CreateTable
+where
+    Attribute: CairoDeserialize<D>,
+{
+    cairo_event_name_and_selector!("CreateTable");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let id = event_data.next_felt()?;
+        let name = event_data.next_string()?;
+        let attributes = Vec::<Attribute>::deserialize(event_data)?;
+        let primary = PrimaryDef::deserialize(event_data)?;
+        let columns = event_data.deserialize_remaining()?;
+        Ok(CreateTable {
             id,
             name,
             attributes,
             primary,
             columns,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
 
-impl EventTrait for CreateTableFromClass {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateTableFromClass");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let id = event_data.next()?;
-        let name = ideserialize_utf8_string(event_data)?;
-        let class_hash = event_data.next()?;
-        CreateTableFromClass {
+impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for CreateTableFromClass {
+    cairo_event_name_and_selector!("CreateTableFromClass");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let id = event_data.next_felt()?;
+        let name = event_data.next_string()?;
+        let class_hash = event_data.next_felt()?;
+        Ok(CreateTableFromClass {
             id,
             name,
             class_hash,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
 
-impl EventTrait for CreateTableFromContract {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateTableFromContract");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let id = event_data.next()?;
-        let name = ideserialize_utf8_string(event_data)?;
-        let contract_address = event_data.next()?;
-        CreateTableFromContract {
+impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for CreateTableFromContract {
+    cairo_event_name_and_selector!("CreateTableFromContract");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let id = event_data.next_felt()?;
+        let name = event_data.next_string()?;
+        let contract_address = event_data.next_felt()?;
+        Ok(CreateTableFromContract {
             id,
             name,
             contract_address,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
 
-impl EventTrait for RenameTable {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RenameTable");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let id = event_data.next()?;
-        let name = ideserialize_utf8_string(event_data)?;
-        RenameTable { id, name }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for RenameTable {
+    cairo_event_name_and_selector!("RenameTable");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let id = event_data.next_felt()?;
+        let name = event_data.next_string()?;
+        Ok(RenameTable { id, name })
     }
 }
 
-impl EventTrait for DropTable {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DropTable");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let id = event_data.next()?;
-        DropTable { id }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DropTable {
+    cairo_event_name_and_selector!("DropTable");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let id = event_data.next_felt()?;
+        Ok(DropTable { id })
     }
 }
 
-impl EventTrait for RenamePrimary {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RenamePrimary");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let name = ideserialize_utf8_string(event_data)?;
-        RenamePrimary { table, name }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for RenamePrimary {
+    cairo_event_name_and_selector!("RenamePrimary");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let name = event_data.next_string()?;
+        Ok(RenamePrimary { table, name })
     }
 }
 
-impl EventTrait for RetypePrimary {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RetypePrimary");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let type_def = PrimaryTypeDef::ideserialize(event_data)?;
-        let attributes = Attribute::ideserialize_end(event_data)?;
-        RetypePrimary {
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for RetypePrimary
+where
+    Attribute: CairoDeserialize<D>,
+{
+    cairo_event_name_and_selector!("RetypePrimary");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let type_def = PrimaryTypeDef::deserialize(event_data)?;
+        let attributes = event_data.deserialize_remaining()?;
+        Ok(RetypePrimary {
             table,
             type_def,
             attributes,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
-impl EventTrait for AddColumn {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("AddColumn");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let id = event_data.next()?;
-        let name = ideserialize_utf8_string(event_data)?;
-        let type_def = TypeDef::ideserialize(event_data)?;
-        let attributes = Attribute::ideserialize_end(event_data)?;
-        AddColumn {
+
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for AddColumn
+where
+    Attribute: CairoDeserialize<D>,
+{
+    cairo_event_name_and_selector!("AddColumn");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let id = event_data.next_felt()?;
+        let name = event_data.next_string()?;
+        let type_def = TypeDef::deserialize(event_data)?;
+        let attributes = event_data.deserialize_remaining()?;
+        Ok(AddColumn {
             table,
             id,
             name,
             attributes,
             type_def,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
-impl EventTrait for AddColumns {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("AddColumns");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let columns = ColumnDef::ideserialize_end(event_data)?;
-        AddColumns { table, columns }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for AddColumns
+where
+    Attribute: CairoDeserialize<D>,
+{
+    cairo_event_name_and_selector!("AddColumns");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let columns = event_data.deserialize_remaining()?;
+        Ok(AddColumns { table, columns })
     }
 }
-impl EventTrait for RenameColumn {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RenameColumn");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let id = event_data.next()?;
-        let name = ideserialize_utf8_string(event_data)?;
-        RenameColumn { table, id, name }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for RenameColumn {
+    cairo_event_name_and_selector!("RenameColumn");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let id = event_data.next_felt()?;
+        let name = event_data.next_string()?;
+        Ok(RenameColumn { table, id, name })
     }
 }
-impl EventTrait for RenameColumns {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RenameColumns");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let columns = IdName::ideserialize_end(event_data)?;
-        RenameColumns { table, columns }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for RenameColumns
+{
+    cairo_event_name_and_selector!("RenameColumns");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let columns = event_data.deserialize_remaining()?;
+        Ok(RenameColumns { table, columns })
     }
 }
-impl EventTrait for RetypeColumn {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RetypeColumn");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let id = event_data.next()?;
-        let type_def = TypeDef::ideserialize(event_data)?;
-        let attributes = Attribute::ideserialize_end(event_data)?;
-        RetypeColumn {
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for RetypeColumn
+where
+    Attribute: CairoDeserialize<D>,
+{
+    cairo_event_name_and_selector!("RetypeColumn");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let id = event_data.next_felt()?;
+        let type_def = TypeDef::deserialize(event_data)?;
+        let attributes = event_data.deserialize_remaining()?;
+        Ok(RetypeColumn {
             table,
             id,
             attributes,
             type_def,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
 
-impl EventTrait for RetypeColumns {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("RetypeColumns");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let columns = IdTypeDef::ideserialize_end(event_data)?;
-        RetypeColumns { table, columns }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for RetypeColumns
+where
+    Attribute: CairoDeserialize<D>,
+{
+    cairo_event_name_and_selector!("RetypeColumns");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let columns = event_data.deserialize_remaining()?;
+        Ok(RetypeColumns { table, columns })
     }
 }
-impl EventTrait for DropColumn {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DropColumn");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let id = event_data.next()?;
-        DropColumn { table, id }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DropColumn {
+    cairo_event_name_and_selector!("DropColumn");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let id = event_data.next_felt()?;
+        Ok(DropColumn { table, id })
     }
 }
-impl EventTrait for DropColumns {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DropColumns");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let ids = event_data.collect();
-        DropColumns { table, ids }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for DropColumns {
+    cairo_event_name_and_selector!("DropColumns");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let ids = event_data.deserialize_remaining()?;
+        Ok(DropColumns { table, ids })
     }
 }
 
-impl EventTrait for CreateIndex {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("CreateIndex");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let id = event_data.next()?;
-        let name = ideserialize_utf8_string(event_data)?;
-        let columns = event_data.collect();
-        CreateIndex {
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for CreateIndex
+where
+    Attribute: CairoDeserialize<D>,
+{
+    cairo_event_name_and_selector!("CreateIndex");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let id = event_data.next_felt()?;
+        let attributes = Vec::<Attribute>::deserialize(event_data)?;
+        let columns = event_data.deserialize_remaining()?;
+        Ok(CreateIndex {
             table,
             id,
-            name,
+            attributes,
             columns,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
 
-impl EventTrait for DropIndex {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DropIndex");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let id = event_data.next()?;
-        DropIndex { table, id }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DropIndex {
+    cairo_event_name_and_selector!("DropIndex");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let id = event_data.next_felt()?;
+        Ok(DropIndex { table, id })
     }
 }
 
-impl EventTrait for InsertRecord {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertRecord");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let row = event_data.next()?;
-        let data = event_data.collect();
-        InsertRecord { table, row, data }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for InsertRecord {
+    cairo_event_name_and_selector!("InsertRecord");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let row = event_data.next_felt()?;
+        let data = event_data.deserialize_remaining()?;
+        Ok(InsertRecord { table, row, data })
     }
 }
-impl EventTrait for InsertRecords {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertRecords");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let entries = Entry::ideserialize_end(event_data)?;
-        InsertRecords { table, entries }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for InsertRecords
+{
+    cairo_event_name_and_selector!("InsertRecords");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let entries = event_data.deserialize_remaining()?;
+        Ok(InsertRecords { table, entries })
     }
 }
-impl EventTrait for InsertField {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertField");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let row = event_data.next()?;
-        let column = event_data.next()?;
-        let data = event_data.collect();
-        InsertField {
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for InsertField {
+    cairo_event_name_and_selector!("InsertField");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let row = event_data.next_felt()?;
+        let column = event_data.next_felt()?;
+        let data = event_data.deserialize_remaining()?;
+        Ok(InsertField {
             table,
             row,
             column,
             data,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
-impl EventTrait for InsertFields {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertFields");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let row = event_data.next()?;
-        let columns = Vec::<Felt>::ideserialize(event_data)?;
-        let data = event_data.collect();
-        InsertFields {
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for InsertFields {
+    cairo_event_name_and_selector!("InsertFields");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let row = event_data.next_felt()?;
+        let columns = Vec::<Felt>::deserialize(event_data)?;
+        let data = event_data.deserialize_remaining()?;
+        Ok(InsertFields {
             table,
             row,
             columns,
             data,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
-impl EventTrait for InsertsField {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertsField");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let column = event_data.next()?;
-        let entries = Entry::ideserialize_end(event_data)?;
-        InsertsField {
+
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for InsertsField {
+    cairo_event_name_and_selector!("InsertsField");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let column = event_data.next_felt()?;
+        let entries = event_data.deserialize_remaining()?;
+        Ok(InsertsField {
             table,
             column,
             entries,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
-impl EventTrait for InsertsFields {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertsFields");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let columns = Vec::<Felt>::ideserialize(event_data)?;
-        let entries = Entry::ideserialize_end(event_data)?;
-        InsertsFields {
+
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for InsertsFields
+{
+    cairo_event_name_and_selector!("InsertsFields");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let columns = Vec::<Felt>::deserialize(event_data)?;
+        let entries = event_data.deserialize_remaining()?;
+        Ok(InsertsFields {
             table,
             columns,
             entries,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
-impl EventTrait for InsertFieldSet {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertFieldSet");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let row = event_data.next()?;
-        let set = event_data.next()?;
-        let data = event_data.collect();
-        InsertFieldSet {
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for InsertFieldSet
+{
+    cairo_event_name_and_selector!("InsertFieldSet");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let row = event_data.next_felt()?;
+        let set = event_data.next_felt()?;
+        let data = event_data.deserialize_remaining()?;
+        Ok(InsertFieldSet {
             table,
             row,
             set,
             data,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
 
-impl EventTrait for InsertFieldSets {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertFieldSets");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let row = event_data.next()?;
-        let sets = Vec::<Felt>::ideserialize(event_data)?;
-        let data = event_data.collect();
-        InsertFieldSets {
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for InsertFieldSets
+{
+    cairo_event_name_and_selector!("InsertFieldSets");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let row = event_data.next_felt()?;
+        let sets = Vec::<Felt>::deserialize(event_data)?;
+        let data = event_data.deserialize_remaining()?;
+        Ok(InsertFieldSets {
             table,
             row,
             sets,
             data,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
 
-impl EventTrait for InsertsFieldSet {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertsFieldSet");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let set = event_data.next()?;
-        let entries = Entry::ideserialize_end(event_data)?;
-        InsertsFieldSet {
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for InsertsFieldSet
+{
+    cairo_event_name_and_selector!("InsertsFieldSet");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let set = event_data.next_felt()?;
+        let entries = event_data.deserialize_remaining()?;
+        Ok(InsertsFieldSet {
             table,
             set,
             entries,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
 
-impl EventTrait for InsertsFieldSets {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("InsertsFieldSets");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let sets = Vec::<Felt>::ideserialize(event_data)?;
-        let entries = Entry::ideserialize_end(event_data)?;
-        InsertsFieldSets {
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for InsertsFieldSets
+{
+    cairo_event_name_and_selector!("InsertsFieldSets");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let sets = Vec::<Felt>::deserialize(event_data)?;
+        let entries = event_data.deserialize_remaining()?;
+        Ok(InsertsFieldSets {
             table,
             sets,
             entries,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
 
-impl EventTrait for DeleteRecord {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeleteRecord");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let row = event_data.next()?;
-        DeleteRecord { table, row }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DeleteRecord {
+    cairo_event_name_and_selector!("DeleteRecord");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let row = event_data.next_felt()?;
+        Ok(DeleteRecord { table, row })
     }
 }
-impl EventTrait for DeleteRecords {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeleteRecords");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let rows = event_data.collect();
-        DeleteRecords { table, rows }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for DeleteRecords
+{
+    cairo_event_name_and_selector!("DeleteRecords");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let rows = event_data.deserialize_remaining()?;
+        Ok(DeleteRecords { table, rows })
     }
 }
-impl EventTrait for DeleteField {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeleteField");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let row = event_data.next()?;
-        let column = event_data.next()?;
-        DeleteField { table, row, column }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DeleteField {
+    cairo_event_name_and_selector!("DeleteField");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let row = event_data.next_felt()?;
+        let column = event_data.next_felt()?;
+        Ok(DeleteField { table, row, column })
     }
 }
-impl EventTrait for DeleteFields {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeleteFields");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let row = event_data.next()?;
-        let columns = event_data.collect();
-        DeleteFields {
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for DeleteFields {
+    cairo_event_name_and_selector!("DeleteFields");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let row = event_data.next_felt()?;
+        let columns = event_data.deserialize_remaining()?;
+        Ok(DeleteFields {
             table,
             row,
             columns,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
-impl EventTrait for DeletesField {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeletesField");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let column = event_data.next()?;
-        let rows = event_data.collect();
-        DeletesField {
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for DeletesField {
+    cairo_event_name_and_selector!("DeletesField");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let column = event_data.next_felt()?;
+        let rows = event_data.deserialize_remaining()?;
+        Ok(DeletesField {
             table,
             rows,
             column,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
-impl EventTrait for DeletesFields {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeletesFields");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let rows = Vec::<Felt>::ideserialize(event_data)?;
-        let columns = event_data.collect();
-        DeletesFields {
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for DeletesFields
+{
+    cairo_event_name_and_selector!("DeletesFields");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let rows = Vec::<Felt>::deserialize(event_data)?;
+        let columns = event_data.deserialize_remaining()?;
+        Ok(DeletesFields {
             table,
             rows,
             columns,
-        }
-        .verify(event_keys, event_data)
+        })
     }
 }
 
-impl EventTrait for DeleteFieldSet {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeleteFieldSet");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let row = event_data.next()?;
-        let set = event_data.next()?;
-        DeleteFieldSet { table, row, set }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DeleteFieldSet {
+    cairo_event_name_and_selector!("DeleteFieldSet");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let row = event_data.next_felt()?;
+        let set = event_data.next_felt()?;
+        Ok(DeleteFieldSet { table, row, set })
     }
 }
 
-impl EventTrait for DeleteFieldSets {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeleteFieldSets");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let row = event_data.next()?;
-        let sets = event_data.collect();
-        DeleteFieldSets { table, row, sets }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for DeleteFieldSets
+{
+    cairo_event_name_and_selector!("DeleteFieldSets");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let row = event_data.next_felt()?;
+        let sets = event_data.deserialize_remaining()?;
+        Ok(DeleteFieldSets { table, row, sets })
     }
 }
 
-impl EventTrait for DeletesFieldSet {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeletesFieldSet");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let set = event_data.next()?;
-        let rows = event_data.collect();
-        DeletesFieldSet { table, rows, set }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for DeletesFieldSet
+{
+    cairo_event_name_and_selector!("DeletesFieldSet");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let set = event_data.next_felt()?;
+        let rows = event_data.deserialize_remaining()?;
+        Ok(DeletesFieldSet { table, rows, set })
     }
 }
 
-impl EventTrait for DeletesFieldSets {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeletesFieldSets");
-    fn deserialize_event(
-        event_keys: &mut FeltIterator,
-        event_data: &mut FeltIterator,
-    ) -> Option<Self> {
-        let table = event_data.next()?;
-        let rows = Vec::<Felt>::ideserialize(event_data)?;
-        let sets = event_data.collect();
-        DeletesFieldSets { table, rows, sets }.verify(event_keys, event_data)
+impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for DeletesFieldSets
+{
+    cairo_event_name_and_selector!("DeletesFieldSets");
+    fn deserialize_event<K: FeltSource>(
+        _event_keys: &mut K,
+        event_data: &mut D,
+    ) -> DecodeResult<Self> {
+        let table = event_data.next_felt()?;
+        let rows = Vec::<Felt>::deserialize(event_data)?;
+        let sets = event_data.deserialize_remaining()?;
+        Ok(DeletesFieldSets { table, rows, sets })
     }
 }

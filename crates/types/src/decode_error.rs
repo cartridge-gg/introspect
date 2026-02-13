@@ -7,8 +7,11 @@ pub type DecodeResult<T> = Result<T, DecodeError>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
 pub enum DecodeError {
-    #[error("unexpected end of input")]
+    #[error("end of input")]
     Eof,
+
+    #[error("end of input")]
+    UnexpectedEof,
 
     #[error("expected end of input, but more data is available")]
     NotEof,
@@ -149,6 +152,20 @@ impl From<core::str::Utf8Error> for DecodeError {
         Self::Utf8 {
             valid_up_to: e.valid_up_to(),
             error_len: e.error_len(),
+        }
+    }
+}
+
+pub trait DecodeResultTrait {
+    fn raise_eof(self) -> Self;
+}
+
+impl<T> DecodeResultTrait for DecodeResult<T> {
+    #[inline]
+    fn raise_eof(self) -> Self {
+        match self {
+            Err(DecodeError::Eof) => Err(DecodeError::UnexpectedEof),
+            other => other,
         }
     }
 }

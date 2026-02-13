@@ -2,6 +2,7 @@ use num_traits::{One, Zero};
 use primitive_types::{U256, U512};
 use starknet_types_core::felt::{Felt, PrimitiveFromFeltError};
 
+use crate::decode_error::DecodeResultTrait;
 use crate::{DecodeError, DecodeResult};
 
 pub struct Bytes31(pub [u8; 31]);
@@ -249,14 +250,36 @@ impl<T: CairoDeserializer> CairoDeserialize<T> for String {
 }
 
 pub trait CairoDeserializer {
-    fn drain(&mut self) -> Vec<Felt> {
-        let mut felts = Vec::new();
-        while let Ok(felt) = self.next_felt() {
-            felts.push(felt);
-        }
-        felts
-    }
     fn next_felt(&mut self) -> DecodeResult<Felt>;
+    fn next_value<T: CairoDeserialize<Self>>(&mut self) -> DecodeResult<T>
+    where
+        Self: Sized,
+    {
+        T::deserialize(self)
+    }
+    fn drain(&mut self) -> DecodeResult<Vec<Felt>> {
+        let mut felts = Vec::new();
+        loop {
+            match self.next_felt() {
+                Ok(felt) => felts.push(felt),
+                Err(DecodeError::Eof) => break Ok(felts),
+                Err(err) => break Err(err),
+            }
+        }
+    }
+    fn drain_values<T: CairoDeserialize<Self>>(&mut self) -> DecodeResult<Vec<T>>
+    where
+        Self: Sized,
+    {
+        let mut items = Vec::new();
+        loop {
+            match T::deserialize(self) {
+                Ok(item) => items.push(item),
+                Err(DecodeError::Eof) => break Ok(items),
+                Err(err) => break Err(err),
+            }
+        }
+    }
     fn next_bool_tag(&mut self, what: &'static str) -> DecodeResult<bool> {
         let f = self.next_felt()?;
         if f.is_zero() {
@@ -307,7 +330,7 @@ pub trait CairoDeserializer {
         self.next_primitive()
     }
     fn next_u256(&mut self) -> DecodeResult<U256> {
-        match [self.next_digits()?, self.next_digits()?] {
+        match [self.next_digits()?, self.next_digits().raise_eof()?] {
             [[0, 0, l2, l1], [0, 0, h2, h1]] => Ok(U256([h2, h1, l2, l1])),
             _ => Err(DecodeError::InvalidEncoding { what: "u256" }),
         }
@@ -315,9 +338,9 @@ pub trait CairoDeserializer {
     fn next_u512(&mut self) -> DecodeResult<U512> {
         match [
             self.next_digits()?,
-            self.next_digits()?,
-            self.next_digits()?,
-            self.next_digits()?,
+            self.next_digits().raise_eof()?,
+            self.next_digits().raise_eof()?,
+            self.next_digits().raise_eof()?,
         ] {
             [
                 [0, 0, l2, l1],
@@ -325,6 +348,7 @@ pub trait CairoDeserializer {
                 [0, 0, h2, h1],
                 [0, 0, h4, h3],
             ] => Ok(U512([h4, h3, h2, h1, l4, l3, l2, l1])),
+
             _ => Err(DecodeError::InvalidEncoding { what: "u512" }),
         }
     }
@@ -349,8 +373,8 @@ pub trait CairoDeserializer {
     {
         Ok(ByteArray::new_from_parts(
             self.next_array::<Bytes31>()?,
-            self.next_bytes31()?.into(),
-            self.next_u8()?,
+            self.next_bytes31().raise_eof()?.into(),
+            self.next_u8().raise_eof()?,
         ))
     }
     fn next_byte_array_bytes(&mut self) -> DecodeResult<Vec<u8>>
@@ -371,7 +395,7 @@ pub trait CairoDeserializer {
         Self: Sized,
     {
         let len = self.next_u32()?;
-        T::deserialize_multiple(self, len as usize)
+        T::deserialize_multiple(self, len as usize).raise_eof()
     }
 
     fn next_fixed_size_array<T: CairoDeserialize<Self>>(
@@ -381,7 +405,7 @@ pub trait CairoDeserializer {
     where
         Self: Sized,
     {
-        T::deserialize_multiple(self, size)
+        T::deserialize_multiple(self, size).raise_eof()
     }
     fn next_option_is_some(&mut self) -> DecodeResult<bool> {
         self.next_bool_tag("option").map(|b| !b)
@@ -393,7 +417,7 @@ pub trait CairoDeserializer {
         if self.next_option_is_some()? {
             Ok(None)
         } else {
-            T::deserialize(self).map(Some)
+            T::deserialize(self).raise_eof().map(Some)
         }
     }
     fn next_result_is_ok(&mut self) -> DecodeResult<bool> {
@@ -406,9 +430,9 @@ pub trait CairoDeserializer {
         Self: Sized,
     {
         if self.next_result_is_ok()? {
-            T::deserialize(self).map(Ok)
+            T::deserialize(self).raise_eof().map(Ok)
         } else {
-            E::deserialize(self).map(Err)
+            E::deserialize(self).raise_eof().map(Err)
         }
     }
     fn next_nullable_is_null(&mut self) -> DecodeResult<bool> {
@@ -421,7 +445,7 @@ pub trait CairoDeserializer {
         if self.next_nullable_is_null()? {
             Ok(None)
         } else {
-            T::deserialize(self).map(Some)
+            T::deserialize(self).raise_eof().map(Some)
         }
     }
     fn next_const_size_array<const N: usize, T: CairoDeserialize<Self>>(
@@ -431,9 +455,13 @@ pub trait CairoDeserializer {
         Self: Sized,
     {
         let mut v = Vec::with_capacity(N);
-        for _ in 0..N {
+        if N > 0 {
             v.push(T::deserialize(self)?);
+            for _ in 1..N {
+                v.push(T::deserialize(self).raise_eof()?);
+            }
         }
+
         v.try_into()
             .map_err(|v: Vec<T>| DecodeError::unexpected_len("const size array", N, v.len()))
     }

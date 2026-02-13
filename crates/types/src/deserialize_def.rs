@@ -1,3 +1,4 @@
+use crate::decode_error::DecodeResultTrait;
 use crate::deserialize::{CairoDeserialize, CairoDeserializer};
 use crate::type_def::selectors;
 use crate::{
@@ -63,7 +64,9 @@ pub trait CairoDeserializeItemDef<D> {
 
 impl<Item: ItemDefTrait + CairoDeserialize<D>, D> CairoDeserializeItemDef<D> for Item {
     fn deserialize_item(deserializer: &mut D) -> DecodeResult<TypeDef> {
-        Item::deserialize(deserializer).map(Item::wrap_to_type_def)
+        Item::deserialize(deserializer)
+            .raise_eof()
+            .map(Item::wrap_to_type_def)
     }
 }
 
@@ -164,8 +167,8 @@ where
 {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         let name = deserializer.next_string()?;
-        let attributes = deserializer.next_array::<Attribute>()?;
-        let members = deserializer.next_array::<MemberDef>()?;
+        let attributes = deserializer.next_array::<Attribute>().raise_eof()?;
+        let members = deserializer.next_array::<MemberDef>().raise_eof()?;
         Ok(StructDef::new(name, attributes, members))
     }
 }
@@ -176,8 +179,10 @@ where
 {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         let name = deserializer.next_string()?;
-        let attributes = deserializer.next_array::<Attribute>()?;
-        let variants = deserializer.next_array::<(Felt, VariantDef)>()?;
+        let attributes = deserializer.next_array::<Attribute>().raise_eof()?;
+        let variants = deserializer
+            .next_array::<(Felt, VariantDef)>()
+            .raise_eof()?;
         Ok(EnumDef::new(name, attributes, variants))
     }
 }
@@ -188,8 +193,8 @@ where
 {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         let name = deserializer.next_string()?;
-        let attributes = deserializer.next_array::<Attribute>()?;
-        let type_def = TypeDef::deserialize(deserializer)?;
+        let attributes = deserializer.next_array::<Attribute>().raise_eof()?;
+        let type_def = TypeDef::deserialize(deserializer).raise_eof()?;
         Ok(MemberDef::new(name, attributes, type_def))
     }
 }
@@ -200,8 +205,8 @@ where
 {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         let name = deserializer.next_string()?;
-        let attributes = deserializer.next_array::<Attribute>()?;
-        let type_def = TypeDef::deserialize(deserializer)?;
+        let attributes = deserializer.next_array::<Attribute>().raise_eof()?;
+        let type_def = TypeDef::deserialize(deserializer).raise_eof()?;
         Ok(VariantDef::new(name, attributes, type_def))
     }
 }
@@ -212,9 +217,9 @@ where
 {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         let id = deserializer.next_felt()?;
-        let name = deserializer.next_string()?;
-        let attributes = deserializer.next_array::<Attribute>()?;
-        let type_def = TypeDef::deserialize(deserializer)?;
+        let name = deserializer.next_string().raise_eof()?;
+        let attributes = deserializer.next_array::<Attribute>().raise_eof()?;
+        let type_def = TypeDef::deserialize(deserializer).raise_eof()?;
         Ok(ColumnDef::new(id, name, attributes, type_def))
     }
 }
@@ -259,8 +264,8 @@ where
 {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         let name = deserializer.next_string()?;
-        let attributes = deserializer.next_array::<Attribute>()?;
-        let type_def = PrimaryTypeDef::deserialize(deserializer)?;
+        let attributes = deserializer.next_array::<Attribute>().raise_eof()?;
+        let type_def = PrimaryTypeDef::deserialize(deserializer).raise_eof()?;
         Ok(PrimaryDef::new(name, attributes, type_def))
     }
 }

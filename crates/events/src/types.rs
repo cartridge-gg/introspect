@@ -1,22 +1,24 @@
-use introspect_types::{FeltIterator, ISerde, TypeDef, ascii_str_to_limbs};
-use serde::{Deserialize, Serialize};
+use introspect_types::{
+    Attribute, CairoDeserialize, CairoDeserializer, CairoEvent, DecodeResult, FeltSource, TypeDef,
+    cairo_event_name_and_selector,
+};
 use starknet_types_core::felt::Felt;
 
-use crate::event::EventTrait;
-
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct DeclareType {
     pub id: Felt,
     pub type_def: TypeDef,
 }
 
-impl EventTrait for DeclareType {
-    const SELECTOR_RAW: [u64; 4] = ascii_str_to_limbs("DeclareType");
+impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DeclareType
+where
+    Attribute: CairoDeserialize<D>,
+{
+    cairo_event_name_and_selector!("DeclareType");
 
-    fn deserialize_event(keys: &mut FeltIterator, data: &mut FeltIterator) -> Option<Self> {
-        let id = keys.next()?;
-        let type_def = TypeDef::ideserialize(data)?;
-
-        DeclareType { id, type_def }.verify(keys, data)
+    fn deserialize_event<K: FeltSource>(_keys: &mut K, data: &mut D) -> DecodeResult<Self> {
+        let id = data.next()?;
+        let type_def = TypeDef::deserialize(data)?;
+        Ok(DeclareType { id, type_def })
     }
 }

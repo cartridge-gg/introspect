@@ -1,4 +1,5 @@
-use crate::deserialize::{ByteArray, CairoDeserialize, CairoDeserializer};
+use crate::decode_error::DecodeResultTrait;
+use crate::deserialize::{ByteArray, CairoDeserializer};
 use crate::felt::IntoFeltSource;
 use crate::{DecodeResult, FeltSource};
 use starknet_types_core::felt::Felt;
@@ -36,27 +37,30 @@ impl<T: IntoFeltSource> From<T> for CairoISerde<T::Source> {
 
 impl<I: FeltSource> CairoISerde<I> {
     pub fn next_byte_array_with_info_byte(&mut self) -> DecodeResult<(Vec<u8>, u8)> {
-        let mut bytes = Vec::new();
-        loop {
-            let [info, felt_bytes @ ..] = self.next_felt_bytes()?;
-
+        fn extent_bytes(
+            deserializer: &mut CairoISerde<impl FeltSource>,
+            bytes: &mut Vec<u8>,
+        ) -> DecodeResult<u8> {
+            let [info, felt_bytes @ ..] = deserializer.next_felt_bytes()?;
             bytes.extend_from_slice(match info & 2 {
                 0 => &felt_bytes,
                 _ => &felt_bytes[(31 - felt_bytes[1] as usize)..31],
             });
+            Ok(info)
+        }
 
-            if info & 1 == 1 {
-                return Ok((bytes, info));
+        let mut bytes = Vec::new();
+        let info = extent_bytes(self, &mut bytes)?;
+        if info & 1 == 1 {
+            Ok((bytes, info))
+        } else {
+            loop {
+                let info = extent_bytes(self, &mut bytes).raise_eof()?;
+                if info & 1 == 1 {
+                    break Ok((bytes, info));
+                }
             }
         }
-    }
-
-    pub fn deserialize_end<T: CairoDeserialize<Self>>(&mut self) -> Vec<T> {
-        let mut values = Vec::new();
-        while let Ok(value) = T::deserialize(self) {
-            values.push(value);
-        }
-        values
     }
 }
 

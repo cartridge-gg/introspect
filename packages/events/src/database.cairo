@@ -149,7 +149,7 @@ pub struct DropTable {
 pub struct CreateIndex {
     pub table: felt252,
     pub id: felt252,
-    pub name: ByteArray,
+    pub attributes: Span<Attribute>,
     pub columns: Span<felt252>,
 }
 
@@ -588,16 +588,16 @@ impl CreateIndexEvent of Event<CreateIndex> {
     ) {
         data.append(*self.table);
         data.append(*self.id);
-        self.name.iserialize(ref data);
+        self.attributes.iserialize(ref data);
         self.columns.iserialize_end(ref data);
     }
 
     fn deserialize(ref keys: Span<felt252>, ref data: Span<felt252>) -> Option<CreateIndex> {
         let table = *data.pop_front()?;
         let id = *data.pop_front()?;
-        let name = ISerde::ideserialize(ref data)?;
+        let attributes = ISerde::ideserialize(ref data)?;
         let columns = ISerdeEnd::ideserialize_end(ref data)?;
-        CreateIndex { table, id, name, columns }.verify_keys(ref keys)
+        CreateIndex { table, id, attributes, columns }.verify_keys(ref keys)
     }
 }
 
