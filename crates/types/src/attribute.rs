@@ -38,3 +38,16 @@ impl<I: FeltSource> CairoDeserialize<CairoISerde<I>> for Attribute {
         Ok(Attribute { name, data })
     }
 }
+
+pub trait Attributes {
+    fn attributes(&self) -> &[Attribute];
+    fn get_attribute(&self, name: &str) -> Option<Option<&[u8]>> {
+        self.attributes()
+            .iter()
+            .find(|attr| attr.name == name)
+            .map(|attr| attr.data.as_deref())
+    }
+    fn has_attribute(&self, name: &str) -> bool {
+        self.attributes().iter().any(|attr| attr.name == name)
+    }
+}

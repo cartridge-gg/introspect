@@ -100,3 +100,44 @@ impl<T, E0> ResultInto<T, E0> for Result<T, E0> {
         }
     }
 }
+
+pub fn string_to_cairo_serialize_byte_array(value: &str) -> Vec<Felt> {
+    let (full, remainder) = value.as_bytes().as_chunks::<31>();
+    let mut result = Vec::with_capacity(full.len() + 3);
+    result.push(full.len().into());
+    for f in full {
+        result.push(Felt::from_bytes_be_slice(f));
+    }
+    result.push(Felt::from_bytes_be_slice(remainder));
+    result.push(remainder.len().into());
+    result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{CairoDeserializer, CairoSerde};
+    fn test_string_to_cairo_serialize_bytearray(value: &str) {
+        let serialized = string_to_cairo_serialize_byte_array(value);
+        let mut serde: CairoSerde<_> = serialized.into();
+        let string = serde.next_string().unwrap();
+        assert_eq!(string, value);
+    }
+    #[test]
+    fn test_empty_string_serialization() {
+        test_string_to_cairo_serialize_bytearray("");
+    }
+    #[test]
+    fn test_len_1_string_serialization() {
+        test_string_to_cairo_serialize_bytearray("a");
+    }
+    #[test]
+    fn test_len_31_string_serialization() {
+        test_string_to_cairo_serialize_bytearray("what is this? a center for ants");
+    }
+
+    #[test]
+    fn test_len_32_string_serialization() {
+        test_string_to_cairo_serialize_bytearray("this is a string with length 32!");
+    }
+}

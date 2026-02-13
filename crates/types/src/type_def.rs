@@ -1,4 +1,4 @@
-use crate::{Attribute, ascii_str_to_limbs};
+use crate::{Attribute, Attributes, ascii_str_to_limbs};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
@@ -285,9 +285,34 @@ pub struct VariantDef {
     pub attributes: Vec<Attribute>,
     pub type_def: TypeDef,
 }
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct TupleDef {
     pub elements: Vec<TypeDef>,
+}
+
+impl Attributes for EnumDef {
+    fn attributes(&self) -> &[Attribute] {
+        &self.attributes
+    }
+}
+
+impl Attributes for StructDef {
+    fn attributes(&self) -> &[Attribute] {
+        &self.attributes
+    }
+}
+
+impl Attributes for VariantDef {
+    fn attributes(&self) -> &[Attribute] {
+        &self.attributes
+    }
+}
+
+impl Attributes for MemberDef {
+    fn attributes(&self) -> &[Attribute] {
+        &self.attributes
+    }
 }
 
 impl Deref for TupleDef {

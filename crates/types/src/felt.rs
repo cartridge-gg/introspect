@@ -46,6 +46,13 @@ impl IntoFeltSource for Vec<Felt> {
     }
 }
 
+impl<'a> IntoFeltSource for &'a Vec<Felt> {
+    type Source = SliceFeltSource<'a>;
+    fn into_source(self) -> Self::Source {
+        SliceFeltSource::new(self)
+    }
+}
+
 impl<'a> IntoFeltSource for &'a [Felt] {
     type Source = SliceFeltSource<'a>;
     fn into_source(self) -> Self::Source {

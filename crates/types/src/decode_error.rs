@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use starknet_types_core::felt::Felt;
 use thiserror::Error;
 
@@ -59,7 +61,7 @@ pub enum DecodeError {
     },
 
     #[error("{0}")]
-    Message(&'static str),
+    Message(Cow<'static, str>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]
@@ -116,6 +118,28 @@ impl DecodeError {
             expected,
             got,
         }
+    }
+    #[allow(private_bounds)]
+    pub fn message<M: ToCowStr>(msg: M) -> Self {
+        Self::Message(msg.to_cow_str())
+    }
+}
+
+trait ToCowStr {
+    fn to_cow_str(self) -> Cow<'static, str>;
+}
+
+impl ToCowStr for &'static str {
+    #[inline]
+    fn to_cow_str(self) -> Cow<'static, str> {
+        Cow::Borrowed(self)
+    }
+}
+
+impl ToCowStr for String {
+    #[inline]
+    fn to_cow_str(self) -> Cow<'static, str> {
+        Cow::Owned(self)
     }
 }
 

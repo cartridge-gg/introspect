@@ -13,7 +13,7 @@ pub mod serde;
 pub mod type_def;
 pub mod utils;
 pub mod value;
-pub use attribute::Attribute;
+pub use attribute::{Attribute, Attributes};
 pub use decode_error::{ByteArrayError, DecodeError, DecodeResult};
 pub use deserialize::{
     CairoDeserialize, CairoDeserializer, felt_to_bytes31_bytes, felt_to_utf8_string,

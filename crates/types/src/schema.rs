@@ -1,40 +1,24 @@
 use crate::deserialize::{CairoDeserializer, FeltToPrimitive};
 use crate::parser::{ParseValues, TypeParserResult};
 use crate::{
-    Attribute, Bytes31EncodedDef, ElementDef, Primary, PrimaryValue, Record, ResultInto, TypeDef,
-    felt_to_bytes31_bytes, felt_to_utf8_string,
+    Attribute, Attributes, Bytes31EncodedDef, ElementDef, Primary, PrimaryValue, Record,
+    ResultInto, TypeDef, felt_to_bytes31_bytes, felt_to_utf8_string,
 };
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
-pub enum PrimaryTypeDef {
-    #[default]
-    Felt252,
-    ShortUtf8,
-    Bytes31,
-    Bytes31Encoded(Bytes31EncodedDef),
-    Bool,
-    U8,
-    U16,
-    U32,
-    U64,
-    U128,
-    I8,
-    I16,
-    I32,
-    I64,
-    I128,
-    ClassHash,
-    ContractAddress,
-    EthAddress,
-    StorageAddress,
-    StorageBaseAddress,
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TableSchema {
+    pub id: Felt,
+    pub name: String,
+    pub attributes: Vec<Attribute>,
+    pub primary: PrimaryDef,
+    pub columns: Vec<ColumnDef>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct SchemaInfo {
+pub struct TableInfo {
     pub table_id: Felt,
     pub table_name: String,
     pub attributes: Vec<Attribute>,
@@ -69,13 +53,30 @@ pub struct PrimaryInfo {
     pub name: String,
     pub attributes: Vec<Attribute>,
 }
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct TableSchema {
-    pub id: Felt,
-    pub name: String,
-    pub attributes: Vec<Attribute>,
-    pub primary: PrimaryDef,
-    pub columns: Vec<ColumnDef>,
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
+pub enum PrimaryTypeDef {
+    #[default]
+    Felt252,
+    ShortUtf8,
+    Bytes31,
+    Bytes31Encoded(Bytes31EncodedDef),
+    Bool,
+    U8,
+    U16,
+    U32,
+    U64,
+    U128,
+    I8,
+    I16,
+    I32,
+    I64,
+    I128,
+    ClassHash,
+    ContractAddress,
+    EthAddress,
+    StorageAddress,
+    StorageBaseAddress,
 }
 
 impl TableSchema {
@@ -111,8 +112,8 @@ impl TableSchema {
         })
     }
 
-    pub fn to_schema_info(&self) -> SchemaInfo {
-        SchemaInfo {
+    pub fn to_schema_info(&self) -> TableInfo {
+        TableInfo {
             table_id: self.id.clone(),
             table_name: self.name.clone(),
             attributes: self.attributes.clone(),
@@ -275,5 +276,41 @@ impl ColumnDef {
             attributes,
             type_def,
         }
+    }
+}
+
+impl Attributes for TableSchema {
+    fn attributes(&self) -> &[Attribute] {
+        &self.attributes
+    }
+}
+
+impl Attributes for TableInfo {
+    fn attributes(&self) -> &[Attribute] {
+        &self.attributes
+    }
+}
+
+impl Attributes for ColumnDef {
+    fn attributes(&self) -> &[Attribute] {
+        &self.attributes
+    }
+}
+
+impl Attributes for ColumnInfo {
+    fn attributes(&self) -> &[Attribute] {
+        &self.attributes
+    }
+}
+
+impl Attributes for PrimaryDef {
+    fn attributes(&self) -> &[Attribute] {
+        &self.attributes
+    }
+}
+
+impl Attributes for PrimaryInfo {
+    fn attributes(&self) -> &[Attribute] {
+        &self.attributes
     }
 }
