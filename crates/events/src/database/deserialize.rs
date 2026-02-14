@@ -19,7 +19,6 @@ use starknet_types_core::felt::Felt;
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
     for CreateColumnSet
 {
-    cairo_event_name_and_selector!("CreateFieldSet");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -34,7 +33,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 where
     Attribute: CairoDeserialize<D>,
 {
-    cairo_event_name_and_selector!("CreateTable");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -55,7 +53,6 @@ where
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for CreateTableFromClass {
-    cairo_event_name_and_selector!("CreateTableFromClass");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -72,7 +69,6 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for CreateTableFromClass {
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for CreateTableFromContract {
-    cairo_event_name_and_selector!("CreateTableFromContract");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -89,7 +85,6 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for CreateTableFromContrac
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for RenameTable {
-    cairo_event_name_and_selector!("RenameTable");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -101,7 +96,6 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for RenameTable {
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DropTable {
-    cairo_event_name_and_selector!("DropTable");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -112,7 +106,6 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DropTable {
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for RenamePrimary {
-    cairo_event_name_and_selector!("RenamePrimary");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -127,7 +120,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 where
     Attribute: CairoDeserialize<D>,
 {
-    cairo_event_name_and_selector!("RetypePrimary");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -147,7 +139,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 where
     Attribute: CairoDeserialize<D>,
 {
-    cairo_event_name_and_selector!("AddColumn");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -170,7 +161,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 where
     Attribute: CairoDeserialize<D>,
 {
-    cairo_event_name_and_selector!("AddColumns");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -181,7 +171,6 @@ where
     }
 }
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for RenameColumn {
-    cairo_event_name_and_selector!("RenameColumn");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -195,7 +184,6 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for RenameColumn {
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
     for RenameColumns
 {
-    cairo_event_name_and_selector!("RenameColumns");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -209,7 +197,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 where
     Attribute: CairoDeserialize<D>,
 {
-    cairo_event_name_and_selector!("RetypeColumn");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -231,7 +218,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 where
     Attribute: CairoDeserialize<D>,
 {
-    cairo_event_name_and_selector!("RetypeColumns");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -242,7 +228,6 @@ where
     }
 }
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DropColumn {
-    cairo_event_name_and_selector!("DropColumn");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -253,7 +238,6 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DropColumn {
     }
 }
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for DropColumns {
-    cairo_event_name_and_selector!("DropColumns");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -268,7 +252,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 where
     Attribute: CairoDeserialize<D>,
 {
-    cairo_event_name_and_selector!("CreateIndex");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -287,7 +270,6 @@ where
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DropIndex {
-    cairo_event_name_and_selector!("DropIndex");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -299,7 +281,6 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DropIndex {
 }
 
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for InsertRecord {
-    cairo_event_name_and_selector!("InsertRecord");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -313,7 +294,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
     for InsertRecords
 {
-    cairo_event_name_and_selector!("InsertRecords");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -324,7 +304,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
     }
 }
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for InsertField {
-    cairo_event_name_and_selector!("InsertField");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -342,7 +321,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
     }
 }
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for InsertFields {
-    cairo_event_name_and_selector!("InsertFields");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -361,7 +339,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 }
 
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for InsertsField {
-    cairo_event_name_and_selector!("InsertsField");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -380,7 +357,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
     for InsertsFields
 {
-    cairo_event_name_and_selector!("InsertsFields");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -398,7 +374,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
     for InsertFieldSet
 {
-    cairo_event_name_and_selector!("InsertFieldSet");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -419,7 +394,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
     for InsertFieldSets
 {
-    cairo_event_name_and_selector!("InsertFieldSets");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -440,7 +414,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
     for InsertsFieldSet
 {
-    cairo_event_name_and_selector!("InsertsFieldSet");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -459,7 +432,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
     for InsertsFieldSets
 {
-    cairo_event_name_and_selector!("InsertsFieldSets");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -476,7 +448,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DeleteRecord {
-    cairo_event_name_and_selector!("DeleteRecord");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -489,7 +460,6 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DeleteRecord {
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
     for DeleteRecords
 {
-    cairo_event_name_and_selector!("DeleteRecords");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -500,7 +470,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
     }
 }
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DeleteField {
-    cairo_event_name_and_selector!("DeleteField");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -512,7 +481,6 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DeleteField {
     }
 }
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for DeleteFields {
-    cairo_event_name_and_selector!("DeleteFields");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -528,7 +496,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
     }
 }
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for DeletesField {
-    cairo_event_name_and_selector!("DeletesField");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -546,7 +513,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
     for DeletesFields
 {
-    cairo_event_name_and_selector!("DeletesFields");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -563,7 +529,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 }
 
 impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DeleteFieldSet {
-    cairo_event_name_and_selector!("DeleteFieldSet");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -578,7 +543,6 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DeleteFieldSet {
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
     for DeleteFieldSets
 {
-    cairo_event_name_and_selector!("DeleteFieldSets");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -593,7 +557,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
     for DeletesFieldSet
 {
-    cairo_event_name_and_selector!("DeletesFieldSet");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -608,7 +571,6 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
     for DeletesFieldSets
 {
-    cairo_event_name_and_selector!("DeletesFieldSets");
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -619,3 +581,42 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
         Ok(DeletesFieldSets { table, rows, sets })
     }
 }
+
+cairo_event_name_and_selector!(CreateColumnSet);
+cairo_event_name_and_selector!(CreateTable);
+cairo_event_name_and_selector!(CreateTableFromClass);
+cairo_event_name_and_selector!(CreateTableFromContract);
+cairo_event_name_and_selector!(RenameTable);
+cairo_event_name_and_selector!(DropTable);
+cairo_event_name_and_selector!(RenamePrimary);
+cairo_event_name_and_selector!(RetypePrimary);
+cairo_event_name_and_selector!(AddColumn);
+cairo_event_name_and_selector!(AddColumns);
+cairo_event_name_and_selector!(RenameColumn);
+cairo_event_name_and_selector!(RenameColumns);
+cairo_event_name_and_selector!(RetypeColumn);
+cairo_event_name_and_selector!(RetypeColumns);
+cairo_event_name_and_selector!(DropColumn);
+cairo_event_name_and_selector!(DropColumns);
+cairo_event_name_and_selector!(CreateIndex);
+cairo_event_name_and_selector!(DropIndex);
+cairo_event_name_and_selector!(InsertRecord);
+cairo_event_name_and_selector!(InsertRecords);
+cairo_event_name_and_selector!(InsertField);
+cairo_event_name_and_selector!(InsertFields);
+cairo_event_name_and_selector!(InsertsField);
+cairo_event_name_and_selector!(InsertsFields);
+cairo_event_name_and_selector!(InsertFieldSet);
+cairo_event_name_and_selector!(InsertFieldSets);
+cairo_event_name_and_selector!(InsertsFieldSet);
+cairo_event_name_and_selector!(InsertsFieldSets);
+cairo_event_name_and_selector!(DeleteRecord);
+cairo_event_name_and_selector!(DeleteRecords);
+cairo_event_name_and_selector!(DeleteField);
+cairo_event_name_and_selector!(DeleteFields);
+cairo_event_name_and_selector!(DeletesField);
+cairo_event_name_and_selector!(DeletesFields);
+cairo_event_name_and_selector!(DeleteFieldSet);
+cairo_event_name_and_selector!(DeleteFieldSets);
+cairo_event_name_and_selector!(DeletesFieldSet);
+cairo_event_name_and_selector!(DeletesFieldSets);

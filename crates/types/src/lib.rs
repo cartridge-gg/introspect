@@ -18,7 +18,7 @@ pub use decode_error::{ByteArrayError, DecodeError, DecodeResult};
 pub use deserialize::{
     CairoDeserialize, CairoDeserializer, felt_to_bytes31_bytes, felt_to_utf8_string,
 };
-pub use event::CairoEvent;
+pub use event::{CairoEvent, CairoEventInfo};
 pub use felt::{FeltIterator, FeltSource, IntoFeltSource, SliceFeltSource, VecFeltSource};
 pub use iserde::CairoISerde;
 pub use parser::ParseValue;

@@ -118,13 +118,8 @@ pub fn macro_attributes(_attr: TokenStream, item: TokenStream) -> TokenStream {
     TokenStream::from(expanded)
 }
 
-#[proc_macro]
-pub fn selector_raw(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as LitStr);
-
-    let str_value = input.value();
-
-    let selector_value = get_selector_from_name(&str_value).expect("invalid selector name");
+fn compute_selector(name: &str) -> TokenStream {
+    let selector_value = get_selector_from_name(name).expect("invalid selector name");
     let selector_raw = selector_value.to_raw();
 
     format!(
@@ -133,4 +128,16 @@ pub fn selector_raw(input: TokenStream) -> TokenStream {
     )
     .parse()
     .unwrap()
+}
+
+#[proc_macro]
+pub fn selector_raw(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as LitStr);
+    compute_selector(&input.value())
+}
+
+#[proc_macro]
+pub fn selector_raw_ident(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as Ident);
+    compute_selector(&input.to_string())
 }

@@ -1,13 +1,28 @@
 use crate::{DecodeError, DecodeResult, FeltSource};
-pub use introspect_rust_macros::selector_raw;
+pub use introspect_rust_macros::{selector_raw, selector_raw_ident};
 use starknet_types_core::felt::Felt;
 
 #[macro_export]
 macro_rules! cairo_event_name_and_selector {
-    ($name:literal) => {
-        const NAME: &'static str = $name;
-        const SELECTOR_RAW: [u64; 4] = $crate::event::selector_raw!($name);
+    ($ty:ident) => {
+        impl $crate::CairoEventInfo for $ty {
+            const NAME: &'static str = stringify!($ty);
+            const SELECTOR_RAW: [u64; 4] = $crate::event::selector_raw_ident!($ty);
+        }
     };
+
+    ($ty:ident, $name:literal) => {
+        impl $crate::CairoEventInfo for $ty {
+            const NAME: &'static str = $name;
+            const SELECTOR_RAW: [u64; 4] = $crate::event::selector_raw!($name);
+        }
+    };
+}
+
+pub trait CairoEventInfo {
+    const NAME: &'static str;
+    const SELECTOR_RAW: [u64; 4];
+    const SELECTOR: Felt = Felt::from_raw(Self::SELECTOR_RAW);
 }
 
 pub trait CairoEvent<D>
@@ -15,10 +30,6 @@ where
     Self: Sized,
     D: FeltSource,
 {
-    const NAME: &'static str;
-    const SELECTOR_RAW: [u64; 4];
-    const SELECTOR: Felt = Felt::from_raw(Self::SELECTOR_RAW);
-
     fn deserialize_event<K: FeltSource>(keys: &mut K, data: &mut D) -> DecodeResult<Self>;
     fn deserialize_and_verify_event<K: FeltSource>(
         keys: &mut K,

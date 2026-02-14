@@ -14,11 +14,11 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DeclareType
 where
     Attribute: CairoDeserialize<D>,
 {
-    cairo_event_name_and_selector!("DeclareType");
-
     fn deserialize_event<K: FeltSource>(_keys: &mut K, data: &mut D) -> DecodeResult<Self> {
         let id = data.next()?;
         let type_def = TypeDef::deserialize(data)?;
         Ok(DeclareType { id, type_def })
     }
 }
+
+cairo_event_name_and_selector!(DeclareType);
