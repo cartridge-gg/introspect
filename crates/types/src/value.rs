@@ -68,6 +68,33 @@ pub enum PrimaryValue {
     StorageBaseAddress(Felt),
 }
 
+impl PrimaryValue {
+    pub fn to_felt(&self) -> Felt {
+        match self {
+            PrimaryValue::Felt252(value)
+            | PrimaryValue::ClassHash(value)
+            | PrimaryValue::ContractAddress(value)
+            | PrimaryValue::EthAddress(value)
+            | PrimaryValue::StorageAddress(value)
+            | PrimaryValue::StorageBaseAddress(value) => *value,
+            PrimaryValue::ShortUtf8(value) => Felt::from_bytes_be_slice(value.as_bytes()),
+            PrimaryValue::Bytes31(value) => Felt::from_bytes_be_slice(value),
+            PrimaryValue::Bytes31Encoded(value) => Felt::from_bytes_be_slice(&value.bytes),
+            PrimaryValue::Bool(value) => (*value as u8).into(),
+            PrimaryValue::U8(value) => (*value).into(),
+            PrimaryValue::U16(value) => (*value).into(),
+            PrimaryValue::U32(value) => (*value).into(),
+            PrimaryValue::U64(value) => (*value).into(),
+            PrimaryValue::U128(value) => (*value).into(),
+            PrimaryValue::I8(value) => (*value).into(),
+            PrimaryValue::I16(value) => (*value).into(),
+            PrimaryValue::I32(value) => (*value).into(),
+            PrimaryValue::I64(value) => (*value).into(),
+            PrimaryValue::I128(value) => (*value).into(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Struct {
     pub name: String,

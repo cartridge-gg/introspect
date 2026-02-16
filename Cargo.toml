@@ -22,6 +22,7 @@ debug = true
 inherits = "release"
 
 [workspace.dependencies]
+blake3 = "1.8.3"
 cainome-cairo-serde = "0.4.0"
 cairo-lang-diagnostics = "2.15.0"
 cairo-lang-macro = "0.2.1"

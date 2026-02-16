@@ -1,5 +1,6 @@
-use crate::{DecodeError, DecodeResult, FeltSource};
+use crate::{DecodeError, DecodeResult, FeltSource, IntoFeltSource};
 pub use introspect_rust_macros::{selector_raw, selector_raw_ident};
+use starknet::core::types::EmittedEvent;
 use starknet_types_core::felt::Felt;
 
 #[macro_export]
@@ -51,5 +52,14 @@ where
         data: &mut D,
     ) -> DecodeResult<T> {
         Self::deserialize_and_verify_event(keys, data).map(Into::into)
+    }
+
+    fn from_emitted_event(event: &EmittedEvent) -> DecodeResult<Self>
+    where
+        D: From<&Vec<Felt>>,
+    {
+        let mut keys = event.keys[1..].into_source();
+        let mut data = (&event.data).into();
+        Self::deserialize_and_verify_event(&mut keys, &mut data)
     }
 }

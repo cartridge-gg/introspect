@@ -4,6 +4,7 @@ use crate::{
     Attribute, Attributes, Bytes31EncodedDef, ElementDef, Primary, PrimaryValue, Record,
     ResultInto, TypeDef, felt_to_bytes31_bytes, felt_to_utf8_string,
 };
+use blake3::Hash;
 use num_traits::Zero;
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
@@ -312,5 +313,52 @@ impl Attributes for PrimaryDef {
 impl Attributes for PrimaryInfo {
     fn attributes(&self) -> &[Attribute] {
         &self.attributes
+    }
+}
+
+pub trait FeltIds {
+    fn ids(&self) -> Vec<&Felt>;
+    fn hash(&self) -> Hash {
+        blake3::hash(
+            &self
+                .ids()
+                .into_iter()
+                .flat_map(|id| id.to_bytes_be())
+                .collect::<Vec<_>>(),
+        )
+    }
+}
+
+pub trait FeltId {
+    fn id(&self) -> &Felt;
+}
+
+impl<T: FeltId> FeltIds for Vec<T> {
+    fn ids(&self) -> Vec<&Felt> {
+        self.iter().map(|item| item.id()).collect()
+    }
+}
+
+impl<T: FeltId> FeltIds for &[T] {
+    fn ids(&self) -> Vec<&Felt> {
+        self.iter().map(|item| item.id()).collect()
+    }
+}
+
+impl FeltId for Felt {
+    fn id(&self) -> &Felt {
+        self
+    }
+}
+
+impl FeltId for ColumnDef {
+    fn id(&self) -> &Felt {
+        &self.id
+    }
+}
+
+impl FeltId for ColumnInfo {
+    fn id(&self) -> &Felt {
+        &self.id
     }
 }

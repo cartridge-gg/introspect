@@ -1,6 +1,6 @@
 use introspect_types::schema::{PrimaryDef, PrimaryTypeDef};
 use introspect_types::{
-    Attribute, CairoDeserialize, CairoDeserializer, ColumnDef, DecodeResult, TypeDef,
+    Attribute, CairoDeserialize, CairoDeserializer, ColumnDef, DecodeResult, FeltId, TypeDef,
 };
 use starknet_types_core::felt::Felt;
 
@@ -312,5 +312,23 @@ impl<D: CairoDeserializer> CairoDeserialize<D> for Entry {
             row: deserializer.next_felt()?,
             data: deserializer.next_array()?,
         })
+    }
+}
+
+impl FeltId for IdName {
+    fn id(&self) -> &Felt {
+        &self.id
+    }
+}
+
+impl FeltId for IdTypeDef {
+    fn id(&self) -> &Felt {
+        &self.id
+    }
+}
+
+impl FeltId for Entry {
+    fn id(&self) -> &Felt {
+        &self.row
     }
 }

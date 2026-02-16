@@ -23,7 +23,7 @@ pub use felt::{FeltIterator, FeltSource, IntoFeltSource, SliceFeltSource, VecFel
 pub use iserde::CairoISerde;
 pub use parser::ParseValue;
 pub use reference::{DerefDefTrait, GetRefTypeDef};
-pub use schema::{ColumnDef, ColumnInfo, PrimaryDef, PrimaryTypeDef, TableSchema};
+pub use schema::{ColumnDef, ColumnInfo, FeltId, FeltIds, PrimaryDef, PrimaryTypeDef, TableSchema};
 pub use serde::CairoSerde;
 pub use type_def::{
     ArrayDef, ByteArrayDeserialization, ByteArrayEncodedDef, Bytes31EncodedDef, CustomDef,
