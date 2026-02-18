@@ -54,9 +54,9 @@ where
         Self::deserialize_and_verify_event(keys, data).map(Into::into)
     }
 
-    fn from_emitted_event(event: &EmittedEvent) -> DecodeResult<Self>
+    fn from_emitted_event<'a>(event: &'a EmittedEvent) -> DecodeResult<Self>
     where
-        D: From<&Vec<Felt>>,
+        D: From<&'a Vec<Felt>>,
     {
         let mut keys = event.keys[1..].into_source();
         let mut data = (&event.data).into();

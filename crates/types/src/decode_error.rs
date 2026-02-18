@@ -10,7 +10,7 @@ pub enum DecodeError {
     #[error("end of input")]
     Eof,
 
-    #[error("end of input")]
+    #[error("unexpected end of input")]
     UnexpectedEof,
 
     #[error("expected end of input, but more data is available")]
@@ -25,6 +25,9 @@ pub enum DecodeError {
         len: usize,
         max: Option<usize>,
     },
+
+    #[error("non zero bytes in felt: {0}")]
+    NonZeroBytesInFelt(Felt),
 
     #[error("value out of range for {target}: {value:?}")]
     OutOfRangeFeltConversion { target: &'static str, value: Felt },
@@ -53,8 +56,11 @@ pub enum DecodeError {
     #[error("failed to convert Felt into primitive type: {what}")]
     PrimitiveFromFelt { what: &'static str },
 
-    #[error("invalid enum selector for {what}: {value:?}")]
-    InvalidEnumSelector { what: &'static str, value: Felt },
+    #[error("invalid enum selector for {name}: {value:?}")]
+    InvalidEnumSelector {
+        name: Cow<'static, str>,
+        value: Felt,
+    },
 
     #[error("unexpected length for {what}: expected {expected}, got {got}")]
     UnexpectedLen {
@@ -107,9 +113,10 @@ impl DecodeError {
     }
 
     #[inline]
-    pub fn invalid_enum_selector<T: Into<Felt>>(what: &'static str, value: T) -> Self {
+    #[allow(private_bounds)]
+    pub fn invalid_enum_selector<N: ToCowStr, T: Into<Felt>>(name: N, value: T) -> Self {
         Self::InvalidEnumSelector {
-            what,
+            name: name.to_cow_str(),
             value: value.into(),
         }
     }
@@ -122,6 +129,8 @@ impl DecodeError {
             got,
         }
     }
+
+    #[inline]
     #[allow(private_bounds)]
     pub fn message<M: ToCowStr>(msg: M) -> Self {
         Self::Message(msg.to_cow_str())
@@ -158,6 +167,9 @@ impl From<core::str::Utf8Error> for DecodeError {
 
 pub trait DecodeResultTrait {
     fn raise_eof(self) -> Self;
+    fn map_eof<F>(self, f: F) -> Self
+    where
+        F: FnOnce() -> DecodeError;
 }
 
 impl<T> DecodeResultTrait for DecodeResult<T> {
@@ -165,6 +177,15 @@ impl<T> DecodeResultTrait for DecodeResult<T> {
     fn raise_eof(self) -> Self {
         match self {
             Err(DecodeError::Eof) => Err(DecodeError::UnexpectedEof),
+            other => other,
+        }
+    }
+    fn map_eof<F>(self, f: F) -> Self
+    where
+        F: FnOnce() -> DecodeError,
+    {
+        match self {
+            Err(DecodeError::Eof) | Err(DecodeError::UnexpectedEof) => Err(f()),
             other => other,
         }
     }

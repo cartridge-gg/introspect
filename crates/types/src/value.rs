@@ -1,4 +1,4 @@
-use crate::{Attribute, bytes31_to_hex_string, felt_to_hex_string};
+use crate::{Attribute, FeltId, bytes31_to_hex_string, felt_to_hex_string};
 use primitive_types::{U256, U512};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
@@ -66,6 +66,24 @@ pub enum PrimaryValue {
     EthAddress(Felt),
     StorageAddress(Felt),
     StorageBaseAddress(Felt),
+}
+
+impl From<Felt> for PrimaryValue {
+    fn from(value: Felt) -> Self {
+        PrimaryValue::Felt252(value)
+    }
+}
+
+impl From<u128> for PrimaryValue {
+    fn from(value: u128) -> Self {
+        PrimaryValue::U128(value)
+    }
+}
+
+impl From<blake3::Hash> for PrimaryValue {
+    fn from(value: blake3::Hash) -> Self {
+        Felt::from_bytes_be(value.as_bytes()).into()
+    }
 }
 
 impl PrimaryValue {
@@ -204,8 +222,20 @@ pub struct Record {
     pub fields: Vec<Field>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct RecordValues {
-    pub primary: PrimaryValue,
-    pub fields: Vec<Value>,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct IdValue {
+    pub id: Felt,
+    pub value: Value,
+}
+
+impl FeltId for PrimaryValue {
+    fn id(&self) -> Felt {
+        self.to_felt()
+    }
+}
+
+impl FeltId for IdValue {
+    fn id(&self) -> Felt {
+        self.id.clone()
+    }
 }

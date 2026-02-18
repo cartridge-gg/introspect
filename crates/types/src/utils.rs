@@ -113,6 +113,54 @@ pub fn string_to_cairo_serialize_byte_array(value: &str) -> Vec<Felt> {
     result
 }
 
+// pub trait Subarray<const N: usize, T> {
+//     fn subarray<const START: usize, const SIZE: usize>(&self) -> [T; SIZE]
+//     where
+//         T: Copy,
+//     {
+//         *self.subarray_ref::<START, SIZE>()
+//     }
+//     fn subarray_ref<const START: usize, const SIZE: usize>(&self) -> &[T; SIZE];
+//     // fn subarrays_ref<const SIZE: usize>(
+//     //     &self,
+//     // ) -> (
+//     //     &[[T; SIZE]; <[T; N] as SubArrays<{ SIZE }>>::COUNT],
+//     //     &[T; <[T; N] as SubArrays<{ SIZE }>>::REMAINDER],
+//     // )
+//     // where
+//     //     [T; N]: SubArrays<{ SIZE }>;
+// }
+
+// trait SubArrays<const OUT: usize> {
+//     type Item;
+//     const COUNT: usize;
+//     const REMAINDER: usize;
+//     fn subarrays_ref<const SIZE: usize>(
+//         &self,
+//     ) -> (
+//         &[[Self::Item; SIZE]; Self::COUNT],
+//         &[Self::Item; Self::REMAINDER],
+//     );
+// }
+
+// impl<const N: usize, const OUT: usize, T> SubArrays<OUT> for [T; N] {
+//     const COUNT: usize = N / OUT;
+//     const REMAINDER: usize = N % OUT;
+//     type Item = T;
+// }
+
+// impl<const N: usize, T> Subarray<N, T> for [T; N] {
+//     fn subarray_ref<const START: usize, const SIZE: usize>(&self) -> &[T; SIZE] {
+//         const {
+//             assert!(
+//                 START <= N && SIZE <= N - START,
+//                 "subarray_ref: START..START+SIZE out of bounds"
+//             );
+//         }
+//         unsafe { &*(self.as_ptr().add(START) as *const [T; SIZE]) }
+//     }
+// }
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,4 +1,4 @@
-use crate::{Attribute, Attributes, ascii_str_to_limbs};
+use crate::{Attribute, Attributes, DecodeError, DecodeResult, ascii_str_to_limbs};
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
@@ -373,6 +373,15 @@ impl EnumDef {
         variants: Vec<(Felt, VariantDef)>,
     ) -> TypeDef {
         TypeDef::Enum(EnumDef::new(name, attributes, variants))
+    }
+
+    pub fn get_variant(&self, selector: &Felt) -> DecodeResult<&VariantDef> {
+        self.variants
+            .get(&selector)
+            .ok_or(DecodeError::invalid_enum_selector(
+                self.name.clone(),
+                *selector,
+            ))
     }
 }
 

@@ -123,7 +123,7 @@ impl<D: CairoDeserializer> ParseValue<D> for TypeDef {
             TypeDef::ShortUtf8 => deserializer
                 .next_bytes31()
                 .map_into(|b| Value::ShortUtf8(b.to_string())),
-            TypeDef::Bytes31 => deserializer.next_bytes31_bytes().map_into(Value::Bytes31),
+            TypeDef::Bytes31 => deserializer.next_bytes::<31>().map_into(Value::Bytes31),
             TypeDef::Bytes31Encoded(b) => b.parse(deserializer).map(Value::Bytes31Encoded),
             TypeDef::Bool => deserializer.next_bool().map_into(Value::Bool),
             TypeDef::U8 => deserializer.next_u8().map_into(Value::U8),
@@ -318,3 +318,10 @@ impl<D: CairoDeserializer> ParseValue<D> for ColumnDef {
         })
     }
 }
+
+// pub trait ColumnDefs {
+//     fn parse_id_values<D: CairoDeserializer>(
+//         &self,
+//         deserializer: &mut D,
+//     ) -> TypeParserResult<Vec<IdValue>>;
+// }

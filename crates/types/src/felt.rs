@@ -1,6 +1,6 @@
 use starknet_types_core::felt::Felt;
 
-use crate::DecodeError;
+use crate::{DecodeError, DecodeResult};
 
 pub trait FeltSource {
     fn next(&mut self) -> Result<Felt, DecodeError>;
@@ -24,7 +24,7 @@ pub struct FeltIterator<I> {
 
 impl<S: FeltSource + ?Sized> FeltSource for &mut S {
     #[inline]
-    fn next(&mut self) -> Result<Felt, DecodeError> {
+    fn next(&mut self) -> DecodeResult<Felt> {
         (**self).next()
     }
 

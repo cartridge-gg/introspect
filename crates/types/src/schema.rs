@@ -317,7 +317,7 @@ impl Attributes for PrimaryInfo {
 }
 
 pub trait FeltIds {
-    fn ids(&self) -> Vec<&Felt>;
+    fn ids(&self) -> Vec<Felt>;
     fn hash(&self) -> Hash {
         blake3::hash(
             &self
@@ -330,35 +330,35 @@ pub trait FeltIds {
 }
 
 pub trait FeltId {
-    fn id(&self) -> &Felt;
+    fn id(&self) -> Felt;
 }
 
 impl<T: FeltId> FeltIds for Vec<T> {
-    fn ids(&self) -> Vec<&Felt> {
+    fn ids(&self) -> Vec<Felt> {
         self.iter().map(|item| item.id()).collect()
     }
 }
 
 impl<T: FeltId> FeltIds for &[T] {
-    fn ids(&self) -> Vec<&Felt> {
+    fn ids(&self) -> Vec<Felt> {
         self.iter().map(|item| item.id()).collect()
     }
 }
 
 impl FeltId for Felt {
-    fn id(&self) -> &Felt {
-        self
+    fn id(&self) -> Felt {
+        *self
     }
 }
 
 impl FeltId for ColumnDef {
-    fn id(&self) -> &Felt {
-        &self.id
+    fn id(&self) -> Felt {
+        self.id.clone()
     }
 }
 
 impl FeltId for ColumnInfo {
-    fn id(&self) -> &Felt {
-        &self.id
+    fn id(&self) -> Felt {
+        self.id.clone()
     }
 }

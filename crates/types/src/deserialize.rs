@@ -1,9 +1,7 @@
-use num_traits::{One, Zero};
-use primitive_types::{U256, U512};
-use starknet_types_core::felt::{Felt, PrimitiveFromFeltError};
-
 use crate::decode_error::DecodeResultTrait;
 use crate::{DecodeError, DecodeResult};
+use primitive_types::{U256, U512};
+use starknet_types_core::felt::{Felt, PrimitiveFromFeltError};
 
 pub struct Bytes31(pub [u8; 31]);
 
@@ -52,6 +50,10 @@ impl From<ByteArray> for Vec<u8> {
 
 impl ByteArray {
     pub fn new_from_parts(full: Vec<Bytes31>, pending: [u8; 31], pending_len: u8) -> Self {
+        assert!(
+            pending_len <= 31,
+            "pending_len must be at most 31 since pending is 31 bytes"
+        );
         let mut data = full.into_iter().flat_map(|b| b.0).collect::<Vec<u8>>();
         data.extend_from_slice(&pending[31 - pending_len as usize..]);
         ByteArray(data)
@@ -251,6 +253,24 @@ impl<T: CairoDeserializer> CairoDeserialize<T> for String {
 
 pub trait CairoDeserializer {
     fn next_felt(&mut self) -> DecodeResult<Felt>;
+    fn next_byte(&mut self) -> DecodeResult<u8> {
+        self.next_bytes::<1>().map(|b| b[0])
+    }
+    fn next_bytes<const N: usize>(&mut self) -> DecodeResult<[u8; N]> {
+        const {
+            assert!(
+                N <= 32,
+                "next_bytes: N must be at most 32 since a felt is 32 bytes"
+            );
+        }
+        let felt = self.next_felt()?;
+        let bytes = felt.to_bytes_be();
+        if bytes[..32 - N].iter().all(|&b| b == 0) {
+            Ok(bytes[32 - N..].try_into().unwrap())
+        } else {
+            Err(DecodeError::NonZeroBytesInFelt(felt))
+        }
+    }
     fn next_value<T: CairoDeserialize<Self>>(&mut self) -> DecodeResult<T>
     where
         Self: Sized,
@@ -281,91 +301,82 @@ pub trait CairoDeserializer {
         }
     }
     fn next_bool_tag(&mut self, what: &'static str) -> DecodeResult<bool> {
-        let f = self.next_felt()?;
-        if f.is_zero() {
-            Ok(false)
-        } else if f.is_one() {
-            Ok(true)
-        } else {
-            Err(DecodeError::invalid_tag(what, f))
+        match self.next_byte() {
+            Ok(0) => Ok(false),
+            Ok(1) => Ok(true),
+            Ok(other) => Err(DecodeError::invalid_tag(what, other)),
+            Err(DecodeError::NonZeroBytesInFelt(felt)) => Err(DecodeError::invalid_tag(what, felt)),
+            Err(err) => Err(err),
         }
     }
     fn next_felt_bytes(&mut self) -> DecodeResult<[u8; 32]> {
-        self.next_felt().map(|f| f.to_bytes_be())
+        self.next_bytes::<32>()
     }
     fn next_bytes31(&mut self) -> DecodeResult<Bytes31> {
-        self.next_felt()?.try_into()
-    }
-    fn next_bytes31_bytes(&mut self) -> DecodeResult<[u8; 31]> {
-        self.next_felt().and_then(felt_to_bytes31_bytes)
+        self.next_bytes::<31>().map(Bytes31)
     }
     fn next_short_string(&mut self) -> DecodeResult<String> {
         self.next_bytes31().map(|b| b.to_string())
     }
-    fn next_digits(&mut self) -> DecodeResult<[u64; 4]> {
-        self.next_felt().map(|f| f.to_be_digits())
-    }
     fn next_bool(&mut self) -> DecodeResult<bool> {
         self.next_bool_tag("bool")
     }
-    fn next_primitive<T>(&mut self) -> DecodeResult<T>
-    where
-        T: TryFrom<Felt, Error = PrimitiveFromFeltError>,
-    {
-        self.next_felt()?.to_primitive()
-    }
     fn next_u8(&mut self) -> DecodeResult<u8> {
-        self.next_primitive()
+        self.next_bytes::<1>().map(|b| b[0])
     }
     fn next_u16(&mut self) -> DecodeResult<u16> {
-        self.next_primitive()
+        self.next_bytes::<2>().map(|b| u16::from_be_bytes(b))
     }
     fn next_u32(&mut self) -> DecodeResult<u32> {
-        self.next_primitive()
+        self.next_bytes::<4>().map(|b| u32::from_be_bytes(b))
     }
     fn next_u64(&mut self) -> DecodeResult<u64> {
-        self.next_primitive()
+        self.next_bytes::<8>().map(|b| u64::from_be_bytes(b))
     }
     fn next_u128(&mut self) -> DecodeResult<u128> {
-        self.next_primitive()
+        self.next_bytes::<16>().map(|b| u128::from_be_bytes(b))
+    }
+    fn next_limbs(&mut self) -> DecodeResult<[u64; 2]> {
+        let bytes = self.next_bytes::<16>()?;
+        let &[high, low] = (unsafe { bytes.as_chunks_unchecked::<8>() }) else {
+            unreachable!()
+        };
+        Ok([u64::from_be_bytes(low), u64::from_be_bytes(high)])
     }
     fn next_u256(&mut self) -> DecodeResult<U256> {
-        match [self.next_digits()?, self.next_digits().raise_eof()?] {
-            [[0, 0, l2, l1], [0, 0, h2, h1]] => Ok(U256([h2, h1, l2, l1])),
-            _ => Err(DecodeError::InvalidEncoding { what: "u256" }),
-        }
+        let [l1, l2] = self.next_limbs()?;
+        let [h1, h2] = self
+            .next_limbs()
+            .map_eof(|| DecodeError::InvalidEncoding { what: "u256" })?;
+        Ok(U256([h2, h1, l2, l1]))
     }
     fn next_u512(&mut self) -> DecodeResult<U512> {
-        match [
-            self.next_digits()?,
-            self.next_digits().raise_eof()?,
-            self.next_digits().raise_eof()?,
-            self.next_digits().raise_eof()?,
-        ] {
-            [
-                [0, 0, l2, l1],
-                [0, 0, l4, l3],
-                [0, 0, h2, h1],
-                [0, 0, h4, h3],
-            ] => Ok(U512([h4, h3, h2, h1, l4, l3, l2, l1])),
-
-            _ => Err(DecodeError::InvalidEncoding { what: "u512" }),
-        }
+        let [l1, l2] = self.next_limbs()?;
+        let [l3, l4] = self
+            .next_limbs()
+            .map_eof(|| DecodeError::InvalidEncoding { what: "u512" })?;
+        let [l5, l6] = self
+            .next_limbs()
+            .map_eof(|| DecodeError::InvalidEncoding { what: "u512" })?;
+        let [l7, l8] = self
+            .next_limbs()
+            .map_eof(|| DecodeError::InvalidEncoding { what: "u512" })?;
+        Ok(U512([l8, l7, l6, l5, l4, l3, l2, l1]))
     }
     fn next_i8(&mut self) -> DecodeResult<i8> {
-        self.next_primitive()
+        self.next_byte().map(|b| b as i8) // interpret as signed
     }
     fn next_i16(&mut self) -> DecodeResult<i16> {
-        self.next_primitive()
+        self.next_bytes::<2>().map(|b| i16::from_be_bytes(b))
     }
     fn next_i32(&mut self) -> DecodeResult<i32> {
-        self.next_primitive()
+        self.next_bytes::<4>().map(|b| i32::from_be_bytes(b))
     }
     fn next_i64(&mut self) -> DecodeResult<i64> {
-        self.next_primitive()
+        self.next_bytes::<8>().map(|b| i64::from_be_bytes(b))
     }
     fn next_i128(&mut self) -> DecodeResult<i128> {
-        self.next_primitive()
+        self.next_bytes::<16>().map(|b| i128::from_be_bytes(b))
     }
     fn next_byte_array(&mut self) -> DecodeResult<ByteArray>
     where
@@ -406,6 +417,9 @@ pub trait CairoDeserializer {
         Self: Sized,
     {
         T::deserialize_multiple(self, size).raise_eof()
+    }
+    fn next_enum_variant(&mut self) -> DecodeResult<Felt> {
+        self.next_felt()
     }
     fn next_option_is_some(&mut self) -> DecodeResult<bool> {
         self.next_bool_tag("option").map(|b| !b)

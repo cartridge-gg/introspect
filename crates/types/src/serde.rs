@@ -28,10 +28,6 @@ impl<I: FeltSource> CairoDeserializer for CairoSerde<I> {
     fn next_felt(&mut self) -> DecodeResult<Felt> {
         self.0.next()
     }
-    fn next_array<T: CairoDeserialize<Self>>(&mut self) -> DecodeResult<Vec<T>> {
-        let len = self.next_u32()?;
-        (0..len).map(|_| T::deserialize(self)).collect()
-    }
 }
 
 impl<I: FeltSource> FeltSource for CairoSerde<I> {

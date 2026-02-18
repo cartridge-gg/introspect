@@ -1,4 +1,5 @@
 pub mod attribute;
+pub mod bytes;
 pub mod decode_error;
 pub mod deserialize;
 pub mod deserialize_def;
@@ -10,6 +11,8 @@ pub mod parser;
 pub mod reference;
 pub mod schema;
 pub mod serde;
+pub mod transcode;
+pub mod transcode_def;
 pub mod type_def;
 pub mod utils;
 pub mod value;
@@ -34,6 +37,6 @@ pub use utils::{
     ResultInto, ascii_str_to_felt, ascii_str_to_limbs, bytes31_to_hex_string, felt_to_hex_string,
 };
 pub use value::{
-    CairoOption, CairoResult, Custom, Encoded31Bytes, EncodedBytes, Enum, Field, Member, Nullable,
-    Primary, PrimaryValue, Record, RecordValues, Struct, Value,
+    CairoOption, CairoResult, Custom, Encoded31Bytes, EncodedBytes, Enum, Field, IdValue, Member,
+    Nullable, Primary, PrimaryValue, Record, Struct, Value,
 };

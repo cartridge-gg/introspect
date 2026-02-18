@@ -316,19 +316,19 @@ impl<D: CairoDeserializer> CairoDeserialize<D> for Entry {
 }
 
 impl FeltId for IdName {
-    fn id(&self) -> &Felt {
-        &self.id
+    fn id(&self) -> Felt {
+        self.id.clone()
     }
 }
 
 impl FeltId for IdTypeDef {
-    fn id(&self) -> &Felt {
-        &self.id
+    fn id(&self) -> Felt {
+        self.id.clone()
     }
 }
 
 impl FeltId for Entry {
-    fn id(&self) -> &Felt {
-        &self.row
+    fn id(&self) -> Felt {
+        self.row.clone()
     }
 }
