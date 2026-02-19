@@ -1,12 +1,8 @@
+use crate::decode_error::DecodeResultTrait;
+use crate::{ByteArray, CairoDeserializer, DecodeError, DecodeResult};
+use starknet_types_core::felt::Felt;
 use std::ops::Deref;
 use std::sync::Arc;
-
-use starknet_types_core::felt::Felt;
-
-use crate::decode_error::DecodeResultTrait;
-use crate::deserialize::ByteArray;
-use crate::{CairoDeserializer, DecodeError, DecodeResult};
-
 pub trait ByteSource {
     fn next(&mut self) -> DecodeResult<u8>;
     fn nexts<const N: usize>(&mut self) -> DecodeResult<[u8; N]> {

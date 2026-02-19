@@ -112,6 +112,10 @@ impl DecodeError {
         Self::TrailingData { remaining }
     }
 
+    pub fn invalid_encoding(what: &'static str) -> Self {
+        Self::InvalidEncoding { what }
+    }
+
     #[inline]
     #[allow(private_bounds)]
     pub fn invalid_enum_selector<N: ToCowStr, T: Into<Felt>>(name: N, value: T) -> Self {

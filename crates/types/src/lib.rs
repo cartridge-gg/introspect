@@ -14,13 +14,12 @@ pub mod serde;
 pub mod transcode;
 pub mod transcode_def;
 pub mod type_def;
+pub mod types;
 pub mod utils;
 pub mod value;
 pub use attribute::{Attribute, Attributes};
 pub use decode_error::{ByteArrayError, DecodeError, DecodeResult};
-pub use deserialize::{
-    CairoDeserialize, CairoDeserializer, felt_to_bytes31_bytes, felt_to_utf8_string,
-};
+pub use deserialize::{CairoDeserialize, CairoDeserializer};
 pub use event::{CairoEvent, CairoEventInfo};
 pub use felt::{FeltIterator, FeltSource, IntoFeltSource, SliceFeltSource, VecFeltSource};
 pub use iserde::CairoISerde;
@@ -29,10 +28,11 @@ pub use reference::{DerefDefTrait, GetRefTypeDef};
 pub use schema::{ColumnDef, ColumnInfo, FeltId, FeltIds, PrimaryDef, PrimaryTypeDef, TableSchema};
 pub use serde::CairoSerde;
 pub use type_def::{
-    ArrayDef, ByteArrayDeserialization, ByteArrayEncodedDef, Bytes31EncodedDef, CustomDef,
-    ElementDef, EnumDef, Felt252DictDef, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef,
-    OptionDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
+    ArrayDef, ByteArrayEncodedDef, Bytes31EncodedDef, CustomDef, ElementDef, EnumDef,
+    Felt252DictDef, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef, OptionDef, RefDef,
+    ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
 };
+pub use types::{ByteArray, Bytes31, EthAddress, felt_to_bytes31_bytes, felt_to_utf8_string};
 pub use utils::{
     ResultInto, ascii_str_to_felt, ascii_str_to_limbs, bytes31_to_hex_string, felt_to_hex_string,
 };

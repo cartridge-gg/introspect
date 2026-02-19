@@ -1,95 +1,7 @@
 use crate::decode_error::DecodeResultTrait;
-use crate::{DecodeError, DecodeResult};
+use crate::{ByteArray, Bytes31, DecodeError, DecodeResult, EthAddress};
 use primitive_types::{U256, U512};
 use starknet_types_core::felt::{Felt, PrimitiveFromFeltError};
-
-pub struct Bytes31(pub [u8; 31]);
-
-impl TryFrom<Felt> for Bytes31 {
-    type Error = DecodeError;
-    fn try_from(felt: Felt) -> Result<Self, DecodeError> {
-        felt_to_bytes31_bytes(felt).map(Bytes31)
-    }
-}
-
-impl From<Bytes31> for [u8; 31] {
-    fn from(bytes31: Bytes31) -> Self {
-        bytes31.0
-    }
-}
-
-pub fn felt_to_utf8_string(felt: Felt) -> DecodeResult<String> {
-    let bytes = felt_to_bytes31_bytes(felt)?;
-    let first = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len());
-    Ok(String::from_utf8_lossy(&bytes[first..]).into_owned())
-}
-
-pub fn felt_to_bytes31_bytes(felt: Felt) -> DecodeResult<[u8; 31]> {
-    let [first, rest @ ..] = felt.to_bytes_be();
-    match first {
-        0 => Ok(rest),
-        _ => Err(DecodeError::InvalidBytes31Encoding(
-            "first byte must be zero for valid Bytes31 encoding",
-        )),
-    }
-}
-
-pub struct ByteArray(pub Vec<u8>);
-
-impl From<Vec<u8>> for ByteArray {
-    fn from(vec: Vec<u8>) -> Self {
-        ByteArray(vec)
-    }
-}
-
-impl From<ByteArray> for Vec<u8> {
-    fn from(byte_array: ByteArray) -> Self {
-        byte_array.0
-    }
-}
-
-impl ByteArray {
-    pub fn new_from_parts(full: Vec<Bytes31>, pending: [u8; 31], pending_len: u8) -> Self {
-        assert!(
-            pending_len <= 31,
-            "pending_len must be at most 31 since pending is 31 bytes"
-        );
-        let mut data = full.into_iter().flat_map(|b| b.0).collect::<Vec<u8>>();
-        data.extend_from_slice(&pending[31 - pending_len as usize..]);
-        ByteArray(data)
-    }
-}
-
-impl From<ByteArray> for String {
-    fn from(value: ByteArray) -> Self {
-        value.to_string()
-    }
-}
-
-impl ToString for ByteArray {
-    fn to_string(&self) -> String {
-        String::from_utf8_lossy(&self.0).into_owned()
-    }
-}
-
-impl ToString for Bytes31 {
-    fn to_string(&self) -> String {
-        let first_non_zero = self.0.iter().position(|&b| b != 0).unwrap_or(self.0.len());
-        String::from_utf8_lossy(&self.0[first_non_zero..]).into_owned()
-    }
-}
-
-pub trait Bytes31Array {
-    fn to_bytes(self) -> Vec<u8>;
-}
-
-impl Bytes31Array for Vec<Bytes31> {
-    fn to_bytes(self) -> Vec<u8> {
-        self.into_iter() // consumes Vec
-            .flat_map(|b| b.0) // consumes each Bytes31
-            .collect()
-    }
-}
 
 pub trait PrimitiveFromFelt: Sized {
     fn primitive_from_felt(felt: Felt) -> DecodeResult<Self>;
@@ -227,6 +139,12 @@ impl<T: CairoDeserializer> CairoDeserialize<T> for i64 {
 impl<T: CairoDeserializer> CairoDeserialize<T> for i128 {
     fn deserialize(deserializer: &mut T) -> DecodeResult<Self> {
         deserializer.next_i128()
+    }
+}
+
+impl<T: CairoDeserializer> CairoDeserialize<T> for EthAddress {
+    fn deserialize(deserializer: &mut T) -> DecodeResult<Self> {
+        deserializer.next_eth_address()
     }
 }
 
@@ -377,6 +295,9 @@ pub trait CairoDeserializer {
     }
     fn next_i128(&mut self) -> DecodeResult<i128> {
         self.next_bytes::<16>().map(|b| i128::from_be_bytes(b))
+    }
+    fn next_eth_address(&mut self) -> DecodeResult<EthAddress> {
+        self.next_bytes::<20>().map(Into::into)
     }
     fn next_byte_array(&mut self) -> DecodeResult<ByteArray>
     where

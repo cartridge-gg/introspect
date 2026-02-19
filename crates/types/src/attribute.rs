@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 
 use crate::decode_error::DecodeResultTrait;
-use crate::deserialize::{ByteArray, CairoDeserialize, CairoDeserializer};
+use crate::deserialize::{CairoDeserialize, CairoDeserializer};
 use crate::iserde::CairoISerde;
 use crate::serde::CairoSerde;
 use crate::utils::ideserialize_byte_array_with_last;
-use crate::{DecodeResult, FeltSource};
+use crate::{ByteArray, DecodeResult, FeltSource};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Attribute {

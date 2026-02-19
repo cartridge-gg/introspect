@@ -1,10 +1,12 @@
 use crate::utils::felt_to_hex_string;
-use crate::{Enum, Struct, Value};
+use crate::{DecodeResult, Enum, Struct, Value};
+use primitive_types::{U256, U512};
 use serde_json::Value::{
     Array as JsonArray, Bool as JsonBool, Null as JsonNull, Number as JsonNumber,
     Object as JsonObject, String as JsonString,
 };
 use serde_json::{Map, Value as JsonValue};
+use starknet_types_core::felt::Felt;
 
 fn vec_values_to_json_array(values: Vec<Value>) -> JsonValue {
     JsonArray(values.into_iter().map(|v| v.into()).collect())

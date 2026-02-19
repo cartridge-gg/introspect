@@ -1,30 +1,9 @@
-use crate::{Attribute, Attributes, DecodeError, DecodeResult, ascii_str_to_limbs};
-use serde::{Deserialize, Serialize};
+use crate::{Attribute, Attributes, DecodeError, DecodeResult, Value, ascii_str_to_limbs};
+use serde::de::DeserializeSeed;
+use serde::{Deserialize, Serialize, Serializer};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
 use std::ops::Deref;
-
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
-pub enum ByteArrayDeserialization {
-    Serde,
-    ISerde,
-}
-pub struct Utf8String(pub String);
-pub struct ByteArray(pub Vec<u8>);
-
-impl Deref for Utf8String {
-    type Target = String;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl Deref for ByteArray {
-    type Target = Vec<u8>;
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
 
 pub trait ElementDef {}
 

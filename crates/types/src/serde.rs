@@ -1,4 +1,4 @@
-use crate::deserialize::{CairoDeserialize, CairoDeserializer};
+use crate::deserialize::CairoDeserializer;
 use crate::felt::IntoFeltSource;
 use crate::{DecodeResult, FeltSource};
 use starknet_types_core::felt::Felt;

@@ -1,9 +1,9 @@
-use crate::deserialize::{Bytes31, CairoDeserializer};
+use crate::deserialize::CairoDeserializer;
 use crate::type_def::{ByteArrayEncodedDef, FixedArrayDef, MemberDef, StructDef, TypeDef};
 use crate::utils::ResultInto;
 use crate::value::{Enum, Nullable, Value};
 use crate::{
-    ArrayDef, Bytes31EncodedDef, CairoOption, CairoResult, ColumnDef, Custom, CustomDef,
+    ArrayDef, Bytes31, Bytes31EncodedDef, CairoOption, CairoResult, ColumnDef, Custom, CustomDef,
     DecodeError, Encoded31Bytes, EncodedBytes, EnumDef, Field, Member, NullableDef, OptionDef,
     ResultDef, Struct, TupleDef,
 };
