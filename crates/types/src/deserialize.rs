@@ -349,10 +349,9 @@ pub trait CairoDeserializer {
     where
         Self: Sized,
     {
-        if self.next_option_is_some()? {
-            Ok(None)
-        } else {
-            T::deserialize(self).raise_eof().map(Some)
+        match self.next_option_is_some()? {
+            true => T::deserialize(self).raise_eof().map(Some),
+            false => Ok(None),
         }
     }
     fn next_result_is_ok(&mut self) -> DecodeResult<bool> {
@@ -364,10 +363,9 @@ pub trait CairoDeserializer {
     where
         Self: Sized,
     {
-        if self.next_result_is_ok()? {
-            T::deserialize(self).raise_eof().map(Ok)
-        } else {
-            E::deserialize(self).raise_eof().map(Err)
+        match self.next_result_is_ok()? {
+            true => T::deserialize(self).raise_eof().map(Ok),
+            false => E::deserialize(self).raise_eof().map(Err),
         }
     }
     fn next_nullable_is_null(&mut self) -> DecodeResult<bool> {
@@ -377,10 +375,9 @@ pub trait CairoDeserializer {
     where
         Self: Sized,
     {
-        if self.next_nullable_is_null()? {
-            Ok(None)
-        } else {
-            T::deserialize(self).raise_eof().map(Some)
+        match self.next_nullable_is_null()? {
+            true => Ok(None),
+            false => T::deserialize(self).raise_eof().map(Some),
         }
     }
     fn next_const_size_array<const N: usize, T: CairoDeserialize<Self>>(

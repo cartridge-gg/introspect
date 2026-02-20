@@ -1,6 +1,5 @@
-use crate::{Attribute, Attributes, DecodeError, DecodeResult, Value, ascii_str_to_limbs};
-use serde::de::DeserializeSeed;
-use serde::{Deserialize, Serialize, Serializer};
+use crate::{Attribute, Attributes, DecodeError, DecodeResult, ascii_str_to_limbs};
+use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
 use std::ops::Deref;

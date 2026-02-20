@@ -319,13 +319,18 @@ impl Attributes for PrimaryInfo {
 pub trait FeltIds {
     fn ids(&self) -> Vec<Felt>;
     fn hash(&self) -> Hash {
-        blake3::hash(
-            &self
-                .ids()
-                .into_iter()
-                .flat_map(|id| id.to_bytes_be())
-                .collect::<Vec<_>>(),
-        )
+        let ids = self.ids();
+        match ids.len() {
+            0 => Hash::from([0; 32]),
+            1 => Hash::from(ids[0].to_bytes_be()),
+            _ => blake3::hash(
+                &self
+                    .ids()
+                    .into_iter()
+                    .flat_map(|id| id.to_bytes_be())
+                    .collect::<Vec<_>>(),
+            ),
+        }
     }
 }
 
