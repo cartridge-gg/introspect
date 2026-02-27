@@ -6,17 +6,17 @@ use serde::{Serialize, Serializer};
 use crate::transcode::CairoSerializer;
 use crate::{CairoDeserializer, EnumDef, TypeDef};
 
-struct SchemaSerialize<'a, D> {
+pub struct SchemaSerialize<'a, D> {
     type_def: &'a TypeDef,
     de: &'a RefCell<&'a mut D>,
 }
 
 impl<'a, D: CairoDeserializer> SchemaSerialize<'a, D> {
-    fn new(type_def: &'a TypeDef, de: &'a RefCell<&'a mut D>) -> Self {
+    pub fn new(type_def: &'a TypeDef, de: &'a RefCell<&'a mut D>) -> Self {
         Self { type_def, de }
     }
 
-    fn to_type(&self, type_def: &'a TypeDef) -> SchemaSerialize<'a, D> {
+    pub fn to_type(&self, type_def: &'a TypeDef) -> SchemaSerialize<'a, D> {
         SchemaSerialize {
             type_def,
             de: self.de,
@@ -42,7 +42,7 @@ impl<'a, D: CairoDeserializer> SchemaSerialize<'a, D> {
         map.end()
     }
 
-    fn serialize_with<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn serialize_with<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: CairoSerializer,
     {
@@ -222,7 +222,7 @@ impl<'a, D: CairoDeserializer> SchemaSerialize<'a, D> {
         }
     }
 
-    fn serialize_fallback<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    pub fn serialize_fallback<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
     {

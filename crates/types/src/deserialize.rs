@@ -282,19 +282,29 @@ pub trait CairoDeserializer {
         Ok(U512([l8, l7, l6, l5, l4, l3, l2, l1]))
     }
     fn next_i8(&mut self) -> DecodeResult<i8> {
-        self.next_byte().map(|b| b as i8) // interpret as signed
+        self.next_felt()?
+            .try_into()
+            .map_err(|_| DecodeError::PrimitiveFromFelt { what: "i8" })
     }
     fn next_i16(&mut self) -> DecodeResult<i16> {
-        self.next_bytes::<2>().map(|b| i16::from_be_bytes(b))
+        self.next_felt()?
+            .try_into()
+            .map_err(|_| DecodeError::PrimitiveFromFelt { what: "i16" })
     }
     fn next_i32(&mut self) -> DecodeResult<i32> {
-        self.next_bytes::<4>().map(|b| i32::from_be_bytes(b))
+        self.next_felt()?
+            .try_into()
+            .map_err(|_| DecodeError::PrimitiveFromFelt { what: "i32" })
     }
     fn next_i64(&mut self) -> DecodeResult<i64> {
-        self.next_bytes::<8>().map(|b| i64::from_be_bytes(b))
+        self.next_felt()?
+            .try_into()
+            .map_err(|_| DecodeError::PrimitiveFromFelt { what: "i64" })
     }
     fn next_i128(&mut self) -> DecodeResult<i128> {
-        self.next_bytes::<16>().map(|b| i128::from_be_bytes(b))
+        self.next_felt()?
+            .try_into()
+            .map_err(|_| DecodeError::PrimitiveFromFelt { what: "i128" })
     }
     fn next_eth_address(&mut self) -> DecodeResult<EthAddress> {
         self.next_bytes::<20>().map(Into::into)
