@@ -3,25 +3,29 @@ version = 1
 
 [[package]]
 name = "cgg_collection"
-version = "0.1.2"
+version = "0.1.1"
+source = "git+https://github.com/cartridge-gg/cairo_core_utils?tag=v0.1.1#d0ba3bc86f5834e0dd9088de23141371b0220f20"
 dependencies = [
  "cgg_snappable",
 ]
 
 [[package]]
 name = "cgg_poseidon"
-version = "0.1.2"
+version = "0.1.1"
+source = "git+https://github.com/cartridge-gg/cairo_core_utils?tag=v0.1.1#d0ba3bc86f5834e0dd9088de23141371b0220f20"
 dependencies = [
  "cgg_collection",
 ]
 
 [[package]]
 name = "cgg_snappable"
-version = "0.1.2"
+version = "0.1.1"
+source = "git+https://github.com/cartridge-gg/cairo_core_utils?tag=v0.1.1#d0ba3bc86f5834e0dd9088de23141371b0220f20"
 
 [[package]]
 name = "cgg_test_utils"
-version = "0.1.2"
+version = "0.1.1"
+source = "git+https://github.com/cartridge-gg/cairo_core_utils?tag=v0.1.1#d0ba3bc86f5834e0dd9088de23141371b0220f20"
 dependencies = [
  "cgg_collection",
  "snforge_std",
@@ -29,7 +33,8 @@ dependencies = [
 
 [[package]]
 name = "cgg_utils"
-version = "0.1.2"
+version = "0.1.1"
+source = "git+https://github.com/cartridge-gg/cairo_core_utils?tag=v0.1.1#d0ba3bc86f5834e0dd9088de23141371b0220f20"
 dependencies = [
  "cgg_collection",
  "cgg_poseidon",
@@ -78,6 +83,7 @@ name = "introspect_test_utils"
 version = "0.1.2"
 dependencies = [
  "cgg_utils",
+ "introspect_events",
  "introspect_types",
  "snforge_std",
 ]

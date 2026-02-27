@@ -15,3 +15,6 @@ pub mod types {
         TypeDefFuzzableToDepth, VariantDef,
     };
 }
+pub mod events {
+    pub mod database;
+}

@@ -42,7 +42,7 @@ fn make_my_struct_def() -> structured::TypeDef {
     )
 }
 
-#[derive(Drop, Table)]
+#[derive(Drop)]
 struct MyStruct {
     a: Array<Span<felt252>>,
     b: Option<felt252>,

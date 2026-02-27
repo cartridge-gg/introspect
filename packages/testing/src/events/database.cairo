@@ -14,7 +14,6 @@ use introspect_test_utils::types::{
 };
 use snforge_std::fuzzable::Fuzzable;
 
-
 pub impl IdNameFuzzable of Fuzzable<IdName> {
     fn blank() -> IdName {
         Default::default()
@@ -117,11 +116,10 @@ pub impl CreateIndexFuzzable of Fuzzable<CreateIndex> {
     }
 
     fn generate() -> CreateIndex {
-        let name = random_pascal_string(64, 4);
         CreateIndex {
             table: Fuzzable::generate(),
-            id: name.selector(),
-            name,
+            id: Fuzzable::generate(),
+            attributes: [].span(),
             columns: Fuzzy::generate_span(297),
         }
     }

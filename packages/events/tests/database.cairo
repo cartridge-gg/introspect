@@ -8,8 +8,8 @@ use introspect_events::database::{
     InsertsFieldSets, InsertsFields, RenameColumn, RenameColumns, RenamePrimary, RenameTable,
     RetypeColumn, RetypeColumns, RetypePrimary,
 };
-use introspect_events::testing::database;
-use introspect_events::testing::database::{
+use introspect_test_utils::events::database;
+use introspect_test_utils::events::database::{
     AddColumnFuzzable, AddColumnsFuzzable, CreateFieldSetFuzzable, CreateIndexFuzzable,
     CreateTableFromClassFuzzable, CreateTableFromContractFuzzable, DeleteFieldFuzzable,
     DeleteFieldSetFuzzable, DeleteFieldSetsFuzzable, DeleteFieldsFuzzable, DeleteRecordFuzzable,
