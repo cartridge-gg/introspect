@@ -1,3 +1,4 @@
+use introspect_types::deserialize_def::TypeDefDeserializer;
 use introspect_types::schema::{PrimaryDef, PrimaryTypeDef};
 use introspect_types::{
     Attribute, CairoDeserialize, CairoDeserializer, ColumnDef, DecodeResult, FeltId, TypeDef,
@@ -293,10 +294,7 @@ impl<D: CairoDeserializer> CairoDeserialize<D> for IdName {
     }
 }
 
-impl<D: CairoDeserializer> CairoDeserialize<D> for IdTypeDef
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for IdTypeDef {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         Ok(IdTypeDef {
             id: deserializer.next_felt()?,

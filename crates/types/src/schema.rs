@@ -241,6 +241,60 @@ impl PrimaryTypeDef {
     }
 }
 
+impl From<PrimaryTypeDef> for TypeDef {
+    fn from(value: PrimaryTypeDef) -> Self {
+        match value {
+            PrimaryTypeDef::Felt252 => TypeDef::Felt252,
+            PrimaryTypeDef::ShortUtf8 => TypeDef::ShortUtf8,
+            PrimaryTypeDef::Bytes31 => TypeDef::Bytes31,
+            PrimaryTypeDef::Bytes31Encoded(e) => TypeDef::Bytes31Encoded(e),
+            PrimaryTypeDef::Bool => TypeDef::Bool,
+            PrimaryTypeDef::U8 => TypeDef::U8,
+            PrimaryTypeDef::U16 => TypeDef::U16,
+            PrimaryTypeDef::U32 => TypeDef::U32,
+            PrimaryTypeDef::U64 => TypeDef::U64,
+            PrimaryTypeDef::U128 => TypeDef::U128,
+            PrimaryTypeDef::I8 => TypeDef::I8,
+            PrimaryTypeDef::I16 => TypeDef::I16,
+            PrimaryTypeDef::I32 => TypeDef::I32,
+            PrimaryTypeDef::I64 => TypeDef::I64,
+            PrimaryTypeDef::I128 => TypeDef::I128,
+            PrimaryTypeDef::ClassHash => TypeDef::ClassHash,
+            PrimaryTypeDef::ContractAddress => TypeDef::ContractAddress,
+            PrimaryTypeDef::EthAddress => TypeDef::EthAddress,
+            PrimaryTypeDef::StorageAddress => TypeDef::StorageAddress,
+            PrimaryTypeDef::StorageBaseAddress => TypeDef::StorageBaseAddress,
+        }
+    }
+}
+
+impl From<&PrimaryTypeDef> for TypeDef {
+    fn from(value: &PrimaryTypeDef) -> Self {
+        match value {
+            PrimaryTypeDef::Felt252 => TypeDef::Felt252,
+            PrimaryTypeDef::ShortUtf8 => TypeDef::ShortUtf8,
+            PrimaryTypeDef::Bytes31 => TypeDef::Bytes31,
+            PrimaryTypeDef::Bytes31Encoded(e) => TypeDef::Bytes31Encoded(e.clone()),
+            PrimaryTypeDef::Bool => TypeDef::Bool,
+            PrimaryTypeDef::U8 => TypeDef::U8,
+            PrimaryTypeDef::U16 => TypeDef::U16,
+            PrimaryTypeDef::U32 => TypeDef::U32,
+            PrimaryTypeDef::U64 => TypeDef::U64,
+            PrimaryTypeDef::U128 => TypeDef::U128,
+            PrimaryTypeDef::I8 => TypeDef::I8,
+            PrimaryTypeDef::I16 => TypeDef::I16,
+            PrimaryTypeDef::I32 => TypeDef::I32,
+            PrimaryTypeDef::I64 => TypeDef::I64,
+            PrimaryTypeDef::I128 => TypeDef::I128,
+            PrimaryTypeDef::ClassHash => TypeDef::ClassHash,
+            PrimaryTypeDef::ContractAddress => TypeDef::ContractAddress,
+            PrimaryTypeDef::EthAddress => TypeDef::EthAddress,
+            PrimaryTypeDef::StorageAddress => TypeDef::StorageAddress,
+            PrimaryTypeDef::StorageBaseAddress => TypeDef::StorageBaseAddress,
+        }
+    }
+}
+
 impl PrimaryDef {
     pub fn new(name: String, attributes: Vec<Attribute>, type_def: PrimaryTypeDef) -> Self {
         PrimaryDef {

@@ -1,26 +1,47 @@
 use crate::decode_error::DecodeResultTrait;
 use crate::deserialize::{CairoDeserialize, CairoDeserializer};
 use crate::type_def::selectors;
+use crate::utils::ideserialize_byte_array_with_last;
 use crate::{
-    ArrayDef, Attribute, ByteArrayEncodedDef, Bytes31EncodedDef, ColumnDef, CustomDef, DecodeError,
-    DecodeResult, EnumDef, Felt252DictDef, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef,
-    OptionDef, PrimaryDef, PrimaryTypeDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef,
-    VariantDef,
+    ArrayDef, Attribute, ByteArray, ByteArrayEncodedDef, Bytes31EncodedDef, CairoISerde,
+    CairoSerde, ColumnDef, CustomDef, DecodeError, DecodeResult, EnumDef, Felt252DictDef,
+    FeltSource, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef, OptionDef, PrimaryDef,
+    PrimaryTypeDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
 };
 use starknet_types_core::felt::Felt;
 
-impl<D: CairoDeserializer> CairoDeserialize<D> for TypeDef
-where
-    Attribute: CairoDeserialize<D>,
-{
-    fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
-        let selector = deserializer.next_felt()?;
+impl<F: FeltSource> TypeDefDeserializer for CairoISerde<F> {
+    fn deserialize_attribute(&mut self) -> DecodeResult<Attribute> {
+        let (name_bytes, info) = ideserialize_byte_array_with_last(self)?;
+        let name = String::from_utf8_lossy(&name_bytes).into_owned();
+        let data = if info & 0b100 != 0 {
+            Some(self.next_byte_array().raise_eof()?.into())
+        } else {
+            None
+        };
+        Ok(Attribute { name, data })
+    }
+}
+
+impl<F: FeltSource> TypeDefDeserializer for CairoSerde<F> {
+    fn deserialize_attribute(&mut self) -> DecodeResult<Attribute> {
+        let name = self.next_string()?;
+        let data = self.next_option::<ByteArray>().raise_eof()?.map(Into::into);
+        Ok(Attribute { name, data })
+    }
+}
+
+pub trait TypeDefDeserializer: CairoDeserializer + Sized {
+    fn deserialize_attribute(&mut self) -> DecodeResult<Attribute>;
+
+    fn deserialize_type_def(&mut self) -> DecodeResult<TypeDef> {
+        let selector = self.next_enum_variant()?;
         match selector.to_be_digits() {
             selectors::None => Ok(TypeDef::None),
             selectors::Felt252 => Ok(TypeDef::Felt252),
             selectors::ShortUtf8 => Ok(TypeDef::ShortUtf8),
             selectors::Bytes31 => Ok(TypeDef::Bytes31),
-            selectors::Bytes31Encoded => Bytes31EncodedDef::deserialize_item(deserializer),
+            selectors::Bytes31Encoded => Bytes31EncodedDef::deserialize_item(self),
             selectors::Bool => Ok(TypeDef::Bool),
             selectors::U8 => Ok(TypeDef::U8),
             selectors::U16 => Ok(TypeDef::U16),
@@ -41,20 +62,32 @@ where
             selectors::StorageBaseAddress => Ok(TypeDef::StorageBaseAddress),
             selectors::ByteArray => Ok(TypeDef::ByteArray),
             selectors::Utf8String => Ok(TypeDef::Utf8String),
-            selectors::ByteArrayEncoded => ByteArrayEncodedDef::deserialize_item(deserializer),
-            selectors::Tuple => TupleDef::deserialize_item(deserializer),
-            selectors::Array => ArrayDef::deserialize_item(deserializer),
-            selectors::FixedArray => FixedArrayDef::deserialize_item(deserializer),
-            selectors::Felt252Dict => Felt252DictDef::deserialize_item(deserializer),
-            selectors::Struct => StructDef::deserialize_item(deserializer),
-            selectors::Enum => EnumDef::deserialize_item(deserializer),
-            selectors::Option => OptionDef::deserialize_item(deserializer),
-            selectors::Result => ResultDef::deserialize_item(deserializer),
-            selectors::Nullable => NullableDef::deserialize_item(deserializer),
-            selectors::Ref => RefDef::deserialize_item(deserializer),
-            selectors::Custom => CustomDef::deserialize_item(deserializer),
+            selectors::ByteArrayEncoded => ByteArrayEncodedDef::deserialize_item(self),
+            selectors::Tuple => TupleDef::deserialize_item(self),
+            selectors::Array => ArrayDef::deserialize_item(self),
+            selectors::FixedArray => FixedArrayDef::deserialize_item(self),
+            selectors::Felt252Dict => Felt252DictDef::deserialize_item(self),
+            selectors::Struct => StructDef::deserialize_item(self),
+            selectors::Enum => EnumDef::deserialize_item(self),
+            selectors::Option => OptionDef::deserialize_item(self),
+            selectors::Result => ResultDef::deserialize_item(self),
+            selectors::Nullable => NullableDef::deserialize_item(self),
+            selectors::Ref => RefDef::deserialize_item(self),
+            selectors::Custom => CustomDef::deserialize_item(self),
             _ => Err(DecodeError::invalid_enum_selector("TypeDef", selector)),
         }
+    }
+}
+
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for TypeDef {
+    fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
+        deserializer.deserialize_type_def()
+    }
+}
+
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for Attribute {
+    fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
+        deserializer.deserialize_attribute()
     }
 }
 
@@ -82,28 +115,19 @@ impl<D: CairoDeserializer> CairoDeserialize<D> for Bytes31EncodedDef {
     }
 }
 
-impl<D: CairoDeserializer> CairoDeserialize<D> for TupleDef
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for TupleDef {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         deserializer.next_array().map(TupleDef::new)
     }
 }
 
-impl<D: CairoDeserializer> CairoDeserialize<D> for ArrayDef
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for ArrayDef {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         TypeDef::deserialize(deserializer).map(ArrayDef::new)
     }
 }
 
-impl<D: CairoDeserializer> CairoDeserialize<D> for FixedArrayDef
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for FixedArrayDef {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         let element_type = TypeDef::deserialize(deserializer)?;
         let size = deserializer.next_u32()?;
@@ -111,28 +135,19 @@ where
     }
 }
 
-impl<D: CairoDeserializer> CairoDeserialize<D> for Felt252DictDef
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for Felt252DictDef {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         TypeDef::deserialize(deserializer).map(Felt252DictDef::new)
     }
 }
 
-impl<D: CairoDeserializer> CairoDeserialize<D> for OptionDef
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for OptionDef {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         TypeDef::deserialize(deserializer).map(OptionDef::new)
     }
 }
 
-impl<D: CairoDeserializer> CairoDeserialize<D> for NullableDef
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for NullableDef {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         TypeDef::deserialize(deserializer).map(NullableDef::new)
     }
@@ -150,10 +165,7 @@ impl<D: CairoDeserializer> CairoDeserialize<D> for CustomDef {
     }
 }
 
-impl<D: CairoDeserializer> CairoDeserialize<D> for ResultDef
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for ResultDef {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         let ok_type = TypeDef::deserialize(deserializer)?;
         let err_type = TypeDef::deserialize(deserializer)?;
@@ -161,10 +173,7 @@ where
     }
 }
 
-impl<D: CairoDeserializer> CairoDeserialize<D> for StructDef
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for StructDef {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         let name = deserializer.next_string()?;
         let attributes = deserializer.next_array::<Attribute>().raise_eof()?;
@@ -173,10 +182,7 @@ where
     }
 }
 
-impl<D: CairoDeserializer> CairoDeserialize<D> for EnumDef
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for EnumDef {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         let name = deserializer.next_string()?;
         let attributes = deserializer.next_array::<Attribute>().raise_eof()?;
@@ -187,10 +193,7 @@ where
     }
 }
 
-impl<D: CairoDeserializer> CairoDeserialize<D> for MemberDef
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for MemberDef {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         let name = deserializer.next_string()?;
         let attributes = deserializer.next_array::<Attribute>().raise_eof()?;
@@ -199,10 +202,7 @@ where
     }
 }
 
-impl<D: CairoDeserializer> CairoDeserialize<D> for VariantDef
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for VariantDef {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         let name = deserializer.next_string()?;
         let attributes = deserializer.next_array::<Attribute>().raise_eof()?;
@@ -211,10 +211,7 @@ where
     }
 }
 
-impl<D: CairoDeserializer> CairoDeserialize<D> for ColumnDef
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for ColumnDef {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         let id = deserializer.next_felt()?;
         let name = deserializer.next_string().raise_eof()?;

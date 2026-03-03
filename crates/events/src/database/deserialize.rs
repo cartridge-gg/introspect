@@ -9,6 +9,7 @@ use super::{
     InsertsFields, RenameColumn, RenameColumns, RenamePrimary, RenameTable, RetypeColumn,
     RetypeColumns, RetypePrimary,
 };
+use introspect_types::deserialize_def::TypeDefDeserializer;
 use introspect_types::schema::{PrimaryDef, PrimaryTypeDef};
 use introspect_types::{
     Attribute, CairoDeserialize, CairoDeserializer, CairoEvent, DecodeResult, FeltSource, TypeDef,
@@ -29,9 +30,8 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
     }
 }
 
-impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for CreateTable
-where
-    Attribute: CairoDeserialize<D>,
+impl<D: FeltSource + TypeDefDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for CreateTable
 {
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
@@ -116,9 +116,8 @@ impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for RenamePrimary {
     }
 }
 
-impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for RetypePrimary
-where
-    Attribute: CairoDeserialize<D>,
+impl<D: FeltSource + TypeDefDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for RetypePrimary
 {
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
@@ -135,10 +134,7 @@ where
     }
 }
 
-impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for AddColumn
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: FeltSource + TypeDefDeserializer + CairoDeserializeRemaining> CairoEvent<D> for AddColumn {
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -157,10 +153,7 @@ where
         })
     }
 }
-impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for AddColumns
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: FeltSource + TypeDefDeserializer + CairoDeserializeRemaining> CairoEvent<D> for AddColumns {
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
         event_data: &mut D,
@@ -193,9 +186,8 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
         Ok(RenameColumns { table, columns })
     }
 }
-impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for RetypeColumn
-where
-    Attribute: CairoDeserialize<D>,
+impl<D: FeltSource + TypeDefDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for RetypeColumn
 {
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,
@@ -214,9 +206,8 @@ where
     }
 }
 
-impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D> for RetypeColumns
-where
-    Attribute: CairoDeserialize<D>,
+impl<D: FeltSource + TypeDefDeserializer + CairoDeserializeRemaining> CairoEvent<D>
+    for RetypeColumns
 {
     fn deserialize_event<K: FeltSource>(
         _event_keys: &mut K,

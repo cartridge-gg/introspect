@@ -1,9 +1,6 @@
 use std::io;
 
 use crate::{CairoDeserializer, DecodeError};
-use primitive_types::{U256, U512};
-use serde::Serializer;
-use serde_json::Serializer as JsonSerializer;
 use starknet_types_core::felt::Felt;
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -179,34 +176,5 @@ where
     ) -> Result<(), TranscodeError<Self::DeserializeError, Self::SerializeError>> {
         input.next_felt().and_then_tc(|f| self.write_felt(f))?;
         Ok(())
-    }
-}
-
-pub trait CairoSerializer: Serializer {
-    fn serialize_byte_string(self, value: &[u8]) -> Result<Self::Ok, Self::Error> {
-        self.serialize_bytes(value)
-    }
-    fn serialize_felt(self, value: [u8; 32]) -> Result<Self::Ok, Self::Error> {
-        self.serialize_byte_string(&value)
-    }
-    fn serialize_eth_address(self, value: [u8; 20]) -> Result<Self::Ok, Self::Error> {
-        self.serialize_byte_string(&value)
-    }
-    fn serialize_u256(self, value: U256) -> Result<Self::Ok, Self::Error> {
-        self.serialize_str(&format!("{value}"))
-    }
-    fn serialize_u512(self, value: U512) -> Result<Self::Ok, Self::Error> {
-        self.serialize_str(&format!("{value}"))
-    }
-}
-
-impl<'a, W, F> CairoSerializer for &'a mut JsonSerializer<W, F>
-where
-    W: io::Write,
-    F: serde_json::ser::Formatter,
-    &'a mut JsonSerializer<W, F>: Serializer,
-{
-    fn serialize_byte_string(self, value: &[u8]) -> Result<Self::Ok, Self::Error> {
-        self.serialize_str(&format!("\\x{}", hex::encode(value)))
     }
 }

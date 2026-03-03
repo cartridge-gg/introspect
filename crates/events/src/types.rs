@@ -1,3 +1,4 @@
+use introspect_types::deserialize_def::TypeDefDeserializer;
 use introspect_types::{
     Attribute, CairoDeserialize, CairoDeserializer, CairoEvent, DecodeResult, FeltSource, TypeDef,
     cairo_event_name_and_selector,
@@ -10,10 +11,7 @@ pub struct DeclareType {
     pub type_def: TypeDef,
 }
 
-impl<D: FeltSource + CairoDeserializer> CairoEvent<D> for DeclareType
-where
-    Attribute: CairoDeserialize<D>,
-{
+impl<D: FeltSource + TypeDefDeserializer> CairoEvent<D> for DeclareType {
     fn deserialize_event<K: FeltSource>(_keys: &mut K, data: &mut D) -> DecodeResult<Self> {
         let id = data.next()?;
         let type_def = TypeDef::deserialize(data)?;

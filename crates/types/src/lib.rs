@@ -10,6 +10,7 @@ pub mod parser;
 pub mod reference;
 pub mod schema;
 pub mod serde;
+pub mod serialize;
 pub mod serialize_def;
 pub mod transcode;
 pub mod transcode_def;
