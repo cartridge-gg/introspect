@@ -1,3 +1,4 @@
+use crate::bytes::IntoByteSource;
 use crate::{Bytes31, CairoDeserializer, DecodeResult, EthAddress};
 use primitive_types::{U256, U512};
 use serde::ser::SerializeMap;
@@ -5,10 +6,29 @@ use serde::{Serialize, Serializer};
 use starknet_types_core::felt::Felt;
 use std::cell::RefCell;
 
-pub struct CairoSeFrom<'a, D: CairoDeserializer, C: CairoSerialization, O> {
-    de: &'a RefCell<&'a mut D>,
+pub struct CairoSeFrom<'a, 'de, T, D: CairoDeserializer, C: CairoSerialization> {
+    schema: &'a T,
+    de: &'de RefCell<&'de mut D>,
     cairo_se: &'a C,
-    schema: &'a O,
+}
+
+pub fn cairo_serialize_from_source<'a, T, D, C, De, S>(
+    schema: &'a T,
+    to_de: De,
+    cairo_se: &'a C,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
+where
+    C: CairoSerialization,
+    S: Serializer,
+    De: IntoByteSource,
+    De::Source: CairoDeserializer + 'a,
+    for<'de> CairoSeFrom<'a, 'de, T, De::Source, C>: Serialize,
+{
+    let mut de = to_de.into_source();
+    let de = RefCell::new(&mut de);
+    let se_from = CairoSeFrom::new(schema, &de, cairo_se);
+    se_from.serialize(serializer)
 }
 
 pub trait CairoDeserialization<D: CairoDeserializer> {
@@ -109,8 +129,8 @@ impl<'a, D: CairoDeserializer> CairoDeserialization<D> for RefCell<&'a mut D> {
     }
 }
 
-impl<'a, D: CairoDeserializer, C: CairoSerialization, O> CairoDeserialization<D>
-    for CairoSeFrom<'a, D, C, O>
+impl<'a, 'de, S, D: CairoDeserializer, C: CairoSerialization> CairoDeserialization<D>
+    for CairoSeFrom<'a, 'de, S, D, C>
 {
     fn with_de<T, E>(&self, op: impl FnOnce(&mut D) -> Result<T, E>) -> Result<T, E> {
         let mut de = self.de.borrow_mut();
@@ -118,8 +138,8 @@ impl<'a, D: CairoDeserializer, C: CairoSerialization, O> CairoDeserialization<D>
     }
 }
 
-impl<'a, D: CairoDeserializer, C: CairoSerialization, O> CairoSeFrom<'a, D, C, O> {
-    pub fn new(schema: &'a O, de: &'a RefCell<&'a mut D>, cairo_se: &'a C) -> Self {
+impl<'a, 'de, T, D: CairoDeserializer, C: CairoSerialization> CairoSeFrom<'a, 'de, T, D, C> {
+    pub fn new(schema: &'a T, de: &'de RefCell<&'de mut D>, cairo_se: &'a C) -> Self {
         Self {
             de,
             cairo_se,
@@ -127,7 +147,7 @@ impl<'a, D: CairoDeserializer, C: CairoSerialization, O> CairoSeFrom<'a, D, C, O
         }
     }
 
-    pub fn to_schema<S>(&self, schema: &'a S) -> CairoSeFrom<'a, D, C, S> {
+    pub fn to_schema<S>(&self, schema: &'a S) -> CairoSeFrom<'a, 'de, S, D, C> {
         CairoSeFrom {
             de: self.de,
             cairo_se: self.cairo_se,
@@ -135,7 +155,7 @@ impl<'a, D: CairoDeserializer, C: CairoSerialization, O> CairoSeFrom<'a, D, C, O
         }
     }
 
-    pub fn schema(&self) -> &'a O {
+    pub fn schema(&self) -> &'a T {
         self.schema
     }
 }
@@ -203,8 +223,8 @@ pub trait CairoSerialization {
     }
 }
 
-impl<'a, D: CairoDeserializer, C: CairoSerialization, O> CairoSerialization
-    for CairoSeFrom<'a, D, C, O>
+impl<'a, 'de, T, D: CairoDeserializer, C: CairoSerialization> CairoSerialization
+    for CairoSeFrom<'a, 'de, T, D, C>
 {
     fn serialize_byte_array<S: Serializer>(
         &self,
@@ -238,27 +258,27 @@ impl<'a, D: CairoDeserializer, C: CairoSerialization, O> CairoSerialization
         self.cairo_se.serialize_u512(serializer, value)
     }
 
-    fn serialize_enum<T: Serialize, S: Serializer>(
+    fn serialize_enum<V: Serialize, S: Serializer>(
         &self,
         serializer: S,
         variant_name: &str,
-        value: &T,
+        value: &V,
     ) -> Result<S::Ok, S::Error> {
         self.cairo_se
             .serialize_enum(serializer, variant_name, value)
     }
 
-    fn serialize_result_ok<T: Serialize, S: Serializer>(
+    fn serialize_result_ok<V: Serialize, S: Serializer>(
         &self,
         serializer: S,
-        value: &T,
+        value: &V,
     ) -> Result<S::Ok, S::Error> {
         self.cairo_se.serialize_result_ok(serializer, value)
     }
-    fn serialize_result_err<T: Serialize, S: Serializer>(
+    fn serialize_result_err<V: Serialize, S: Serializer>(
         &self,
         serializer: S,
-        value: &T,
+        value: &V,
     ) -> Result<S::Ok, S::Error> {
         self.cairo_se.serialize_result_err(serializer, value)
     }

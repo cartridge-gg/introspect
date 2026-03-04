@@ -3,7 +3,9 @@ use crate::{CairoDeserializer, TypeDef, VariantDef};
 use serde::ser::{Error as SerError, SerializeMap, SerializeSeq, SerializeTuple};
 use serde::{Serialize, Serializer};
 
-impl<'a, D: CairoDeserializer, C: CairoSerialization> Serialize for CairoSeFrom<'a, D, C, TypeDef> {
+impl<'a, 'de, D: CairoDeserializer, C: CairoSerialization> Serialize
+    for CairoSeFrom<'a, 'de, TypeDef, D, C>
+{
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,

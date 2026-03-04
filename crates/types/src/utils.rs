@@ -80,19 +80,51 @@ pub fn ideserialize_utf8_string<I: FeltSource>(data: &mut I) -> DecodeResult<Str
     Ok(String::from_utf8_lossy(&byte_array).into_owned())
 }
 
-pub trait ResultInto<T, E0> {
-    fn map_into<U, E1, F>(self, op: F) -> Result<U, E1>
+pub trait ResultInto<T, E> {
+    fn into<RT, RE>(self) -> Result<RT, RE>
     where
-        E0: Into<E1>,
-        F: FnOnce(T) -> U;
+        E: Into<RE>,
+        T: Into<RT>;
+    fn ok_into<RT>(self) -> Result<RT, E>
+    where
+        T: Into<RT>;
+    fn err_into<RE>(self) -> Result<T, RE>
+    where
+        E: Into<RE>;
+    fn map_into<RT, RE, F>(self, op: F) -> Result<RT, RE>
+    where
+        E: Into<RE>,
+        F: FnOnce(T) -> RT;
 }
 
-impl<T, E0> ResultInto<T, E0> for Result<T, E0> {
-    #[inline]
-    fn map_into<U, E1, F>(self, op: F) -> Result<U, E1>
+impl<T, E> ResultInto<T, E> for Result<T, E> {
+    fn into<RT, RE>(self) -> Result<RT, RE>
     where
-        E0: Into<E1>,
-        F: FnOnce(T) -> U,
+        E: Into<RE>,
+        T: Into<RT>,
+    {
+        match self {
+            Ok(t) => Ok(t.into()),
+            Err(e) => Err(e.into()),
+        }
+    }
+    fn ok_into<RT>(self) -> Result<RT, E>
+    where
+        T: Into<RT>,
+    {
+        self.map(Into::into)
+    }
+    fn err_into<RE>(self) -> Result<T, RE>
+    where
+        E: Into<RE>,
+    {
+        self.map_err(Into::into)
+    }
+    #[inline]
+    fn map_into<RT, RE, F>(self, op: F) -> Result<RT, RE>
+    where
+        E: Into<RE>,
+        F: FnOnce(T) -> RT,
     {
         match self {
             Ok(t) => Ok(op(t)),
