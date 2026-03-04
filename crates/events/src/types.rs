@@ -1,7 +1,6 @@
 use introspect_types::deserialize_def::TypeDefDeserializer;
 use introspect_types::{
-    Attribute, CairoDeserialize, CairoDeserializer, CairoEvent, DecodeResult, FeltSource, TypeDef,
-    cairo_event_name_and_selector,
+    CairoDeserialize, CairoEvent, DecodeResult, FeltSource, TypeDef, cairo_event_name_and_selector,
 };
 use starknet_types_core::felt::Felt;
 

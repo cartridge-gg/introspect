@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -22,5 +24,14 @@ pub trait Attributes {
     }
     fn has_attribute(&self, name: &str) -> bool {
         self.attributes().iter().any(|attr| attr.name == name)
+    }
+}
+
+impl<T> Attributes for T
+where
+    T: Deref<Target = [Attribute]>,
+{
+    fn attributes(&self) -> &[Attribute] {
+        self.deref()
     }
 }
