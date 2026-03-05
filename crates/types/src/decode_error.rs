@@ -26,8 +26,8 @@ pub enum DecodeError {
         max: Option<usize>,
     },
 
-    #[error("non zero bytes in felt: {0}")]
-    NonZeroBytesInFelt(Felt),
+    #[error("non zero bytes in felt: {0} of {1} bytes")]
+    NonZeroBytesInFelt(Felt, usize),
 
     #[error("value out of range for {target}: {value:?}")]
     OutOfRangeFeltConversion { target: &'static str, value: Felt },

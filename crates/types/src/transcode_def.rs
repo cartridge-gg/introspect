@@ -86,7 +86,7 @@ where
             | TypeDef::StorageAddress
             | TypeDef::StorageBaseAddress => output.transcode_felt(input),
             TypeDef::ShortUtf8 | TypeDef::Bytes31 | TypeDef::Bytes31Encoded(_) => {
-                output.transcode_felt(input)
+                output.transcode_bytes::<31>(input)
             }
             TypeDef::Bool => output.transcode_bytes::<1>(input),
             TypeDef::U8 => output.transcode_bytes::<1>(input),
@@ -100,11 +100,19 @@ where
             TypeDef::U512 => input
                 .next_u512()
                 .and_then_tc(|v| output.write_bytes(&v.to_big_endian())),
-            TypeDef::I8 => output.transcode_bytes::<1>(input),
-            TypeDef::I16 => output.transcode_bytes::<2>(input),
-            TypeDef::I32 => output.transcode_bytes::<4>(input),
-            TypeDef::I64 => output.transcode_bytes::<8>(input),
-            TypeDef::I128 => output.transcode_bytes::<16>(input),
+            TypeDef::I8 => input.next_i8().and_then_tc(|v| output.write_byte(v as u8)),
+            TypeDef::I16 => input
+                .next_i16()
+                .and_then_tc(|v| output.write_bytes(&v.to_be_bytes())),
+            TypeDef::I32 => input
+                .next_i32()
+                .and_then_tc(|v| output.write_bytes(&v.to_be_bytes())),
+            TypeDef::I64 => input
+                .next_i64()
+                .and_then_tc(|v| output.write_bytes(&v.to_be_bytes())),
+            TypeDef::I128 => input
+                .next_i128()
+                .and_then_tc(|v| output.write_bytes(&v.to_be_bytes())),
             TypeDef::EthAddress => output.transcode_bytes::<20>(input),
             TypeDef::ByteArray
             | TypeDef::Utf8String

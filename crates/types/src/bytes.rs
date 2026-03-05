@@ -151,6 +151,21 @@ impl<B: ByteSource> CairoDeserializer for B {
         }
         Ok(bytes)
     }
+    fn next_i8(&mut self) -> DecodeResult<i8> {
+        Ok(self.next_byte()? as i8)
+    }
+    fn next_i16(&mut self) -> DecodeResult<i16> {
+        Ok(i16::from_be_bytes(self.nexts::<2>()?))
+    }
+    fn next_i32(&mut self) -> DecodeResult<i32> {
+        Ok(i32::from_be_bytes(self.nexts::<4>()?))
+    }
+    fn next_i64(&mut self) -> DecodeResult<i64> {
+        Ok(i64::from_be_bytes(self.nexts::<8>()?))
+    }
+    fn next_i128(&mut self) -> DecodeResult<i128> {
+        Ok(i128::from_be_bytes(self.nexts::<16>()?))
+    }
     fn next_u256(&mut self) -> DecodeResult<primitive_types::U256> {
         Ok(primitive_types::U256::from_big_endian(&self.nexts::<32>()?))
     }

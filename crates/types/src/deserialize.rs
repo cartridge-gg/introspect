@@ -186,7 +186,7 @@ pub trait CairoDeserializer {
         if bytes[..32 - N].iter().all(|&b| b == 0) {
             Ok(bytes[32 - N..].try_into().unwrap())
         } else {
-            Err(DecodeError::NonZeroBytesInFelt(felt))
+            Err(DecodeError::NonZeroBytesInFelt(felt, N))
         }
     }
     fn next_value<T: CairoDeserialize<Self>>(&mut self) -> DecodeResult<T>
@@ -223,7 +223,9 @@ pub trait CairoDeserializer {
             Ok(0) => Ok(false),
             Ok(1) => Ok(true),
             Ok(other) => Err(DecodeError::invalid_tag(what, other)),
-            Err(DecodeError::NonZeroBytesInFelt(felt)) => Err(DecodeError::invalid_tag(what, felt)),
+            Err(DecodeError::NonZeroBytesInFelt(felt, _)) => {
+                Err(DecodeError::invalid_tag(what, felt))
+            }
             Err(err) => Err(err),
         }
     }

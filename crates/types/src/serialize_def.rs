@@ -121,17 +121,21 @@ impl<'a, 'de, D: CairoDeserializer, C: CairoSerialization> Serialize
             )),
             TypeDef::Struct(struct_def) => {
                 let mut map = serializer.serialize_map(Some(struct_def.members.len()))?;
+                // println!("struct_def: {:?}", struct_def.name);
                 for member in &struct_def.members {
+                    // println!("member: {:?}\t{:?}", member.name, member.type_def);
                     map.serialize_entry(&member.name, &self.to_schema(&member.type_def))?;
                 }
                 map.end()
             }
             TypeDef::Enum(enum_def) => {
                 let selector = self.next_enum_variant().map_err(S::Error::custom)?;
+
                 let VariantDef { name, type_def, .. } =
                     enum_def.get_variant(&selector).map_err(S::Error::custom)?;
+                // println!("variant: {name}\t{selector}");
 
-                self.serialize_enum(serializer, name, type_def)
+                self.serialize_enum(serializer, name, &self.to_schema(type_def))
             }
             TypeDef::Ref(_) => Err(S::Error::custom(
                 "TypeDef Ref needs to be expanded before serializing",

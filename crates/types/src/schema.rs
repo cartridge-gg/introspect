@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::deserialize::{CairoDeserializer, FeltToPrimitive};
 use crate::parser::{ParseValues, TypeParserResult};
 use crate::{
@@ -331,6 +333,16 @@ impl ColumnDef {
             attributes,
             type_def,
         }
+    }
+}
+
+pub trait ColumnDefs {
+    fn as_hash_map(self) -> HashMap<Felt, ColumnDef>;
+}
+
+impl ColumnDefs for Vec<ColumnDef> {
+    fn as_hash_map(self) -> HashMap<Felt, ColumnDef> {
+        self.into_iter().map(|col| (col.id.clone(), col)).collect()
     }
 }
 

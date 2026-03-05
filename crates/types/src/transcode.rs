@@ -77,7 +77,8 @@ pub trait CairoWrite {
     fn write_byte(&mut self, byte: u8) -> Result<Self::Ok, Self::Error>;
     fn write_bytes(&mut self, bytes: &[u8]) -> Result<Self::Ok, Self::Error>;
     fn write_variable_bytes(&mut self, bytes: &[u8]) -> Result<Self::Ok, Self::Error> {
-        self.write_bytes(&bytes.len().to_be_bytes())?;
+        let len: u32 = bytes.len().try_into().unwrap();
+        self.write_bytes(&len.to_be_bytes())?;
         self.write_bytes(bytes)
     }
     fn write_felt(&mut self, felt: Felt) -> Result<Self::Ok, Self::Error>;
