@@ -198,7 +198,6 @@ pub trait CairoSerialization {
         T: Serialize,
     {
         let mut map = serializer.serialize_map(Some(1))?;
-        println!("variant_name: {}", variant_name);
         map.serialize_entry(variant_name, value)?;
         map.end()
     }

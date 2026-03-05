@@ -121,9 +121,7 @@ impl<'a, 'de, D: CairoDeserializer, C: CairoSerialization> Serialize
             )),
             TypeDef::Struct(struct_def) => {
                 let mut map = serializer.serialize_map(Some(struct_def.members.len()))?;
-                // println!("struct_def: {:?}", struct_def.name);
                 for member in &struct_def.members {
-                    // println!("member: {:?}\t{:?}", member.name, member.type_def);
                     map.serialize_entry(&member.name, &self.to_schema(&member.type_def))?;
                 }
                 map.end()
@@ -133,7 +131,6 @@ impl<'a, 'de, D: CairoDeserializer, C: CairoSerialization> Serialize
 
                 let VariantDef { name, type_def, .. } =
                     enum_def.get_variant(&selector).map_err(S::Error::custom)?;
-                // println!("variant: {name}\t{selector}");
 
                 self.serialize_enum(serializer, name, &self.to_schema(type_def))
             }

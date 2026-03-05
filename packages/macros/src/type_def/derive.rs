@@ -8,7 +8,6 @@ use cairo_syntax_parser::str_to_token_stream;
 fn TypeDef(token_stream: TokenStream) -> ProcMacroResult {
     let item = IntrospectItem::from_token_stream(token_stream).unwrap();
     let string = item.type_def_impl_to_string(I_PATH, false);
-    println!("{string}");
     ProcMacroResult::new(str_to_token_stream(&string))
 }
 
@@ -17,6 +16,5 @@ fn TypeDef(token_stream: TokenStream) -> ProcMacroResult {
 fn TypeDefRef(token_stream: TokenStream) -> ProcMacroResult {
     let item = IntrospectItem::from_token_stream(token_stream).unwrap();
     let string = item.type_def_impl_to_string(I_PATH, true);
-    println!("{string}");
     ProcMacroResult::new(str_to_token_stream(&string))
 }
