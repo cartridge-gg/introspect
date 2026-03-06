@@ -1,5 +1,5 @@
 use crate::serialize::{CairoSeFrom, ToCairoDeSeFrom};
-use crate::{CairoDeserializer, EnumDef, PrimaryTypeDef, ResultDef, TupleDef, TypeDef};
+use crate::{CairoDeserializer, EnumDef, PrimaryTypeDef, ResultDef, TupleDef, TypeDef, VariantDef};
 use primitive_types::{U256, U512};
 use serde::ser::{Error as SerError, SerializeMap, SerializeSeq, SerializeTuple};
 use serde::{Serialize, Serializer};
@@ -53,10 +53,9 @@ pub trait CairoTypeSerialization: Sized {
         enum_def: &'a EnumDef,
         variant: Felt,
     ) -> Result<S::Ok, S::Error> {
-        let variant = enum_def.get_variant(&variant).map_err(S::Error::custom)?;
-        let mut map = serializer.serialize_map(Some(1))?;
-        map.serialize_entry(&variant.name, &variant.type_def.to_de_se(data, self))?;
-        map.end()
+        let VariantDef { name, type_def, .. } =
+            enum_def.get_variant(&variant).map_err(S::Error::custom)?;
+        self.serialize_variant(data, serializer, name, type_def)
     }
 
     fn serialize_variant<'a, S: Serializer>(
@@ -78,12 +77,10 @@ pub trait CairoTypeSerialization: Sized {
         result: &'a ResultDef,
         is_ok: bool,
     ) -> Result<S::Ok, S::Error> {
-        let mut map = serializer.serialize_map(Some(1))?;
         match is_ok {
-            true => map.serialize_entry("Ok", &result.ok.to_de_se(data, self))?,
-            false => map.serialize_entry("Err", &result.err.to_de_se(data, self))?,
+            true => self.serialize_variant(data, serializer, "Ok", &result.ok),
+            false => self.serialize_variant(data, serializer, "Err", &result.err),
         }
-        map.end()
     }
 }
 
