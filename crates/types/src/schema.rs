@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use crate::deserialize::{CairoDeserializer, FeltToPrimitive};
-use crate::parser::{ParseValues, TypeParserResult};
+use crate::deserialize::FeltToPrimitive;
+use crate::parser::TypeParserResult;
 use crate::{
-    Attribute, Attributes, Bytes31EncodedDef, ElementDef, Primary, PrimaryValue, Record,
-    ResultInto, TypeDef, felt_to_bytes31_bytes, felt_to_utf8_string,
+    Attribute, Attributes, Bytes31EncodedDef, ElementDef, Primary, PrimaryValue, ResultInto,
+    TypeDef, felt_to_bytes31_bytes, felt_to_utf8_string,
 };
 use blake3::Hash;
 use num_traits::Zero;
@@ -21,15 +21,6 @@ pub struct TableSchema {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct TableInfo {
-    pub table_id: Felt,
-    pub table_name: String,
-    pub attributes: Vec<Attribute>,
-    pub primary: PrimaryInfo,
-    pub columns: Vec<ColumnInfo>,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct ColumnDef {
     pub id: Felt,
     pub name: String,
@@ -39,9 +30,9 @@ pub struct ColumnDef {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct ColumnInfo {
-    pub id: Felt,
     pub name: String,
     pub attributes: Vec<Attribute>,
+    pub type_def: TypeDef,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
@@ -49,12 +40,6 @@ pub struct PrimaryDef {
     pub name: String,
     pub attributes: Vec<Attribute>,
     pub type_def: PrimaryTypeDef,
-}
-
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct PrimaryInfo {
-    pub name: String,
-    pub attributes: Vec<Attribute>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
@@ -82,110 +67,8 @@ pub enum PrimaryTypeDef {
     StorageBaseAddress,
 }
 
-impl TableSchema {
-    pub fn new(
-        id: Felt,
-        name: String,
-        attributes: Vec<Attribute>,
-        primary: PrimaryDef,
-        columns: Vec<ColumnDef>,
-    ) -> Self {
-        TableSchema {
-            id,
-            name,
-            attributes,
-            primary,
-            columns,
-        }
-    }
-
-    pub fn to_record<D: CairoDeserializer>(
-        &self,
-        primary_id: Felt,
-        data: &mut D,
-    ) -> TypeParserResult<Record> {
-        let primary = self.primary.to_primary(primary_id)?;
-        let fields = self.columns.parse_values(data)?;
-        Ok(Record {
-            table_id: self.id.clone(),
-            table_name: self.name.clone(),
-            attributes: self.attributes.clone(),
-            primary,
-            fields,
-        })
-    }
-
-    pub fn to_schema_info(&self) -> TableInfo {
-        TableInfo {
-            table_id: self.id.clone(),
-            table_name: self.name.clone(),
-            attributes: self.attributes.clone(),
-            primary: PrimaryInfo {
-                name: self.primary.name.clone(),
-                attributes: self.primary.attributes.clone(),
-            },
-            columns: self
-                .columns
-                .iter()
-                .map(ColumnInfo::from)
-                .collect::<Vec<_>>(),
-        }
-    }
-}
-
 impl ElementDef for PrimaryTypeDef {}
 impl ElementDef for PrimaryDef {}
-
-impl From<&ColumnDef> for ColumnInfo {
-    fn from(column_def: &ColumnDef) -> Self {
-        ColumnInfo {
-            id: column_def.id.clone(),
-            name: column_def.name.clone(),
-            attributes: column_def.attributes.clone(),
-        }
-    }
-}
-
-impl<T: AsRef<ColumnDef>> From<T> for ColumnInfo {
-    fn from(column_def: T) -> Self {
-        let column_def = column_def.as_ref();
-        ColumnInfo {
-            id: column_def.id.clone(),
-            name: column_def.name.clone(),
-            attributes: column_def.attributes.clone(),
-        }
-    }
-}
-
-// impl TryFrom<TypeDef> for PrimaryTypeDef {
-//     type Error = ();
-
-//     fn try_from(value: TypeDef) -> Result<Self, Self::Error> {
-//         match value {
-//             TypeDef::Felt252 => Ok(PrimaryTypeDef::Felt252),
-//             TypeDef::ShortUtf8 => Ok(PrimaryTypeDef::ShortUtf8),
-//             TypeDef::Bytes31 => Ok(PrimaryTypeDef::Bytes31),
-//             TypeDef::Bytes31Encoded(encoding) => Ok(PrimaryTypeDef::Bytes31Encoded(encoding)),
-//             TypeDef::Bool => Ok(PrimaryTypeDef::Bool),
-//             TypeDef::U8 => Ok(PrimaryTypeDef::U8),
-//             TypeDef::U16 => Ok(PrimaryTypeDef::U16),
-//             TypeDef::U32 => Ok(PrimaryTypeDef::U32),
-//             TypeDef::U64 => Ok(PrimaryTypeDef::U64),
-//             TypeDef::U128 => Ok(PrimaryTypeDef::U128),
-//             TypeDef::I8 => Ok(PrimaryTypeDef::I8),
-//             TypeDef::I16 => Ok(PrimaryTypeDef::I16),
-//             TypeDef::I32 => Ok(PrimaryTypeDef::I32),
-//             TypeDef::I64 => Ok(PrimaryTypeDef::I64),
-//             TypeDef::I128 => Ok(PrimaryTypeDef::I128),
-//             TypeDef::ClassHash => Ok(PrimaryTypeDef::ClassHash),
-//             TypeDef::ContractAddress => Ok(PrimaryTypeDef::ContractAddress),
-//             TypeDef::EthAddress => Ok(PrimaryTypeDef::EthAddress),
-//             TypeDef::StorageAddress => Ok(PrimaryTypeDef::StorageAddress),
-//             TypeDef::StorageBaseAddress => Ok(PrimaryTypeDef::StorageBaseAddress),
-//             _ => Err(()),
-//         }
-//     }
-// }
 
 impl PrimaryTypeDef {
     pub fn item_name(&self) -> &str {
@@ -316,13 +199,6 @@ impl PrimaryDef {
     pub fn to_primary_value(&self, felt: Felt) -> TypeParserResult<PrimaryValue> {
         self.type_def.to_primary_value(felt)
     }
-
-    pub fn to_primary_info(&self) -> PrimaryInfo {
-        PrimaryInfo {
-            name: self.name.clone(),
-            attributes: self.attributes.clone(),
-        }
-    }
 }
 
 impl ColumnDef {
@@ -336,23 +212,31 @@ impl ColumnDef {
     }
 }
 
+impl ColumnInfo {
+    pub fn new(name: String, attributes: Vec<Attribute>, type_def: TypeDef) -> Self {
+        ColumnInfo {
+            name,
+            attributes,
+            type_def,
+        }
+    }
+}
+
 pub trait ColumnDefs {
     fn as_hash_map(self) -> HashMap<Felt, ColumnDef>;
+    fn as_info_map(self) -> HashMap<Felt, ColumnInfo>;
 }
 
 impl ColumnDefs for Vec<ColumnDef> {
     fn as_hash_map(self) -> HashMap<Felt, ColumnDef> {
         self.into_iter().map(|col| (col.id.clone(), col)).collect()
     }
-}
-
-impl Attributes for TableSchema {
-    fn attributes(&self) -> &[Attribute] {
-        &self.attributes
+    fn as_info_map(self) -> HashMap<Felt, ColumnInfo> {
+        self.into_iter().map(Into::into).collect()
     }
 }
 
-impl Attributes for TableInfo {
+impl Attributes for TableSchema {
     fn attributes(&self) -> &[Attribute] {
         &self.attributes
     }
@@ -364,21 +248,39 @@ impl Attributes for ColumnDef {
     }
 }
 
-impl Attributes for ColumnInfo {
-    fn attributes(&self) -> &[Attribute] {
-        &self.attributes
-    }
-}
-
 impl Attributes for PrimaryDef {
     fn attributes(&self) -> &[Attribute] {
         &self.attributes
     }
 }
 
-impl Attributes for PrimaryInfo {
+impl Attributes for ColumnInfo {
     fn attributes(&self) -> &[Attribute] {
         &self.attributes
+    }
+}
+
+impl From<ColumnDef> for (Felt, ColumnInfo) {
+    fn from(value: ColumnDef) -> Self {
+        (
+            value.id,
+            ColumnInfo {
+                name: value.name,
+                attributes: value.attributes,
+                type_def: value.type_def,
+            },
+        )
+    }
+}
+
+impl From<(Felt, ColumnInfo)> for ColumnDef {
+    fn from(value: (Felt, ColumnInfo)) -> Self {
+        ColumnDef {
+            id: value.0,
+            name: value.1.name,
+            attributes: value.1.attributes,
+            type_def: value.1.type_def,
+        }
     }
 }
 
@@ -423,12 +325,6 @@ impl FeltId for Felt {
 }
 
 impl FeltId for ColumnDef {
-    fn id(&self) -> Felt {
-        self.id.clone()
-    }
-}
-
-impl FeltId for ColumnInfo {
     fn id(&self) -> Felt {
         self.id.clone()
     }

@@ -5,8 +5,8 @@ use crate::transcode::{
     TranscodeWriter,
 };
 use crate::{
-    ArrayDef, CairoDeserializer, ColumnDef, DecodeError, EnumDef, FixedArrayDef, NullableDef,
-    OptionDef, ResultDef, StructDef, TupleDef, TypeDef,
+    ArrayDef, CairoDeserializer, ColumnDef, ColumnInfo, DecodeError, EnumDef, FixedArrayDef,
+    NullableDef, OptionDef, ResultDef, StructDef, TupleDef, TypeDef,
 };
 
 impl<T: CairoWrite + ?Sized> CairoWrite for &mut T {
@@ -307,6 +307,23 @@ where
 }
 
 impl<In, Out> Transcode<In, Out> for ColumnDef
+where
+    In: CairoDeserializer,
+    Out: CairoWrite,
+{
+    type SerializeError = <Out as TranscodeWriter<In>>::SerializeError;
+    type DeserializeError = DecodeError;
+
+    fn transcode(
+        &self,
+        input: &mut In,
+        output: &mut Out,
+    ) -> Result<(), TranscodeError<Self::DeserializeError, Self::SerializeError>> {
+        self.type_def.transcode(input, output)
+    }
+}
+
+impl<In, Out> Transcode<In, Out> for ColumnInfo
 where
     In: CairoDeserializer,
     Out: CairoWrite,

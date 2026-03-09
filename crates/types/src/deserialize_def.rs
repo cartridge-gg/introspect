@@ -4,9 +4,9 @@ use crate::type_def::selectors;
 use crate::utils::ideserialize_byte_array_with_last;
 use crate::{
     ArrayDef, Attribute, ByteArray, ByteArrayEncodedDef, Bytes31EncodedDef, CairoISerde,
-    CairoSerde, ColumnDef, CustomDef, DecodeError, DecodeResult, EnumDef, Felt252DictDef,
-    FeltSource, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef, OptionDef, PrimaryDef,
-    PrimaryTypeDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
+    CairoSerde, ColumnDef, ColumnInfo, CustomDef, DecodeError, DecodeResult, EnumDef,
+    Felt252DictDef, FeltSource, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef, OptionDef,
+    PrimaryDef, PrimaryTypeDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
 };
 use starknet_types_core::felt::Felt;
 
@@ -218,6 +218,15 @@ impl<D: TypeDefDeserializer> CairoDeserialize<D> for ColumnDef {
         let attributes = deserializer.next_array::<Attribute>().raise_eof()?;
         let type_def = TypeDef::deserialize(deserializer).raise_eof()?;
         Ok(ColumnDef::new(id, name, attributes, type_def))
+    }
+}
+
+impl<D: TypeDefDeserializer> CairoDeserialize<D> for ColumnInfo {
+    fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
+        let name = deserializer.next_string().raise_eof()?;
+        let attributes = deserializer.next_array::<Attribute>().raise_eof()?;
+        let type_def = TypeDef::deserialize(deserializer).raise_eof()?;
+        Ok(ColumnInfo::new(name, attributes, type_def))
     }
 }
 
