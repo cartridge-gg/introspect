@@ -2,7 +2,7 @@ use crate::{Attribute, Attributes, DecodeError, DecodeResult, ascii_str_to_limbs
 use serde::{Deserialize, Serialize};
 use starknet_types_core::felt::Felt;
 use std::collections::HashMap;
-use std::ops::Deref;
+use std::ops::{Deref, DerefMut};
 
 pub trait ElementDef {}
 
@@ -190,6 +190,12 @@ macro_rules! item_def_constructors {
             type Target = TypeDef;
             fn deref(&self) -> &Self::Target {
                 &self.type_def
+            }
+        }
+
+        impl DerefMut for $type {
+            fn deref_mut(&mut self) -> &mut Self::Target {
+                &mut self.type_def
             }
         }
 

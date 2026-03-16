@@ -71,7 +71,7 @@ impl ElementDef for PrimaryTypeDef {}
 impl ElementDef for PrimaryDef {}
 
 impl PrimaryTypeDef {
-    pub fn item_name(&self) -> &str {
+    pub fn item_name(&self) -> &'static str {
         match self {
             PrimaryTypeDef::Felt252 => "Felt252",
             PrimaryTypeDef::ShortUtf8 => "ShortUtf8",
