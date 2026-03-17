@@ -13,6 +13,13 @@ pub trait CairoTypeSerialization: Sized {
     ) -> Result<S::Ok, S::Error> {
         serializer.serialize_bytes(value)
     }
+    fn serialize_string<S: Serializer>(
+        &self,
+        serializer: S,
+        value: &str,
+    ) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(value)
+    }
     fn serialize_felt<S: Serializer>(
         &self,
         serializer: S,
@@ -119,7 +126,7 @@ impl<'a, C: CairoTypeSerialization> CairoSerialize<'a, C> for TypeDef {
             }
             TypeDef::ShortUtf8 => {
                 let value = data.next_short_string().map_err(S::Error::custom)?;
-                serializer.serialize_str(&value)
+                cairo_se.serialize_string(serializer, &value)
             }
             TypeDef::Bytes31 | TypeDef::Bytes31Encoded(_) => {
                 let value = data.next_bytes::<31>().map_err(S::Error::custom)?;
@@ -187,7 +194,7 @@ impl<'a, C: CairoTypeSerialization> CairoSerialize<'a, C> for TypeDef {
             }
             TypeDef::Utf8String => {
                 let value = data.next_string().map_err(S::Error::custom)?;
-                serializer.serialize_str(&value)
+                cairo_se.serialize_string(serializer, &value)
             }
             TypeDef::Tuple(tuple) => cairo_se.serialize_tuple(data, serializer, tuple),
             TypeDef::Array(array_def) => {
