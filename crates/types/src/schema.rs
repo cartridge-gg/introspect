@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::ops::Deref;
 
 use crate::deserialize::FeltToPrimitive;
 use crate::parser::TypeParserResult;
@@ -302,17 +303,89 @@ pub trait FeltIds {
     }
 }
 
+pub trait Name {
+    fn name(&self) -> &str;
+}
+
+pub trait Names {
+    fn names(&self) -> Vec<&str>;
+}
+
+impl Name for TableSchema {
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+impl Name for ColumnDef {
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+impl Name for ColumnInfo {
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+impl Name for (Felt, ColumnInfo) {
+    fn name(&self) -> &str {
+        &self.1.name
+    }
+}
+
+impl Name for (&Felt, &ColumnInfo) {
+    fn name(&self) -> &str {
+        &self.1.name
+    }
+}
+
+impl Name for PrimaryDef {
+    fn name(&self) -> &str {
+        &self.name
+    }
+}
+
+impl<R, T> Names for Vec<R>
+where
+    R: Deref<Target = T>,
+    for<'a> T: Name + 'a,
+{
+    fn names(&self) -> Vec<&str> {
+        self.iter().map(|item| item.name()).collect()
+    }
+}
+
+impl<'a, R, T> Names for &'a [R]
+where
+    R: Deref<Target = T>,
+    T: Name + 'a,
+{
+    fn names(&self) -> Vec<&str> {
+        self.iter().map(|item| item.name()).collect()
+    }
+}
+
 pub trait FeltId {
     fn id(&self) -> Felt;
 }
 
-impl<T: FeltId> FeltIds for Vec<T> {
+impl<R, T> FeltIds for Vec<R>
+where
+    R: Deref<Target = T>,
+    T: FeltId,
+{
     fn ids(&self) -> Vec<Felt> {
         self.iter().map(|item| item.id()).collect()
     }
 }
 
-impl<T: FeltId> FeltIds for &[T] {
+impl<R, T> FeltIds for &[R]
+where
+    R: Deref<Target = T>,
+    T: FeltId,
+{
     fn ids(&self) -> Vec<Felt> {
         self.iter().map(|item| item.id()).collect()
     }
@@ -326,6 +399,18 @@ impl FeltId for Felt {
 
 impl FeltId for ColumnDef {
     fn id(&self) -> Felt {
-        self.id.clone()
+        self.id
+    }
+}
+
+impl FeltId for (Felt, ColumnInfo) {
+    fn id(&self) -> Felt {
+        self.0
+    }
+}
+
+impl FeltId for (&Felt, &ColumnInfo) {
+    fn id(&self) -> Felt {
+        *self.0
     }
 }
