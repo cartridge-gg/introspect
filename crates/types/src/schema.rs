@@ -179,6 +179,58 @@ impl From<&PrimaryTypeDef> for TypeDef {
     }
 }
 
+pub struct PrimaryConversionError(pub &'static str);
+
+impl From<PrimaryDef> for ColumnInfo {
+    fn from(value: PrimaryDef) -> Self {
+        ColumnInfo {
+            name: value.name,
+            attributes: value.attributes,
+            type_def: value.type_def.into(),
+        }
+    }
+}
+
+impl TryFrom<TypeDef> for PrimaryTypeDef {
+    type Error = PrimaryConversionError;
+    fn try_from(value: TypeDef) -> Result<Self, Self::Error> {
+        match value {
+            TypeDef::Felt252 => Ok(PrimaryTypeDef::Felt252),
+            TypeDef::ShortUtf8 => Ok(PrimaryTypeDef::ShortUtf8),
+            TypeDef::Bytes31 => Ok(PrimaryTypeDef::Bytes31),
+            TypeDef::Bytes31Encoded(e) => Ok(PrimaryTypeDef::Bytes31Encoded(e)),
+            TypeDef::Bool => Ok(PrimaryTypeDef::Bool),
+            TypeDef::U8 => Ok(PrimaryTypeDef::U8),
+            TypeDef::U16 => Ok(PrimaryTypeDef::U16),
+            TypeDef::U32 => Ok(PrimaryTypeDef::U32),
+            TypeDef::U64 => Ok(PrimaryTypeDef::U64),
+            TypeDef::U128 => Ok(PrimaryTypeDef::U128),
+            TypeDef::I8 => Ok(PrimaryTypeDef::I8),
+            TypeDef::I16 => Ok(PrimaryTypeDef::I16),
+            TypeDef::I32 => Ok(PrimaryTypeDef::I32),
+            TypeDef::I64 => Ok(PrimaryTypeDef::I64),
+            TypeDef::I128 => Ok(PrimaryTypeDef::I128),
+            TypeDef::ClassHash => Ok(PrimaryTypeDef::ClassHash),
+            TypeDef::ContractAddress => Ok(PrimaryTypeDef::ContractAddress),
+            TypeDef::EthAddress => Ok(PrimaryTypeDef::EthAddress),
+            TypeDef::StorageAddress => Ok(PrimaryTypeDef::StorageAddress),
+            TypeDef::StorageBaseAddress => Ok(PrimaryTypeDef::StorageBaseAddress),
+            _ => Err(PrimaryConversionError(value.item_name())),
+        }
+    }
+}
+
+impl TryFrom<ColumnInfo> for PrimaryDef {
+    type Error = PrimaryConversionError;
+    fn try_from(value: ColumnInfo) -> Result<Self, Self::Error> {
+        Ok(PrimaryDef {
+            name: value.name,
+            attributes: value.attributes,
+            type_def: value.type_def.try_into()?,
+        })
+    }
+}
+
 impl PrimaryDef {
     pub fn new(name: String, attributes: Vec<Attribute>, type_def: PrimaryTypeDef) -> Self {
         PrimaryDef {
