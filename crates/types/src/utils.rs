@@ -81,7 +81,7 @@ pub fn ideserialize_utf8_string<I: FeltSource>(data: &mut I) -> DecodeResult<Str
 }
 
 pub trait ResultInto<T, E> {
-    fn into<RT, RE>(self) -> Result<RT, RE>
+    fn result_into<RT, RE>(self) -> Result<RT, RE>
     where
         E: Into<RE>,
         T: Into<RT>;
@@ -98,7 +98,7 @@ pub trait ResultInto<T, E> {
 }
 
 impl<T, E> ResultInto<T, E> for Result<T, E> {
-    fn into<RT, RE>(self) -> Result<RT, RE>
+    fn result_into<RT, RE>(self) -> Result<RT, RE>
     where
         E: Into<RE>,
         T: Into<RT>,
