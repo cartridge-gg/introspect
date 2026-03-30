@@ -14,6 +14,7 @@ use std::ops::Deref;
 pub struct TableSchema {
     pub id: Felt,
     pub name: String,
+    #[serde(default)]
     pub attributes: Vec<Attribute>,
     pub primary: PrimaryDef,
     pub columns: Vec<ColumnDef>,
@@ -23,6 +24,7 @@ pub struct TableSchema {
 pub struct ColumnDef {
     pub id: Felt,
     pub name: String,
+    #[serde(default)]
     pub attributes: Vec<Attribute>,
     pub type_def: TypeDef,
 }
@@ -30,6 +32,7 @@ pub struct ColumnDef {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct ColumnInfo {
     pub name: String,
+    #[serde(default)]
     pub attributes: Vec<Attribute>,
     pub type_def: TypeDef,
 }
@@ -37,8 +40,126 @@ pub struct ColumnInfo {
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct PrimaryDef {
     pub name: String,
+    #[serde(default)]
     pub attributes: Vec<Attribute>,
     pub type_def: PrimaryTypeDef,
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq)]
+pub struct ColumnDefRef<'a> {
+    pub id: &'a Felt,
+    pub name: &'a str,
+    pub attributes: &'a [Attribute],
+    pub type_def: &'a TypeDef,
+}
+
+#[derive(Clone, Debug, Serialize, PartialEq)]
+pub struct ColumnInfoRef<'a> {
+    pub name: &'a str,
+    pub attributes: &'a [Attribute],
+    pub type_def: &'a TypeDef,
+}
+
+impl<'a> From<&'a ColumnDef> for ColumnDefRef<'a> {
+    fn from(value: &'a ColumnDef) -> Self {
+        ColumnDefRef {
+            id: &value.id,
+            name: &value.name,
+            attributes: &value.attributes,
+            type_def: &value.type_def,
+        }
+    }
+}
+
+impl<'a> From<&'a ColumnInfo> for ColumnInfoRef<'a> {
+    fn from(value: &'a ColumnInfo) -> Self {
+        ColumnInfoRef {
+            name: &value.name,
+            attributes: &value.attributes,
+            type_def: &value.type_def,
+        }
+    }
+}
+
+impl<'a> From<&'a ColumnDef> for ColumnInfoRef<'a> {
+    fn from(value: &'a ColumnDef) -> Self {
+        ColumnInfoRef {
+            name: &value.name,
+            attributes: &value.attributes,
+            type_def: &value.type_def,
+        }
+    }
+}
+
+impl<'a> From<(&'a Felt, &'a ColumnInfo)> for ColumnDefRef<'a> {
+    fn from(value: (&'a Felt, &'a ColumnInfo)) -> Self {
+        ColumnDefRef {
+            id: value.0,
+            name: &value.1.name,
+            attributes: &value.1.attributes,
+            type_def: &value.1.type_def,
+        }
+    }
+}
+
+impl<'a> From<&(&'a Felt, &'a ColumnInfo)> for ColumnDefRef<'a> {
+    fn from(value: &(&'a Felt, &'a ColumnInfo)) -> Self {
+        From::<(&'a Felt, &'a ColumnInfo)>::from(*value)
+    }
+}
+
+impl<'a> From<&'a ColumnDef> for (&'a Felt, ColumnInfoRef<'a>) {
+    fn from(value: &'a ColumnDef) -> Self {
+        (
+            &value.id,
+            ColumnInfoRef {
+                name: &value.name,
+                attributes: &value.attributes,
+                type_def: &value.type_def,
+            },
+        )
+    }
+}
+
+impl<'a> From<ColumnDefRef<'a>> for (&'a Felt, ColumnInfoRef<'a>) {
+    fn from(value: ColumnDefRef<'a>) -> Self {
+        (
+            value.id,
+            ColumnInfoRef {
+                name: value.name,
+                attributes: value.attributes,
+                type_def: value.type_def,
+            },
+        )
+    }
+}
+
+impl<'a> From<(&'a Felt, ColumnInfoRef<'a>)> for ColumnDefRef<'a> {
+    fn from(value: (&'a Felt, ColumnInfoRef<'a>)) -> Self {
+        ColumnDefRef {
+            id: value.0,
+            name: value.1.name,
+            attributes: value.1.attributes,
+            type_def: value.1.type_def,
+        }
+    }
+}
+
+pub trait AsColumnRef<'a> {
+    fn as_entry(&'a self) -> (&'a Felt, ColumnInfoRef<'a>) {
+        self.as_def().into()
+    }
+    fn as_def(&'a self) -> ColumnDefRef<'a>;
+}
+
+impl<'a, T> AsColumnRef<'a> for T
+where
+    &'a T: Into<ColumnDefRef<'a>>,
+    T: 'a,
+{
+    fn as_def(&'a self) -> ColumnDefRef<'a> {
+        self.into()
+    }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Default)]
