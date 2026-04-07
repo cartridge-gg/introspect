@@ -2567,7 +2567,7 @@ dependencies = [
 [[package]]
 name = "starknet-types-raw"
 version = "0.1.0"
-source = "git+ssh://git@github.com/cartridge-gg/starknet-types-raw.git?branch=main#613790ab6e35c08669dcac18e93f27d2f25c2498"
+source = "git+https://github.com/cartridge-gg/starknet-types-raw?branch=main#613790ab6e35c08669dcac18e93f27d2f25c2498"
 dependencies = [
  "serde",
  "starknet-types-core",

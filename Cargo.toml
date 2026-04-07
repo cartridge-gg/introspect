@@ -56,4 +56,4 @@ introspect-types = { path = "crates/types" }
 introspect-rust-macros = { path = "crates/macros" }
 
 cairo-syntax-parser = { git = "https://github.com/cartridge-gg/cairo-syntax-parser", branch = "main" }
-starknet-types-raw = { git = "ssh://git@github.com/cartridge-gg/starknet-types-raw.git", branch = "main" }
+starknet-types-raw = { git = "https://github.com/cartridge-gg/starknet-types-raw", branch = "main" }
