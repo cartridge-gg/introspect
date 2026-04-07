@@ -2,7 +2,7 @@ use crate::decode_error::DecodeResultTrait;
 use crate::deserialize::CairoDeserializer;
 use crate::felt::IntoFeltSource;
 use crate::{ByteArray, DecodeResult, FeltSource};
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 
 pub struct CairoISerde<I: FeltSource>(pub I);
 

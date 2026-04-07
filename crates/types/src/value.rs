@@ -1,7 +1,7 @@
 use crate::{Attribute, FeltId, bytes31_to_hex_string, felt_to_hex_string};
 use primitive_types::{U256, U512};
 use serde::{Deserialize, Serialize};
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 
 #[derive(Clone, Debug, Serialize, Deserialize, Default, PartialEq)]
 pub enum Value {
@@ -82,7 +82,7 @@ impl From<u128> for PrimaryValue {
 
 impl From<blake3::Hash> for PrimaryValue {
     fn from(value: blake3::Hash) -> Self {
-        Felt::from_bytes_be(value.as_bytes()).into()
+        Felt::from(<[u8; 32]>::from(value)).into()
     }
 }
 
@@ -98,7 +98,7 @@ impl PrimaryValue {
             PrimaryValue::ShortUtf8(value) => Felt::from_bytes_be_slice(value.as_bytes()),
             PrimaryValue::Bytes31(value) => Felt::from_bytes_be_slice(value),
             PrimaryValue::Bytes31Encoded(value) => Felt::from_bytes_be_slice(&value.bytes),
-            PrimaryValue::Bool(value) => (*value as u8).into(),
+            PrimaryValue::Bool(value) => (*value).into(),
             PrimaryValue::U8(value) => (*value).into(),
             PrimaryValue::U16(value) => (*value).into(),
             PrimaryValue::U32(value) => (*value).into(),

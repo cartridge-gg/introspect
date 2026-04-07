@@ -3,7 +3,7 @@ use introspect_types::schema::{PrimaryDef, PrimaryTypeDef};
 use introspect_types::{
     Attribute, CairoDeserialize, CairoDeserializer, ColumnDef, DecodeResult, FeltId, TypeDef,
 };
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct CreateColumnSet {

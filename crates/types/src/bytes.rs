@@ -1,6 +1,6 @@
 use crate::decode_error::DecodeResultTrait;
 use crate::{ByteArray, CairoDeserializer, DecodeError, DecodeResult};
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 use std::ops::Deref;
 use std::sync::Arc;
 pub trait ByteSource {
@@ -126,7 +126,7 @@ impl<'a, S: ByteSource + ?Sized> IntoByteSource for &'a mut S {
 
 impl<B: ByteSource> CairoDeserializer for B {
     fn next_felt(&mut self) -> DecodeResult<Felt> {
-        Ok(Felt::from_bytes_be(&self.nexts::<32>()?))
+        self.nexts::<32>().map(Felt::from)
     }
     fn next_byte(&mut self) -> DecodeResult<u8> {
         self.next()

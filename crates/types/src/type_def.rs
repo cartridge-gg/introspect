@@ -1,6 +1,6 @@
-use crate::{Attribute, Attributes, DecodeError, DecodeResult, ascii_str_to_limbs};
+use crate::{Attribute, Attributes, DecodeError, DecodeResult};
 use serde::{Deserialize, Serialize};
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 use std::collections::HashMap;
 use std::ops::{Deref, DerefMut};
 
@@ -20,9 +20,8 @@ macro_rules! define_type_variants {
 
         #[allow(non_upper_case_globals)]
         pub mod selectors {
-            use super::ascii_str_to_limbs;
-            pub const None: [u64; 4] = [0; 4];
-            $(pub const $variant: [u64; 4] = ascii_str_to_limbs($selector);)*
+            pub const None: starknet_types_raw::Felt = starknet_types_raw::Felt::ZERO;
+            $(pub const $variant: starknet_types_raw::Felt = starknet_types_raw::Felt::selector($selector);)*
         }
 
 
@@ -122,7 +121,7 @@ impl TypeName for TypeDef {
                 inner.err.type_name()
             ),
             TypeDef::Nullable(inner) => format!("Nullable<{}>", inner.type_def.type_name()),
-            TypeDef::Ref(inner) => inner.id.to_hex_string(),
+            TypeDef::Ref(inner) => inner.id.to_string(),
             TypeDef::Custom(inner) => inner.encoding.clone(),
             _ => self.item_name().to_string(),
         }

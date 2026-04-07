@@ -1,7 +1,7 @@
 use crate::deserialize::CairoDeserializer;
 use crate::felt::IntoFeltSource;
 use crate::{DecodeResult, FeltSource};
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 
 pub struct CairoSerde<F: FeltSource>(pub F);
 

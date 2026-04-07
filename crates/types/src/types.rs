@@ -1,14 +1,6 @@
-use crate::utils::Subarray;
 use crate::{DecodeError, DecodeResult};
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 use std::ops::Deref;
-
-const MAX_L1_ADDRESS: Felt = Felt::from_raw([
-    461478224317121089,
-    18446743936270598144,
-    74766790688767,
-    18406070939574861858,
-]);
 
 pub struct EthAddress(pub [u8; 20]);
 pub struct Bytes31(pub [u8; 31]);
@@ -21,23 +13,22 @@ impl TryFrom<Felt> for Bytes31 {
     }
 }
 
-impl TryFrom<Felt> for EthAddress {
+impl TryFrom<[u8; 32]> for EthAddress {
     type Error = DecodeError;
-    fn try_from(felt: Felt) -> Result<Self, DecodeError> {
-        TryFrom::try_from(&felt)
+    fn try_from(felt: [u8; 32]) -> Result<Self, DecodeError> {
+        match felt {
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, b @ ..] => Ok(EthAddress(b)),
+            _ => Err(DecodeError::invalid_encoding(
+                "Felt value exceeds maximum for ETH address",
+            )),
+        }
     }
 }
 
-impl TryFrom<&Felt> for EthAddress {
+impl TryFrom<Felt> for EthAddress {
     type Error = DecodeError;
-    fn try_from(felt: &Felt) -> Result<Self, DecodeError> {
-        if felt <= &MAX_L1_ADDRESS {
-            Ok(felt.to_bytes_be().subarray::<12, 20>().into())
-        } else {
-            Err(DecodeError::invalid_encoding(
-                "Felt value exceeds maximum for ETH address",
-            ))
-        }
+    fn try_from(felt: Felt) -> Result<Self, DecodeError> {
+        felt.to_be_bytes().try_into()
     }
 }
 
@@ -134,7 +125,7 @@ pub fn felt_to_utf8_string(felt: Felt) -> DecodeResult<String> {
 }
 
 pub fn felt_to_bytes31_bytes(felt: Felt) -> DecodeResult<[u8; 31]> {
-    let [first, rest @ ..] = felt.to_bytes_be();
+    let [first, rest @ ..] = felt.to_be_bytes();
     match first {
         0 => Ok(rest),
         _ => Err(DecodeError::InvalidBytes31Encoding(

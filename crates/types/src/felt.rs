@@ -1,4 +1,4 @@
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 
 use crate::{DecodeError, DecodeResult};
 

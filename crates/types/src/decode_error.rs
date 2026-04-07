@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 use thiserror::Error;
 
 pub type DecodeResult<T> = Result<T, DecodeError>;

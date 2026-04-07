@@ -34,9 +34,7 @@ pub use type_def::{
     ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
 };
 pub use types::{ByteArray, Bytes31, EthAddress, felt_to_bytes31_bytes, felt_to_utf8_string};
-pub use utils::{
-    ResultInto, ascii_str_to_felt, ascii_str_to_limbs, bytes31_to_hex_string, felt_to_hex_string,
-};
+pub use utils::{ResultInto, bytes31_to_hex_string, felt_to_hex_string};
 pub use value::{
     CairoOption, CairoResult, Custom, Encoded31Bytes, EncodedBytes, Enum, Field, IdValue, Member,
     Nullable, Primary, PrimaryValue, Record, Struct, Value,

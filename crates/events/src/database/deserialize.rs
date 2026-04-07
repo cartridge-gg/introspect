@@ -12,10 +12,10 @@ use super::{
 use introspect_types::deserialize_def::TypeDefDeserializer;
 use introspect_types::schema::{PrimaryDef, PrimaryTypeDef};
 use introspect_types::{
-    Attribute, CairoDeserialize, CairoDeserializer, CairoEvent, DecodeResult, FeltSource, TypeDef,
-    cairo_event_name_and_selector,
+    Attribute, CairoDeserialize, CairoDeserializer, CairoEvent, CairoEventInfo, DecodeResult,
+    FeltSource, TypeDef,
 };
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 
 impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D>
     for CreateColumnSet
@@ -573,41 +573,117 @@ impl<D: FeltSource + CairoDeserializer + CairoDeserializeRemaining> CairoEvent<D
     }
 }
 
-cairo_event_name_and_selector!(CreateColumnSet);
-cairo_event_name_and_selector!(CreateTable);
-cairo_event_name_and_selector!(CreateTableFromClass);
-cairo_event_name_and_selector!(CreateTableFromContract);
-cairo_event_name_and_selector!(RenameTable);
-cairo_event_name_and_selector!(DropTable);
-cairo_event_name_and_selector!(RenamePrimary);
-cairo_event_name_and_selector!(RetypePrimary);
-cairo_event_name_and_selector!(AddColumn);
-cairo_event_name_and_selector!(AddColumns);
-cairo_event_name_and_selector!(RenameColumn);
-cairo_event_name_and_selector!(RenameColumns);
-cairo_event_name_and_selector!(RetypeColumn);
-cairo_event_name_and_selector!(RetypeColumns);
-cairo_event_name_and_selector!(DropColumn);
-cairo_event_name_and_selector!(DropColumns);
-cairo_event_name_and_selector!(CreateIndex);
-cairo_event_name_and_selector!(DropIndex);
-cairo_event_name_and_selector!(InsertRecord);
-cairo_event_name_and_selector!(InsertRecords);
-cairo_event_name_and_selector!(InsertField);
-cairo_event_name_and_selector!(InsertFields);
-cairo_event_name_and_selector!(InsertsField);
-cairo_event_name_and_selector!(InsertsFields);
-cairo_event_name_and_selector!(InsertFieldSet);
-cairo_event_name_and_selector!(InsertFieldSets);
-cairo_event_name_and_selector!(InsertsFieldSet);
-cairo_event_name_and_selector!(InsertsFieldSets);
-cairo_event_name_and_selector!(DeleteRecord);
-cairo_event_name_and_selector!(DeleteRecords);
-cairo_event_name_and_selector!(DeleteField);
-cairo_event_name_and_selector!(DeleteFields);
-cairo_event_name_and_selector!(DeletesField);
-cairo_event_name_and_selector!(DeletesFields);
-cairo_event_name_and_selector!(DeleteFieldSet);
-cairo_event_name_and_selector!(DeleteFieldSets);
-cairo_event_name_and_selector!(DeletesFieldSet);
-cairo_event_name_and_selector!(DeletesFieldSets);
+impl CairoEventInfo for CreateColumnSet {
+    const NAME: &'static str = "CreateColumnSet";
+}
+impl CairoEventInfo for CreateTable {
+    const NAME: &'static str = "CreateTable";
+}
+impl CairoEventInfo for CreateTableFromClass {
+    const NAME: &'static str = "CreateTableFromClass";
+}
+impl CairoEventInfo for CreateTableFromContract {
+    const NAME: &'static str = "CreateTableFromContract";
+}
+impl CairoEventInfo for RenameTable {
+    const NAME: &'static str = "RenameTable";
+}
+impl CairoEventInfo for DropTable {
+    const NAME: &'static str = "DropTable";
+}
+impl CairoEventInfo for RenamePrimary {
+    const NAME: &'static str = "RenamePrimary";
+}
+impl CairoEventInfo for RetypePrimary {
+    const NAME: &'static str = "RetypePrimary";
+}
+impl CairoEventInfo for AddColumn {
+    const NAME: &'static str = "AddColumn";
+}
+impl CairoEventInfo for AddColumns {
+    const NAME: &'static str = "AddColumns";
+}
+impl CairoEventInfo for RenameColumn {
+    const NAME: &'static str = "RenameColumn";
+}
+impl CairoEventInfo for RenameColumns {
+    const NAME: &'static str = "RenameColumns";
+}
+impl CairoEventInfo for RetypeColumn {
+    const NAME: &'static str = "RetypeColumn";
+}
+impl CairoEventInfo for RetypeColumns {
+    const NAME: &'static str = "RetypeColumns";
+}
+impl CairoEventInfo for DropColumn {
+    const NAME: &'static str = "DropColumn";
+}
+impl CairoEventInfo for DropColumns {
+    const NAME: &'static str = "DropColumns";
+}
+impl CairoEventInfo for CreateIndex {
+    const NAME: &'static str = "CreateIndex";
+}
+impl CairoEventInfo for DropIndex {
+    const NAME: &'static str = "DropIndex";
+}
+impl CairoEventInfo for InsertRecord {
+    const NAME: &'static str = "InsertRecord";
+}
+impl CairoEventInfo for InsertRecords {
+    const NAME: &'static str = "InsertRecords";
+}
+impl CairoEventInfo for InsertField {
+    const NAME: &'static str = "InsertField";
+}
+impl CairoEventInfo for InsertFields {
+    const NAME: &'static str = "InsertFields";
+}
+impl CairoEventInfo for InsertsField {
+    const NAME: &'static str = "InsertsField";
+}
+impl CairoEventInfo for InsertsFields {
+    const NAME: &'static str = "InsertsFields";
+}
+impl CairoEventInfo for InsertFieldSet {
+    const NAME: &'static str = "InsertFieldSet";
+}
+impl CairoEventInfo for InsertFieldSets {
+    const NAME: &'static str = "InsertFieldSets";
+}
+impl CairoEventInfo for InsertsFieldSet {
+    const NAME: &'static str = "InsertsFieldSet";
+}
+impl CairoEventInfo for InsertsFieldSets {
+    const NAME: &'static str = "InsertsFieldSets";
+}
+impl CairoEventInfo for DeleteRecord {
+    const NAME: &'static str = "DeleteRecord";
+}
+impl CairoEventInfo for DeleteRecords {
+    const NAME: &'static str = "DeleteRecords";
+}
+impl CairoEventInfo for DeleteField {
+    const NAME: &'static str = "DeleteField";
+}
+impl CairoEventInfo for DeleteFields {
+    const NAME: &'static str = "DeleteFields";
+}
+impl CairoEventInfo for DeletesField {
+    const NAME: &'static str = "DeletesField";
+}
+impl CairoEventInfo for DeletesFields {
+    const NAME: &'static str = "DeletesFields";
+}
+impl CairoEventInfo for DeleteFieldSet {
+    const NAME: &'static str = "DeleteFieldSet";
+}
+impl CairoEventInfo for DeleteFieldSets {
+    const NAME: &'static str = "DeleteFieldSets";
+}
+impl CairoEventInfo for DeletesFieldSet {
+    const NAME: &'static str = "DeletesFieldSet";
+}
+impl CairoEventInfo for DeletesFieldSets {
+    const NAME: &'static str = "DeletesFieldSets";
+}

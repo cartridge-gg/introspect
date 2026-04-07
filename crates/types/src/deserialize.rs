@@ -1,7 +1,7 @@
 use crate::decode_error::DecodeResultTrait;
 use crate::{ByteArray, Bytes31, DecodeError, DecodeResult, EthAddress};
 use primitive_types::{U256, U512};
-use starknet_types_core::felt::{Felt, PrimitiveFromFeltError};
+use starknet_types_raw::felt::{Felt, PrimitiveFromFeltError};
 
 pub trait PrimitiveFromFelt: Sized {
     fn primitive_from_felt(felt: Felt) -> DecodeResult<Self>;
@@ -181,12 +181,11 @@ pub trait CairoDeserializer {
                 "next_bytes: N must be at most 32 since a felt is 32 bytes"
             );
         }
-        let felt = self.next_felt()?;
-        let bytes = felt.to_bytes_be();
+        let bytes = self.next_felt()?.to_be_bytes();
         if bytes[..32 - N].iter().all(|&b| b == 0) {
             Ok(bytes[32 - N..].try_into().unwrap())
         } else {
-            Err(DecodeError::NonZeroBytesInFelt(felt, N))
+            Err(DecodeError::NonZeroBytesInFelt(bytes.into(), N))
         }
     }
     fn next_value<T: CairoDeserialize<Self>>(&mut self) -> DecodeResult<T>

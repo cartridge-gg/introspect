@@ -3,7 +3,7 @@ use crate::{CairoDeserializer, EnumDef, PrimaryTypeDef, ResultDef, TupleDef, Typ
 use primitive_types::{U256, U512};
 use serde::ser::{Error as SerError, SerializeMap, SerializeSeq, SerializeTuple};
 use serde::{Serialize, Serializer};
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 
 pub trait CairoTypeSerialization: Sized {
     fn serialize_byte_array<S: Serializer>(

@@ -3,7 +3,7 @@ use crate::{
     ColumnDef, EnumDef, FixedArrayDef, ItemDefTrait, MemberDef, ResultDef, StructDef, TableSchema,
     TupleDef, TypeDef, VariantDef,
 };
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 use std::collections::HashMap;
 use std::hash::Hash;
 

@@ -9,11 +9,12 @@ crate-type = ["cdylib", "lib"]
 
 [dependencies]
 cairo-lang-macro.workspace = true
-cairo-lang-starknet-classes.workspace = true
 cairo-syntax-parser.workspace = true
 introspect-rust-macros.workspace = true
 introspect-types.workspace = true
 itertools.workspace = true
-salsa = "0.24.0"
+salsa = "0.26.0"
 starknet-types-core.workspace = true
 thiserror.workspace = true
+num-bigint.workspace = true
+sha3.workspace = true

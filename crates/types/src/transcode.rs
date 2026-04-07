@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::{CairoDeserializer, DecodeError};
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum TranscodeError<D, S> {
@@ -101,7 +101,7 @@ impl CairoWrite for Vec<u8> {
 
     #[inline]
     fn write_felt(&mut self, felt: Felt) -> Result<Self::Ok, Self::Error> {
-        self.extend_from_slice(&felt.to_bytes_be());
+        self.extend_from_slice(felt.as_be_bytes());
         Ok(())
     }
 }
@@ -138,7 +138,7 @@ impl<W: io::Write> CairoWrite for IoCairoWrite<W> {
 
     #[inline]
     fn write_felt(&mut self, felt: Felt) -> Result<Self::Ok, Self::Error> {
-        self.inner.write_all(&felt.to_bytes_be())
+        self.inner.write_all(felt.as_be_bytes())
     }
 }
 

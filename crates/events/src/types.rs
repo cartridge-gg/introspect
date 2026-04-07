@@ -1,8 +1,8 @@
 use introspect_types::deserialize_def::TypeDefDeserializer;
 use introspect_types::{
-    CairoDeserialize, CairoEvent, DecodeResult, FeltSource, TypeDef, cairo_event_name_and_selector,
+    CairoDeserialize, CairoEvent, CairoEventInfo, DecodeResult, FeltSource, TypeDef,
 };
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct DeclareType {
@@ -18,4 +18,6 @@ impl<D: FeltSource + TypeDefDeserializer> CairoEvent<D> for DeclareType {
     }
 }
 
-cairo_event_name_and_selector!(DeclareType);
+impl CairoEventInfo for DeclareType {
+    const NAME: &'static str = "DeclareType";
+}

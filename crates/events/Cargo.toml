@@ -8,8 +8,7 @@ version.workspace = true
 [dependencies]
 cainome-cairo-serde.workspace = true
 serde.workspace = true
-starknet-types-core.workspace = true
-starknet.workspace = true
 introspect-types.workspace = true
+starknet-types-raw.workspace = true
 
 [dev-dependencies]

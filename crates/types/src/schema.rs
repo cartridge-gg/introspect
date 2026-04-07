@@ -5,9 +5,8 @@ use crate::{
     TypeDef, felt_to_bytes31_bytes, felt_to_utf8_string,
 };
 use blake3::Hash;
-use num_traits::Zero;
 use serde::{Deserialize, Serialize};
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 use std::ops::Deref;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -462,12 +461,12 @@ pub trait FeltIds {
         let ids = self.ids();
         match ids.len() {
             0 => Hash::from([0; 32]),
-            1 => Hash::from(ids[0].to_bytes_be()),
+            1 => Hash::from(ids[0].to_be_bytes()),
             _ => blake3::hash(
                 &self
                     .ids()
                     .into_iter()
-                    .flat_map(|id| id.to_bytes_be())
+                    .flat_map(|id| id.to_be_bytes())
                     .collect::<Vec<_>>(),
             ),
         }
@@ -634,7 +633,7 @@ impl_collections!(TypeDefs::type_defs -> Vec<&TypeDef>, TypeDefTrait::type_def);
 #[cfg(test)]
 mod tests {
     use super::*;
-    use starknet_types_core::felt::Felt;
+    use starknet_types_raw::Felt;
 
     fn felt(v: u64) -> Felt {
         Felt::from(v)
@@ -1083,13 +1082,13 @@ mod tests {
     #[test]
     fn hash_single_felt() {
         let v = vec![felt(42)];
-        assert_eq!(v.hash(), blake3::Hash::from(felt(42).to_bytes_be()));
+        assert_eq!(v.hash(), blake3::Hash::from(felt(42).to_be_bytes()));
     }
 
     #[test]
     fn hash_multiple_felts() {
         let v = vec![felt(1), felt(2), felt(3)];
-        let expected = blake3::hash(&v.iter().flat_map(|f| f.to_bytes_be()).collect::<Vec<_>>());
+        let expected = blake3::hash(&v.iter().flat_map(|f| f.to_be_bytes()).collect::<Vec<_>>());
         assert_eq!(v.hash(), expected);
     }
 
@@ -1100,7 +1099,7 @@ mod tests {
         let expected = blake3::hash(
             &[felt(10), felt(20)]
                 .iter()
-                .flat_map(|f| f.to_bytes_be())
+                .flat_map(|f| f.to_be_bytes())
                 .collect::<Vec<_>>(),
         );
         assert_eq!(s.hash(), expected);
@@ -1112,7 +1111,7 @@ mod tests {
         let expected = blake3::hash(
             &[felt(10), felt(20)]
                 .iter()
-                .flat_map(|f| f.to_bytes_be())
+                .flat_map(|f| f.to_be_bytes())
                 .collect::<Vec<_>>(),
         );
         assert_eq!(v.hash(), expected);

@@ -1,5 +1,7 @@
 use std::ops::Deref;
 
+use starknet_types_raw::Felt;
+
 use crate::transcode::{
     CairoWrite, Transcode, TranscodeError, TranscodeResult, TranscodeSerializeResult,
     TranscodeWriter,
@@ -20,10 +22,7 @@ impl<T: CairoWrite + ?Sized> CairoWrite for &mut T {
         (**self).write_bytes(bytes)
     }
 
-    fn write_felt(
-        &mut self,
-        felt: starknet_types_core::felt::Felt,
-    ) -> Result<Self::Ok, Self::Error> {
+    fn write_felt(&mut self, felt: Felt) -> Result<Self::Ok, Self::Error> {
         (**self).write_felt(felt)
     }
 }

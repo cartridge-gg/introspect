@@ -12,11 +12,10 @@ num-traits.workspace = true
 primitive-types.workspace = true
 serde_json.workspace = true
 serde.workspace = true
-starknet-types-core.workspace = true
+starknet-types-raw.workspace = true
 lambdaworks-math.workspace = true
 hex.workspace = true
 thiserror.workspace = true
-starknet.workspace = true
 introspect-rust-macros.workspace = true
 
 

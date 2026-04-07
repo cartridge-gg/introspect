@@ -38,6 +38,7 @@ indent = "0.1.1"
 itertools = "0.14.0"
 lambdaworks-math = "0.13.0"
 num-traits = { version = "0.2", default-features = false }
+num-bigint = "0.4.6"
 primitive-types = { version = "0.14.0", features = ["serde"] }
 proc-macro2 = "1.0.106"
 serde = "1.0.228"
@@ -45,6 +46,7 @@ serde_json = "1.0.145"
 starknet = "0.17.0"
 starknet-crypto = "0.8"
 starknet-types-core = "0.2.0"
+sha3 = "0.10.8"
 thiserror = "2.0.17"
 
 
@@ -54,3 +56,4 @@ introspect-types = { path = "crates/types" }
 introspect-rust-macros = { path = "crates/macros" }
 
 cairo-syntax-parser = { git = "https://github.com/cartridge-gg/cairo-syntax-parser", branch = "main" }
+starknet-types-raw = { git = "ssh://git@github.com/cartridge-gg/starknet-types-raw.git", branch = "main" }

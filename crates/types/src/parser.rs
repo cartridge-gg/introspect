@@ -7,7 +7,7 @@ use crate::{
     DecodeError, Encoded31Bytes, EncodedBytes, EnumDef, Field, Member, NullableDef, OptionDef,
     ResultDef, Struct, TupleDef,
 };
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 use thiserror::Error;
 
 #[derive(Debug, Error)]

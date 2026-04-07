@@ -8,7 +8,7 @@ use crate::{
     Felt252DictDef, FeltSource, FixedArrayDef, ItemDefTrait, MemberDef, NullableDef, OptionDef,
     PrimaryDef, PrimaryTypeDef, RefDef, ResultDef, StructDef, TupleDef, TypeDef, VariantDef,
 };
-use starknet_types_core::felt::Felt;
+use starknet_types_raw::Felt;
 
 impl<F: FeltSource> TypeDefDeserializer for CairoISerde<F> {
     fn deserialize_attribute(&mut self) -> DecodeResult<Attribute> {
@@ -36,7 +36,7 @@ pub trait TypeDefDeserializer: CairoDeserializer + Sized {
 
     fn deserialize_type_def(&mut self) -> DecodeResult<TypeDef> {
         let selector = self.next_enum_variant()?;
-        match selector.to_be_digits() {
+        match selector {
             selectors::None => Ok(TypeDef::None),
             selectors::Felt252 => Ok(TypeDef::Felt252),
             selectors::ShortUtf8 => Ok(TypeDef::ShortUtf8),
@@ -233,7 +233,7 @@ impl<D: TypeDefDeserializer> CairoDeserialize<D> for ColumnInfo {
 impl<D: CairoDeserializer> CairoDeserialize<D> for PrimaryTypeDef {
     fn deserialize(deserializer: &mut D) -> DecodeResult<Self> {
         let selector = deserializer.next_felt()?;
-        match selector.to_be_digits() {
+        match selector {
             selectors::Felt252 => Ok(PrimaryTypeDef::Felt252),
             selectors::ShortUtf8 => Ok(PrimaryTypeDef::ShortUtf8),
             selectors::Bytes31 => Ok(PrimaryTypeDef::Bytes31),
